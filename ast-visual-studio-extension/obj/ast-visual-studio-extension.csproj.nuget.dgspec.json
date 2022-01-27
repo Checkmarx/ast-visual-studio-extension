@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\HugoMa\\Workspaces\\.NET_PROJECTS\\ast-visual-studio-extension\\ast-visual-studio-extension\\ast-visual-studio-extension.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\HugoMa\\Workspaces\\.NET_PROJECTS\\ast-visual-studio-extension\\ast-visual-studio-extension\\ast-visual-studio-extension.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\HugoMa\\Workspaces\\.NET_PROJECTS\\ast-visual-studio-extension\\ast-visual-studio-extension\\ast-visual-studio-extension.csproj",
+        "projectName": "ast-visual-studio-extension",
+        "projectPath": "C:\\Users\\HugoMa\\Workspaces\\.NET_PROJECTS\\ast-visual-studio-extension\\ast-visual-studio-extension\\ast-visual-studio-extension.csproj",
+        "packagesPath": "C:\\Users\\HugoMa\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\HugoMa\\Workspaces\\.NET_PROJECTS\\ast-visual-studio-extension\\ast-visual-studio-extension\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "configFilePaths": [
+          "C:\\Users\\HugoMa\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "dependencies": {
+            "Microsoft.VSSDK.BuildTools": {
+              "target": "Package",
+              "version": "[17.0.5234, )"
+            },
+            "Microsoft.VisualStudio.SDK": {
+              "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "target": "Package",
+              "version": "[17.0.31902.203, )"
+            }
+          }
+        }
+      },
+      "runtimes": {
+        "win": {
+          "#import": []
+        },
+        "win-x64": {
+          "#import": []
+        },
+        "win-x86": {
+          "#import": []
+        }
+      }
+    }
+  }
+}
