@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+	<Extern href="stdidcmd.h"/>
+
+	<Extern href="vsshlids.h"/>
+
+	<Commands package="guidCxWindowPackage">
+
+		<Menus>
+			<Menu guid="guidCxWindowPackageCmdSet" id="TWToolbar" type="ToolWindowToolbar">
+				<CommandFlag>DefaultDocked</CommandFlag>
+				<Strings>
+					<ButtonText>Checkmarx extension toolbar</ButtonText>
+					<CommandName>Checkmarx extension toolbar</CommandName>
+				</Strings>
+			</Menu>
+		</Menus>
+
+		<Groups>
+			<Group guid="guidCxWindowPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+			</Group>
+			<Group guid="guidCxWindowPackageCmdSet" id="TWToolbarGroup" priority="0x0000">
+				<Parent guid="guidCxWindowPackageCmdSet" id="TWToolbar" />
+			</Group>
+		</Groups>
+
+		<Combos>
+			<Combo guid="guidCxWindowPackageCmdSet" id="ScansCombo" priority="0x0012" type="DynamicCombo" defaultWidth="240" idCommandList="ScansComboGetList">
+				<Parent guid="guidCxWindowPackageCmdSet" id="TWToolbarGroup"/>
+				<CommandFlag>IconAndText</CommandFlag>
+				<CommandFlag>CommandWellOnly</CommandFlag>
+				<Strings>
+					<ButtonText>Scans: </ButtonText>
+					<MenuText>Scans Combo: </MenuText>
+					<ToolTipText>Select a scan id</ToolTipText>
+					<CanonicalName>Scans Combo</CanonicalName>
+					<LocCanonicalName>Scans Combo</LocCanonicalName>
+					<CommandName>Scans Combo</CommandName>
+				</Strings>
+			</Combo>
+		</Combos>
+
+		<Buttons>
+			<Button guid="guidCxWindowPackageCmdSet" id="CxWindowCommandId" priority="0x0100" type="Button">
+				<Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+				<Icon guid="CxImages" id="cxlogo" />
+				<Strings>
+					<ButtonText>Checkmarx</ButtonText>
+				</Strings>
+			</Button>
+		</Buttons>
+
+		<Bitmaps>
+			<Bitmap guid="CxImages" href="Resources\cx_logo16.16.png" usedList="cxlogo" />
+		</Bitmaps>
+	</Commands>
+
+	<Symbols>
+		<GuidSymbol name="guidCxWindowPackage" value="{63d5f3b4-a254-4bef-974b-0733c306ed2c}" />
+
+		<GuidSymbol name="guidCxWindowPackageCmdSet" value="{e46cd6d8-268d-4e77-9074-071e72a25f39}">
+			<IDSymbol name="CxWindowCommandId" value="0x0100" />
+			<IDSymbol name="MyMenuGroup" value="0x1020" />
+			<IDSymbol name="CxWindowCmdId" value="0x0101" />
+			<IDSymbol name="TWToolbar" value="0x1000" />
+			<IDSymbol name="TWToolbarGroup" value="0x1050" />
+			<IDSymbol name="ScansCombo" value="0x103"/>
+			<IDSymbol name="ScansComboGetList" value="0x104"/>
+		</GuidSymbol>
+
+		<GuidSymbol name="CxImages" value="{cca5f138-eee9-4fc7-8f65-fce867b52e22}">
+			<IDSymbol name="cxlogo" value="1" />
+		</GuidSymbol>
+	</Symbols>
+</CommandTable>
