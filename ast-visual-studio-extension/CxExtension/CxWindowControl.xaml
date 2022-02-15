@@ -9,6 +9,12 @@
              d:DesignHeight="300" d:DesignWidth="300"
              Name="CxWindow">
 
+    <UserControl.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{Binding ElementName=hiddenLbl, Path=Foreground}"/>
+        </Style>
+    </UserControl.Resources>
+
     <DockPanel>
         <Grid Name="ParentGrid">
             <Grid.ColumnDefinitions>
@@ -34,22 +40,24 @@
             <GridSplitter x:Name="Splitter" Grid.Column ="1" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
 
             <!-- Column 1 -->
-            <TreeView Background="Transparent" Margin="10,5,0,13" x:Name="TreeViewResults" HorizontalAlignment="Left" VerticalAlignment="Top" 
-                      MaxHeight="{Binding ElementName=ParentGrid, Path=ActualHeight}"
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="1,1,2,0">
+                <TreeView Background="Transparent" Margin="10,5,0,13" x:Name="TreeViewResults" HorizontalAlignment="Left" VerticalAlignment="Top" 
                       BorderThickness="0,0,0,0" RenderTransformOrigin="0.5,0.5">
-                <TreeView.Resources>
-                    <!-- Style the inactive selection the same as active -->
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}" />
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{DynamicResource {x:Static SystemColors.HighlightTextColorKey}}"/>
-                </TreeView.Resources>
-            </TreeView>
+                    <TreeView.Resources>
+                        <!-- Style the inactive selection the same as active -->
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}" />
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{DynamicResource {x:Static SystemColors.HighlightTextColorKey}}"/>
+                    </TreeView.Resources>
+                </TreeView>
+            </ScrollViewer>
 
             <!-- Column 2 -->
             <StackPanel Grid.Column="1">
                 <!-- Result Title -->
                 <WrapPanel Orientation="Horizontal" Margin="10">
+                    <Label Name="hiddenLbl" Content="My Label" Visibility="Hidden" Width="0"></Label>
                     <Image x:Name="ResultSeverityIcon" Width="25" Height="31" />
-                    <TextBlock TextWrapping="WrapWithOverflow" Grid.Column="1" x:Name="ResultTitle" Text="" FontSize="20" Foreground="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" Margin="7,0,0,0"></TextBlock>
+                    <TextBlock TextWrapping="WrapWithOverflow" Grid.Column="1" x:Name="ResultTitle" FontSize="20" Margin="7,0,0,0"></TextBlock>
                 </WrapPanel>
 
                 <Separator Name="Separator" Visibility="Hidden"/>
@@ -82,22 +90,20 @@
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" />
-                                </Trigger>
-                            </Style.Triggers>
                         </Style>
                     </TabControl.Resources>
                     <TabItem Name="TabItem">
                         <TabItem.HeaderTemplate>
                             <DataTemplate>
+                                <DataTemplate.Resources>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                                </DataTemplate.Resources>
                                 <Grid HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="5*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Description" Grid.Column="1" VerticalAlignment="Center" FontSize="15" Foreground="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                    <TextBlock Text="Description" Grid.Column="1" VerticalAlignment="Center" FontSize="15"/>
                                 </Grid>
                             </DataTemplate>
                         </TabItem.HeaderTemplate>
@@ -111,17 +117,20 @@
                     <TabItem>
                         <TabItem.HeaderTemplate>
                             <DataTemplate>
+                                <DataTemplate.Resources>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                                </DataTemplate.Resources>
                                 <Grid HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="5*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Changes" Grid.Column="1" VerticalAlignment="Center" FontSize="15" Foreground="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                    <TextBlock Text="Changes" Grid.Column="1" VerticalAlignment="Center" FontSize="15" />
                                 </Grid>
                             </DataTemplate>
                         </TabItem.HeaderTemplate>
                         <TabItem.Content>
-                            <TextBlock Text="Triage changes ..." Grid.Column="1" VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                            <TextBlock Text="Triage changes ..." Grid.Column="1" VerticalAlignment="Center" FontSize="13" />
                         </TabItem.Content>
                     </TabItem>
                 </TabControl>
