@@ -53,7 +53,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 {
                     Text = result.Description,
                     TextWrapping = TextWrapping.WrapWithOverflow,
-                    FontSize = 13,
                     Margin = new Thickness(10, 5, 0, 0)
                 };
 
@@ -70,7 +69,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 TextBlock actualValueTextBlock = new TextBlock
                 {
                     TextWrapping = TextWrapping.WrapWithOverflow,
-                    FontSize = 13,
                     Margin = new Thickness(10, result.Description != null ? 30 : 5, 0, 0)
                 };
 
@@ -87,7 +85,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 TextBlock expectedValueTextBlock = new TextBlock
                 {
                     TextWrapping = TextWrapping.WrapWithOverflow,
-                    FontSize = 13,
                     Margin = new Thickness(10, 15, 0, 0)
                 };
 
@@ -97,8 +94,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.ResultInfoStackPanel.Children.Add(expectedValueTextBlock);
             }
 
-            cxWindowUI.ResultTabControl.Visibility = Visibility.Visible;
-            cxWindowUI.Separator.Visibility = Visibility.Visible;
+            cxWindowUI.ResultInfoPanel.Visibility = Visibility.Visible;
         }
 
         // Clear panel
@@ -111,8 +107,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.ResultSeverityIcon.Source = null;
                 cxWindowUI.ResultTitle.Text = String.Empty;
                 cxWindowUI.ResultInfoStackPanel.Children.Clear();
-                cxWindowUI.Separator.Visibility = Visibility.Hidden;
-                cxWindowUI.ResultTabControl.Visibility = Visibility.Hidden;
+                cxWindowUI.ResultInfoPanel.Visibility = Visibility.Hidden;
             }
         }
     }

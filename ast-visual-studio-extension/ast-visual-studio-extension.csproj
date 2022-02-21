@@ -26,7 +26,7 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
-    <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
+    <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
     <IncludeDebugSymbolsInLocalVSIXDeployment>false</IncludeDebugSymbolsInLocalVSIXDeployment>
     <CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
     <CopyOutputSymbolsToOutputDirectory>true</CopyOutputSymbolsToOutputDirectory>
@@ -54,12 +54,15 @@
   <ItemGroup>
     <Compile Include="CxExtension\Enums\Severity.cs" />
     <Compile Include="CxExtension\Panels\BasePanel.cs" />
+    <Compile Include="CxExtension\Panels\FileNode.cs" />
     <Compile Include="CxExtension\Panels\ResultInfoPanel.cs" />
     <Compile Include="CxExtension\Panels\ResultsTreePanel.cs" />
+    <Compile Include="CxExtension\Panels\ResultVulnerabilitiesPanel.cs" />
     <Compile Include="CxExtension\Toolbar\ScansCombobox.cs" />
     <Compile Include="CxExtension\Utils\CxConstants.cs" />
     <Compile Include="CxExtension\Utils\CxUtils.cs" />
     <Compile Include="CxExtension\Utils\ResultsFilteringAndGrouping.cs" />
+    <Compile Include="CxExtension\Utils\SolutionExplorerUtils.cs" />
     <Compile Include="CxExtension\Utils\UIUtils.cs" />
     <Compile Include="CxExtension\Utils\XAMLCalculations.cs" />
     <Compile Include="CxWrapper\CxConstants.cs" />
@@ -121,23 +124,45 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Community.VisualStudio.Toolkit.17">
+      <Version>17.0.394</Version>
+    </PackageReference>
+    <PackageReference Include="Community.VisualStudio.VSCT">
+      <Version>16.0.29.6</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="log4net">
       <Version>2.0.14</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.31902.203" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5234" />
-    <PackageReference Include="SharpVectors">
-      <Version>1.7.7</Version>
+    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
+      <Version>7.1.2</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.SDK">
+      <Version>17.0.32112.339</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5234" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="CxExtension\Resources\high_18x22.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="CxExtension\Resources\high_title.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CxExtension\Resources\info_18x22.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="CxExtension\Resources\info_title.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="CxExtension\Resources\low_18x22.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="CxExtension\Resources\low_title.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CxExtension\Resources\medium_18x22.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="CxExtension\Resources\medium_title.png">

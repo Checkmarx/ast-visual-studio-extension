@@ -37,7 +37,7 @@ namespace ast_visual_studio_extension.CxCLI.Models
         public string Value { get; set; }
 
         [JsonProperty("filename")]
-        public string Filename { get; set; }
+        public string FileName { get; set; }
 
         [JsonProperty("line")]
         public int Line { get; set; }

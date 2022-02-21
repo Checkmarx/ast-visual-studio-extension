@@ -20,10 +20,12 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     internal class ResultsTreePanel : BasePanel
     {
         private readonly ResultInfoPanel resultInfoPanel;
+        private readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
 
         public ResultsTreePanel(AsyncPackage package) : base(package)
         {
             resultInfoPanel = new ResultInfoPanel(package);
+            resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package);
         }
 
         // Draw results tree
@@ -34,6 +36,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             try
             {
                 resultInfoPanel.Clear();
+                resultVulnerabilitiesPanel.Clear();
                 resultsTree.Items.Clear();
 
                 resultsTree.Items.Add(CxConstants.INFO_GETTING_RESULTS);
@@ -102,6 +105,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private void OnClickResult(object sender, RoutedEventArgs e)
         {
             resultInfoPanel.Draw((sender as TreeViewItem).Tag as Result);
+            resultVulnerabilitiesPanel.Draw((sender as TreeViewItem).Tag as Result);
         }
     }
 }
