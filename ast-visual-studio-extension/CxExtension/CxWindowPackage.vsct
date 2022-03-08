@@ -26,22 +26,6 @@
 			</Group>
 		</Groups>
 
-		<Combos>
-			<Combo guid="guidCxWindowPackageCmdSet" id="ScansCombo" priority="0x0012" type="DynamicCombo" defaultWidth="240" idCommandList="ScansComboGetList">
-				<Parent guid="guidCxWindowPackageCmdSet" id="TWToolbarGroup"/>
-				<CommandFlag>IconAndText</CommandFlag>
-				<CommandFlag>CommandWellOnly</CommandFlag>
-				<Strings>
-					<ButtonText>Scans: </ButtonText>
-					<MenuText>Scans Combo: </MenuText>
-					<ToolTipText>Select a scan id</ToolTipText>
-					<CanonicalName>Scans Combo</CanonicalName>
-					<LocCanonicalName>Scans Combo</LocCanonicalName>
-					<CommandName>Scans Combo</CommandName>
-				</Strings>
-			</Combo>
-		</Combos>
-
 		<Buttons>
 			<Button guid="guidCxWindowPackageCmdSet" id="CxWindowCommandId" priority="0x0100" type="Button">
 				<Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
@@ -66,8 +50,6 @@
 			<IDSymbol name="CxWindowCmdId" value="0x0101" />
 			<IDSymbol name="TWToolbar" value="0x1000" />
 			<IDSymbol name="TWToolbarGroup" value="0x1050" />
-			<IDSymbol name="ScansCombo" value="0x103"/>
-			<IDSymbol name="ScansComboGetList" value="0x104"/>
 		</GuidSymbol>
 
 		<GuidSymbol name="CxImages" value="{cca5f138-eee9-4fc7-8f65-fce867b52e22}">

@@ -1,6 +1,11 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+﻿using ast_visual_studio_extension.CxCli;
+using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxPreferences;
+using Microsoft.VisualStudio.Shell;
 using System;
 using System.IO;
+using System.Windows.Controls;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
@@ -38,6 +43,29 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             Enum.TryParse(severity, out Severity resultSeverity);
 
             return resultSeverity;
+        }
+
+        /// <summary>
+        /// Create a wrapper to call CLI
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="resultsTree"></param>
+        /// <returns></returns>
+        public static CxWrapper GetCxWrapper(AsyncPackage package, TreeView resultsTree)
+        {
+            try
+            {
+                CxPreferencesModule preferences = (CxPreferencesModule)package.GetDialogPage(typeof(CxPreferencesModule));
+                CxConfig configuration = preferences.GetCxConfig;
+
+                return new CxWrapper(configuration);
+            }
+            catch (Exception e)
+            {
+                resultsTree.Items.Clear();
+                resultsTree.Items.Add(e.Message);
+                return null;
+            }
         }
     }
 }

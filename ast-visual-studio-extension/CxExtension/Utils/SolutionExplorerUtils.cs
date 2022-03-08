@@ -3,6 +3,7 @@ using EnvDTE;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -67,6 +68,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
+            // TODO: pick file name from last /
+            //string last = inputString.Substring(inputString.LastIndexOf('\\') + 1);
             if (fileName.StartsWith("/"))
             {
                 fileName = fileName.Substring(1);
@@ -89,7 +92,17 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 // Ignore bin folder
                 var foldersToIgnore = Directory.GetDirectories(projectPath, "bin", SearchOption.AllDirectories);
 
-                IEnumerable<string> files = Directory.GetFiles(projectPath, fileName, SearchOption.AllDirectories).Where(x => !foldersToIgnore.Any(c => x.StartsWith(c)));
+                IEnumerable<string> files;
+
+                try
+                {
+                    files = Directory.GetFiles(projectPath, fileName, SearchOption.AllDirectories).Where(x => !foldersToIgnore.Any(c => x.StartsWith(c)));
+                }
+                catch(Exception e)
+                {
+                    continue;
+                }
+                
 
                 allFiles.AddRange(files);
             }

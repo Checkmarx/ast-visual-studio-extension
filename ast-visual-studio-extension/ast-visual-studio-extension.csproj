@@ -58,7 +58,10 @@
     <Compile Include="CxExtension\Panels\ResultInfoPanel.cs" />
     <Compile Include="CxExtension\Panels\ResultsTreePanel.cs" />
     <Compile Include="CxExtension\Panels\ResultVulnerabilitiesPanel.cs" />
+    <Compile Include="CxExtension\Toolbar\BranchesCombobox.cs" />
+    <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ScansCombobox.cs" />
+    <Compile Include="CxExtension\Toolbar\CxToolbar.cs" />
     <Compile Include="CxExtension\Utils\CxConstants.cs" />
     <Compile Include="CxExtension\Utils\CxUtils.cs" />
     <Compile Include="CxExtension\Utils\ResultsFilteringAndGrouping.cs" />
@@ -74,13 +77,14 @@
     <Compile Include="CxWrapper\Models\Data.cs" />
     <Compile Include="CxWrapper\Models\Node.cs" />
     <Compile Include="CxWrapper\Models\PackageData.cs" />
+    <Compile Include="CxWrapper\Models\Project.cs" />
     <Compile Include="CxWrapper\Models\Result.cs" />
     <Compile Include="CxWrapper\Models\Results.cs" />
+    <Compile Include="CxWrapper\Models\Scan.cs" />
     <Compile Include="CxWrapper\Models\VulnerabilityCVSS.cs" />
     <Compile Include="CxWrapper\Models\VulnerabilityDetails.cs" />
     <Compile Include="CxWrapper\ReportFormat.cs" />
     <Compile Include="CxExtension\CxWindow.cs" />
-    <Compile Include="CxExtension\Commands\ManageToolbarCombosCmd.cs" />
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>

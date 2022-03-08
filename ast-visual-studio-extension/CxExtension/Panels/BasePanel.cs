@@ -5,7 +5,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     internal abstract class BasePanel
     {
         public AsyncPackage package;
-        private readonly CxWindowControl cxWindowUI;
+        private CxWindowControl cxWindowUI;
 
         public BasePanel(AsyncPackage package) 
         { 
@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 ToolWindowPane window = package.FindToolWindow(typeof(CxWindow), 0, true);
 
-                return window.Content as CxWindowControl;
+                cxWindowUI = window.Content as CxWindowControl;
             }
             
             return cxWindowUI;

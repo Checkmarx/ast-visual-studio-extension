@@ -2,6 +2,7 @@
 using ast_visual_studio_extension.CxCli;
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxCLI.Models;
+using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
 using Microsoft.VisualStudio.Shell;
@@ -29,8 +30,12 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         }
 
         // Draw results tree
-        public async Task DrawAsync(string currentScanId)
+        public async Task DrawAsync(string currentScanId, CxToolbar cxToolbar)
         {
+            cxToolbar.ProjectsCombo.IsEnabled = false;
+            cxToolbar.BranchesCombo.IsEnabled = false;
+            cxToolbar.ScansCombo.IsEnabled = false;
+
             TreeView resultsTree = GetCxWindowControl().TreeViewResults;
 
             try
@@ -48,7 +53,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                 TreeViewItem rootNode = new TreeViewItem
                 {
-                    Header = UIUtils.CreateTreeViewItemHeader(String.Empty, String.Format(CxConstants.TREE_PARENT_NODE, currentScanId)),
+                    Header = UIUtils.CreateTreeViewItemHeader(string.Empty, string.Format(treeResults.Count > 0 ? CxConstants.TREE_PARENT_NODE : CxConstants.TREE_PARENT_NODE_NO_RESULTS, currentScanId)),
                     ItemsSource = treeResults
                 };
 
@@ -57,9 +62,13 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             }
             catch (Exception ex)
             {
-                resultsTree.Items.Clear();
-                resultsTree.Items.Add(ex.Message);
+                GetCxWindowControl().TreeViewResults.Items.Clear();
+                GetCxWindowControl().TreeViewResults.Items.Add(ex.Message);
             }
+
+            cxToolbar.ProjectsCombo.IsEnabled = true;
+            cxToolbar.BranchesCombo.IsEnabled = true;
+            cxToolbar.ScansCombo.IsEnabled = true;
         }
 
         // Get AST results
@@ -93,7 +102,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                     Tag = result
                 };
 
-                item.MouseLeftButtonUp += OnClickResult;
+                item.GotFocus += OnClickResult;
 
                 transformedResults.Add(item);
             }
@@ -106,6 +115,16 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         {
             resultInfoPanel.Draw((sender as TreeViewItem).Tag as Result);
             resultVulnerabilitiesPanel.Draw((sender as TreeViewItem).Tag as Result);
+        }
+
+        /// <summary>
+        /// Clear all panels
+        /// </summary>
+        public void ClearAllPanels()
+        {
+            GetCxWindowControl().TreeViewResults.Items.Clear();
+            resultInfoPanel.Clear();
+            resultVulnerabilitiesPanel.Clear();
         }
     }
 }
