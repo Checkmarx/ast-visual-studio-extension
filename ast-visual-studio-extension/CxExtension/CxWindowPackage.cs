@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Task = System.Threading.Tasks.Task;
@@ -65,9 +64,6 @@ namespace ast_visual_studio_extension.CxExtension
 
             // Command to create Checkmarx extension main window
             await CxWindowCommand.InitializeAsync(this);
-
-            // Command to create Checkmarx extension Toolbar
-            await ManageToolbarCombosCmd.InitializeAsync(this);
         }
 
         public override IVsAsyncToolWindowFactory GetAsyncToolWindowFactory(Guid toolWindowType)
@@ -89,6 +85,11 @@ namespace ast_visual_studio_extension.CxExtension
             }
 
             return base.GetToolWindowTitle(toolWindowType, id);
+        }
+
+        protected override System.Threading.Tasks.Task<object> InitializeToolWindowAsync(Type toolWindowType, int id, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(this as object);
         }
 
         #endregion

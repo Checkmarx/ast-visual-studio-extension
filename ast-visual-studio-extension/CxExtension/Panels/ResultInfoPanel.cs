@@ -36,7 +36,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             CxWindowControl cxWindowUI = GetCxWindowControl();
 
-            cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
+           cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
             cxWindowUI.ResultTitle.Text = result.Data.QueryName ?? result.Id;
         }
 
@@ -94,7 +94,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.ResultInfoStackPanel.Children.Add(expectedValueTextBlock);
             }
 
-            cxWindowUI.ResultInfoPanel.Visibility = Visibility.Visible;
+           cxWindowUI.ResultInfoPanel.Visibility = Visibility.Visible;
         }
 
         // Clear panel
@@ -105,7 +105,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             if (cxWindowUI != null)
             {
                 cxWindowUI.ResultSeverityIcon.Source = null;
-                cxWindowUI.ResultTitle.Text = String.Empty;
+                cxWindowUI.ResultTitle.Text = string.Empty;
                 cxWindowUI.ResultInfoStackPanel.Children.Clear();
                 cxWindowUI.ResultInfoPanel.Visibility = Visibility.Hidden;
             }

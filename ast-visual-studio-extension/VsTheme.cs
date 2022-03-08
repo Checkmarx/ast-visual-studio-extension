@@ -70,30 +70,10 @@ namespace ast_visual_studio_extension
                     }
                 };
 
-                allResources[typeof(TextBlock)] = new Style
-                {
-                    TargetType = typeof(TextBlock),
-                    BasedOn = (Style)shellResources[typeof(TextBlock)],
-                    Setters =
-                    {
-                        new Setter(Control.PaddingProperty, new Thickness(2, 3, 2, 3))
-                    }
-                };
-
                 allResources[typeof(ComboBox)] = new Style
                 {
                     TargetType = typeof(ComboBox),
                     BasedOn = (Style)shellResources[typeof(ComboBox)],
-                    Setters =
-                    {
-                        new Setter(Control.PaddingProperty, new Thickness(2, 3, 2, 3))
-                    }
-                };
-
-                allResources[typeof(TextBlock)] = new Style
-                {
-                    TargetType = typeof(TextBlock),
-                    BasedOn = (Style)shellResources[typeof(TextBlock)],
                     Setters =
                     {
                         new Setter(Control.PaddingProperty, new Thickness(2, 3, 2, 3))

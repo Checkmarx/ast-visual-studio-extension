@@ -31,8 +31,6 @@ namespace ast_visual_studio_extension.CxExtension
         public const int CxWindowCmdId = 0x0101;
         public const int TWToolbar = 0x1000;
         public const int TWToolbarGroup = 0x1050;
-        public const int ScansCombo = 0x0103;
-        public const int ScansComboGetList = 0x0104;
         public const int cxlogo = 0x0001;
     }
 }

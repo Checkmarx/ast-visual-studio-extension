@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class CxConstants
@@ -11,6 +6,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /************ GENERAL ************/
         public static string EXTENSION_TITLE => "Checkmarx";
         public static string TREE_PARENT_NODE => "Scan: {0}";
+        public static string TREE_PARENT_NODE_NO_RESULTS => "No results for scan {0}";
         public static string DESC_TAB_LBL_ACTUAL_VALUE => "Actual Value: ";
         public static string DESC_TAB_LBL_EXPECTED_VALUE => "Expected Value: ";
         public static string LBL_ATTACK_VECTOR => "Attack Vector";
@@ -39,5 +35,13 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /************ NOTIFICATIONS ************/
         public static string NOTIFY_FILE_NOT_FOUND_TITLE => "File {0} not found in the solution";
         public static string NOTIFY_FILE_NOT_FOUND_DESCRIPTION => "Please ensure you are in the correct scan";
+
+        /************ TOOLBAR ************/
+        public static string TOOLBAR_SELECT_PROJECT => "Select a project";
+        public static string TOOLBAR_SELECT_BRANCH => "Select a branch";
+        public static string TOOLBAR_SELECT_SCAN => "Select a scan";
+        public static string TOOLBAR_LOADING_PROJECTS => "Loading projects...";
+        public static string TOOLBAR_LOADING_BRANCHES => "Loading branches...";
+        public static string TOOLBAR_LOADING_SCANS => "Loading scans...";
     }
 }
