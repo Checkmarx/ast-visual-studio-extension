@@ -40,8 +40,10 @@
                     <Setter Property="BorderBrush" Value="Transparent"/>
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource MenuItem.Highlight.Background}"/>
-                    <Setter Property="BorderBrush" Value="{StaticResource MenuItem.Highlight.Border}"/>
+                    <!--Setter Property="Background" Value="#3D26A0DA"/>
+                    <Setter Property="BorderBrush" Value="#FF26A0DA"/-->
+                    <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -65,8 +67,10 @@
         <SolidColorBrush x:Key="Menu.Static.Separator" Color="#FFD7D7D7"/>
         <SolidColorBrush x:Key="Menu.Disabled.Foreground" Color="#FF707070"/>
         <SolidColorBrush x:Key="MenuItem.Selected.Background" Color="#3D26A0DA"/>
-        <SolidColorBrush x:Key="MenuItem.Selected.Border" Color="#FF26A0DA"/>
+        <SolidColorBrush x:Key="MenuItem.Selected.Border" Color="#3D26A0DA"/>
+        <!-- Menu.Static.Foreground Replaced with: {DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}} -->
         <SolidColorBrush x:Key="MenuItem.Highlight.Background" Color="#3D26A0DA"/>
+        <!-- Menu.Static.Foreground Replaced with: {DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}} -->
         <SolidColorBrush x:Key="MenuItem.Highlight.Border" Color="#FF26A0DA"/>
         <SolidColorBrush x:Key="MenuItem.Highlight.Disabled.Background" Color="#0A000000"/>
         <SolidColorBrush x:Key="MenuItem.Highlight.Disabled.Border" Color="#21000000"/>
@@ -157,8 +161,10 @@
                     <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
                 </Trigger>
                 <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Background}"/>
-                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/>
+                    <!--Setter Property="Background" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Background}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/-->
+                    <Setter Property="Background" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{StaticResource Menu.Disabled.Foreground}"/>
@@ -192,7 +198,7 @@
                                     <Canvas HorizontalAlignment="Left" Height="0" VerticalAlignment="Top" Width="0">
                                         <Rectangle x:Name="OpaqueRect" Fill="{Binding Background, ElementName=SubMenuBorder}" Height="{Binding ActualHeight, ElementName=SubMenuBorder}" Width="{Binding ActualWidth, ElementName=SubMenuBorder}"/>
                                     </Canvas>
-                                    <Rectangle Fill="{StaticResource Menu.Static.Separator}" HorizontalAlignment="Left" Margin="29,2,0,2" Width="1"/>
+                                    <!--Rectangle Fill="{StaticResource Menu.Static.Separator}" HorizontalAlignment="Left" Margin="29,2,0,2" Width="1"/-->
                                     <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Cycle" Grid.IsSharedSizeScope="true" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" KeyboardNavigation.TabNavigation="Cycle"/>
                                 </Grid>
                             </ScrollViewer>
@@ -212,8 +218,10 @@
                     <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
                 </Trigger>
                 <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Background}"/>
-                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/>
+                    <!--Setter Property="Background" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Background}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/-->
+                    <Setter Property="Background" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{StaticResource Menu.Disabled.Foreground}"/>
@@ -237,7 +245,8 @@
                         <ColumnDefinition Width="20"/>
                     </Grid.ColumnDefinitions>
                     <ContentPresenter x:Name="Icon" ContentSource="Icon" HorizontalAlignment="Center" Height="16" Margin="3" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center" Width="16"/>
-                    <Border x:Name="GlyphPanel" Background="{StaticResource MenuItem.Selected.Background}" BorderBrush="{StaticResource MenuItem.Selected.Border}" BorderThickness="1" ClipToBounds="False" HorizontalAlignment="Center" Height="22" Margin="-1,0,0,0" VerticalAlignment="Center" Visibility="Hidden" Width="22">
+                    <!--Border x:Name="GlyphPanel" Background="{StaticResource MenuItem.Selected.Background}" BorderBrush="{StaticResource MenuItem.Selected.Border}" BorderThickness="1" ClipToBounds="False" HorizontalAlignment="Center" Height="22" Margin="-1,0,0,0" VerticalAlignment="Center" Visibility="Hidden" Width="22"-->
+                    <Border x:Name="GlyphPanel" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" ClipToBounds="False" HorizontalAlignment="Center" Height="22" Margin="-1,0,0,0" VerticalAlignment="Center" Visibility="Hidden" Width="22">
                         <!--Path x:Name="Glyph" Data="{StaticResource Checkmark}" FlowDirection="LeftToRight" Fill="{StaticResource Menu.Static.Foreground}" Height="11" Width="10"/-->
                         <Path x:Name="Glyph" Data="{StaticResource Checkmark}" FlowDirection="LeftToRight" Fill="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}" Height="11" Width="10"/>
                     </Border>
@@ -254,8 +263,10 @@
                     <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
                 </Trigger>
                 <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Background}"/>
-                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/>
+                    <!--Setter Property="Background" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Background}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/-->
+                    <Setter Property="Background" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{StaticResource Menu.Disabled.Foreground}"/>
@@ -283,7 +294,8 @@
                         <ColumnDefinition Width="20"/>
                     </Grid.ColumnDefinitions>
                     <ContentPresenter x:Name="Icon" ContentSource="Icon" HorizontalAlignment="Center" Height="16" Margin="3" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center" Width="16"/>
-                    <Border x:Name="GlyphPanel" Background="{StaticResource MenuItem.Highlight.Background}" BorderBrush="{StaticResource MenuItem.Highlight.Border}" BorderThickness="1" Height="22" Margin="-1,0,0,0" VerticalAlignment="Center" Visibility="Hidden" Width="22">
+                    <!--Border x:Name="GlyphPanel" Background="{StaticResource MenuItem.Highlight.Background}" BorderBrush="{StaticResource MenuItem.Highlight.Border}" BorderThickness="1" Height="22" Margin="-1,0,0,0" VerticalAlignment="Center" Visibility="Hidden" Width="22"-->
+                    <Border x:Name="GlyphPanel" Background="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}" BorderThickness="1" Height="22" Margin="-1,0,0,0" VerticalAlignment="Center" Visibility="Hidden" Width="22">
                         <!--Path x:Name="Glyph" Data="{DynamicResource Checkmark}" FlowDirection="LeftToRight" Fill="{StaticResource Menu.Static.Foreground}" Height="11" Width="9"/-->
                         <Path x:Name="Glyph" Data="{DynamicResource Checkmark}" FlowDirection="LeftToRight" Fill="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}" Height="11" Width="9"/>
                     </Border>
@@ -318,8 +330,10 @@
                     <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
                 </Trigger>
                 <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" TargetName="templateRoot" Value="Transparent"/>
-                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/>
+                    <!--Setter Property="Background" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Background}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{StaticResource MenuItem.Highlight.Border}"/-->
+                    <Setter Property="Background" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                    <Setter Property="BorderBrush" TargetName="templateRoot" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="TextElement.Foreground" TargetName="templateRoot" Value="{StaticResource Menu.Disabled.Foreground}"/>
