@@ -52,7 +52,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CxExtension\Enums\GroupBy.cs" />
     <Compile Include="CxExtension\Enums\Severity.cs" />
+    <Compile Include="CxExtension\Enums\State.cs" />
     <Compile Include="CxExtension\Panels\BasePanel.cs" />
     <Compile Include="CxExtension\Panels\FileNode.cs" />
     <Compile Include="CxExtension\Panels\ResultInfoPanel.cs" />
@@ -62,6 +64,7 @@
     <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ScansCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\CxToolbar.cs" />
+    <Compile Include="CxExtension\Utils\SettingsUtils.cs" />
     <Compile Include="CxExtension\Utils\CxConstants.cs" />
     <Compile Include="CxExtension\Utils\CxUtils.cs" />
     <Compile Include="CxExtension\Utils\ResultsFilteringAndGrouping.cs" />

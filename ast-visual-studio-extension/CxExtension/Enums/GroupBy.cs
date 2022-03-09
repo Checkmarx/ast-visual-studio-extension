@@ -2,10 +2,10 @@
 {
     public enum GroupBy
     {
-        ENGINE,
-        FILE,
-        SEVERITY,
-        STATE,
-        QUERY_NAME
+        ENGINE = 1,
+        FILE = 4,
+        SEVERITY = 2,
+        STATE = 3,
+        QUERY_NAME = 5
     }
 }

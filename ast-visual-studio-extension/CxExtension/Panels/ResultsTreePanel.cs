@@ -23,15 +23,32 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
 
+        private string currentScanId;
+        private Results currentResults;
+
         public ResultsTreePanel(AsyncPackage package) : base(package)
         {
             resultInfoPanel = new ResultInfoPanel(package);
             resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package);
         }
 
+        public void Draw(CxToolbar cxToolbar)
+        {
+            if (this.currentScanId != null && this.currentResults != null)
+            {
+                ClearAllPanels();
+
+                TreeViewItem rootNode = BuildTree();
+
+                GetCxWindowControl().TreeViewResults.Items.Add(rootNode);
+            }
+        }
+
         // Draw results tree
         public async Task DrawAsync(string currentScanId, CxToolbar cxToolbar)
         {
+            this.currentScanId = currentScanId;
+
             cxToolbar.ProjectsCombo.IsEnabled = false;
             cxToolbar.BranchesCombo.IsEnabled = false;
             cxToolbar.ScansCombo.IsEnabled = false;
@@ -46,16 +63,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                 resultsTree.Items.Add(CxConstants.INFO_GETTING_RESULTS);
 
-                Results results = await GetResultsAsync(Guid.Parse(currentScanId));
-
-                List<TreeViewItem> treeViewResults = ConvertResultsToTreeViewItem(results);
-                List<TreeViewItem> treeResults = ResultsFilteringAndGrouping.FilterAndGroupResults(treeViewResults);
-
-                TreeViewItem rootNode = new TreeViewItem
-                {
-                    Header = UIUtils.CreateTreeViewItemHeader(string.Empty, string.Format(treeResults.Count > 0 ? CxConstants.TREE_PARENT_NODE : CxConstants.TREE_PARENT_NODE_NO_RESULTS, currentScanId)),
-                    ItemsSource = treeResults
-                };
+                currentResults = await GetResultsAsync(Guid.Parse(currentScanId));
+                
+                TreeViewItem rootNode = BuildTree();
 
                 resultsTree.Items.Clear();
                 resultsTree.Items.Add(rootNode);
@@ -84,6 +94,19 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             Results results = await resultsAsync;
 
             return results;
+        }
+
+        private TreeViewItem BuildTree()
+        {
+            List<TreeViewItem> treeViewResults = ConvertResultsToTreeViewItem(currentResults);
+            List<TreeViewItem> treeResults = ResultsFilteringAndGrouping.FilterAndGroupResults(package, treeViewResults);
+
+            TreeViewItem rootNode = new TreeViewItem
+            {
+                Header = UIUtils.CreateTreeViewItemHeader(string.Empty, string.Format(treeResults.Count > 0 ? CxConstants.TREE_PARENT_NODE : CxConstants.TREE_PARENT_NODE_NO_RESULTS, currentScanId)),
+                ItemsSource = treeResults
+            };
+            return rootNode;
         }
 
         // Convert AST results to tree view item

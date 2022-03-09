@@ -46,6 +46,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             TextBlock resultUIElement = new TextBlock();
             resultUIElement.Inlines.Add(uiContainer);
+            resultUIElement.Tag = displayName;
 
             return resultUIElement;
         }

@@ -1,7 +1,11 @@
-﻿using ast_visual_studio_extension.CxExtension.Panels;
+﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using Microsoft.VisualStudio.Shell;
+using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace ast_visual_studio_extension.CxExtension
@@ -23,7 +27,37 @@ namespace ast_visual_studio_extension.CxExtension
                 .WithProjectsCombo(ProjectsCombobox)
                 .WithBranchesCombo(BranchesCombobox)
                 .WithScansCombo(ScansCombobox)
-                .WithResultsTree(TreeViewResults);
+                .WithResultsTree(TreeViewResults)
+                .WithSeverityFilters(new Dictionary<Severity, ToggleButton>
+                {
+                    { Severity.HIGH, HighSeverityFilter },
+                    { Severity.MEDIUM, MediumSeverityFilter },
+                    { Severity.LOW, LowSeverityFilter },
+                    { Severity.INFO, InfoSeverityFilter },
+                }, new Dictionary<Severity, Image>
+                {
+                    { Severity.HIGH, HighSeverityFilterImage },
+                    { Severity.MEDIUM, MediumSeverityFilterImage },
+                    { Severity.LOW, LowSeverityFilterImage },
+                    { Severity.INFO, InfoSeverityFilterImage },
+                })
+                .WithStateFilters(new Dictionary<State, MenuItem>
+                {
+                    { State.NOT_IGNORED, NotIgnoredStateFilter },
+                    { State.IGNORED, IgnoredStateFilter },
+                    { State.TO_VERIFY, ToVerifyStateFilter },
+                    { State.CONFIRMED, ConfirmedStateFilter },
+                    { State.PROPOSED_NOT_EXPLOITABLE, ProposedNotExploitableStateFilter },
+                    { State.NOT_EXPLOITABLE, NotExploitableStateFilter },
+                    { State.URGENT, UrgentStateFilter },
+                })
+                .WithGroupByOptions(new Dictionary<GroupBy, MenuItem>
+                {
+                    { GroupBy.FILE, FileGroupBy },
+                    { GroupBy.SEVERITY, SeverityGroupBy },
+                    { GroupBy.STATE, StateGroupBy },
+                    { GroupBy.QUERY_NAME, QueryNameGroupBy },
+                });
 
             // Init toolbar elements
             cxToolbar.Init();
@@ -98,6 +132,98 @@ namespace ast_visual_studio_extension.CxExtension
         private void OnKeyDownScans(object sender, KeyEventArgs e)
         {
             cxToolbar.ScansCombobox.OnKeyDownScans(sender, e);
+        }
+
+        private void HighSeverityFilter_Click(object sender, RoutedEventArgs e)
+        {
+            cxToolbar.SeverityFilterClick(Severity.HIGH);
+        }
+
+        private void MediumSeverityFilter_Click(object sender, RoutedEventArgs e)
+        {
+            cxToolbar.SeverityFilterClick(Severity.MEDIUM);
+        }
+
+        private void LowSeverityFilter_Click(object sender, RoutedEventArgs e)
+        {
+            cxToolbar.SeverityFilterClick(Severity.LOW);
+        }
+
+        private void InfoSeverityFilter_Click(object sender, RoutedEventArgs e)
+        {
+            cxToolbar.SeverityFilterClick(Severity.INFO);
+        }
+
+        private void ConfirmedStateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(State.CONFIRMED);
+        }
+
+        private void ToVerifyStateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(State.TO_VERIFY);
+        }
+
+        private void UrgentStateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(State.URGENT);
+        }
+
+        private void NotExploitableStateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(State.NOT_EXPLOITABLE);
+        }
+
+        private void ProposedNotExploitableStateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(State.PROPOSED_NOT_EXPLOITABLE);
+        }
+
+        private void IgnoredStateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(State.IGNORED);
+        }
+
+        private void NotIgnoredStateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(State.NOT_IGNORED);
+        }
+
+        private void FileGroupBy_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.GroupByClick(GroupBy.FILE);
+        }
+
+        private void SeverityGroupBy_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.GroupByClick(GroupBy.SEVERITY);
+        }
+
+        private void StateGroupBy_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.GroupByClick(GroupBy.STATE);
+        }
+
+        private void QueryNameGroupBy_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.GroupByClick(GroupBy.QUERY_NAME);
+        }
+
+        private void MenuItem_Click(object sender)
+        {
+            MenuItem menuItem = (sender as MenuItem);
+            menuItem.IsChecked = !menuItem.IsChecked;
         }
     }
 }
