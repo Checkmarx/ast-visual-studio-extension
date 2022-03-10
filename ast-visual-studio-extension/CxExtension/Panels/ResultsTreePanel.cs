@@ -23,15 +23,38 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
 
+        private string currentScanId;
+        private Results currentResults;
+
         public ResultsTreePanel(AsyncPackage package) : base(package)
         {
             resultInfoPanel = new ResultInfoPanel(package);
             resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package);
         }
 
+        public void Redraw()
+        {
+            if (this.currentScanId != null && this.currentResults != null)
+            {
+                var treeView = GetCxWindowControl().TreeViewResults;
+
+                var expanded = CollectExpandedNodes(treeView.Items[0] as TreeViewItem);
+
+                ClearAllPanels();
+
+                TreeViewItem rootNode = BuildTree();
+
+                treeView.Items.Add(rootNode);
+
+                ExpandNodes(expanded, rootNode);
+            }
+        }
+
         // Draw results tree
         public async Task DrawAsync(string currentScanId, CxToolbar cxToolbar)
         {
+            this.currentScanId = currentScanId;
+
             cxToolbar.ProjectsCombo.IsEnabled = false;
             cxToolbar.BranchesCombo.IsEnabled = false;
             cxToolbar.ScansCombo.IsEnabled = false;
@@ -46,16 +69,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                 resultsTree.Items.Add(CxConstants.INFO_GETTING_RESULTS);
 
-                Results results = await GetResultsAsync(Guid.Parse(currentScanId));
+                currentResults = await GetResultsAsync(Guid.Parse(currentScanId));
 
-                List<TreeViewItem> treeViewResults = ConvertResultsToTreeViewItem(results);
-                List<TreeViewItem> treeResults = ResultsFilteringAndGrouping.FilterAndGroupResults(treeViewResults);
-
-                TreeViewItem rootNode = new TreeViewItem
-                {
-                    Header = UIUtils.CreateTreeViewItemHeader(string.Empty, string.Format(treeResults.Count > 0 ? CxConstants.TREE_PARENT_NODE : CxConstants.TREE_PARENT_NODE_NO_RESULTS, currentScanId)),
-                    ItemsSource = treeResults
-                };
+                TreeViewItem rootNode = BuildTree();
 
                 resultsTree.Items.Clear();
                 resultsTree.Items.Add(rootNode);
@@ -74,7 +90,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         // Get AST results
         private async Task<Results> GetResultsAsync(Guid scanId)
         {
-            CxPreferencesModule preferences = (CxPreferencesModule) package.GetDialogPage(typeof(CxPreferencesModule));
+            CxPreferencesModule preferences = (CxPreferencesModule)package.GetDialogPage(typeof(CxPreferencesModule));
             CxConfig configuration = preferences.GetCxConfig;
 
             CxWrapper cxWrapper = new CxWrapper(configuration);
@@ -84,6 +100,20 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             Results results = await resultsAsync;
 
             return results;
+        }
+
+        private TreeViewItem BuildTree()
+        {
+            List<TreeViewItem> treeViewResults = ConvertResultsToTreeViewItem(currentResults);
+            List<TreeViewItem> treeResults = ResultsFilteringAndGrouping.FilterAndGroupResults(package, treeViewResults);
+
+            TreeViewItem rootNode = new TreeViewItem
+            {
+                Header = UIUtils.CreateTreeViewItemHeader(string.Empty, string.Format(treeResults.Count > 0 ? CxConstants.TREE_PARENT_NODE : CxConstants.TREE_PARENT_NODE_NO_RESULTS, currentScanId)),
+                ItemsSource = treeResults
+            };
+
+            return rootNode;
         }
 
         // Convert AST results to tree view item
@@ -125,6 +155,60 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             GetCxWindowControl().TreeViewResults.Items.Clear();
             resultInfoPanel.Clear();
             resultVulnerabilitiesPanel.Clear();
+        }
+
+        // Iterates the tree to collect all expanded nodes.
+        // Using a stack to iterate as a recursive version was slow.
+        private List<TreeViewItem> CollectExpandedNodes(TreeViewItem root)
+        {
+            var expanded = new List<TreeViewItem>();
+            var toVisit = new Stack<TreeViewItem>();
+            toVisit.Push(root);
+            while (toVisit.Count > 0)
+            {
+                var current = toVisit.Pop();
+                if (current.IsExpanded)
+                {
+                    expanded.Add(current);
+                    if (current.ItemsSource != null)
+                    {
+                        foreach (var item in current.ItemsSource)
+                        {
+                            toVisit.Push(item as TreeViewItem);
+                        }
+                    }
+                }
+            }
+
+            return expanded;
+        }
+
+        // Iterates the tree to expand previously expanded nodes.
+        // Using a stack to iterate as a recursive version was slow.
+        private void ExpandNodes(List<TreeViewItem> expandedNodes, TreeViewItem root)
+        {
+            var toVisit = new Stack<TreeViewItem>();
+            toVisit.Push(root);
+
+            while (toVisit.Count > 0)
+            {
+                var current = toVisit.Pop();
+                foreach (var node in expandedNodes)
+                {
+                    if ((current.Header as TextBlock).Tag as string == (node.Header as TextBlock).Tag as string)
+                    {
+                        current.IsExpanded = true;
+                        if (current.ItemsSource != null)
+                        {
+                            foreach (var item in current.ItemsSource)
+                            {
+                                toVisit.Push(item as TreeViewItem);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
         }
     }
 }
