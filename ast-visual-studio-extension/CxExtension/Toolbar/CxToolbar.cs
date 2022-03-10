@@ -143,19 +143,19 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public void SeverityFilterClick(Severity severity)
         {
             SettingsUtils.Store(Package, SettingsUtils.severityCollection, severity, SettingsUtils.severityDefaultValues);
-            ResultsTreePanel.Draw(this);
+            ResultsTreePanel.Redraw();
         }
 
         public void StateFilterClick(State state)
         {
             SettingsUtils.Store(Package, SettingsUtils.stateCollection, state, SettingsUtils.stateDefaultValues);
-            ResultsTreePanel.Draw(this);
+            ResultsTreePanel.Redraw();
         }
 
         public void GroupByClick(GroupBy groupBy)
         {
             SettingsUtils.Store(Package, SettingsUtils.groupByCollection, groupBy, SettingsUtils.groupByDefaultValues);
-            ResultsTreePanel.Draw(this);
+            ResultsTreePanel.Redraw();
         }
     }
 }

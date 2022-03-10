@@ -62,7 +62,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return new TreeViewItem
             {
                 Header = CreateTreeViewItemHeader(String.Empty, headerText),
-                ItemsSource = source
+                ItemsSource = source,
+                Tag = headerText
             };
         }
 
