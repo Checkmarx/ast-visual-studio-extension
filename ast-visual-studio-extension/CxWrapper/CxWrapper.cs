@@ -67,6 +67,8 @@ namespace ast_visual_studio_extension.CxCli
             {
                 "project",
                 "list",
+                "--filter",
+                "limit=10000",
                 "--format",
                 "json"
             };
@@ -131,6 +133,55 @@ namespace ast_visual_studio_extension.CxCli
             string scan = Execution.ExecuteCommand(WithConfigArguments(scanArguments));
 
             return JsonConvert.DeserializeObject<Scan>(scan);
+        }
+
+        public void TriageUpdate(string projectId, string similarityId, string scanType, string state, string comment, string severity)
+        {
+            List<string> triageArguments = new List<string>
+            {
+                "triage",
+                "update",
+                "--project-id",
+                projectId,
+                "--similarity-id",
+                similarityId,
+                "--scan-type",
+                scanType,
+                "--state",
+                state
+            };
+
+            if (!string.IsNullOrEmpty(comment))
+            {
+                triageArguments.Add("--comment");
+                triageArguments.Add(comment);
+            }
+
+            triageArguments.Add("--severity");
+            triageArguments.Add(severity);
+
+            Execution.ExecuteCommand(WithConfigArguments(triageArguments));
+        }
+
+        public List<Predicate> TriageShow(string projectId, string similarityId, string scanType)
+        {
+            List<string> triageArguments = new List<string>
+            {
+                "triage",
+                "show",
+                "--project-id",
+                projectId,
+                "--similarity-id",
+                similarityId,
+                "--scan-type",
+                scanType,
+                "--format",
+                "json"
+            };
+
+            string predicates = Execution.ExecuteCommand(WithConfigArguments(triageArguments));
+
+            return JsonConvert.DeserializeObject<List<Predicate>>(predicates);
         }
 
         private List<string> WithConfigArguments(List<string> baseArguments)

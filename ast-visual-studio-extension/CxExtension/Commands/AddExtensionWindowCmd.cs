@@ -15,7 +15,6 @@ namespace ast_visual_studio_extension.CxExtension
         public const int CxWindowCommandId = 0x0100;
 
         public const string guidCxWindowPackageCmdSet = "e46cd6d8-268d-4e77-9074-071e72a25f39";
-        public const int ToolbarCommandId = 0x1000;
 
         private readonly AsyncPackage package;
 

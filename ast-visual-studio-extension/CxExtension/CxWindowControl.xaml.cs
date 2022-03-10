@@ -1,6 +1,7 @@
 ﻿using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using Microsoft.VisualStudio.Shell;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -9,10 +10,13 @@ namespace ast_visual_studio_extension.CxExtension
     public partial class CxWindowControl : UserControl
     {
         private readonly CxToolbar cxToolbar;
+        private ResultInfoPanel resultInfoPanel;
 
         public CxWindowControl(AsyncPackage package)
         {
             ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package);
+
+            resultInfoPanel = new ResultInfoPanel(package);
 
             InitializeComponent();
 
@@ -98,6 +102,31 @@ namespace ast_visual_studio_extension.CxExtension
         private void OnKeyDownScans(object sender, KeyEventArgs e)
         {
             cxToolbar.ScansCombobox.OnKeyDownScans(sender, e);
+        }
+
+        /// <summary>
+        /// On press triage update button
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnClickTriageUpdate(object sender, RoutedEventArgs e)
+        {
+            _ = resultInfoPanel.TriageUpdateAsync(TriageUpdateBtn, TreeViewResults, cxToolbar, TriageSeverityCombobox, TriageStateCombobox, (ResultTabControl.SelectedItem as TabItem).Name, TriageChangesTab);
+        }
+
+        /// <summary>
+        /// On focus in triage changes
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnFocusTriageChanges(object sender, RoutedEventArgs e)
+        {
+            //_ = resultInfoPanel.TriageShowAsync(TreeViewResults, cxToolbar, TriageChangesTab);
+        }
+
+        private void OnClickTriageChanges(object sender, MouseButtonEventArgs e)
+        {
+            _ = resultInfoPanel.TriageShowAsync(TreeViewResults, cxToolbar, TriageChangesTab);
         }
     }
 }

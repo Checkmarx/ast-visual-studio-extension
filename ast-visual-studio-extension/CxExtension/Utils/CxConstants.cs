@@ -24,6 +24,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string ICON_LOW_TITLE => "low_18x22.png";
         public static string ICON_INFO => "info.png";
         public static string ICON_INFO_TITLE => "info_18x22.png";
+        public static string ICON_FLAG => "Flag.png";
 
         /************ PROJECT FOLDERS ************/
         public static string FOLDER_RESOURCES => "Resources";
