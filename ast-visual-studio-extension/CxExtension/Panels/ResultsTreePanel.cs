@@ -170,9 +170,12 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 if (current.IsExpanded)
                 {
                     expanded.Add(current);
-                    foreach (var item in current.ItemsSource)
+                    if (current.ItemsSource != null)
                     {
-                        toVisit.Push(item as TreeViewItem);
+                        foreach (var item in current.ItemsSource)
+                        {
+                            toVisit.Push(item as TreeViewItem);
+                        }
                     }
                 }
             }
@@ -194,10 +197,13 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 {
                     if ((current.Header as TextBlock).Tag as string == (node.Header as TextBlock).Tag as string)
                     {
-                        node.IsExpanded = true;
-                        foreach (var item in node.ItemsSource)
+                        current.IsExpanded = true;
+                        if (current.ItemsSource != null)
                         {
-                            toVisit.Push(item as TreeViewItem);
+                            foreach (var item in current.ItemsSource)
+                            {
+                                toVisit.Push(item as TreeViewItem);
+                            }
                         }
                         break;
                     }
