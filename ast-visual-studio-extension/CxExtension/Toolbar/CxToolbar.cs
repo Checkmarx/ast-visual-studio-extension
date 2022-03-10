@@ -28,10 +28,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public ProjectsCombobox ProjectsCombobox { get; set; }
         public BranchesCombobox BranchesCombobox { get; set; }
         public ScansCombobox ScansCombobox { get; set; }
-        public Dictionary<Severity, ToggleButton> SeverityFilters { get; set; }
+        public Dictionary<ToggleButton, Severity> SeverityFilters { get; set; }
         public Dictionary<Severity, Image> SeverityFilterImages { get; set; }
-        public Dictionary<State, MenuItem> StateFilters { get; set; }
-        public Dictionary<GroupBy, MenuItem> GroupByOptions { get; set; }
+        public Dictionary<MenuItem, State> StateFilters { get; set; }
+        public Dictionary<MenuItem, GroupBy> GroupByOptions { get; set; }
 
         public static CxToolbar Builder()
         {
@@ -74,20 +74,20 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return this;
         }
 
-        public CxToolbar WithSeverityFilters(Dictionary<Severity, ToggleButton> severityFilters, Dictionary<Severity, Image> severityFilterImages)
+        public CxToolbar WithSeverityFilters(Dictionary<ToggleButton, Severity> severityFilters, Dictionary<Severity, Image> severityFilterImages)
         {
             SeverityFilters = severityFilters;
             SeverityFilterImages = severityFilterImages;
             return this;
         }
 
-        public CxToolbar WithStateFilters(Dictionary<State, MenuItem> stateFilters)
+        public CxToolbar WithStateFilters(Dictionary<MenuItem, State> stateFilters)
         {
             StateFilters = stateFilters;
             return this;
         }
 
-        public CxToolbar WithGroupByOptions(Dictionary<GroupBy, MenuItem> groupByOptions)
+        public CxToolbar WithGroupByOptions(Dictionary<MenuItem, GroupBy> groupByOptions)
         {
             GroupByOptions = groupByOptions;
             return this;
@@ -103,10 +103,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             ProjectsCombobox = new ProjectsCombobox(this, BranchesCombobox);
 
             var readOnlyStore = new ShellSettingsManager(Package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
-            foreach (KeyValuePair<Severity, ToggleButton> pair in SeverityFilters)
+            foreach (KeyValuePair<ToggleButton, Severity> pair in SeverityFilters)
             {
-                var severity = pair.Key;
-                var control = pair.Value;
+                var control = pair.Key;
+                var severity = pair.Value;
                 control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.severityCollection, severity.ToString(), SettingsUtils.severityDefaultValues[severity]);
             }
             foreach (KeyValuePair<Severity, Image> pair in SeverityFilterImages)
@@ -115,16 +115,16 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 var control = pair.Value;
                 control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true)));
             }
-            foreach (KeyValuePair<State, MenuItem> pair in StateFilters)
+            foreach (KeyValuePair<MenuItem, State> pair in StateFilters)
             {
-                var state = pair.Key;
-                var control = pair.Value;
+                var control = pair.Key;
+                var state = pair.Value;
                 control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.stateCollection, state.ToString(), SettingsUtils.stateDefaultValues[state]);
             }
-            foreach (KeyValuePair<GroupBy, MenuItem> pair in GroupByOptions)
+            foreach (KeyValuePair<MenuItem, GroupBy> pair in GroupByOptions)
             {
-                var groupBy = pair.Key;
-                var control = pair.Value;
+                var control = pair.Key;
+                var groupBy = pair.Value;
                 control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.groupByCollection, groupBy.ToString(), SettingsUtils.groupByDefaultValues[groupBy]);
             }
         }
@@ -140,21 +140,21 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             ScansCombo.IsEnabled = enable;
         }
 
-        public void SeverityFilterClick(Severity severity)
+        public void SeverityFilterClick(ToggleButton severityControl)
         {
-            SettingsUtils.Store(Package, SettingsUtils.severityCollection, severity, SettingsUtils.severityDefaultValues);
+            SettingsUtils.Store(Package, SettingsUtils.severityCollection, SeverityFilters[severityControl], SettingsUtils.severityDefaultValues);
             ResultsTreePanel.Redraw();
         }
 
-        public void StateFilterClick(State state)
+        public void StateFilterClick(MenuItem stateControl)
         {
-            SettingsUtils.Store(Package, SettingsUtils.stateCollection, state, SettingsUtils.stateDefaultValues);
+            SettingsUtils.Store(Package, SettingsUtils.stateCollection, StateFilters[stateControl], SettingsUtils.stateDefaultValues);
             ResultsTreePanel.Redraw();
         }
 
-        public void GroupByClick(GroupBy groupBy)
+        public void GroupByClick(MenuItem groupByControl)
         {
-            SettingsUtils.Store(Package, SettingsUtils.groupByCollection, groupBy, SettingsUtils.groupByDefaultValues);
+            SettingsUtils.Store(Package, SettingsUtils.groupByCollection, GroupByOptions[groupByControl], SettingsUtils.groupByDefaultValues);
             ResultsTreePanel.Redraw();
         }
     }

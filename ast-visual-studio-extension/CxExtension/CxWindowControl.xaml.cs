@@ -28,12 +28,12 @@ namespace ast_visual_studio_extension.CxExtension
                 .WithBranchesCombo(BranchesCombobox)
                 .WithScansCombo(ScansCombobox)
                 .WithResultsTree(TreeViewResults)
-                .WithSeverityFilters(new Dictionary<Severity, ToggleButton>
+                .WithSeverityFilters(new Dictionary<ToggleButton, Severity>
                 {
-                    { Severity.HIGH, HighSeverityFilter },
-                    { Severity.MEDIUM, MediumSeverityFilter },
-                    { Severity.LOW, LowSeverityFilter },
-                    { Severity.INFO, InfoSeverityFilter },
+                    { HighSeverityFilter, Severity.HIGH },
+                    { MediumSeverityFilter , Severity.MEDIUM},
+                    { LowSeverityFilter, Severity.LOW },
+                    { InfoSeverityFilter, Severity.INFO },
                 }, new Dictionary<Severity, Image>
                 {
                     { Severity.HIGH, HighSeverityFilterImage },
@@ -41,22 +41,22 @@ namespace ast_visual_studio_extension.CxExtension
                     { Severity.LOW, LowSeverityFilterImage },
                     { Severity.INFO, InfoSeverityFilterImage },
                 })
-                .WithStateFilters(new Dictionary<State, MenuItem>
+                .WithStateFilters(new Dictionary<MenuItem, State>
                 {
-                    { State.NOT_IGNORED, NotIgnoredStateFilter },
-                    { State.IGNORED, IgnoredStateFilter },
-                    { State.TO_VERIFY, ToVerifyStateFilter },
-                    { State.CONFIRMED, ConfirmedStateFilter },
-                    { State.PROPOSED_NOT_EXPLOITABLE, ProposedNotExploitableStateFilter },
-                    { State.NOT_EXPLOITABLE, NotExploitableStateFilter },
-                    { State.URGENT, UrgentStateFilter },
+                    { NotIgnoredStateFilter, State.NOT_IGNORED },
+                    { IgnoredStateFilter, State.IGNORED },
+                    { ToVerifyStateFilter, State.TO_VERIFY },
+                    { ConfirmedStateFilter, State.CONFIRMED },
+                    { ProposedNotExploitableStateFilter, State.PROPOSED_NOT_EXPLOITABLE },
+                    { NotExploitableStateFilter, State.NOT_EXPLOITABLE },
+                    { UrgentStateFilter, State.URGENT },
                 })
-                .WithGroupByOptions(new Dictionary<GroupBy, MenuItem>
+                .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
                 {
-                    { GroupBy.FILE, FileGroupBy },
-                    { GroupBy.SEVERITY, SeverityGroupBy },
-                    { GroupBy.STATE, StateGroupBy },
-                    { GroupBy.QUERY_NAME, QueryNameGroupBy },
+                    { FileGroupBy, GroupBy.FILE },
+                    { SeverityGroupBy, GroupBy.SEVERITY },
+                    { StateGroupBy, GroupBy.STATE },
+                    { QueryNameGroupBy, GroupBy.QUERY_NAME },
                 });
 
             // Init toolbar elements
@@ -133,91 +133,21 @@ namespace ast_visual_studio_extension.CxExtension
         {
             cxToolbar.ScansCombobox.OnKeyDownScans(sender, e);
         }
-
-        private void HighSeverityFilter_Click(object sender, RoutedEventArgs e)
+        private void SeverityFilter_Click(object sender, RoutedEventArgs e)
         {
-            cxToolbar.SeverityFilterClick(Severity.HIGH);
+            cxToolbar.SeverityFilterClick(sender as ToggleButton);
         }
 
-        private void MediumSeverityFilter_Click(object sender, RoutedEventArgs e)
-        {
-            cxToolbar.SeverityFilterClick(Severity.MEDIUM);
-        }
-
-        private void LowSeverityFilter_Click(object sender, RoutedEventArgs e)
-        {
-            cxToolbar.SeverityFilterClick(Severity.LOW);
-        }
-
-        private void InfoSeverityFilter_Click(object sender, RoutedEventArgs e)
-        {
-            cxToolbar.SeverityFilterClick(Severity.INFO);
-        }
-
-        private void ConfirmedStateFilter_Click(object sender, RoutedEventArgs e)
+        private void StateFilter_Click(object sender, RoutedEventArgs e)
         {
             MenuItem_Click(sender);
-            cxToolbar.StateFilterClick(State.CONFIRMED);
+            cxToolbar.StateFilterClick(sender as MenuItem);
         }
 
-        private void ToVerifyStateFilter_Click(object sender, RoutedEventArgs e)
+        private void GroupBy_Click(object sender, RoutedEventArgs e)
         {
             MenuItem_Click(sender);
-            cxToolbar.StateFilterClick(State.TO_VERIFY);
-        }
-
-        private void UrgentStateFilter_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.StateFilterClick(State.URGENT);
-        }
-
-        private void NotExploitableStateFilter_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.StateFilterClick(State.NOT_EXPLOITABLE);
-        }
-
-        private void ProposedNotExploitableStateFilter_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.StateFilterClick(State.PROPOSED_NOT_EXPLOITABLE);
-        }
-
-        private void IgnoredStateFilter_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.StateFilterClick(State.IGNORED);
-        }
-
-        private void NotIgnoredStateFilter_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.StateFilterClick(State.NOT_IGNORED);
-        }
-
-        private void FileGroupBy_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.GroupByClick(GroupBy.FILE);
-        }
-
-        private void SeverityGroupBy_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.GroupByClick(GroupBy.SEVERITY);
-        }
-
-        private void StateGroupBy_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.GroupByClick(GroupBy.STATE);
-        }
-
-        private void QueryNameGroupBy_Click(object sender, RoutedEventArgs e)
-        {
-            MenuItem_Click(sender);
-            cxToolbar.GroupByClick(GroupBy.QUERY_NAME);
+            cxToolbar.GroupByClick(sender as MenuItem);
         }
 
         private void MenuItem_Click(object sender)

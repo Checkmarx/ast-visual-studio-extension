@@ -425,16 +425,16 @@
                 <Separator Style="{StaticResource SeparatorStyle}" />
             </StackPanel>
 
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="HighSeverityFilter_Click">
+            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="MediumSeverityFilter_Click">
+            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="MediumSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="LowSeverityFilter_Click">
+            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="InfoSeverityFilter_Click">
+            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
 
@@ -443,13 +443,13 @@
                     <MenuItem.Icon>
                         <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Filter}"/>
                     </MenuItem.Icon>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ConfirmedStateFilter" Header="Confirmed" Click="ConfirmedStateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ToVerifyStateFilter" Header="To Verify" Click="ToVerifyStateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="UrgentStateFilter" Header="Urgent" Click="UrgentStateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotExploitableStateFilter" Header="Not Exploitable" Click="NotExploitableStateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ProposedNotExploitableStateFilter" Header="Proposed Not Exploitable" Click="ProposedNotExploitableStateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="IgnoredStateFilter" Header="Ignored" Click="IgnoredStateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotIgnoredStateFilter" Header="Not Ignored" Click="NotIgnoredStateFilter_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ConfirmedStateFilter" Header="Confirmed" Click="StateFilter_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ToVerifyStateFilter" Header="To Verify" Click="StateFilter_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="UrgentStateFilter" Header="Urgent" Click="StateFilter_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotExploitableStateFilter" Header="Not Exploitable" Click="StateFilter_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ProposedNotExploitableStateFilter" Header="Proposed Not Exploitable" Click="StateFilter_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="IgnoredStateFilter" Header="Ignored" Click="StateFilter_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotIgnoredStateFilter" Header="Not Ignored" Click="StateFilter_Click"/>
                 </MenuItem>
             </Menu>
 
@@ -462,10 +462,10 @@
                     <MenuItem.Icon>
                         <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.GroupBy}"/>
                     </MenuItem.Icon>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="FileGroupBy" Header="File" Click="FileGroupBy_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="SeverityGroupBy" Header="Severity" Click="SeverityGroupBy_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StateGroupBy" Header="State" Click="StateGroupBy_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="QueryNameGroupBy" Header="Query Name" Click="QueryNameGroupBy_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="FileGroupBy" Header="File" Click="GroupBy_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="SeverityGroupBy" Header="Severity" Click="GroupBy_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StateGroupBy" Header="State" Click="GroupBy_Click"/>
+                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="QueryNameGroupBy" Header="Query Name" Click="GroupBy_Click"/>
                 </MenuItem>
             </Menu>
         </StackPanel>
