@@ -61,10 +61,19 @@ namespace ast_visual_studio_extension.CxCLI
             };
         }
 
-        private static string BuildArguments(List<String> arguments)
+        private static string BuildArguments(List<string> arguments)
         {
-            // TODO: check if it is possible to use some process builder
-            return String.Join(" ", arguments);
+            string result = string.Empty;
+
+            foreach(string arg in arguments)
+            {
+                result += " ";
+
+                // Quote string if it contains spaces
+                result += arg.Contains(" ") ? "\"" + arg + "\"" : arg;
+            }
+
+            return result;
         }
     }
 }

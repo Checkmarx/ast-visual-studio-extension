@@ -54,7 +54,7 @@
             <TextBlock Text="Branch:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
             <ComboBox VerticalAlignment="Center" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Select a branch" Name="BranchesCombobox"  Margin="4" Width="250" SelectionChanged="OnChangeBranch"></ComboBox>
             <TextBlock Text="Scan:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
-            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Margin="4" Width="250" SelectionChanged="OnChangeScan" KeyDown="OnKeyDownScans"></ComboBox>
+            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Margin="4" Width="350" SelectionChanged="OnChangeScan" KeyDown="OnTypeScan"></ComboBox>
         </StackPanel>
 
         <!-- Column 1 -->
@@ -80,68 +80,28 @@
 
             <Separator Margin="5,0,5,0"/>
 
-            <!--StackPanel Orientation="Horizontal" Margin="5,10,0,0">
-                <ComboBox VerticalAlignment="Center" Name="TriageSeverityCombobox" Width="220">
-                    <ComboBoxItem>HIGH</ComboBoxItem>
-                    <ComboBoxItem>MEDIUM</ComboBoxItem>
-                    <ComboBoxItem>LOW</ComboBoxItem>
-                    <ComboBoxItem>INFO</ComboBoxItem>
-                </ComboBox>
-                <ComboBox VerticalAlignment="Center" Name="TriageStateCombobox" Width="220" Margin="5,0,0,0">
-                    <ComboBoxItem>CONFIRMED</ComboBoxItem>
-                    <ComboBoxItem>TO_VERIFY</ComboBoxItem>
-                    <ComboBoxItem>URGENT</ComboBoxItem>
-                    <ComboBoxItem>IGNORED</ComboBoxItem>
-                    <ComboBoxItem>NOT_IGNORED</ComboBoxItem>
-                </ComboBox>
-                <Button VerticalAlignment="Center" Name="TriageUpdateBtn"  Click="OnClickTriageUpdate" Margin="5,5,5,0">Update</Button>
-            </StackPanel-->
-
-            <!--WrapPanel Margin="5,10,0,0" Orientation="Horizontal">
-                    <ComboBox VerticalAlignment="Center" Name="TriageSeverityCombobox" Width="250">
-                    <ComboBoxItem>HIGH</ComboBoxItem>
-                    <ComboBoxItem>MEDIUM</ComboBoxItem>
-                    <ComboBoxItem>LOW</ComboBoxItem>
-                    <ComboBoxItem>INFO</ComboBoxItem>
-                </ComboBox>
-                <ComboBox VerticalAlignment="Center" Name="TriageStateCombobox" Width="250" Margin="5,0,0,0">
-                    <ComboBoxItem>CONFIRMED</ComboBoxItem>
-                    <ComboBoxItem>TO_VERIFY</ComboBoxItem>
-                    <ComboBoxItem>URGENT</ComboBoxItem>
-                    <ComboBoxItem>IGNORED</ComboBoxItem>
-                    <ComboBoxItem>NOT_IGNORED</ComboBoxItem>
-                </ComboBox>
-                <Button VerticalAlignment="Center" Name="TriageUpdateBtn"  Click="OnClickTriageUpdate" Margin="5,5,5,0" Width="100">Update</Button>
-            </WrapPanel>
-
-            <StackPanel>
-                <TextBox Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow"/>
-            </StackPanel-->
-
             <WrapPanel Orientation="Horizontal">
-                <ComboBox Name="TriageSeverityCombobox" Width="180" Margin="5">
+                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageSeverityCombobox" Margin="5,10,0,0" Width="190">
                     <ComboBoxItem>HIGH</ComboBoxItem>
                     <ComboBoxItem>MEDIUM</ComboBoxItem>
                     <ComboBoxItem>LOW</ComboBoxItem>
                     <ComboBoxItem>INFO</ComboBoxItem>
                 </ComboBox>
-                <ComboBox Name="TriageStateCombobox" Width="180" Margin="5">
+                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageStateCombobox" Margin="5,10,0,0" Width="190">
                     <ComboBoxItem>CONFIRMED</ComboBoxItem>
                     <ComboBoxItem>TO_VERIFY</ComboBoxItem>
                     <ComboBoxItem>URGENT</ComboBoxItem>
+                    <ComboBoxItem>NOT_EXPLOITABLE</ComboBoxItem>
+                    <ComboBoxItem>PROPOSED_NOT_EXPLOITABLE</ComboBoxItem>
                     <ComboBoxItem>IGNORED</ComboBoxItem>
                     <ComboBoxItem>NOT_IGNORED</ComboBoxItem>
                 </ComboBox>
-                <Button Name="TriageUpdateBtn" Width="115" Click="OnClickTriageUpdate" Margin="5">Update</Button>
+                <Button Name="TriageUpdateBtn" Width="108" Click="OnClickTriageUpdate" Margin="5,10,0,0">Update</Button>
             </WrapPanel>
 
             <StackPanel>
-                <TextBox Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow"/>
+                <TextBox Text="Comment (Optional)" Foreground="Gray" Name="TriageComment" Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow" GotFocus="OnFocusComment" LostFocus="OnLostFocusComment"/>
             </StackPanel>
-
-            <!--WrapPanel Margin="10,10,0,0" Orientation="Horizontal">
-                <TextBox HorizontalAlignment="Stretch" Margin="0,5,0,0" TextWrapping="WrapWithOverflow" Height="50"></TextBox>
-            </WrapPanel-->
 
             <!-- Description and Changes tabs -->
             <TabControl x:Name="ResultTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" Background="Transparent" BorderBrush="Transparent" Margin="0,10,0,0">

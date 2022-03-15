@@ -30,6 +30,15 @@ namespace ast_visual_studio_extension.CxPreferences
             }
         }
 
+        /// <summary>
+        /// On apply settings
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnApply(PageApplyEventArgs e)
+        {
+            base.OnApply(e);
+        }
+
         public CxConfig GetCxConfig
         {
             get

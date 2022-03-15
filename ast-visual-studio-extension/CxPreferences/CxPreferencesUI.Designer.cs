@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+﻿
 
 namespace ast_visual_studio_extension.CxPreferences
 {

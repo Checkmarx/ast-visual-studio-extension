@@ -1,7 +1,9 @@
 ﻿using ast_visual_studio_extension.CxCli;
 using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxPreferences;
+using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.IO;
@@ -66,6 +68,60 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 resultsTree.Items.Add(e.Message);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Get item's index in combobox
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="cxToolbar"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static int GetItemIndexInCombo(string value, ComboBox combobox, ComboboxType type)
+        {
+            for (var i = 0; i < combobox.Items.Count; i++)
+            {
+                ComboBoxItem item = combobox.Items[i] as ComboBoxItem;
+
+                string valueToCheck = GetValueToCompareWith(type, item);
+
+                if (valueToCheck.Equals(value)) return i;
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Get value to compare with to retrieve combobox item index
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        private static string GetValueToCompareWith(ComboboxType type, ComboBoxItem item)
+        {
+            switch (type)
+            {
+                case ComboboxType.PROJECTS: return (item.Tag as Project).Id;
+                case ComboboxType.BRANCHES: return item.Content as string;
+                case ComboboxType.SCANS: return (item.Tag as Scan).ID;
+                case ComboboxType.SEVERITY: return item.Content as string;
+                case ComboboxType.STATE: return item.Content as string;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Display notification to the user
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="description"></param>
+        public static void DisplayNotification(string title, string description)
+        {
+            new ToastContentBuilder()
+                                .AddText(title)
+                                .AddText(description)
+                                .Show();
         }
     }
 }

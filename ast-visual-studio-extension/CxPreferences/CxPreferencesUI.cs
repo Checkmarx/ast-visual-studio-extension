@@ -1,6 +1,5 @@
 ﻿using ast_visual_studio_extension.CxCli;
 using ast_visual_studio_extension.CxCLI;
-using ast_visual_studio_extension.CxCLI.Models;
 using System;
 using System.Windows.Forms;
 using static ast_visual_studio_extension.CxCLI.CxConfig;
@@ -61,16 +60,10 @@ namespace ast_visual_studio_extension.CxPreferences
                 CxWrapper cxWrapper = new CxWrapper(GetCxConfig());
                 lblValidationResult.Text = cxWrapper.AuthValidate();
             }
-            //catch (InvalidCLIConfigException ex)
             catch (Exception ex)
             {
                 lblValidationResult.Text = ex.Message;
             }
-        }
-
-        private void OnLoadSettings(object sender, EventArgs e)
-        {
-            lblValidationResult.Text = string.Empty; // TODO: check if it is needed
         }
 
         private CxConfig GetCxConfig()
@@ -85,6 +78,13 @@ namespace ast_visual_studio_extension.CxPreferences
             };
 
             return configuration;
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+
+            lblValidationResult.Text = string.Empty;
         }
     }
 }

@@ -2,7 +2,6 @@
 using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
@@ -10,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace ast_visual_studio_extension.CxExtension.Panels
@@ -30,8 +30,18 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             CxWindowControl cxWindowUI = GetCxWindowControl();
 
+            // Disable all triage stuff if selected result is sca
+            bool isNotScaEngine = !this.result.Type.Equals(CxConstants.ENGINE_SCA);
+
+            cxWindowUI.TriageSeverityCombobox.IsEnabled = isNotScaEngine;
+            cxWindowUI.TriageStateCombobox.IsEnabled = isNotScaEngine;
+            cxWindowUI.TriageComment.IsEnabled = isNotScaEngine;
+            cxWindowUI.TriageUpdateBtn.IsEnabled = isNotScaEngine;
+
             // Set description tab as selected when drawing result info panel
             cxWindowUI.DescriptionTabItem.IsSelected = true;
+            cxWindowUI.TriageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
+            cxWindowUI.TriageComment.Foreground = new SolidColorBrush(Colors.Gray);
 
             DrawTitle();
             DrawDesrciptionTab();
@@ -104,44 +114,31 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.ResultInfoStackPanel.Children.Add(expectedValueTextBlock);
             }
 
-            cxWindowUI.TriageSeverityCombobox.SelectedIndex = GetSeverityIndex(result.Severity, cxWindowUI);
-            cxWindowUI.TriageStateCombobox.SelectedIndex = GetStateIndex(result.State.Trim(), cxWindowUI);
+            cxWindowUI.TriageSeverityCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.Severity, cxWindowUI.TriageSeverityCombobox, Enums.ComboboxType.SEVERITY);
+            cxWindowUI.TriageStateCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.State.Trim(), cxWindowUI.TriageStateCombobox, Enums.ComboboxType.STATE);
 
             cxWindowUI.ResultInfoPanel.Visibility = Visibility.Visible;
         }
 
-        private int GetSeverityIndex(string severity, CxWindowControl cxWindowUI)
-        {
-            for (var i = 0; i < cxWindowUI.TriageSeverityCombobox.Items.Count; i++)
-            {
-                ComboBoxItem item = cxWindowUI.TriageSeverityCombobox.Items[i] as ComboBoxItem;
-
-                string p = item.Content as string;
-
-                if (p.Equals(severity)) return i;
-            }
-
-            return -1;
-        }
-
-        private int GetStateIndex(string state, CxWindowControl cxWindowUI)
-        {
-            for (var i = 0; i < cxWindowUI.TriageStateCombobox.Items.Count; i++)
-            {
-                ComboBoxItem item = cxWindowUI.TriageStateCombobox.Items[i] as ComboBoxItem;
-
-                string p = item.Content as string;
-
-                if (p.Equals(state)) return i;
-            }
-
-            return -1;
-        }
-
-        // TODO static?
-        public async Task TriageUpdateAsync(Button triageUpdateBtn, TreeView treeViewResults, CxToolbar cxToolbar, ComboBox severityCombobox, ComboBox stateCombobox, string selectedTabItem, StackPanel triageChangesTab)
+        /// <summary>
+        /// Update result
+        /// </summary>
+        /// <param name="triageUpdateBtn"></param>
+        /// <param name="treeViewResults"></param>
+        /// <param name="cxToolbar"></param>
+        /// <param name="severityCombobox"></param>
+        /// <param name="stateCombobox"></param>
+        /// <param name="selectedTabItem"></param>
+        /// <param name="triageChangesTab"></param>
+        /// <param name="triageComment"></param>
+        /// <returns></returns>
+        public async Task TriageUpdateAsync(Button triageUpdateBtn, TreeView treeViewResults, CxToolbar cxToolbar, ComboBox severityCombobox, ComboBox stateCombobox, string selectedTabItem, StackPanel triageChangesTab, TextBox triageComment)
         {
             triageUpdateBtn.IsEnabled = false;
+            severityCombobox.IsEnabled = false;
+            stateCombobox.IsEnabled = false;
+            triageComment.IsEnabled = false;
+            triageComment.Foreground = new SolidColorBrush(Colors.Gray);
 
             Result result = (treeViewResults.SelectedItem as TreeViewItem).Tag as Result;
 
@@ -150,12 +147,15 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             string engineType = result.Type;
             string state = (stateCombobox.SelectedValue as ComboBoxItem).Content as string;
             string severity = (severityCombobox.SelectedValue as ComboBoxItem).Content as string;
-            string comment = "";
+            string comment = triageComment.Text.Equals(CxConstants.TRIAGE_COMMENT_PLACEHOLDER) ? string.Empty : triageComment.Text;
 
             CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
             if (cxWrapper == null)
             {
                 triageUpdateBtn.IsEnabled = true;
+                severityCombobox.IsEnabled = true;
+                stateCombobox.IsEnabled = true;
+                triageComment.IsEnabled = true;
 
                 return;
             }
@@ -169,18 +169,23 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    new ToastContentBuilder()
-                                .AddText("Triage Update failed")
-                                .AddText(ex.Message)
-                                .Show();
-
-                    triageUpdateBtn.IsEnabled = true;
+                    CxUtils.DisplayNotification(CxConstants.TRIAGE_UPDATE_FAILED, ex.Message);
 
                     return false;
                 }
             });
 
-            if (!triageUpdatedSuccessfully) return;
+            if (!triageUpdatedSuccessfully)
+            {
+                triageUpdateBtn.IsEnabled = true;
+                triageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
+                triageComment.Foreground = new SolidColorBrush(Colors.Gray);
+                severityCombobox.IsEnabled = true;
+                stateCombobox.IsEnabled = true;
+                triageComment.IsEnabled = true;
+
+                return;
+            }
 
             result.State = state;
             result.Severity = severity;
@@ -192,15 +197,36 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             if (selectedTabItem.Equals("ChangesTabItem"))
             {
-                _ = TriageShowAsync(treeViewResults, cxToolbar, triageChangesTab);
+                await TriageShowAsync(treeViewResults, cxToolbar, triageChangesTab);
             }
 
             triageUpdateBtn.IsEnabled = true;
+            triageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
+            triageComment.Foreground = new SolidColorBrush(Colors.Gray);
+            severityCombobox.IsEnabled = true;
+            stateCombobox.IsEnabled = true;
+            triageComment.IsEnabled = true;
         }
 
+        /// <summary>
+        /// List triage changes
+        /// </summary>
+        /// <param name="treeViewResults"></param>
+        /// <param name="cxToolbar"></param>
+        /// <param name="triageChangesTab"></param>
+        /// <returns></returns>
         public async Task TriageShowAsync(TreeView treeViewResults, CxToolbar cxToolbar, StackPanel triageChangesTab)
         {
             Result result = ((treeViewResults.SelectedItem as TreeViewItem).Tag as Result);
+
+            triageChangesTab.Children.Clear();
+
+            if (result != null && result.Type.Equals(CxConstants.ENGINE_SCA))
+            {
+                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SCA_NOT_AVAILABLE));
+
+                return;
+            }
 
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
             string similarityId = result.SimilarityId;
@@ -211,7 +237,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             triageChangesTab.Children.Clear();
 
-            triageChangesTab.Children.Add(UIUtils.CreateTextBlock("Loading changes..."));
+            triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_LOADING_CHANGES));
+
+            string errorMessage = string.Empty;
 
             List<Predicate> predicates = await Task.Run(() =>
             {
@@ -221,41 +249,56 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    new ToastContentBuilder()
-                                    .AddText("Triage Show failed")
-                                    .AddText(ex.Message)
-                                    .Show();
+                    CxUtils.DisplayNotification(CxConstants.TRIAGE_SHOW_FAILED, ex.Message);
+                    errorMessage = ex.Message;
 
                     return null;
                 }
             });
 
-            if (predicates == null) return;
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                triageChangesTab.Children.Clear();
+
+                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SHOW_FAILED + ". " + errorMessage));
+
+                return;
+            }
 
             triageChangesTab.Children.Clear();
 
             if (predicates.Count == 0)
             {
-                triageChangesTab.Children.Add(UIUtils.CreateTextBlock("No changes."));
+                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_NO_CHANGES));
 
                 return;
             }
 
-            for (int i = 0; i < predicates.Count; i++)
+            foreach(Predicate predicate in predicates)
             {
-                Predicate pred = predicates[i];
+                DateTime predicateCreatedAt = DateTime.Parse(predicate.CreatedAt, System.Globalization.CultureInfo.InvariantCulture);
+                string createdAt = predicateCreatedAt.ToString(CxConstants.DATE_OUTPUT_FORMAT);
 
-                DateTime myDate = DateTime.ParseExact(pred.CreatedAt, "yyyy-MM-dd'T'HH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
-                string createdAt = myDate.ToString("dd/MM/yyyy HH:mm:ss");
-                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(pred.CreatedBy + " | " + createdAt));
-                triageChangesTab.Children.Add(UIUtils.CreateSeverityLabelWithIcon(pred.Severity));
-                triageChangesTab.Children.Add(UIUtils.CreateLabelWithImage(pred.State));
+                TextBlock tb = new TextBlock();
+                tb.Inlines.Add(new Bold(new Run(predicate.CreatedBy)));
+                tb.Inlines.Add(new Run(" | " + createdAt));
+
+                triageChangesTab.Children.Add(tb);
+                triageChangesTab.Children.Add(UIUtils.CreateSeverityLabelWithIcon(predicate.Severity));
+                triageChangesTab.Children.Add(UIUtils.CreateLabelWithImage(predicate.State, CxConstants.ICON_FLAG));
+
+                if (!string.IsNullOrEmpty(predicate.Comment))
+                {
+                    triageChangesTab.Children.Add(UIUtils.CreateLabelWithImage(predicate.Comment, CxConstants.ICON_COMMENT));
+                }
 
                 triageChangesTab.Children.Add(new Separator());
-            }            
+            }     
         }
 
-        // Clear panel
+        /// <summary>
+        /// Clear Result Info panel
+        /// </summary>
         public void Clear()
         {
             CxWindowControl cxWindowUI = GetCxWindowControl();

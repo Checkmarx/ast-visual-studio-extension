@@ -1,16 +1,18 @@
 ﻿using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
+using ast_visual_studio_extension.CxExtension.Utils;
 using Microsoft.VisualStudio.Shell;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace ast_visual_studio_extension.CxExtension
 {
     public partial class CxWindowControl : UserControl
     {
         private readonly CxToolbar cxToolbar;
-        private ResultInfoPanel resultInfoPanel;
+        private readonly ResultInfoPanel resultInfoPanel;
 
         public CxWindowControl(AsyncPackage package)
         {
@@ -99,9 +101,9 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void OnKeyDownScans(object sender, KeyEventArgs e)
+        private void OnTypeScan(object sender, KeyEventArgs e)
         {
-            cxToolbar.ScansCombobox.OnKeyDownScans(sender, e);
+            _ = cxToolbar.ScansCombobox.OnTypeScanAsync(sender, e);
         }
 
         /// <summary>
@@ -111,22 +113,45 @@ namespace ast_visual_studio_extension.CxExtension
         /// <param name="e"></param>
         private void OnClickTriageUpdate(object sender, RoutedEventArgs e)
         {
-            _ = resultInfoPanel.TriageUpdateAsync(TriageUpdateBtn, TreeViewResults, cxToolbar, TriageSeverityCombobox, TriageStateCombobox, (ResultTabControl.SelectedItem as TabItem).Name, TriageChangesTab);
+            _ = resultInfoPanel.TriageUpdateAsync(TriageUpdateBtn, TreeViewResults, cxToolbar, TriageSeverityCombobox, TriageStateCombobox, (ResultTabControl.SelectedItem as TabItem).Name, TriageChangesTab, TriageComment);
         }
 
         /// <summary>
-        /// On focus in triage changes
+        /// On click triage changes
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void OnFocusTriageChanges(object sender, RoutedEventArgs e)
-        {
-            //_ = resultInfoPanel.TriageShowAsync(TreeViewResults, cxToolbar, TriageChangesTab);
-        }
-
         private void OnClickTriageChanges(object sender, MouseButtonEventArgs e)
         {
             _ = resultInfoPanel.TriageShowAsync(TreeViewResults, cxToolbar, TriageChangesTab);
+        }
+
+        /// <summary>
+        /// On Focus comment field
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnFocusComment(object sender, RoutedEventArgs e)
+        {
+            if (TriageComment.Text.Equals(CxConstants.TRIAGE_COMMENT_PLACEHOLDER))
+            {
+                TriageComment.Text = string.Empty;
+                TriageComment.Foreground = new SolidColorBrush(Colors.White);
+            }
+        }
+
+        /// <summary>
+        /// On Lost Focus comment field
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnLostFocusComment(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(TriageComment.Text))
+            {
+                TriageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
+                TriageComment.Foreground = new SolidColorBrush(Colors.Gray);
+            }
         }
     }
 }

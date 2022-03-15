@@ -57,11 +57,17 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 return;
             }
 
-            for (int i = 0; i < scans.Count; i++)
+            cxToolbar.ScansCombo.Items.Clear();
+
+            foreach(Scan scan in scans)
             {
+                DateTime scanCreatedAt = DateTime.Parse(scan.CreatedAt, System.Globalization.CultureInfo.InvariantCulture);
+                string createdAt = scanCreatedAt.ToString(CxConstants.DATE_OUTPUT_FORMAT);
+
                 ComboBoxItem comboBoxItem = new ComboBoxItem
                 {
-                    Content = scans[i].ID
+                    Content = string.Format(CxConstants.SCAN_ID_DISPLAY_FORMAT, createdAt, scan.ID),
+                    Tag = scan,
                 };
 
                 cxToolbar.ScansCombo.Items.Add(comboBoxItem);
@@ -74,27 +80,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             if (!string.IsNullOrEmpty(CxToolbar.currentScanId))
             {
-                cxToolbar.ScansCombo.SelectedIndex = GetScanIndex(CxToolbar.currentScanId);
+                cxToolbar.ScansCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(CxToolbar.currentScanId, cxToolbar.ScansCombo, Enums.ComboboxType.SCANS);
             }
-        }
-
-        /// <summary>
-        /// Get index of current scan in Scans combobox
-        /// </summary>
-        /// <param name="scanId"></param>
-        /// <returns></returns>
-        private int GetScanIndex(string scanId)
-        {
-            for (var i = 0; i < cxToolbar.ScansCombo.Items.Count; i++)
-            {
-                ComboBoxItem item = cxToolbar.ScansCombo.Items[i] as ComboBoxItem;
-
-                string p = item.Content as string;
-
-                if (p.Equals(scanId)) return i;
-            }
-
-            return -1;
         }
 
         /// <summary>
@@ -104,11 +91,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeScan(object sender, SelectionChangedEventArgs e)
         {
-            ComboBox comboBox = sender as ComboBox;
+            if (!(sender is ComboBox scansCombo) || scansCombo.SelectedItem == null || scansCombo.SelectedIndex == -1) return;
 
-            if (comboBox.SelectedItem == null) return;
-
-            string selectedScan = ((sender as ComboBox).SelectedItem as ComboBoxItem).Content as string;
+            string selectedScan = ((scansCombo.SelectedItem as ComboBoxItem).Tag as Scan).ID;
 
             _ = cxToolbar.ResultsTreePanel.DrawAsync(selectedScan, cxToolbar);
 
@@ -121,70 +106,79 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        public void OnKeyDownScans(object sender, KeyEventArgs e)
+        public async Task OnTypeScanAsync(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return || e.Key == Key.Tab)
             {
-                string scanId = (e.OriginalSource as TextBox).Text;
+                string scanId = ValidateScanId((e.OriginalSource as TextBox).Text);
+                if (string.IsNullOrEmpty(scanId)) return;
 
-                CxWrapper wrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+                CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+                if (cxWrapper == null) return;
 
-                Scan scan = wrapper.ScanShow(scanId);
+                cxToolbar.ProjectsCombo.IsEnabled = false;
+                cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_LOADING_PROJECTS;
+                cxToolbar.BranchesCombo.IsEnabled = false;
+                cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_LOADING_BRANCHES;
+                cxToolbar.ScansCombo.IsEnabled = false;
+                cxToolbar.ResultsTreePanel.ClearAllPanels();
 
-                string projectId = scan.ProjectId;
+                Scan scan = null;
 
-                int projectIdx = GetProjectIndex(projectId);
-
-                bool needsToTrigger = ScanExist(scanId);
-
-                CxToolbar.currentBranch = scan.Branch;
-                CxToolbar.currentScanId = scanId;
-
-                cxToolbar.ProjectsCombo.SelectedIndex = projectIdx;
-
-                if (needsToTrigger)
+                bool scanShowSuccessfully = await Task.Run(() =>
                 {
-                    cxToolbar.ProjectsCombobox.OnChangeProject(null, null);
+                    try
+                    {
+                        scan = cxWrapper.ScanShow(scanId);
+
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        AddMessageToTree(ex.Message);
+
+                        return false;
+                    }
+                });
+
+                if (scanShowSuccessfully)
+                {
+                    CxToolbar.currentBranch = scan.Branch;
+                    CxToolbar.currentScanId = scanId;
+
+                    cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(scan.ProjectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
                 }
             }
         }
 
         /// <summary>
-        /// Check if scan exist in the Scans combobox
+        /// Validate if provided scan id is valid to get results
         /// </summary>
-        /// <param name="scanId"></param>
+        /// <param name="scan"></param>
         /// <returns></returns>
-        private bool ScanExist(string scanId)
+        private string ValidateScanId(string scan)
         {
-            for (var i = 0; i < cxToolbar.ScansCombo.Items.Count; i++)
-            {
-                ComboBoxItem item = cxToolbar.ScansCombo.Items[i] as ComboBoxItem;
+            string scanId = !string.IsNullOrEmpty(scan) ? scan.Trim() : string.Empty;
 
-                string p = item.Content as string;
+            bool isValidScanId = Guid.TryParse(scanId, out _) && !string.IsNullOrEmpty(scanId);
 
-                if (p.Equals(scanId)) return true;
-            }
+            if(isValidScanId) return scanId;
 
-            return false;
+            AddMessageToTree(CxConstants.INVALID_SCAN_ID);
+
+            return string.Empty;
+            
         }
 
         /// <summary>
-        /// Get index of a given project in Projects combobox
+        /// Add a message to the results tree
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <returns></returns>
-        private int GetProjectIndex(string projectId)
+        /// <param name="message"></param>
+        private void AddMessageToTree(string message)
         {
-            for (var i = 0; i < cxToolbar.ProjectsCombo.Items.Count; i++)
-            {
-                ComboBoxItem item = cxToolbar.ProjectsCombo.Items[i] as ComboBoxItem;
-
-                Project p = item.Tag as Project;
-
-                if (p.Id == projectId) return i;
-            }
-
-            return -1;
+            cxToolbar.ResultsTreePanel.ClearAllPanels();
+            cxToolbar.ResultsTree.Items.Clear();
+            cxToolbar.ResultsTree.Items.Add(message);
         }
     }
 }

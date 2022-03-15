@@ -14,6 +14,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string LBL_LOCATION => "Location";
         public static string LBL_ATTACK_VECTOR_ITEM => "{0}. {1} ";
         public static string LBL_LOCATION_FILE => "File ";
+        public static string INVALID_SCAN_ID => "Invalid scan id ";
+        public static string SCAN_ID_DISPLAY_FORMAT => "{0}    {1}";
+        public static string ENGINE_SCA => "sca";
 
         /************ ICONS ************/
         public static string ICON_HIGH => "high.png";
@@ -25,6 +28,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string ICON_INFO => "info.png";
         public static string ICON_INFO_TITLE => "info_18x22.png";
         public static string ICON_FLAG => "Flag.png";
+        public static string ICON_COMMENT => "Comment.png";
 
         /************ PROJECT FOLDERS ************/
         public static string FOLDER_RESOURCES => "Resources";
@@ -44,5 +48,16 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string TOOLBAR_LOADING_PROJECTS => "Loading projects...";
         public static string TOOLBAR_LOADING_BRANCHES => "Loading branches...";
         public static string TOOLBAR_LOADING_SCANS => "Loading scans...";
+
+        /************ TRIAGE ************/
+        public static string TRIAGE_COMMENT_PLACEHOLDER => "Comment (Optional)";
+        public static string TRIAGE_UPDATE_FAILED => "Triage Update failed";
+        public static string TRIAGE_SHOW_FAILED => "Triage Show failed";
+        public static string TRIAGE_LOADING_CHANGES => "Loading changes...";
+        public static string TRIAGE_NO_CHANGES => "No changes.";
+        public static string TRIAGE_SCA_NOT_AVAILABLE => "Changes not available for sca engine.";
+
+        /************ DATE FORMATS ************/
+        public static string DATE_OUTPUT_FORMAT => "dd/MM/yyyy HH:mm:ss";
     }
 }

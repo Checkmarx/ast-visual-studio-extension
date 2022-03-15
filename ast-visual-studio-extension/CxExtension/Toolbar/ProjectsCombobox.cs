@@ -69,7 +69,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     Content = projects[i].Name,
                     Tag = projects[i]
                 };
-
                 cxToolbar.ProjectsCombo.Items.Add(comboBoxItem);
             }
 
@@ -85,16 +84,18 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeProject(object sender, SelectionChangedEventArgs e)
         {
+            ComboBox projectsCombo = cxToolbar.ProjectsCombo;
+            if (projectsCombo == null || projectsCombo.SelectedItem == null || projectsCombo.SelectedIndex == -1) return;
+
             cxToolbar.EnableCombos(false);
 
-            cxToolbar.BranchesCombo.Items.Clear();
             cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_LOADING_BRANCHES;
-
             cxToolbar.ScansCombo.Items.Clear();
+            cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_SELECT_SCAN : CxToolbar.currentScanId;
 
             cxToolbar.ResultsTreePanel.ClearAllPanels();
             
-            Project selectedProject = (cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project;
+            Project selectedProject = (projectsCombo.SelectedItem as ComboBoxItem).Tag as Project;
 
             _ = branchesCombobox.LoadBranchesAsync(selectedProject.Id);
         }

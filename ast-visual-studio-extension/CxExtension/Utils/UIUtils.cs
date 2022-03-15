@@ -107,7 +107,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return stackPanel;
         }
 
-        public static StackPanel CreateLabelWithImage(string message)
+        public static StackPanel CreateLabelWithImage(string message, string icon)
         {
             StackPanel stackPanel = new StackPanel
             {
@@ -116,7 +116,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             Image severityIcon = new Image();
             
-            BitmapImage severityBitmap = new BitmapImage(new Uri(Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, CxConstants.ICON_FLAG)));
+            BitmapImage severityBitmap = new BitmapImage(new Uri(Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, icon)));
             severityIcon.Source = severityBitmap;
 
             stackPanel.Children.Add(severityIcon);
