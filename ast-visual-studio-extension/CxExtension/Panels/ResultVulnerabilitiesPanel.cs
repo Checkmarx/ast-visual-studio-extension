@@ -101,7 +101,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 {
                     NavigateUri = new System.Uri(packageData.Url)
                 };
-                link.Inlines.Add(packageData.Type);
+                link.Inlines.Add(packageData.Url);
                 link.RequestNavigate += (sender, e) =>
                 {
                     Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));

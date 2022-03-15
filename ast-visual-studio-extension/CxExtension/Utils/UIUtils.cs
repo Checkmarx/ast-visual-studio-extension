@@ -47,6 +47,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             TextBlock resultUIElement = new TextBlock();
             resultUIElement.Inlines.Add(uiContainer);
+            resultUIElement.Tag = displayName;
 
             return resultUIElement;
         }
@@ -62,7 +63,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return new TreeViewItem
             {
                 Header = CreateTreeViewItemHeader(String.Empty, headerText),
-                ItemsSource = source
+                ItemsSource = source,
+                Tag = headerText
             };
         }
 

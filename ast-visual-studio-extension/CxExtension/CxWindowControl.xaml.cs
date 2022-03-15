@@ -1,9 +1,12 @@
-﻿using ast_visual_studio_extension.CxExtension.Panels;
+﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
 using Microsoft.VisualStudio.Shell;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -29,7 +32,37 @@ namespace ast_visual_studio_extension.CxExtension
                 .WithProjectsCombo(ProjectsCombobox)
                 .WithBranchesCombo(BranchesCombobox)
                 .WithScansCombo(ScansCombobox)
-                .WithResultsTree(TreeViewResults);
+                .WithResultsTree(TreeViewResults)
+                .WithSeverityFilters(new Dictionary<ToggleButton, Severity>
+                {
+                    { HighSeverityFilter, Severity.HIGH },
+                    { MediumSeverityFilter , Severity.MEDIUM},
+                    { LowSeverityFilter, Severity.LOW },
+                    { InfoSeverityFilter, Severity.INFO },
+                }, new Dictionary<Severity, Image>
+                {
+                    { Severity.HIGH, HighSeverityFilterImage },
+                    { Severity.MEDIUM, MediumSeverityFilterImage },
+                    { Severity.LOW, LowSeverityFilterImage },
+                    { Severity.INFO, InfoSeverityFilterImage },
+                })
+                .WithStateFilters(new Dictionary<MenuItem, State>
+                {
+                    { NotIgnoredStateFilter, State.NOT_IGNORED },
+                    { IgnoredStateFilter, State.IGNORED },
+                    { ToVerifyStateFilter, State.TO_VERIFY },
+                    { ConfirmedStateFilter, State.CONFIRMED },
+                    { ProposedNotExploitableStateFilter, State.PROPOSED_NOT_EXPLOITABLE },
+                    { NotExploitableStateFilter, State.NOT_EXPLOITABLE },
+                    { UrgentStateFilter, State.URGENT },
+                })
+                .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
+                {
+                    { FileGroupBy, GroupBy.FILE },
+                    { SeverityGroupBy, GroupBy.SEVERITY },
+                    { StateGroupBy, GroupBy.STATE },
+                    { QueryNameGroupBy, GroupBy.QUERY_NAME },
+                });
 
             // Init toolbar elements
             cxToolbar.Init();
@@ -152,6 +185,28 @@ namespace ast_visual_studio_extension.CxExtension
                 TriageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
                 TriageComment.Foreground = new SolidColorBrush(Colors.Gray);
             }
+        }
+        private void SeverityFilter_Click(object sender, RoutedEventArgs e)
+        {
+            cxToolbar.SeverityFilterClick(sender as ToggleButton);
+        }
+
+        private void StateFilter_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.StateFilterClick(sender as MenuItem);
+        }
+
+        private void GroupBy_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem_Click(sender);
+            cxToolbar.GroupByClick(sender as MenuItem);
+        }
+
+        private void MenuItem_Click(object sender)
+        {
+            MenuItem menuItem = (sender as MenuItem);
+            menuItem.IsChecked = !menuItem.IsChecked;
         }
     }
 }
