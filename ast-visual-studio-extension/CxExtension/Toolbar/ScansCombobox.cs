@@ -14,6 +14,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
     {
         private readonly CxToolbar cxToolbar;
 
+        private bool firstLoad = true;
+
         public ScansCombobox(CxToolbar cxToolbar)
         {
             this.cxToolbar = cxToolbar;
@@ -82,6 +84,16 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 cxToolbar.ScansCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(CxToolbar.currentScanId, cxToolbar.ScansCombo, Enums.ComboboxType.SCANS);
             }
+            else
+            {
+                string scanId = SettingsUtils.GetToolbarValue(cxToolbar.Package, SettingsUtils.scanIdProperty);
+
+                if (!string.IsNullOrEmpty(scanId) && firstLoad)
+                {
+                    cxToolbar.ScansCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(scanId, cxToolbar.ScansCombo, Enums.ComboboxType.SCANS);
+                    firstLoad = false;
+                }
+            }
         }
 
         /// <summary>
@@ -94,6 +106,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             if (!(sender is ComboBox scansCombo) || scansCombo.SelectedItem == null || scansCombo.SelectedIndex == -1) return;
 
             string selectedScan = ((scansCombo.SelectedItem as ComboBoxItem).Tag as Scan).ID;
+
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "scanId", selectedScan);
 
             _ = cxToolbar.ResultsTreePanel.DrawAsync(selectedScan, cxToolbar);
 
