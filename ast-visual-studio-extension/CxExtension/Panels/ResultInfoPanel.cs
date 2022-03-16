@@ -178,12 +178,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             if (!triageUpdatedSuccessfully)
             {
-                triageUpdateBtn.IsEnabled = true;
-                triageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
-                triageComment.Foreground = new SolidColorBrush(Colors.Gray);
-                severityCombobox.IsEnabled = true;
-                stateCombobox.IsEnabled = true;
-                triageComment.IsEnabled = true;
+                UpdateTriageElementsState(triageUpdateBtn, triageComment, severityCombobox, stateCombobox);
 
                 return;
             }
@@ -201,6 +196,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 await TriageShowAsync(treeViewResults, cxToolbar, triageChangesTab);
             }
 
+            UpdateTriageElementsState(triageUpdateBtn, triageComment, severityCombobox, stateCombobox);
+        }
+
+        private void UpdateTriageElementsState(Button triageUpdateBtn, TextBox triageComment, ComboBox severityCombobox, ComboBox stateCombobox)
+        {
             triageUpdateBtn.IsEnabled = true;
             triageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
             triageComment.Foreground = new SolidColorBrush(Colors.Gray);
@@ -259,16 +259,14 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
             });
 
+            triageChangesTab.Children.Clear();
+
             if (!string.IsNullOrEmpty(errorMessage))
             {
-                triageChangesTab.Children.Clear();
-
                 triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SHOW_FAILED + ". " + errorMessage));
 
                 return;
             }
-
-            triageChangesTab.Children.Clear();
 
             if (predicates.Count == 0)
             {
