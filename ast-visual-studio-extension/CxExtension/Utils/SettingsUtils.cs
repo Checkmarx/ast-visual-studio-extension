@@ -70,7 +70,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             var readOnlyStore = new ShellSettingsManager(package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
 
-            return readOnlyStore.GetString("cenas", property, string.Empty);
+            return readOnlyStore.GetString(toolbarCollection, property, string.Empty);
         }
 
         public static HashSet<Severity> EnabledSeverities(AsyncPackage package)
