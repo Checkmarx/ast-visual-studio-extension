@@ -414,12 +414,12 @@
         <GridSplitter Grid.Row="1" Grid.Column ="1" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
 
         <StackPanel Grid.ColumnSpan="3" Grid.Row="0" Orientation="Horizontal">
-            <TextBlock Text="Project:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
-            <ComboBox IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Loading projects..." Name="ProjectsCombobox" Height="23" Margin="4" Width="250" SelectionChanged="OnChangeProject"/>
+            <TextBlock VerticalAlignment="Center" Text="Project:" Grid.Column="1" Margin="4"/>
+            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Loading projects..." Name="ProjectsCombobox" Margin="4" Width="250" SelectionChanged="OnChangeProject"/>
             <TextBlock Text="Branch:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
-            <ComboBox IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Select a branch" Name="BranchesCombobox" Height="23" Margin="4" Width="250" SelectionChanged="OnChangeBranch"></ComboBox>
+            <ComboBox VerticalAlignment="Center" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Select a branch" Name="BranchesCombobox"  Margin="4" Width="250" SelectionChanged="OnChangeBranch"></ComboBox>
             <TextBlock Text="Scan:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
-            <ComboBox IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Height="23" Margin="4" Width="250" SelectionChanged="OnChangeScan" KeyDown="OnKeyDownScans"></ComboBox>
+            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Margin="4" Width="350" SelectionChanged="OnChangeScan" KeyDown="OnTypeScan"></ComboBox>
 
             <StackPanel Orientation="Horizontal">
                 <Separator Style="{StaticResource SeparatorStyle}" />
@@ -483,6 +483,7 @@
 
         <!-- Column 2 -->
         <StackPanel Grid.Row="1" x:Name="ResultInfoPanel" Grid.Column="1" Visibility="Hidden">
+
             <!-- Result Title -->
             <WrapPanel Name="ResultTitleWrapPanel" Orientation="Horizontal" Margin="10" MinHeight="25">
                 <Label Name="hiddenLbl" Content="My Label" Visibility="Hidden" Width="0"></Label>
@@ -491,6 +492,29 @@
             </WrapPanel>
 
             <Separator Margin="5,0,5,0"/>
+
+            <WrapPanel Orientation="Horizontal">
+                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageSeverityCombobox" Margin="5,10,0,0" Width="190">
+                    <ComboBoxItem>HIGH</ComboBoxItem>
+                    <ComboBoxItem>MEDIUM</ComboBoxItem>
+                    <ComboBoxItem>LOW</ComboBoxItem>
+                    <ComboBoxItem>INFO</ComboBoxItem>
+                </ComboBox>
+                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageStateCombobox" Margin="5,10,0,0" Width="190">
+                    <ComboBoxItem>CONFIRMED</ComboBoxItem>
+                    <ComboBoxItem>TO_VERIFY</ComboBoxItem>
+                    <ComboBoxItem>URGENT</ComboBoxItem>
+                    <ComboBoxItem>NOT_EXPLOITABLE</ComboBoxItem>
+                    <ComboBoxItem>PROPOSED_NOT_EXPLOITABLE</ComboBoxItem>
+                    <ComboBoxItem>IGNORED</ComboBoxItem>
+                    <ComboBoxItem>NOT_IGNORED</ComboBoxItem>
+                </ComboBox>
+                <Button Name="TriageUpdateBtn" Width="108" Click="OnClickTriageUpdate" Margin="5,10,0,0">Update</Button>
+            </WrapPanel>
+
+            <StackPanel>
+                <TextBox Text="Comment (Optional)" Foreground="Gray" Name="TriageComment" Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow" GotFocus="OnFocusComment" LostFocus="OnLostFocusComment"/>
+            </StackPanel>
 
             <!-- Description and Changes tabs -->
             <TabControl x:Name="ResultTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" Background="Transparent" BorderBrush="Transparent" Margin="0,10,0,0">
@@ -522,7 +546,7 @@
                         </Setter>
                     </Style>
                 </TabControl.Resources>
-                <TabItem Name="TabItem">
+                <TabItem Name="DescriptionTabItem">
                     <TabItem.HeaderTemplate>
                         <DataTemplate>
                             <DataTemplate.Resources>
@@ -544,7 +568,7 @@
                         </ScrollViewer>
                     </TabItem.Content>
                 </TabItem>
-                <TabItem>
+                <TabItem Name="ChangesTabItem">
                     <TabItem.HeaderTemplate>
                         <DataTemplate>
                             <DataTemplate.Resources>
@@ -555,12 +579,14 @@
                                     <ColumnDefinition Width="1*" />
                                     <ColumnDefinition Width="5*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Changes" Grid.Column="1" VerticalAlignment="Center"/>
+                                <TextBlock Text="Changes" Grid.Column="1" VerticalAlignment="Center" MouseUp="OnClickTriageChanges"/>
                             </Grid>
                         </DataTemplate>
                     </TabItem.HeaderTemplate>
                     <TabItem.Content>
-                        <TextBlock Text="Triage changes ..." Grid.Column="1" VerticalAlignment="Center"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{Binding ElementName=ParentGrid, Path=ActualHeight, Converter={StaticResource CalculateScrollViewerHeight}}">
+                            <StackPanel Name="TriageChangesTab" Margin="10,10,10,0"></StackPanel>
+                        </ScrollViewer>
                     </TabItem.Content>
                 </TabItem>
             </TabControl>
@@ -570,7 +596,7 @@
         <ScrollViewer Grid.Row="1" Grid.Column="2" x:Name="VulnerabilitiesPanel" Visibility="Hidden" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="1,1,2,0" PreviewMouseWheel="VulnerabilitiesPanelPreviewMouseWheel">
             <StackPanel>
                 <!-- Result Title -->
-                <WrapPanel Orientation="Horizontal" Margin="10" MinHeight="25">
+                <WrapPanel Orientation="Horizontal" Margin="10" MinHeight="24">
                     <TextBlock x:Name="VulnerabilitiesPanelTitle" Text="" TextWrapping="WrapWithOverflow" Grid.Column="1" FontSize="15" Margin="7,0,0,0"></TextBlock>
                 </WrapPanel>
 

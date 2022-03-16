@@ -58,6 +58,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 return;
             }
 
+            cxToolbar.BranchesCombo.Items.Clear();
+
             for (int i = 0; i < branches.Count; i++)
             {
                 ComboBoxItem comboBoxItem = new ComboBoxItem
@@ -73,27 +75,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             if(!string.IsNullOrEmpty(CxToolbar.currentBranch))
             {
-                cxToolbar.BranchesCombo.SelectedIndex = GetBranchIndex(CxToolbar.currentBranch);
+                cxToolbar.BranchesCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(CxToolbar.currentBranch, cxToolbar.BranchesCombo, Enums.ComboboxType.BRANCHES);
             }
-        }
-
-        /// <summary>
-        /// Get branch index in the Branches combobox
-        /// </summary>
-        /// <param name="branch"></param>
-        /// <returns></returns>
-        private int GetBranchIndex(string branch)
-        {
-            for (var i = 0; i < cxToolbar.BranchesCombo.Items.Count; i++)
-            {
-                ComboBoxItem item = cxToolbar.BranchesCombo.Items[i] as ComboBoxItem;
-
-                string p = item.Content as string;
-
-                if (p.Equals(branch)) return i;
-            }
-
-            return -1;
         }
 
         /// <summary>
@@ -103,18 +86,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeBranch(object sender, SelectionChangedEventArgs e)
         {
+            ComboBox branchesCombo = sender as ComboBox;
+            if (branchesCombo == null || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
+
             cxToolbar.EnableCombos(false);
-            cxToolbar.ScansCombo.Items.Clear();
-            cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_SELECT_SCAN;
+            cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_LOADING_SCANS : CxToolbar.currentScanId;
             cxToolbar.ResultsTreePanel.ClearAllPanels();
 
-            ComboBox comboBox = sender as ComboBox;
-
-            if (comboBox.SelectedItem == null) return;
-
-            cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_LOADING_SCANS;
-
-            string selectedBranch = ((sender as ComboBox).SelectedItem as ComboBoxItem).Content as string;
+            string selectedBranch = (branchesCombo.SelectedItem as ComboBoxItem).Content as string;
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
 
             _ = scansCombobox.LoadScansAsync(projectId, selectedBranch);

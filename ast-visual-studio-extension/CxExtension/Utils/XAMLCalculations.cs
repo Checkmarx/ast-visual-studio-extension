@@ -17,7 +17,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             int gridHeigh = System.Convert.ToInt32(value);
 
-            return gridHeigh - 99;
+            return gridHeigh - 212;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

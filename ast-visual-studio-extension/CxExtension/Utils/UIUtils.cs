@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -75,6 +76,61 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         private static void OnMouseLeaveResult(object sender, RoutedEventArgs e)
         {
             (sender as StackPanel).Background = new SolidColorBrush(Colors.Transparent);
+        }
+
+        public static TextBlock CreateTextBlock(string message)
+        {
+            return new TextBlock
+            {
+                Text = message
+            };
+        }
+
+        public static StackPanel CreateSeverityLabelWithIcon(string severity)
+        {
+            StackPanel stackPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+
+            Image severityIcon = new Image();
+            BitmapImage severityBitmap = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity, false)));
+            severityIcon.Source = severityBitmap;
+
+            stackPanel.Children.Add(severityIcon);
+
+            Label severityLabel = new Label
+            {
+                Content = severity
+            };
+
+            stackPanel.Children.Add(severityLabel);
+
+            return stackPanel;
+        }
+
+        public static StackPanel CreateLabelWithImage(string message, string icon)
+        {
+            StackPanel stackPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+
+            Image severityIcon = new Image();
+            
+            BitmapImage severityBitmap = new BitmapImage(new Uri(Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, icon)));
+            severityIcon.Source = severityBitmap;
+
+            stackPanel.Children.Add(severityIcon);
+
+            Label severityLabel = new Label
+            {
+                Content = message
+            };
+
+            stackPanel.Children.Add(severityLabel);
+
+            return stackPanel;
         }
     }
 }

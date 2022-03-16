@@ -40,10 +40,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             if (files.Count == 0)
             {
-                new ToastContentBuilder()
-                                    .AddText(string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND_TITLE, node.FileName))
-                                    .AddText(CxConstants.NOTIFY_FILE_NOT_FOUND_DESCRIPTION)
-                                    .Show();
+                CxUtils.DisplayNotification(string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND_TITLE, node.FileName), CxConstants.NOTIFY_FILE_NOT_FOUND_DESCRIPTION);
             }
 
             var dte = GetDTE();

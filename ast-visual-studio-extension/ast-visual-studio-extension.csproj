@@ -52,6 +52,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CxExtension\Enums\ComboboxType.cs" />
     <Compile Include="CxExtension\Enums\GroupBy.cs" />
     <Compile Include="CxExtension\Enums\Severity.cs" />
     <Compile Include="CxExtension\Enums\State.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="CxWrapper\Models\Data.cs" />
     <Compile Include="CxWrapper\Models\Node.cs" />
     <Compile Include="CxWrapper\Models\PackageData.cs" />
+    <Compile Include="CxWrapper\Models\Predicate.cs" />
     <Compile Include="CxWrapper\Models\Project.cs" />
     <Compile Include="CxWrapper\Models\Result.cs" />
     <Compile Include="CxWrapper\Models\Results.cs" />
@@ -151,6 +153,18 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5234" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="CxExtension\Resources\Comment.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CxExtension\Resources\Flag.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CxExtension\Resources\FlagGreen.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="CxExtension\Resources\FlagOutline.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="CxExtension\Resources\high_18x22.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

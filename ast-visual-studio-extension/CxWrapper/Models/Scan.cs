@@ -21,5 +21,12 @@ namespace ast_visual_studio_extension.CxCLI.Models
 
         [JsonProperty("Branch")]
         public string Branch { get; set; }
+
+        [JsonProperty("CreatedAt")]
+        public string CreatedAt { get; set; }
+
+        [JsonProperty("UpdatedAt")]
+        public string UpdatedAt { get; set; }
+
     }
 }
