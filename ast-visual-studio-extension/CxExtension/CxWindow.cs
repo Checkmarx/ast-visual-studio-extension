@@ -11,11 +11,21 @@ namespace ast_visual_studio_extension.CxExtension
     [Guid("9cc11b43-869b-4804-a3c3-cd202b8ec977")]
     public class CxWindow : ToolWindowPane
     {
+
         public CxWindow(object context) : base(null)
         {
             Caption = CxConstants.EXTENSION_TITLE;
 
-            Content = new CxWindowControl(context as AsyncPackage);
+            AsyncPackage package = context as AsyncPackage;
+
+            if (CxUtils.AreCxCredentialsDefined(package))
+            {
+                Content = new CxWindowControl(package);
+            }
+            else
+            {
+                Content = new CxInitialPanel(package);
+            }
         }
     }
 }

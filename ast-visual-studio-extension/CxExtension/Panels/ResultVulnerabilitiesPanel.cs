@@ -1,6 +1,5 @@
 ﻿using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Microsoft.VisualStudio.Shell;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
@@ -9,9 +8,14 @@ using System.Windows.Documents;
 
 namespace ast_visual_studio_extension.CxExtension.Panels
 {
-    internal class ResultVulnerabilitiesPanel : BasePanel
+    internal class ResultVulnerabilitiesPanel
     {
-        public ResultVulnerabilitiesPanel(AsyncPackage package) : base(package) { }
+        private readonly CxWindowControl cxWindowUI;
+
+        public ResultVulnerabilitiesPanel(CxWindowControl cxWindow)
+        {
+            cxWindowUI = cxWindow;
+        }
 
         private Result result;
         private List<Node> nodes;
@@ -27,7 +31,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             nodes = result.Data.Nodes ?? new List<Node>();
             packageDataList = result.Data.PackageData ?? new List<PackageData>();
 
-            CxWindowControl cxWindowUI = GetCxWindowControl();
             cxWindowUI.VulnerabilitiesList.Items.Clear();
 
             if (nodes.Count > 0)
@@ -51,7 +54,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// </summary>
         private void BuildAttackVectorPanel()
         {
-            CxWindowControl cxWindowUI = GetCxWindowControl();
             cxWindowUI.VulnerabilitiesPanelTitle.Text = CxConstants.LBL_ATTACK_VECTOR;
 
             ListView vulnerabilitiesList = cxWindowUI.VulnerabilitiesList;
@@ -82,7 +84,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// </summary>
         private void BuildPackageDataPanel()
         {
-            CxWindowControl cxWindowUI = GetCxWindowControl();
             cxWindowUI.VulnerabilitiesPanelTitle.Text = CxConstants.LBL_PACKAGE_DATA;
 
             ListView vulnerabilitiesList = cxWindowUI.VulnerabilitiesList;
@@ -121,7 +122,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// </summary>
         private void BuildVulnerabilityLocation()
         {
-            CxWindowControl cxWindowUI = GetCxWindowControl();
             cxWindowUI.VulnerabilitiesPanelTitle.Text = CxConstants.LBL_LOCATION;
 
             ListViewItem item = new ListViewItem();
@@ -144,12 +144,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// </summary>
         public void Clear()
         {
-            CxWindowControl cxWindowUI = GetCxWindowControl();
-
-            if (cxWindowUI != null)
-            {
-                cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
-            }
+            cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
         }
     }
 }

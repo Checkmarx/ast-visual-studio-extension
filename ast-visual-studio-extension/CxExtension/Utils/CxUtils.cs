@@ -123,5 +123,20 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                                 .AddText(description)
                                 .Show();
         }
+
+        /// <summary>
+        /// CHeck if checkmarx settings are defined
+        /// </summary>
+        /// <param name="package"></param>
+        /// <returns></returns>
+        public static bool AreCxCredentialsDefined(AsyncPackage package)
+        {
+            CxPreferencesModule preferences = (CxPreferencesModule)package.GetDialogPage(typeof(CxPreferencesModule));
+            CxConfig configuration = preferences.GetCxConfig;
+            
+            if (configuration == null || string.IsNullOrEmpty(configuration.BaseUri) || string.IsNullOrEmpty(configuration.Tenant) || string.IsNullOrEmpty(configuration.ApiKey)) return false;
+
+            return true;
+        }
     }
 }

@@ -2,6 +2,7 @@
 using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxPreferences;
 using Microsoft.VisualStudio.Shell;
 using System.Collections.Generic;
 using System.Windows;
@@ -16,14 +17,20 @@ namespace ast_visual_studio_extension.CxExtension
     {
         private readonly CxToolbar cxToolbar;
         private readonly ResultInfoPanel resultInfoPanel;
+        private readonly AsyncPackage package;
 
         public CxWindowControl(AsyncPackage package)
         {
-            ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package);
-
-            resultInfoPanel = new ResultInfoPanel(package);
-
             InitializeComponent();
+
+            this.package = package;
+
+            ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this);
+
+            resultInfoPanel = new ResultInfoPanel(this);
+           
+            // Subscribe OnApply event in checkmarx settings window
+            CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
 
             // Build CxToolbar
             cxToolbar = CxToolbar.Builder()
@@ -66,6 +73,24 @@ namespace ast_visual_studio_extension.CxExtension
 
             // Init toolbar elements
             cxToolbar.Init();
+        }
+
+        /// <summary>
+        /// Check if panel should be redraw after applying new checkmarx settings
+        /// </summary>
+        private void CheckToolWindowPanel()
+        {
+            if (!CxUtils.AreCxCredentialsDefined(package))
+            {
+                CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
+                Content = new CxInitialPanel(package);
+            }
+
+            // If the projects combobox has no items it might had been occurred an error, so refresh the extension
+            if (cxToolbar.ProjectsCombo.Items.Count == 0)
+            {
+                cxToolbar.Init();
+            }
         }
 
         /// <summary>

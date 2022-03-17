@@ -17,18 +17,20 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     /// <summary>
     /// This class is used to draw the result information panel
     /// </summary>
-    internal class ResultInfoPanel : BasePanel
+    internal class ResultInfoPanel
     {
         private Result result;
+        private readonly CxWindowControl cxWindowUI;
 
-        public ResultInfoPanel(AsyncPackage package) : base(package) { }
+        public ResultInfoPanel(CxWindowControl cxWindow)
+        {
+            cxWindowUI = cxWindow;
+        }
 
         // Draw result information content
         public void Draw(Result result)
         {
             this.result = result;
-
-            CxWindowControl cxWindowUI = GetCxWindowControl();
 
             // Disable all triage stuff if selected result is sca
             bool isNotScaEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
@@ -55,8 +57,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             BitmapImage bitmapImage = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(result.Severity, true)));
             severityIcon.Source = bitmapImage;
 
-            CxWindowControl cxWindowUI = GetCxWindowControl();
-
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
             cxWindowUI.ResultTitle.Text = result.Data.QueryName ?? result.Id;
         }
@@ -64,8 +64,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         // Draw description tab
         private void DrawDesrciptionTab()
         {
-            CxWindowControl cxWindowUI = GetCxWindowControl();
-
             cxWindowUI.ResultInfoStackPanel.Children.Clear();
 
             if (result.Description != null)
@@ -302,15 +300,10 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// </summary>
         public void Clear()
         {
-            CxWindowControl cxWindowUI = GetCxWindowControl();
-
-            if (cxWindowUI != null)
-            {
-                cxWindowUI.ResultSeverityIcon.Source = null;
-                cxWindowUI.ResultTitle.Text = string.Empty;
-                cxWindowUI.ResultInfoStackPanel.Children.Clear();
-                cxWindowUI.ResultInfoPanel.Visibility = Visibility.Hidden;
-            }
+            cxWindowUI.ResultSeverityIcon.Source = null;
+            cxWindowUI.ResultTitle.Text = string.Empty;
+            cxWindowUI.ResultInfoStackPanel.Children.Clear();
+            cxWindowUI.ResultInfoPanel.Visibility = Visibility.Hidden;
         }
     }
 }

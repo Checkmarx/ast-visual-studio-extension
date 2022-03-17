@@ -28,6 +28,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string ICON_INFO_TITLE => "info_18x22.png";
         public static string ICON_FLAG => "Flag.png";
         public static string ICON_COMMENT => "Comment.png";
+        public static string ICON_CX_LOGO_INITIAL_PANEL => "checkmarx-80.png";
 
         /************ PROJECT FOLDERS ************/
         public static string FOLDER_RESOURCES => "Resources";

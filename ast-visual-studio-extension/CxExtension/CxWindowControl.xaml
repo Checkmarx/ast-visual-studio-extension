@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:ast_visual_studio_extension"
-             xmlns:svgc1="http://sharpvectors.codeplex.com/svgc/"
              xmlns:GenericWPF="clr-namespace:ast_visual_studio_extension.CxExtension"
              xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
              xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
@@ -493,14 +492,14 @@
 
             <Separator Margin="5,0,5,0"/>
 
-            <WrapPanel Orientation="Horizontal">
-                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageSeverityCombobox" Margin="5,10,0,0" Width="190">
+            <UniformGrid Rows="1" Columns="3">
+                <ComboBox IsEditable="True" IsReadOnly="True"  Name="TriageSeverityCombobox" Margin="5,5,0,0">
                     <ComboBoxItem>HIGH</ComboBoxItem>
                     <ComboBoxItem>MEDIUM</ComboBoxItem>
                     <ComboBoxItem>LOW</ComboBoxItem>
                     <ComboBoxItem>INFO</ComboBoxItem>
                 </ComboBox>
-                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageStateCombobox" Margin="5,10,0,0" Width="190">
+                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageStateCombobox" Margin="5,5,0,0">
                     <ComboBoxItem>CONFIRMED</ComboBoxItem>
                     <ComboBoxItem>TO_VERIFY</ComboBoxItem>
                     <ComboBoxItem>URGENT</ComboBoxItem>
@@ -509,12 +508,12 @@
                     <ComboBoxItem>IGNORED</ComboBoxItem>
                     <ComboBoxItem>NOT_IGNORED</ComboBoxItem>
                 </ComboBox>
-                <Button Name="TriageUpdateBtn" Width="108" Click="OnClickTriageUpdate" Margin="5,10,0,0">Update</Button>
-            </WrapPanel>
+                <Button Name="TriageUpdateBtn" Click="OnClickTriageUpdate" Margin="5,5,5,0">Update</Button>
+            </UniformGrid>
 
-            <StackPanel>
+            <UniformGrid Rows="1" Columns="1">
                 <TextBox Text="Comment (Optional)" Foreground="Gray" Name="TriageComment" Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow" GotFocus="OnFocusComment" LostFocus="OnLostFocusComment"/>
-            </StackPanel>
+            </UniformGrid>
 
             <!-- Description and Changes tabs -->
             <TabControl x:Name="ResultTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" Background="Transparent" BorderBrush="Transparent" Margin="0,10,0,0">

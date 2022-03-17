@@ -23,7 +23,7 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             get
             {
-                preferencesUI = new CxPreferencesUI();
+                preferencesUI = CxPreferencesUI.GetInstance();
                 preferencesUI.Initialize(this);
 
                 return preferencesUI;
@@ -37,6 +37,8 @@ namespace ast_visual_studio_extension.CxPreferences
         protected override void OnApply(PageApplyEventArgs e)
         {
             base.OnApply(e);
+
+            preferencesUI.ThrowEventOnApply();
         }
 
         public CxConfig GetCxConfig
