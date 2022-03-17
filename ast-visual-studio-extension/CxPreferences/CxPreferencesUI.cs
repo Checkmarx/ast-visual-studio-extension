@@ -10,9 +10,28 @@ namespace ast_visual_studio_extension.CxPreferences
     {
         internal CxPreferencesModule cxPreferencesModule;
 
-        public CxPreferencesUI()
+        public delegate void EventHandler();
+        public event EventHandler OnApplySettingsEvent = delegate { };
+        private static CxPreferencesUI Instance;
+
+        private CxPreferencesUI()
         {
             InitializeComponent();
+        }
+
+        public static CxPreferencesUI GetInstance()
+        {
+            if(Instance == null)
+            {
+                Instance = new CxPreferencesUI();
+            }
+
+            return Instance;
+        }
+
+        public void ThrowEventOnApply()
+        {
+            OnApplySettingsEvent();
         }
 
         public void Initialize(CxPreferencesModule preferencesModule)

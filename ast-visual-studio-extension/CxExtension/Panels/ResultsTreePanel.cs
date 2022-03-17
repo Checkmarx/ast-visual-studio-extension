@@ -18,25 +18,29 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     /// <summary>
     /// This class is used to draw the result tree panel
     /// </summary>
-    internal class ResultsTreePanel : BasePanel
+    internal class ResultsTreePanel
     {
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
 
         private string currentScanId;
         private Results currentResults;
+        private readonly CxWindowControl cxWindowUI;
+        private readonly AsyncPackage package;
 
-        public ResultsTreePanel(AsyncPackage package) : base(package)
+        public ResultsTreePanel(AsyncPackage package, CxWindowControl cxWindow)
         {
-            resultInfoPanel = new ResultInfoPanel(package);
-            resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package);
+            this.package = package;
+            cxWindowUI = cxWindow;
+            resultInfoPanel = new ResultInfoPanel(cxWindow);
+            resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(cxWindow);
         }
 
         public void Redraw()
         {
-            if (this.currentScanId != null && this.currentResults != null)
+            if (currentScanId != null && currentResults != null)
             {
-                var treeView = GetCxWindowControl().TreeViewResults;
+                var treeView = cxWindowUI.TreeViewResults;
 
                 var expanded = CollectExpandedNodes(treeView.Items[0] as TreeViewItem);
 
@@ -59,7 +63,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxToolbar.BranchesCombo.IsEnabled = false;
             cxToolbar.ScansCombo.IsEnabled = false;
 
-            TreeView resultsTree = GetCxWindowControl().TreeViewResults;
+            TreeView resultsTree = cxWindowUI.TreeViewResults;
 
             try
             {
@@ -78,8 +82,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             }
             catch (Exception ex)
             {
-                GetCxWindowControl().TreeViewResults.Items.Clear();
-                GetCxWindowControl().TreeViewResults.Items.Add(ex.Message);
+                cxWindowUI.TreeViewResults.Items.Clear();
+                cxWindowUI.TreeViewResults.Items.Add(ex.Message);
             }
 
             cxToolbar.ProjectsCombo.IsEnabled = true;
@@ -152,7 +156,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// </summary>
         public void ClearAllPanels()
         {
-            GetCxWindowControl().TreeViewResults.Items.Clear();
+            cxWindowUI.TreeViewResults.Items.Clear();
             resultInfoPanel.Clear();
             resultVulnerabilitiesPanel.Clear();
         }

@@ -52,11 +52,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CxExtension\CxInitialPanel.xaml.cs">
+      <DependentUpon>CxInitialPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CxExtension\Enums\ComboboxType.cs" />
     <Compile Include="CxExtension\Enums\GroupBy.cs" />
     <Compile Include="CxExtension\Enums\Severity.cs" />
     <Compile Include="CxExtension\Enums\State.cs" />
-    <Compile Include="CxExtension\Panels\BasePanel.cs" />
     <Compile Include="CxExtension\Panels\FileNode.cs" />
     <Compile Include="CxExtension\Panels\ResultInfoPanel.cs" />
     <Compile Include="CxExtension\Panels\ResultsTreePanel.cs" />
@@ -153,6 +155,9 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5234" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="CxExtension\Resources\checkmarx-80.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="CxExtension\Resources\Comment.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -224,6 +229,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Page Include="CxExtension\CxInitialPanel.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="CxExtension\CxWindowControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
