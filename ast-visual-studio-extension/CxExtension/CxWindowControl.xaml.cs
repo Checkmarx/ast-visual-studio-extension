@@ -85,6 +85,12 @@ namespace ast_visual_studio_extension.CxExtension
                 CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
                 Content = new CxInitialPanel(package);
             }
+
+            // If the projects combobox has no items it might had been occurred an error, so refresh the extension
+            if (cxToolbar.ProjectsCombo.Items.Count == 0)
+            {
+                cxToolbar.Init();
+            }
         }
 
         /// <summary>
