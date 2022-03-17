@@ -12,6 +12,10 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static readonly string severityCollection = "Checkmarx/Filter/Severity";
         public static readonly string stateCollection = "Checkmarx/Filter/State";
         public static readonly string groupByCollection = "Checkmarx/GroupBy";
+        public static readonly string toolbarCollection = "Checkmarx/Toolbar";
+        public static readonly string projectIdProperty = "projectId";
+        public static readonly string branchProperty = "branch";
+        public static readonly string scanIdProperty = "scanId";
 
         public static readonly Dictionary<object, bool> severityDefaultValues = new Dictionary<object, bool>
         {
@@ -51,9 +55,22 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             userSettingsStore.SetBoolean(collection, property.ToString(), enabled);
         }
 
-        public static void Read(AsyncPackage package, string collection, object property, Dictionary<object, bool> defaults)
+        public static void StoreToolbarValue(AsyncPackage package, string collection, object property, string value)
         {
+            WritableSettingsStore userSettingsStore = new ShellSettingsManager(package).GetWritableSettingsStore(SettingsScope.UserSettings);
+            if (!userSettingsStore.CollectionExists(collection))
+            {
+                userSettingsStore.CreateCollection(collection);
+            }
 
+            userSettingsStore.SetString(collection, property.ToString(), value);
+        }
+
+        public static string GetToolbarValue(AsyncPackage package, string property)
+        {
+            var readOnlyStore = new ShellSettingsManager(package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
+
+            return readOnlyStore.GetString(toolbarCollection, property, string.Empty);
         }
 
         public static HashSet<Severity> EnabledSeverities(AsyncPackage package)

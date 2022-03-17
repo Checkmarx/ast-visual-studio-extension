@@ -33,12 +33,13 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             this.result = result;
 
             // Disable all triage stuff if selected result is sca
-            bool isNotScaEngine = !this.result.Type.Equals(CxConstants.ENGINE_SCA);
+            bool isNotScaEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
 
             cxWindowUI.TriageSeverityCombobox.IsEnabled = isNotScaEngine;
             cxWindowUI.TriageStateCombobox.IsEnabled = isNotScaEngine;
-            cxWindowUI.TriageComment.IsEnabled = isNotScaEngine;
-            cxWindowUI.TriageUpdateBtn.IsEnabled = isNotScaEngine;
+            cxWindowUI.TriageComment.Visibility = isNotScaEngine ? Visibility.Visible : Visibility.Hidden;
+            cxWindowUI.TriageUpdateBtn.Visibility = isNotScaEngine ? Visibility.Visible : Visibility.Hidden;
+            cxWindowUI.ResultTabControl.Margin = isNotScaEngine ? new Thickness(0, 10, 0, 0) : new Thickness(0, -45, 0, 0);
 
             // Set description tab as selected when drawing result info panel
             cxWindowUI.DescriptionTabItem.IsSelected = true;
@@ -219,7 +220,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             triageChangesTab.Children.Clear();
 
-            if (result != null && result.Type.Equals(CxConstants.ENGINE_SCA))
+            bool isSca = result.Data.PackageData != null || (result.Data.Nodes == null && string.IsNullOrEmpty(result.Data.FileName));
+
+            if (result != null && isSca)
             {
                 triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SCA_NOT_AVAILABLE));
 
@@ -289,7 +292,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
 
                 triageChangesTab.Children.Add(new Separator());
-            }     
+            }
         }
 
         /// <summary>

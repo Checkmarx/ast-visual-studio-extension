@@ -73,6 +73,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
 
             cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_SELECT_PROJECT;
+
+            string projectId = SettingsUtils.GetToolbarValue(cxToolbar.Package, SettingsUtils.projectIdProperty);
+
+            if (!string.IsNullOrEmpty(projectId))
+            {
+                cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(projectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
+            }
+
             cxToolbar.ProjectsCombo.IsEnabled = true;
             cxToolbar.ScansCombo.IsEnabled = true;
         }
@@ -96,6 +104,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ResultsTreePanel.ClearAllPanels();
             
             Project selectedProject = (projectsCombo.SelectedItem as ComboBoxItem).Tag as Project;
+
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "projectId", selectedProject.Id);
 
             _ = branchesCombobox.LoadBranchesAsync(selectedProject.Id);
         }
