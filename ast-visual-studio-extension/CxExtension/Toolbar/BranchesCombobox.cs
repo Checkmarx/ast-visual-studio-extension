@@ -15,6 +15,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         private readonly CxToolbar cxToolbar;
 
+        private bool firstLoad = true;
+
         public BranchesCombobox(CxToolbar cxToolbar, ScansCombobox scansCombobox)
         {
             this.cxToolbar = cxToolbar;
@@ -77,6 +79,16 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 cxToolbar.BranchesCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(CxToolbar.currentBranch, cxToolbar.BranchesCombo, Enums.ComboboxType.BRANCHES);
             }
+            else
+            {
+                string branch = SettingsUtils.GetToolbarValue(cxToolbar.Package, SettingsUtils.branchProperty);
+
+                if (!string.IsNullOrEmpty(branch) && firstLoad)
+                {
+                    cxToolbar.BranchesCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(branch, cxToolbar.BranchesCombo, Enums.ComboboxType.BRANCHES);
+                    firstLoad = false;
+                }
+            }
         }
 
         /// <summary>
@@ -95,6 +107,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             string selectedBranch = (branchesCombo.SelectedItem as ComboBoxItem).Content as string;
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
+
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "branch", selectedBranch);
 
             _ = scansCombobox.LoadScansAsync(projectId, selectedBranch);
         }
