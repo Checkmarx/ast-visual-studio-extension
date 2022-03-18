@@ -54,7 +54,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private void DrawTitle()
         {
             Image severityIcon = new Image();
-            BitmapImage bitmapImage = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(result.Severity, true)));
+            BitmapImage bitmapImage = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(result.Severity, true), UriKind.RelativeOrAbsolute));
             severityIcon.Source = bitmapImage;
 
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;

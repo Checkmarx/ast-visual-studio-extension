@@ -7,7 +7,7 @@ namespace ast_visual_studio_extension.CxCLI
 {
     internal class Execution
     {
-        private readonly static string executablePath = Path.Combine(Environment.CurrentDirectory, "CxWrapper", "Resources", "cx.exe");
+        private readonly static string executablePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources", "cx.exe");
 
         public static string ExecuteCommand(List<string> arguments)
         {

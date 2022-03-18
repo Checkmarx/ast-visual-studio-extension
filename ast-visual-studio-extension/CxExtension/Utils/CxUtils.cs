@@ -21,15 +21,15 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string GetIconPathFromSeverity(string severity, Boolean iconForTitle)
         {
             switch (GetSeverityFromString(severity))
-            {
+            {               
                 case Severity.HIGH:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_HIGH_TITLE : CxConstants.ICON_HIGH);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_HIGH_TITLE : CxConstants.ICON_HIGH);
                 case Severity.MEDIUM:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_MEDIUM_TITLE : CxConstants.ICON_MEDIUM);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_MEDIUM_TITLE : CxConstants.ICON_MEDIUM);
                 case Severity.LOW:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_LOW_TITLE : CxConstants.ICON_LOW);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_LOW_TITLE : CxConstants.ICON_LOW);
                 case Severity.INFO:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_INFO_TITLE : CxConstants.ICON_INFO);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_INFO_TITLE : CxConstants.ICON_INFO);
             }
 
             return string.Empty;

@@ -31,7 +31,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             if (!string.IsNullOrEmpty(severity))
             {
                 Image severityIcon = new Image();
-                BitmapImage severityBitmap = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity, false)));
+                BitmapImage severityBitmap = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity, false), UriKind.RelativeOrAbsolute));
                 severityIcon.Source = severityBitmap;
 
                 stackPanel.Children.Add(severityIcon);
@@ -94,7 +94,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             };
 
             Image severityIcon = new Image();
-            BitmapImage severityBitmap = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity, false)));
+            BitmapImage severityBitmap = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity, false), UriKind.RelativeOrAbsolute));
             severityIcon.Source = severityBitmap;
 
             stackPanel.Children.Add(severityIcon);
@@ -118,7 +118,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             Image severityIcon = new Image();
             
-            BitmapImage severityBitmap = new BitmapImage(new Uri(Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, icon)));
+            BitmapImage severityBitmap = new BitmapImage(new Uri(CxConstants.RESOURCES_BASE_DIR + icon, UriKind.RelativeOrAbsolute));
             severityIcon.Source = severityBitmap;
 
             stackPanel.Children.Add(severityIcon);

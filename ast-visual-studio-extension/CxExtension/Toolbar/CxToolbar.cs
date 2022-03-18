@@ -113,7 +113,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 var severity = pair.Key;
                 var control = pair.Value;
-                control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true)));
+                control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true), UriKind.RelativeOrAbsolute));
             }
             foreach (KeyValuePair<MenuItem, State> pair in StateFilters)
             {
