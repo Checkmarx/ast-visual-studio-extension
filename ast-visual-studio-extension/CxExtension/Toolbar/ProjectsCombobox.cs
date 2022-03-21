@@ -101,7 +101,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ScansCombo.Items.Clear();
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_SELECT_SCAN : CxToolbar.currentScanId;
 
-            cxToolbar.ResultsTreePanel.ClearAllPanels();
+            cxToolbar.ResultsTreePanel.ClearAll();
             
             Project selectedProject = (projectsCombo.SelectedItem as ComboBoxItem).Tag as Project;
 

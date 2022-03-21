@@ -44,7 +44,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                 var expanded = CollectExpandedNodes(treeView.Items[0] as TreeViewItem);
 
-                ClearAllPanels();
+                ClearPanels();
 
                 TreeViewItem rootNode = BuildTree();
 
@@ -152,9 +152,19 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         }
 
         /// <summary>
-        /// Clear all panels
+        /// Clear panels and state
         /// </summary>
-        public void ClearAllPanels()
+        public void ClearAll()
+        {
+            ClearPanels();
+            currentResults = null;
+            currentScanId = null;
+        }
+
+        /// <summary>
+        /// Clear panels
+        /// </summary>
+        private void ClearPanels()
         {
             cxWindowUI.TreeViewResults.Items.Clear();
             resultInfoPanel.Clear();
