@@ -135,7 +135,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 cxToolbar.BranchesCombo.IsEnabled = false;
                 cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_LOADING_BRANCHES;
                 cxToolbar.ScansCombo.IsEnabled = false;
-                cxToolbar.ResultsTreePanel.ClearAllPanels();
+                cxToolbar.ResultsTreePanel.ClearAll();
 
                 Scan scan = null;
 
@@ -190,7 +190,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="message"></param>
         private void AddMessageToTree(string message)
         {
-            cxToolbar.ResultsTreePanel.ClearAllPanels();
+            cxToolbar.ResultsTreePanel.ClearAll();
             cxToolbar.ResultsTree.Items.Clear();
             cxToolbar.ResultsTree.Items.Add(message);
         }

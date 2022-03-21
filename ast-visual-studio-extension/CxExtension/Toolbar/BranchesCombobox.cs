@@ -103,7 +103,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             cxToolbar.EnableCombos(false);
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_LOADING_SCANS : CxToolbar.currentScanId;
-            cxToolbar.ResultsTreePanel.ClearAllPanels();
+            cxToolbar.ResultsTreePanel.ClearAll();
 
             string selectedBranch = (branchesCombo.SelectedItem as ComboBoxItem).Content as string;
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
