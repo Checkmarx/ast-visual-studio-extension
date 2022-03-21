@@ -152,7 +152,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         }
 
         /// <summary>
-        /// Clear all panels
+        /// Clear panels and state
         /// </summary>
         public void ClearAll()
         {
@@ -161,6 +161,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             currentScanId = null;
         }
 
+        /// <summary>
+        /// Clear panels
+        /// </summary>
         private void ClearPanels()
         {
             cxWindowUI.TreeViewResults.Items.Clear();
