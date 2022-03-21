@@ -52,14 +52,18 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // tbServerUrl
             // 
+            this.tbServerUrl.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tbServerUrl.Location = new System.Drawing.Point(155, 20);
             this.tbServerUrl.Name = "tbServerUrl";
-            this.tbServerUrl.Size = new System.Drawing.Size(390, 20);
+            this.tbServerUrl.Size = new System.Drawing.Size(626, 20);
             this.tbServerUrl.TabIndex = 0;
             this.tbServerUrl.TextChanged += new System.EventHandler(this.OnServerUrlChange);
             // 
             // groupBox1
             // 
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.Controls.Add(this.tbTenantName);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.tbAuthUrl);
@@ -68,16 +72,18 @@ namespace ast_visual_studio_extension.CxPreferences
             this.groupBox1.Controls.Add(this.tbServerUrl);
             this.groupBox1.Location = new System.Drawing.Point(3, 9);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(555, 121);
+            this.groupBox1.Size = new System.Drawing.Size(787, 121);
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Server Settings";
             // 
             // tbTenantName
             // 
+            this.tbTenantName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tbTenantName.Location = new System.Drawing.Point(155, 84);
             this.tbTenantName.Name = "tbTenantName";
-            this.tbTenantName.Size = new System.Drawing.Size(390, 20);
+            this.tbTenantName.Size = new System.Drawing.Size(626, 20);
             this.tbTenantName.TabIndex = 4;
             this.tbTenantName.TextChanged += new System.EventHandler(this.OnTenantNameChange);
             // 
@@ -92,9 +98,11 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // tbAuthUrl
             // 
+            this.tbAuthUrl.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tbAuthUrl.Location = new System.Drawing.Point(155, 50);
             this.tbAuthUrl.Name = "tbAuthUrl";
-            this.tbAuthUrl.Size = new System.Drawing.Size(390, 20);
+            this.tbAuthUrl.Size = new System.Drawing.Size(626, 20);
             this.tbAuthUrl.TabIndex = 2;
             this.tbAuthUrl.TextChanged += new System.EventHandler(this.OnAuthUrlChange);
             // 
@@ -118,21 +126,25 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // groupBox2
             // 
+            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(this.tbApiKey);
             this.groupBox2.Controls.Add(this.label4);
             this.groupBox2.Location = new System.Drawing.Point(4, 139);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(554, 58);
+            this.groupBox2.Size = new System.Drawing.Size(786, 58);
             this.groupBox2.TabIndex = 7;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Credentials";
             // 
             // tbApiKey
             // 
+            this.tbApiKey.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tbApiKey.Location = new System.Drawing.Point(155, 17);
             this.tbApiKey.Name = "tbApiKey";
             this.tbApiKey.PasswordChar = '*';
-            this.tbApiKey.Size = new System.Drawing.Size(390, 20);
+            this.tbApiKey.Size = new System.Drawing.Size(625, 20);
             this.tbApiKey.TabIndex = 1;
             this.tbApiKey.TextChanged += new System.EventHandler(this.OnApiKeyChange);
             // 
@@ -147,20 +159,25 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // groupBox3
             // 
+            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox3.Controls.Add(this.tbAdditionalParameters);
             this.groupBox3.Controls.Add(this.label5);
             this.groupBox3.Location = new System.Drawing.Point(4, 205);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(554, 58);
+            this.groupBox3.Size = new System.Drawing.Size(786, 58);
             this.groupBox3.TabIndex = 10;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Additional settings";
             // 
             // tbAdditionalParameters
             // 
+            this.tbAdditionalParameters.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tbAdditionalParameters.Location = new System.Drawing.Point(155, 20);
             this.tbAdditionalParameters.Name = "tbAdditionalParameters";
-            this.tbAdditionalParameters.Size = new System.Drawing.Size(390, 20);
+            this.tbAdditionalParameters.ReadOnly = true;
+            this.tbAdditionalParameters.Size = new System.Drawing.Size(625, 20);
             this.tbAdditionalParameters.TabIndex = 1;
             this.tbAdditionalParameters.TextChanged += new System.EventHandler(this.OnAdditionalParametersChange);
             // 
@@ -185,26 +202,30 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // lblValidationResult
             // 
+            this.lblValidationResult.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.lblValidationResult.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.lblValidationResult.Location = new System.Drawing.Point(159, 277);
             this.lblValidationResult.Multiline = true;
             this.lblValidationResult.Name = "lblValidationResult";
             this.lblValidationResult.ReadOnly = true;
             this.lblValidationResult.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.lblValidationResult.Size = new System.Drawing.Size(399, 164);
+            this.lblValidationResult.Size = new System.Drawing.Size(631, 275);
             this.lblValidationResult.TabIndex = 11;
             // 
             // CxPreferencesUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScroll = true;
             this.Controls.Add(this.lblValidationResult);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.button1);
             this.Name = "CxPreferencesUI";
-            this.Size = new System.Drawing.Size(793, 444);
+            this.Size = new System.Drawing.Size(793, 555);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);

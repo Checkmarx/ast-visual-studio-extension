@@ -43,8 +43,16 @@ namespace ast_visual_studio_extension.CxCLI
                 {
                     throw new CxException(process.ExitCode, errorData.Trim());
                 }
-                
-                return !string.IsNullOrEmpty(errorData.Trim()) ? errorData.Trim() : outputData.Trim();
+
+                // When debug flag is used as additional parameters the 'ErrorDataReceived' constains the additional details
+                if (arguments.Contains(CxConstants.FLAG_DEBUG) && outputData.Trim().Length > 0)
+                {
+                    return outputData.Trim();
+                }
+                else
+                {
+                    return !string.IsNullOrEmpty(errorData.Trim()) ? errorData.Trim() : outputData.Trim();
+                }
             }
         }
 

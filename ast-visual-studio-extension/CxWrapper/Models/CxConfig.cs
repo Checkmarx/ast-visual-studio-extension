@@ -18,25 +18,25 @@ namespace ast_visual_studio_extension.CxCLI
 
             if (!string.IsNullOrEmpty(BaseUri))
             {
-                arguments.Add(CxConstants.FlagBaseURI);
+                arguments.Add(CxConstants.FLAG_BASE_URI);
                 arguments.Add(BaseUri);
             }
 
             if (!string.IsNullOrEmpty(BaseAuthURI))
             {
-                arguments.Add(CxConstants.FlagBaseAuthURI);
+                arguments.Add(CxConstants.FLAG_BASE_AUTH_URI);
                 arguments.Add(BaseAuthURI);
             }
 
             if (!string.IsNullOrEmpty(Tenant))
             {
-                arguments.Add(CxConstants.FlagTenant);
+                arguments.Add(CxConstants.FLAG_TENANT);
                 arguments.Add(Tenant);
             }
 
             if (!string.IsNullOrEmpty(ApiKey))
             {
-                arguments.Add(CxConstants.FlagAPIKey);
+                arguments.Add(CxConstants.FLAG_API_KEY);
                 arguments.Add(ApiKey);
             }
 
@@ -70,12 +70,12 @@ namespace ast_visual_studio_extension.CxCLI
         {
             if (string.IsNullOrEmpty(BaseUri))
             {
-                throw new InvalidCLIConfigException(CxConstants.ExceptionURINotSet);
+                throw new InvalidCLIConfigException(CxConstants.EXCEPTION_URI_NOT_SET);
             }
 
             if (string.IsNullOrEmpty(ApiKey))
             {
-                throw new InvalidCLIConfigException(CxConstants.ExceptionCredentialsNotSet);
+                throw new InvalidCLIConfigException(CxConstants.EXCEPTION_CREDENTIALS_NOT_SET);
             }
         }
 
