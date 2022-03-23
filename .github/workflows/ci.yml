@@ -23,4 +23,4 @@ jobs:
         with:
           name: release
           path: |
-            ast-visual-studio-extension/dist/
+            ast-visual-studio-extension\bin\Release\
