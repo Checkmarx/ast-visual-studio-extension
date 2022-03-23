@@ -39,8 +39,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string INFO_GETTING_RESULTS => "Getting results...";
 
         /************ NOTIFICATIONS ************/
-        public static string NOTIFY_FILE_NOT_FOUND_TITLE => "File {0} not found in the solution";
-        public static string NOTIFY_FILE_NOT_FOUND_DESCRIPTION => "Please ensure you are in the correct scan";
+        public static string NOTIFY_FILE_NOT_FOUND => "File {0} not found in the solution. Please ensure you are in the correct scan.";
 
         /************ TOOLBAR ************/
         public static string TOOLBAR_SELECT_PROJECT => "Select a project";
@@ -52,8 +51,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         /************ TRIAGE ************/
         public static string TRIAGE_COMMENT_PLACEHOLDER => "Comment (Optional)";
-        public static string TRIAGE_UPDATE_FAILED => "Triage Update failed";
-        public static string TRIAGE_SHOW_FAILED => "Triage Show failed";
+        public static string TRIAGE_UPDATE_FAILED => "Triage Update failed. {0}";
+        public static string TRIAGE_SHOW_FAILED => "Triage Show failed. {0}";
         public static string TRIAGE_LOADING_CHANGES => "Loading changes...";
         public static string TRIAGE_NO_CHANGES => "No changes.";
         public static string TRIAGE_SCA_NOT_AVAILABLE => "Changes not available for sca engine.";

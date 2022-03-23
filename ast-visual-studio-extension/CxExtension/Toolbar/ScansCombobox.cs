@@ -14,11 +14,21 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
     {
         private readonly CxToolbar cxToolbar;
 
-        private bool firstLoad = true;
+        private static ScansCombobox instance;
 
-        public ScansCombobox(CxToolbar cxToolbar)
+        private ScansCombobox(CxToolbar cxToolbar)
         {
             this.cxToolbar = cxToolbar;
+        }
+
+        public static ScansCombobox GetInstance(CxToolbar cxToolbar)
+        {
+            if (instance == null)
+            {
+                instance = new ScansCombobox(cxToolbar);
+            }
+
+            return instance;
         }
 
         /// <summary>
@@ -80,7 +90,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ProjectsCombo.IsEnabled = true;
             cxToolbar.BranchesCombo.IsEnabled = true;
 
-            if (!string.IsNullOrEmpty(CxToolbar.currentScanId))
+            if (CxToolbar.reverseSearch)
             {
                 cxToolbar.ScansCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(CxToolbar.currentScanId, cxToolbar.ScansCombo, Enums.ComboboxType.SCANS);
             }
@@ -88,12 +98,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 string scanId = SettingsUtils.GetToolbarValue(cxToolbar.Package, SettingsUtils.scanIdProperty);
 
-                if (!string.IsNullOrEmpty(scanId) && firstLoad)
+                if (!string.IsNullOrEmpty(scanId))
                 {
                     cxToolbar.ScansCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(scanId, cxToolbar.ScansCombo, Enums.ComboboxType.SCANS);
-                    firstLoad = false;
                 }
             }
+
+            CxToolbar.reverseSearch = false;
         }
 
         /// <summary>
@@ -130,6 +141,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
                 if (cxWrapper == null) return;
 
+                CxToolbar.reverseSearch = true;
                 cxToolbar.ProjectsCombo.IsEnabled = false;
                 cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_LOADING_PROJECTS;
                 cxToolbar.BranchesCombo.IsEnabled = false;

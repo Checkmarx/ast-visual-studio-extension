@@ -15,12 +15,22 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         private readonly CxToolbar cxToolbar;
 
-        private bool firstLoad = true;
+        private static BranchesCombobox instance;
 
-        public BranchesCombobox(CxToolbar cxToolbar, ScansCombobox scansCombobox)
+        private BranchesCombobox(CxToolbar cxToolbar, ScansCombobox scansCombobox)
         {
             this.cxToolbar = cxToolbar;
             this.scansCombobox = scansCombobox;
+        }
+
+        public static BranchesCombobox GetInstance(CxToolbar cxToolbar, ScansCombobox scansCombobox)
+        {
+            if (instance == null)
+            {
+                instance = new BranchesCombobox(cxToolbar, scansCombobox);
+            }
+
+            return instance;
         }
 
         /// <summary>
@@ -75,7 +85,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_SELECT_BRANCH;
             cxToolbar.EnableCombos(true);
 
-            if(!string.IsNullOrEmpty(CxToolbar.currentBranch))
+            if(CxToolbar.reverseSearch)
             {
                 cxToolbar.BranchesCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(CxToolbar.currentBranch, cxToolbar.BranchesCombo, Enums.ComboboxType.BRANCHES);
             }
@@ -83,10 +93,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 string branch = SettingsUtils.GetToolbarValue(cxToolbar.Package, SettingsUtils.branchProperty);
 
-                if (!string.IsNullOrEmpty(branch) && firstLoad)
+                if (!string.IsNullOrEmpty(branch))
                 {
                     cxToolbar.BranchesCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(branch, cxToolbar.BranchesCombo, Enums.ComboboxType.BRANCHES);
-                    firstLoad = false;
                 }
             }
         }

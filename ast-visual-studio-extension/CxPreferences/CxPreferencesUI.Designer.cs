@@ -143,9 +143,9 @@ namespace ast_visual_studio_extension.CxPreferences
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbApiKey.Location = new System.Drawing.Point(155, 17);
             this.tbApiKey.Name = "tbApiKey";
-            this.tbApiKey.PasswordChar = '*';
             this.tbApiKey.Size = new System.Drawing.Size(625, 20);
             this.tbApiKey.TabIndex = 1;
+            this.tbApiKey.UseSystemPasswordChar = true;
             this.tbApiKey.TextChanged += new System.EventHandler(this.OnApiKeyChange);
             // 
             // label4
@@ -176,9 +176,10 @@ namespace ast_visual_studio_extension.CxPreferences
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbAdditionalParameters.Location = new System.Drawing.Point(155, 20);
             this.tbAdditionalParameters.Name = "tbAdditionalParameters";
-            this.tbAdditionalParameters.ReadOnly = true;
+            this.tbAdditionalParameters.PasswordChar = '*';
             this.tbAdditionalParameters.Size = new System.Drawing.Size(625, 20);
             this.tbAdditionalParameters.TabIndex = 1;
+            this.tbAdditionalParameters.UseSystemPasswordChar = true;
             this.tbAdditionalParameters.TextChanged += new System.EventHandler(this.OnAdditionalParametersChange);
             // 
             // label5

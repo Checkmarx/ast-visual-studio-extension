@@ -2,7 +2,6 @@
 using ast_visual_studio_extension.CxCLI;
 using System;
 using System.Windows.Forms;
-using static ast_visual_studio_extension.CxCLI.CxConfig;
 
 namespace ast_visual_studio_extension.CxPreferences
 {

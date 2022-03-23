@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -11,6 +10,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class UIUtils
     {
+        public static CxWindowControl CxWindowUI { get; set; }
+
         /// <summary>
         ///  Create header for tree view item
         /// </summary>
@@ -62,7 +63,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             return new TreeViewItem
             {
-                Header = CreateTreeViewItemHeader(String.Empty, headerText),
+                Header = CreateTreeViewItemHeader(string.Empty, headerText),
                 ItemsSource = source,
                 Tag = headerText
             };
@@ -70,7 +71,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         private static void OnMouseOverResult(object sender, RoutedEventArgs e)
         {
-            (sender as StackPanel).Background = new SolidColorBrush(Colors.DarkSlateGray);
+            (sender as StackPanel).Background = CxWindowUI.hiddenLblHoverColor.Foreground;
         }
 
         private static void OnMouseLeaveResult(object sender, RoutedEventArgs e)

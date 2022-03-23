@@ -33,7 +33,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             this.package = package;
             cxWindowUI = cxWindow;
             resultInfoPanel = new ResultInfoPanel(cxWindow);
-            resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(cxWindow);
+            resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package, cxWindow);
+            UIUtils.CxWindowUI = cxWindowUI;
         }
 
         public void Redraw()

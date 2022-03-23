@@ -13,8 +13,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
     {
         private readonly CxToolbar cxToolbar;
         private readonly BranchesCombobox branchesCombobox;
+        private static ProjectsCombobox instance;
 
-        public ProjectsCombobox(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
+        private ProjectsCombobox(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
         {
             this.cxToolbar = cxToolbar;
             this.branchesCombobox = branchesCombobox;
@@ -22,11 +23,70 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             _ = LoadProjectsAsync();
         }
 
+        public static ProjectsCombobox GetInstance(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
+        {
+            if (instance == null)
+            {
+                instance = new ProjectsCombobox(cxToolbar, branchesCombobox);
+            }
+
+            return instance;
+        }
+
         /// <summary>
         /// Populate Projects combobox
         /// </summary>
         /// <returns></returns>
-        private async Task LoadProjectsAsync()
+        public async Task LoadProjectsAsync()
+        {
+            await LoadProjectsComboboxAsync();
+
+            string projectId = SettingsUtils.GetToolbarValue(cxToolbar.Package, SettingsUtils.projectIdProperty);
+
+            if (!string.IsNullOrEmpty(projectId))
+            {
+                cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(projectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
+            }
+
+            cxToolbar.ProjectsCombo.IsEnabled = true;
+            cxToolbar.ScansCombo.IsEnabled = true;
+            CxToolbar.redrawExtension = false;
+        }
+
+        /// <summary>
+        /// Reset extension
+        /// </summary>
+        /// <returns></returns>
+        public async Task ResetExtensionAsync()
+        {
+            cxToolbar.ProjectsCombo.Items.Clear();
+            cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_LOADING_PROJECTS;
+            cxToolbar.ProjectsCombo.IsEnabled = false;
+            cxToolbar.BranchesCombo.Items.Clear();
+            cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_LOADING_BRANCHES;
+            cxToolbar.BranchesCombo.IsEnabled = false;
+            cxToolbar.ScansCombo.Items.Clear();
+            cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_LOADING_SCANS;
+            cxToolbar.ScansCombo.IsEnabled = false;
+            cxToolbar.ResultsTreePanel.ClearAll();
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.projectIdProperty, string.Empty);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, string.Empty);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.scanIdProperty, string.Empty);
+
+            await LoadProjectsComboboxAsync();
+
+            cxToolbar.ScansCombo.IsEnabled = true;
+            cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_SELECT_SCAN;
+            cxToolbar.ProjectsCombo.IsEnabled = true;
+            cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_SELECT_BRANCH;
+            CxToolbar.resetExtension = false;
+        }
+
+        /// <summary>
+        /// Load projects combobox
+        /// </summary>
+        /// <returns></returns>
+        private async Task LoadProjectsComboboxAsync()
         {
             CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
             if (cxWrapper == null)
@@ -73,16 +133,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
 
             cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_SELECT_PROJECT;
-
-            string projectId = SettingsUtils.GetToolbarValue(cxToolbar.Package, SettingsUtils.projectIdProperty);
-
-            if (!string.IsNullOrEmpty(projectId))
-            {
-                cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(projectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
-            }
-
-            cxToolbar.ProjectsCombo.IsEnabled = true;
-            cxToolbar.ScansCombo.IsEnabled = true;
         }
 
         /// <summary>
@@ -102,10 +152,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_SELECT_SCAN : CxToolbar.currentScanId;
 
             cxToolbar.ResultsTreePanel.ClearAll();
-            
+
             Project selectedProject = (projectsCombo.SelectedItem as ComboBoxItem).Tag as Project;
 
-            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "projectId", selectedProject.Id);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.projectIdProperty, selectedProject.Id);
 
             _ = branchesCombobox.LoadBranchesAsync(selectedProject.Id);
         }

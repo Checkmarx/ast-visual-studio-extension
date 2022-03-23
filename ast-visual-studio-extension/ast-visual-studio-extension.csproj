@@ -151,9 +151,6 @@
     <PackageReference Include="log4net">
       <Version>2.0.14</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
-      <Version>7.1.2</Version>
-    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK">
       <Version>17.0.32112.339</Version>
     </PackageReference>

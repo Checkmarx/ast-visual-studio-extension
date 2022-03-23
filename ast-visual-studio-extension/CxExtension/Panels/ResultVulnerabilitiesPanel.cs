@@ -1,5 +1,6 @@
 ﻿using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Utils;
+using Microsoft.VisualStudio.Shell;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
@@ -12,9 +13,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     {
         private readonly CxWindowControl cxWindowUI;
 
-        public ResultVulnerabilitiesPanel(CxWindowControl cxWindow)
+        public ResultVulnerabilitiesPanel(AsyncPackage package, CxWindowControl cxWindow)
         {
             cxWindowUI = cxWindow;
+
+            SolutionExplorerUtils.AsyncPackage = package;
         }
 
         private Result result;
