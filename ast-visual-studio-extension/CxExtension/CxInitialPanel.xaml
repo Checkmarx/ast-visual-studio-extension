@@ -10,7 +10,7 @@
              Name="CheckmarxInitialPanel">
 
     <StackPanel x:Name="InitialPanel" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Image x:Name="InitialPanelIcon" Stretch="None" />
+        <Image x:Name="InitialPanelIcon" Width="80" Height="80"/>
         <Button Content="Open Settings" Margin="0,15,0,0" Click="OnClickOpenSettings"/>
     </StackPanel>
 </UserControl>

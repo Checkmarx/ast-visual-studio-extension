@@ -28,7 +28,7 @@ namespace ast_visual_studio_extension.CxExtension
             ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this);
 
             resultInfoPanel = new ResultInfoPanel(this);
-           
+
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
 
@@ -86,11 +86,19 @@ namespace ast_visual_studio_extension.CxExtension
                 Content = new CxInitialPanel(package);
             }
 
-            // If the projects combobox has no items it might had been occurred an error, so refresh the extension
-            if (cxToolbar.ProjectsCombo.Items.Count == 0)
-            {
-                cxToolbar.Init();
-            }
+            cxToolbar.ProjectsCombo.Items.Clear();
+            cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_LOADING_PROJECTS;
+            cxToolbar.ProjectsCombo.IsEnabled = false;
+            cxToolbar.BranchesCombo.Items.Clear();
+            cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_LOADING_BRANCHES;
+            cxToolbar.BranchesCombo.IsEnabled = false;
+            cxToolbar.ScansCombo.Items.Clear();
+            cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_LOADING_SCANS;
+            cxToolbar.ScansCombo.IsEnabled = false;
+            cxToolbar.ResultsTreePanel.ClearAll();
+
+            CxToolbar.redrawExtension = true;
+            cxToolbar.Init();
         }
 
         /// <summary>
@@ -194,7 +202,7 @@ namespace ast_visual_studio_extension.CxExtension
             if (TriageComment.Text.Equals(CxConstants.TRIAGE_COMMENT_PLACEHOLDER))
             {
                 TriageComment.Text = string.Empty;
-                TriageComment.Foreground = new SolidColorBrush(Colors.White);
+                TriageComment.ClearValue(TextBox.ForegroundProperty);
             }
         }
 
@@ -232,6 +240,22 @@ namespace ast_visual_studio_extension.CxExtension
         {
             MenuItem menuItem = (sender as MenuItem);
             menuItem.IsChecked = !menuItem.IsChecked;
+        }
+
+        private void RefreshBtn_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshBtn.IsChecked = false;
+            CxToolbar.currentProjectId = string.Empty;
+            CxToolbar.currentBranch = string.Empty;
+            CxToolbar.currentScanId = string.Empty;
+            CxToolbar.resetExtension = true;
+            cxToolbar.Init();
+        }
+
+        private void SettingsBtn_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsBtn.IsChecked = false;
+            package.ShowOptionPage(typeof(CxPreferencesModule));
         }
     }
 }

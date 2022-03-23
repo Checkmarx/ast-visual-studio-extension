@@ -414,7 +414,7 @@
 
         <StackPanel Grid.ColumnSpan="3" Grid.Row="0" Orientation="Horizontal">
             <TextBlock VerticalAlignment="Center" Text="Project:" Grid.Column="1" Margin="4"/>
-            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Loading projects..." Name="ProjectsCombobox" Margin="4" Width="250" SelectionChanged="OnChangeProject"/>
+            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Loading projects..." Name="ProjectsCombobox" Margin="4" Width="250" SelectionChanged="OnChangeProject"/>
             <TextBlock Text="Branch:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
             <ComboBox VerticalAlignment="Center" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Select a branch" Name="BranchesCombobox"  Margin="4" Width="250" SelectionChanged="OnChangeBranch"></ComboBox>
             <TextBlock Text="Scan:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
@@ -424,21 +424,21 @@
                 <Separator Style="{StaticResource SeparatorStyle}" />
             </StackPanel>
 
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
+            <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
+            <ToggleButton ToolTip="Medium" Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="MediumSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
+            <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
-            <ToggleButton Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
+            <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
 
             <Menu Background="Transparent">
-                <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
+                <MenuItem ToolTip="Filter by state" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
                     <MenuItem.Icon>
                         <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Filter}"/>
                     </MenuItem.Icon>
@@ -457,7 +457,7 @@
             </StackPanel>
 
             <Menu Background="Transparent">
-                <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
+                <MenuItem ToolTip="Group by" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
                     <MenuItem.Icon>
                         <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.GroupBy}"/>
                     </MenuItem.Icon>
@@ -467,6 +467,18 @@
                     <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="QueryNameGroupBy" Header="Query Name" Click="GroupBy_Click"/>
                 </MenuItem>
             </Menu>
+
+            <StackPanel Orientation="Horizontal">
+                <Separator Style="{StaticResource SeparatorStyle}" />
+            </StackPanel>
+
+            <ToggleButton ToolTip="Reset extension" Style="{StaticResource SeverityFilterStyle}" x:Name="RefreshBtn" Click="RefreshBtn_Click">
+                <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Refresh}"/>
+            </ToggleButton>
+
+            <ToggleButton ToolTip="Open Checkmarx settings" Style="{StaticResource SeverityFilterStyle}" x:Name="SettingsBtn" Click="SettingsBtn_Click">
+                <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Settings}"/>
+            </ToggleButton>
         </StackPanel>
 
         <!-- Column 1 -->
@@ -485,7 +497,8 @@
 
             <!-- Result Title -->
             <WrapPanel Name="ResultTitleWrapPanel" Orientation="Horizontal" Margin="10" MinHeight="25">
-                <Label Name="hiddenLbl" Content="My Label" Visibility="Hidden" Width="0"></Label>
+                <Label Name="hiddenLbl" Content="My Label" Visibility="Hidden" Width="0"/>
+                <Label Name="hiddenLblHoverColor" Visibility="Hidden" Width="0" Foreground="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
                 <Image x:Name="ResultSeverityIcon" Stretch="None" />
                 <TextBlock TextWrapping="WrapWithOverflow" Grid.Column="1" x:Name="ResultTitle" FontSize="15" Margin="7,2,0,0"></TextBlock>
             </WrapPanel>
@@ -512,7 +525,7 @@
             </UniformGrid>
 
             <UniformGrid Rows="1" Columns="1">
-                <TextBox Text="Comment (Optional)" Foreground="Gray" Name="TriageComment" Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow" GotFocus="OnFocusComment" LostFocus="OnLostFocusComment"/>
+                <TextBox Text="Comment (Optional)" Name="TriageComment" Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow" GotFocus="OnFocusComment" LostFocus="OnLostFocusComment"/>
             </UniformGrid>
 
             <!-- Description and Changes tabs -->
@@ -529,7 +542,7 @@
                                             <Style TargetType="{x:Type StackPanel}">
                                                 <Style.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="DarkSlateGray"/>
+                                                        <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
                                                     </Trigger>
                                                 </Style.Triggers>
                                             </Style>

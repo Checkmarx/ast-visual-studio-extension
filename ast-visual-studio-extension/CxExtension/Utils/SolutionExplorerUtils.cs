@@ -1,6 +1,5 @@
 ﻿using ast_visual_studio_extension.CxExtension.Panels;
 using EnvDTE;
-using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -15,6 +14,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class SolutionExplorerUtils
     {
+        public static AsyncPackage AsyncPackage { private get; set; }
         /// <summary>
         /// Get current EnvDTE
         /// </summary>
@@ -40,7 +40,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             if (files.Count == 0)
             {
-                CxUtils.DisplayNotification(string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND_TITLE, node.FileName), CxConstants.NOTIFY_FILE_NOT_FOUND_DESCRIPTION);
+                _ = CxUtils.DisplayMessageInfoBarAsync(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, node.FileName));
             }
 
             var dte = GetDTE();
@@ -65,12 +65,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            // TODO: pick file name from last /
-            //string last = inputString.Substring(inputString.LastIndexOf('\\') + 1);
-            if (fileName.StartsWith("/"))
-            {
-                fileName = fileName.Substring(1);
-            }
+            fileName = fileName.Substring(fileName.LastIndexOf('/') + 1);
 
             var dte = GetDTE();
 
