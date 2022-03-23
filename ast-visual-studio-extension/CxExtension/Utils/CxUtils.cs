@@ -3,10 +3,12 @@ using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxPreferences;
-using Microsoft.Toolkit.Uwp.Notifications;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
@@ -21,15 +23,15 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string GetIconPathFromSeverity(string severity, Boolean iconForTitle)
         {
             switch (GetSeverityFromString(severity))
-            {
+            {               
                 case Severity.HIGH:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_HIGH_TITLE : CxConstants.ICON_HIGH);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_HIGH_TITLE : CxConstants.ICON_HIGH);
                 case Severity.MEDIUM:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_MEDIUM_TITLE : CxConstants.ICON_MEDIUM);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_MEDIUM_TITLE : CxConstants.ICON_MEDIUM);
                 case Severity.LOW:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_LOW_TITLE : CxConstants.ICON_LOW);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_LOW_TITLE : CxConstants.ICON_LOW);
                 case Severity.INFO:
-                    return Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, iconForTitle ? CxConstants.ICON_INFO_TITLE : CxConstants.ICON_INFO);
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_INFO_TITLE : CxConstants.ICON_INFO);
             }
 
             return string.Empty;
@@ -112,16 +114,32 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         }
 
         /// <summary>
-        /// Display notification to the user
+        /// Display a warning notification in the info bar
         /// </summary>
-        /// <param name="title"></param>
-        /// <param name="description"></param>
-        public static void DisplayNotification(string title, string description)
+        /// <param name="package"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public async static Task DisplayMessageInfoBarAsync(AsyncPackage package, string message)
         {
-            new ToastContentBuilder()
-                                .AddText(title)
-                                .AddText(description)
-                                .Show();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            if (await package.GetServiceAsync((typeof(SVsShell))) is IVsShell shell)
+            {
+                // Get the main window handle to host our InfoBar
+                shell.GetProperty((int)__VSSPROPID7.VSSPROPID_MainWindowInfoBarHost, out var obj);
+                
+                var host = (IVsInfoBarHost)obj;
+
+                if (host == null) return;
+
+                InfoBarModel infoBarModel = new InfoBarModel(message, KnownMonikers.StatusWarning, isCloseButtonVisible: true);
+
+                if (!(await package.GetServiceAsync(typeof(SVsInfoBarUIFactory)) is IVsInfoBarUIFactory factory)) return;
+
+                IVsInfoBarUIElement element = factory.CreateInfoBar(infoBarModel);
+
+                host.AddInfoBar(element);
+            }
         }
 
         /// <summary>

@@ -3,6 +3,9 @@
   <PropertyGroup>
     <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <InstallRoot>Default</InstallRoot>
+    <VSIXSubPath>
+    </VSIXSubPath>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -132,7 +135,9 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationProvider" />
     <Reference Include="WindowsBase" />
+    <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Community.VisualStudio.Toolkit.17">
@@ -146,75 +151,73 @@
     <PackageReference Include="log4net">
       <Version>2.0.14</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
-      <Version>7.1.2</Version>
-    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK">
       <Version>17.0.32112.339</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5234" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="CxExtension\Resources\checkmarx-80.png">
+    <Resource Include="CxExtension\Resources\checkmarx-80.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\Comment.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\Comment.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\Flag.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\Flag.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\FlagGreen.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\FlagGreen.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\FlagOutline.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\FlagOutline.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\high_18x22.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\high_18x22.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\high_title.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\high_title.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\info_18x22.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\info_18x22.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\info_title.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\info_title.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\low_18x22.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\low_18x22.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\low_title.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\low_title.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\medium_18x22.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\medium_18x22.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\medium_title.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\medium_title.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </Resource>
     <Content Include="CxWrapper\Resources\cx.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <VSCTCompile Include="CxExtension\CxWindowPackage.vsct">
       <Generator>VsctGenerator</Generator>
       <ResourceName>Menus1.ctmenu</ResourceName>
       <LastGenOutput>CxWindowPackage1.cs</LastGenOutput>
     </VSCTCompile>
-    <Content Include="CxExtension\Resources\cx_logo16.16.png" />
-    <Content Include="CxExtension\Resources\high.png">
+    <Resource Include="CxExtension\Resources\cx_logo16.16.png" />
+    <Resource Include="CxExtension\Resources\high.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\info.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\info.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\low.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\low.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CxExtension\Resources\medium.png">
+    </Resource>
+    <Resource Include="CxExtension\Resources\medium.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </Resource>
     <Content Include="CxPreferences\Resources\CxPreferencesPackage.ico" />
   </ItemGroup>
   <ItemGroup>

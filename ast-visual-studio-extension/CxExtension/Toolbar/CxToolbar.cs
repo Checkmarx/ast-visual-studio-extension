@@ -18,6 +18,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public static string currentProjectId = string.Empty;
         public static string currentBranch = string.Empty;
         public static string currentScanId = string.Empty;
+        public static bool resetExtension = false;
+        public static bool redrawExtension = false;
+        public static bool reverseSearch = false;
 
         public AsyncPackage Package { get; set; }
         public ResultsTreePanel ResultsTreePanel { get; set; }
@@ -98,9 +101,19 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// </summary>
         public void Init()
         {
-            ScansCombobox = new ScansCombobox(this);
-            BranchesCombobox = new BranchesCombobox(this, ScansCombobox);
-            ProjectsCombobox = new ProjectsCombobox(this, BranchesCombobox);
+            ScansCombobox = ScansCombobox.GetInstance(this);
+            BranchesCombobox = BranchesCombobox.GetInstance(this, ScansCombobox);
+            ProjectsCombobox = ProjectsCombobox.GetInstance(this, BranchesCombobox);
+
+            if (resetExtension)
+            {
+                _ = ProjectsCombobox.ResetExtensionAsync();
+            }
+
+            if (redrawExtension)
+            {
+                _ = ProjectsCombobox.LoadProjectsAsync();
+            }
 
             var readOnlyStore = new ShellSettingsManager(Package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
             foreach (KeyValuePair<ToggleButton, Severity> pair in SeverityFilters)
@@ -113,7 +126,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 var severity = pair.Key;
                 var control = pair.Value;
-                control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true)));
+                control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true), UriKind.RelativeOrAbsolute));
             }
             foreach (KeyValuePair<MenuItem, State> pair in StateFilters)
             {

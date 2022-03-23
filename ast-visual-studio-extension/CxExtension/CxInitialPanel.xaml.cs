@@ -19,7 +19,7 @@ namespace ast_visual_studio_extension.CxExtension
             this.package = package;
 
             Image severityIcon = new Image();
-            BitmapImage bitmapImage = new BitmapImage(new Uri(Path.Combine(Environment.CurrentDirectory, CxConstants.FOLDER_CX_EXTENSION, CxConstants.FOLDER_RESOURCES, CxConstants.ICON_CX_LOGO_INITIAL_PANEL)));
+            BitmapImage bitmapImage = new BitmapImage(new Uri(CxConstants.RESOURCES_BASE_DIR + CxConstants.ICON_CX_LOGO_INITIAL_PANEL, UriKind.RelativeOrAbsolute));
             severityIcon.Source = bitmapImage;
 
             InitialPanelIcon.Source = bitmapImage;

@@ -7,7 +7,7 @@ namespace ast_visual_studio_extension.CxCLI
 {
     internal class Execution
     {
-        private readonly static string executablePath = Path.Combine(Environment.CurrentDirectory, "CxWrapper", "Resources", "cx.exe");
+        private readonly static string executablePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources", "cx.exe");
 
         public static string ExecuteCommand(List<string> arguments)
         {
@@ -43,8 +43,16 @@ namespace ast_visual_studio_extension.CxCLI
                 {
                     throw new CxException(process.ExitCode, errorData.Trim());
                 }
-                
-                return !string.IsNullOrEmpty(errorData.Trim()) ? errorData.Trim() : outputData.Trim();
+
+                // When debug flag is used as additional parameters the 'ErrorDataReceived' constains the additional details
+                if (arguments.Contains(CxConstants.FLAG_DEBUG) && outputData.Trim().Length > 0)
+                {
+                    return outputData.Trim();
+                }
+                else
+                {
+                    return !string.IsNullOrEmpty(errorData.Trim()) ? errorData.Trim() : outputData.Trim();
+                }
             }
         }
 

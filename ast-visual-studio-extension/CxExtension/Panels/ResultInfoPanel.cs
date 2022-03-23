@@ -25,6 +25,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         public ResultInfoPanel(CxWindowControl cxWindow)
         {
             cxWindowUI = cxWindow;
+            UIUtils.CxWindowUI = cxWindowUI;
         }
 
         // Draw result information content
@@ -54,7 +55,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private void DrawTitle()
         {
             Image severityIcon = new Image();
-            BitmapImage bitmapImage = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(result.Severity, true)));
+            BitmapImage bitmapImage = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(result.Severity, true), UriKind.RelativeOrAbsolute));
             severityIcon.Source = bitmapImage;
 
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
@@ -168,8 +169,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    CxUtils.DisplayNotification(CxConstants.TRIAGE_UPDATE_FAILED, ex.Message);
-
+                    _ = CxUtils.DisplayMessageInfoBarAsync(cxToolbar.Package, string.Format(CxConstants.TRIAGE_UPDATE_FAILED, ex.Message));
+                    
                     return false;
                 }
             });
@@ -250,7 +251,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    CxUtils.DisplayNotification(CxConstants.TRIAGE_SHOW_FAILED, ex.Message);
+                    _ = CxUtils.DisplayMessageInfoBarAsync(cxToolbar.Package, string.Format(CxConstants.TRIAGE_SHOW_FAILED, ex.Message));
                     errorMessage = ex.Message;
 
                     return null;
@@ -261,7 +262,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
-                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SHOW_FAILED + ". " + errorMessage));
+                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(string.Format(CxConstants.TRIAGE_SHOW_FAILED, errorMessage)));
 
                 return;
             }
@@ -281,6 +282,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 TextBlock tb = new TextBlock();
                 tb.Inlines.Add(new Bold(new Run(predicate.CreatedBy)));
                 tb.Inlines.Add(new Run(" | " + createdAt));
+
+                predicate.State = predicate.State.Replace("_", "__");
 
                 triageChangesTab.Children.Add(tb);
                 triageChangesTab.Children.Add(UIUtils.CreateSeverityLabelWithIcon(predicate.Severity));
