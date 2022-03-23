@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="ast_visual_studio_extension.ee50149d-e5ee-4be4-9b84-fecf58ef2360" Version="1.0" Language="en-US" Publisher="Company" />
+        <Identity Id="ast_visual_studio_extension.ee50149d-e5ee-4be4-9b84-fecf58ef2360" Version="1.0" Language="en-US" Publisher="Checkmarx" />
         <DisplayName>ast_visual_studio_extension</DisplayName>
         <Description xml:space="preserve">The CxAST Visual Studio plugin enables you to import results from a CxAST scan directly into your IDE. You can view the vulnerabilities that were identified in your source code and navigate directly to the vulnerable code in the editor. </Description>
         <Icon>CxExtension\Resources\checkmarx-80.png</Icon>
         <Tags>security</Tags>
+        <Preview>true</Preview>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
