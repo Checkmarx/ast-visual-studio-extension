@@ -21,8 +21,19 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     {
         private Result result;
         private readonly CxWindowControl cxWindowUI;
+        private static ResultInfoPanel instance;
 
-        public ResultInfoPanel(CxWindowControl cxWindow)
+        public static ResultInfoPanel GetInstance(CxWindowControl cxWindow)
+        {
+            if(instance == null)
+            {
+                instance = new ResultInfoPanel(cxWindow);
+            }
+
+            return instance;
+        }
+
+        private ResultInfoPanel(CxWindowControl cxWindow)
         {
             cxWindowUI = cxWindow;
             UIUtils.CxWindowUI = cxWindowUI;
@@ -132,15 +143,13 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <param name="triageChangesTab"></param>
         /// <param name="triageComment"></param>
         /// <returns></returns>
-        public async Task TriageUpdateAsync(Button triageUpdateBtn, TreeView treeViewResults, CxToolbar cxToolbar, ComboBox severityCombobox, ComboBox stateCombobox, string selectedTabItem, StackPanel triageChangesTab, TextBox triageComment)
+        public async Task TriageUpdateAsync(Button triageUpdateBtn, CxToolbar cxToolbar, ComboBox severityCombobox, ComboBox stateCombobox, string selectedTabItem, StackPanel triageChangesTab, TextBox triageComment)
         {
             triageUpdateBtn.IsEnabled = false;
             severityCombobox.IsEnabled = false;
             stateCombobox.IsEnabled = false;
             triageComment.IsEnabled = false;
             triageComment.Foreground = new SolidColorBrush(Colors.Gray);
-
-            Result result = (treeViewResults.SelectedItem as TreeViewItem).Tag as Result;
 
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
             string similarityId = result.SimilarityId;
@@ -185,15 +194,14 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             result.State = state;
             result.Severity = severity;
 
-            string displayName = result.Data.QueryName ?? result.Id;
-
-            (treeViewResults.SelectedItem as TreeViewItem).Header = UIUtils.CreateTreeViewItemHeader(result.Severity, displayName);
-            (treeViewResults.SelectedItem as TreeViewItem).Tag = result;
+            cxToolbar.ResultsTreePanel.Redraw(false);
 
             if (selectedTabItem.Equals("ChangesTabItem"))
             {
-                await TriageShowAsync(treeViewResults, cxToolbar, triageChangesTab);
+                await TriageShowAsync(cxToolbar, triageChangesTab);
             }
+
+            DrawTitle();
 
             UpdateTriageElementsState(triageUpdateBtn, triageComment, severityCombobox, stateCombobox);
         }
@@ -215,10 +223,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <param name="cxToolbar"></param>
         /// <param name="triageChangesTab"></param>
         /// <returns></returns>
-        public async Task TriageShowAsync(TreeView treeViewResults, CxToolbar cxToolbar, StackPanel triageChangesTab)
+        public async Task TriageShowAsync(CxToolbar cxToolbar, StackPanel triageChangesTab)
         {
-            Result result = ((treeViewResults.SelectedItem as TreeViewItem).Tag as Result);
-
             triageChangesTab.Children.Clear();
 
             bool isSca = result.Data.PackageData != null || (result.Data.Nodes == null && string.IsNullOrEmpty(result.Data.FileName));

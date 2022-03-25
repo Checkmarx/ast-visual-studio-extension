@@ -101,9 +101,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// </summary>
         public void Init()
         {
-            ScansCombobox = ScansCombobox.GetInstance(this);
-            BranchesCombobox = BranchesCombobox.GetInstance(this, ScansCombobox);
-            ProjectsCombobox = ProjectsCombobox.GetInstance(this, BranchesCombobox);
+            ScansCombobox = new ScansCombobox(this);
+            BranchesCombobox = new BranchesCombobox(this, ScansCombobox); 
+            ProjectsCombobox = new ProjectsCombobox(this, BranchesCombobox);
 
             if (resetExtension)
             {
@@ -156,19 +156,19 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public void SeverityFilterClick(ToggleButton severityControl)
         {
             SettingsUtils.Store(Package, SettingsUtils.severityCollection, SeverityFilters[severityControl], SettingsUtils.severityDefaultValues);
-            ResultsTreePanel.Redraw();
+            ResultsTreePanel.Redraw(true);
         }
 
         public void StateFilterClick(MenuItem stateControl)
         {
             SettingsUtils.Store(Package, SettingsUtils.stateCollection, StateFilters[stateControl], SettingsUtils.stateDefaultValues);
-            ResultsTreePanel.Redraw();
+            ResultsTreePanel.Redraw(true);
         }
 
         public void GroupByClick(MenuItem groupByControl)
         {
             SettingsUtils.Store(Package, SettingsUtils.groupByCollection, GroupByOptions[groupByControl], SettingsUtils.groupByDefaultValues);
-            ResultsTreePanel.Redraw();
+            ResultsTreePanel.Redraw(true);
         }
     }
 }

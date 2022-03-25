@@ -2,7 +2,7 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
         <Identity Id="ast_visual_studio_extension.ee50149d-e5ee-4be4-9b84-fecf58ef2360" Version="1.0" Language="en-US" Publisher="Company" />
-        <DisplayName>ast_visual_studio_extension</DisplayName>
+        <DisplayName>Checkmarx AST Extension</DisplayName>
         <Description xml:space="preserve">The CxAST Visual Studio extension enables you to import results from a CxAST scan directly into your IDE</Description>
     </Metadata>
     <Installation>
