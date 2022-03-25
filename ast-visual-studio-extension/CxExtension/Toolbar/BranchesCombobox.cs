@@ -15,22 +15,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         private readonly CxToolbar cxToolbar;
 
-        private static BranchesCombobox instance;
-
-        private BranchesCombobox(CxToolbar cxToolbar, ScansCombobox scansCombobox)
+        public BranchesCombobox(CxToolbar cxToolbar, ScansCombobox scansCombobox)
         {
             this.cxToolbar = cxToolbar;
             this.scansCombobox = scansCombobox;
-        }
-
-        public static BranchesCombobox GetInstance(CxToolbar cxToolbar, ScansCombobox scansCombobox)
-        {
-            if (instance == null)
-            {
-                instance = new BranchesCombobox(cxToolbar, scansCombobox);
-            }
-
-            return instance;
         }
 
         /// <summary>

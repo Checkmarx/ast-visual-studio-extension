@@ -17,6 +17,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string INVALID_SCAN_ID => "Invalid scan id ";
         public static string SCAN_ID_DISPLAY_FORMAT => "{0}    {1}";
         public static string RESOURCES_BASE_DIR => "pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/";
+        public static int FILE_PATH_MAX_LEN => 45;
+        public static string COLLAPSE_CRUMB => "...";
 
         /************ ICONS ************/
         public static string ICON_HIGH => "high.png";

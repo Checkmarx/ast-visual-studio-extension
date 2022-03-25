@@ -45,6 +45,8 @@ namespace ast_visual_studio_extension.CxPreferences
             this.label5 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.lblValidationResult = new System.Windows.Forms.TextBox();
+            this.helpPage = new System.Windows.Forms.LinkLabel();
+            this.AdditionalParametersHelPage = new System.Windows.Forms.LinkLabel();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -70,7 +72,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.tbServerUrl);
-            this.groupBox1.Location = new System.Drawing.Point(3, 9);
+            this.groupBox1.Location = new System.Drawing.Point(3, 40);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(787, 121);
             this.groupBox1.TabIndex = 6;
@@ -130,7 +132,7 @@ namespace ast_visual_studio_extension.CxPreferences
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(this.tbApiKey);
             this.groupBox2.Controls.Add(this.label4);
-            this.groupBox2.Location = new System.Drawing.Point(4, 139);
+            this.groupBox2.Location = new System.Drawing.Point(4, 170);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(786, 58);
             this.groupBox2.TabIndex = 7;
@@ -161,11 +163,12 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox3.Controls.Add(this.AdditionalParametersHelPage);
             this.groupBox3.Controls.Add(this.tbAdditionalParameters);
             this.groupBox3.Controls.Add(this.label5);
-            this.groupBox3.Location = new System.Drawing.Point(4, 205);
+            this.groupBox3.Location = new System.Drawing.Point(4, 236);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(786, 58);
+            this.groupBox3.Size = new System.Drawing.Size(786, 85);
             this.groupBox3.TabIndex = 10;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Additional settings";
@@ -193,7 +196,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(3, 275);
+            this.button1.Location = new System.Drawing.Point(3, 327);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(124, 22);
             this.button1.TabIndex = 8;
@@ -207,19 +210,42 @@ namespace ast_visual_studio_extension.CxPreferences
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblValidationResult.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.lblValidationResult.Location = new System.Drawing.Point(159, 277);
+            this.lblValidationResult.Location = new System.Drawing.Point(159, 329);
             this.lblValidationResult.Multiline = true;
             this.lblValidationResult.Name = "lblValidationResult";
             this.lblValidationResult.ReadOnly = true;
             this.lblValidationResult.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.lblValidationResult.Size = new System.Drawing.Size(631, 275);
+            this.lblValidationResult.Size = new System.Drawing.Size(631, 223);
             this.lblValidationResult.TabIndex = 11;
+            // 
+            // helpPage
+            // 
+            this.helpPage.AutoSize = true;
+            this.helpPage.Location = new System.Drawing.Point(10, 17);
+            this.helpPage.Name = "helpPage";
+            this.helpPage.Size = new System.Drawing.Size(247, 13);
+            this.helpPage.TabIndex = 12;
+            this.helpPage.TabStop = true;
+            this.helpPage.Text = "Checkmarx AST Visual Studio Extension help page";
+            this.helpPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HelpPage_LinkClicked);
+            // 
+            // AdditionalParametersHelPage
+            // 
+            this.AdditionalParametersHelPage.AutoSize = true;
+            this.AdditionalParametersHelPage.Location = new System.Drawing.Point(152, 52);
+            this.AdditionalParametersHelPage.Name = "AdditionalParametersHelPage";
+            this.AdditionalParametersHelPage.Size = new System.Drawing.Size(237, 13);
+            this.AdditionalParametersHelPage.TabIndex = 2;
+            this.AdditionalParametersHelPage.TabStop = true;
+            this.AdditionalParametersHelPage.Text = "Checkmarx AST additional parameters help page";
+            this.AdditionalParametersHelPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.AdditionalParametersHelPage_LinkClicked);
             // 
             // CxPreferencesUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
+            this.Controls.Add(this.helpPage);
             this.Controls.Add(this.lblValidationResult);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.groupBox2);
@@ -255,5 +281,7 @@ namespace ast_visual_studio_extension.CxPreferences
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.TextBox lblValidationResult;
+        private System.Windows.Forms.LinkLabel helpPage;
+        private System.Windows.Forms.LinkLabel AdditionalParametersHelPage;
     }
 }
