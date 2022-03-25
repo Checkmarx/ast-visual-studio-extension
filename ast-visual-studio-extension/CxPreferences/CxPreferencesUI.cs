@@ -104,5 +104,15 @@ namespace ast_visual_studio_extension.CxPreferences
 
             lblValidationResult.Text = string.Empty;
         }
+
+        private void HelpPage_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            System.Diagnostics.Process.Start("https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336643630/CxAST+Visual+Studio+Plugin");
+        }
+
+        private void AdditionalParametersHelPage_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            System.Diagnostics.Process.Start("https://checkmarx.atlassian.net/wiki/spaces/AST/pages/3044541180/Global+Flags");
+        }
     }
 }

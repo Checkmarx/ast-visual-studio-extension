@@ -1,8 +1,8 @@
-﻿using ast_visual_studio_extension.CxExtension.Utils;
+﻿using ast_visual_studio_extension.CxExtension.Toolbar;
+using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
 using Microsoft.VisualStudio.Shell;
 using System;
-using System.IO;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
@@ -36,6 +36,7 @@ namespace ast_visual_studio_extension.CxExtension
             if (CxUtils.AreCxCredentialsDefined(package))
             {
                 CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
+                CxToolbar.redrawExtension = true;
                 Content = new CxWindowControl(package);
             }
         }

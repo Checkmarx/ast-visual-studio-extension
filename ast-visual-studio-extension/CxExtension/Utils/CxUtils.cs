@@ -59,8 +59,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             try
             {
-                CxPreferencesModule preferences = (CxPreferencesModule)package.GetDialogPage(typeof(CxPreferencesModule));
-                CxConfig configuration = preferences.GetCxConfig;
+                CxPreferencesModule preferences = (CxPreferencesModule) package.GetDialogPage(typeof(CxPreferencesModule));
+                CxConfig configuration = preferences.GetCxConfig();
 
                 return new CxWrapper(configuration);
             }
@@ -139,6 +139,10 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 IVsInfoBarUIElement element = factory.CreateInfoBar(infoBarModel);
 
                 host.AddInfoBar(element);
+
+                await Task.Delay(10000);
+
+                host.RemoveInfoBar(element);
             }
         }
 
@@ -149,12 +153,22 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// <returns></returns>
         public static bool AreCxCredentialsDefined(AsyncPackage package)
         {
-            CxPreferencesModule preferences = (CxPreferencesModule)package.GetDialogPage(typeof(CxPreferencesModule));
-            CxConfig configuration = preferences.GetCxConfig;
+            CxPreferencesModule preferences = (CxPreferencesModule) package.GetDialogPage(typeof(CxPreferencesModule));
+            CxConfig configuration = preferences.GetCxConfig();
             
             if (configuration == null || string.IsNullOrEmpty(configuration.BaseUri) || string.IsNullOrEmpty(configuration.Tenant) || string.IsNullOrEmpty(configuration.ApiKey)) return false;
 
             return true;
+        }
+
+        /// <summary>
+        /// Trim file name when it is greater than 45
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static string CapToLen(string fileName)
+        {
+            return fileName.Length > CxConstants.FILE_PATH_MAX_LEN ? CxConstants.COLLAPSE_CRUMB + fileName.Substring(fileName.Length - CxConstants.FILE_PATH_MAX_LEN + CxConstants.COLLAPSE_CRUMB.Length) : fileName;
         }
     }
 }

@@ -15,15 +15,12 @@ namespace ast_visual_studio_extension.CxPreferences
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
 
-        public CxPreferencesModule() { }
-
-        private CxPreferencesUI preferencesUI;
-
         protected override IWin32Window Window
         {
             get
             {
-                preferencesUI = CxPreferencesUI.GetInstance();
+                CxPreferencesUI preferencesUI = CxPreferencesUI.GetInstance();
+
                 preferencesUI.Initialize(this);
 
                 return preferencesUI;
@@ -38,24 +35,25 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             base.OnApply(e);
 
-            preferencesUI.ThrowEventOnApply();
+            CxPreferencesUI.GetInstance().ThrowEventOnApply();
         }
 
-        public CxConfig GetCxConfig
+        /// <summary>
+        /// Get Checkmarx configuration
+        /// </summary>
+        /// <returns></returns>
+        public CxConfig GetCxConfig()
         {
-            get
+            CxConfig configuration = new CxConfig
             {
-                CxConfig configuration = new CxConfig
-                {
-                    BaseUri = ServerUrl,
-                    BaseAuthURI = AuthUrl,
-                    Tenant = TenantName,
-                    ApiKey = ApiKey,
-                    AdditionalParameters = AdditionalParameters,
-                };
+                BaseUri = ServerUrl,
+                BaseAuthURI = AuthUrl,
+                Tenant = TenantName,
+                ApiKey = ApiKey,
+                AdditionalParameters = AdditionalParameters,
+            };
 
-                return configuration;
-            }
+            return configuration;
         }
     }
 }
