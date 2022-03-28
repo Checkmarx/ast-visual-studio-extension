@@ -1,0 +1,26 @@
+name: AST visual studio extension CI
+
+on: [ pull_request, workflow_dispatch ]
+
+
+jobs:
+  integration-tests:
+    runs-on: windows-latest
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v3
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - run: dotnet restore
+
+      
+      - run: msbuild /p:Configuration=Release /p:DeployExtension=False
+
+      - name: Upload release
+        uses: actions/upload-artifact@v2
+        with:
+          name: release
+          path: |
+            ast-visual-studio-extension\bin\Release\
