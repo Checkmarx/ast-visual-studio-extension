@@ -19,25 +19,25 @@ namespace ast_visual_studio_extension.CxCLI
             if (!string.IsNullOrEmpty(BaseUri))
             {
                 arguments.Add(CxConstants.FLAG_BASE_URI);
-                arguments.Add(BaseUri);
+                arguments.Add(BaseUri.Trim());
             }
 
             if (!string.IsNullOrEmpty(BaseAuthURI))
             {
                 arguments.Add(CxConstants.FLAG_BASE_AUTH_URI);
-                arguments.Add(BaseAuthURI);
+                arguments.Add(BaseAuthURI.Trim());
             }
 
             if (!string.IsNullOrEmpty(Tenant))
             {
                 arguments.Add(CxConstants.FLAG_TENANT);
-                arguments.Add(Tenant);
+                arguments.Add(Tenant.Trim());
             }
 
             if (!string.IsNullOrEmpty(ApiKey))
             {
                 arguments.Add(CxConstants.FLAG_API_KEY);
-                arguments.Add(ApiKey);
+                arguments.Add(ApiKey.Trim());
             }
 
             if (!string.IsNullOrEmpty(AdditionalParameters))

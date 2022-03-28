@@ -10,7 +10,7 @@
         /** CLI COMMANDS **/
         public static string CLI_AUTH_CMD => "auth";
         public static string CLI_VALIDATE_CMD => "validate";
-        public static string CLI_RESULT_CMD => "result";
+        public static string CLI_RESULTS_CMD => "results";
         public static string CLI_PROJECT_CMD => "project";
         public static string CLI_LIST_CMD => "list";
         public static string CLI_BRANCHES_CMD => "branches";
