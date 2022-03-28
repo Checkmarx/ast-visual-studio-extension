@@ -36,7 +36,7 @@ jobs:
       
       - name: Publish Release
         uses: cezarypiatek/VsixPublisherAction@0.1
-          with:
-            extension-file: '\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
-            publish-manifest-file: '.\vs-publish.json'
-            personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
+        with:
+          extension-file: '\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
+          publish-manifest-file: '.\vs-publish.json'
+          personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
