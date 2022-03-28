@@ -14,21 +14,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
     {
         private readonly CxToolbar cxToolbar;
 
-        private static ScansCombobox instance;
-
-        private ScansCombobox(CxToolbar cxToolbar)
+        public ScansCombobox(CxToolbar cxToolbar)
         {
             this.cxToolbar = cxToolbar;
-        }
-
-        public static ScansCombobox GetInstance(CxToolbar cxToolbar)
-        {
-            if (instance == null)
-            {
-                instance = new ScansCombobox(cxToolbar);
-            }
-
-            return instance;
         }
 
         /// <summary>
@@ -172,6 +160,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     CxToolbar.currentBranch = scan.Branch;
                     CxToolbar.currentScanId = scanId;
 
+                    cxToolbar.ProjectsCombo.SelectedIndex = -1; // used to trigger onChangeProjects when the provided scanId belongs to the current project
                     cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(scan.ProjectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
                 }
             }

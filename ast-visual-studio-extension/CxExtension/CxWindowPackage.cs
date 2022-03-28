@@ -27,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus1.ctmenu", 1)]
-    [ProvideToolWindow(typeof(CxWindow), Style = VsDockStyle.Tabbed)]
+    [ProvideToolWindow(typeof(CxWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Right, Window = EnvDTE.Constants.vsWindowKindOutput)]
     [Guid(CxWindowPackage.PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
     {

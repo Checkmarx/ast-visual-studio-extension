@@ -72,7 +72,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 TextBlock tb = new TextBlock();
                 tb.Inlines.Add(itemName);
                 Hyperlink link = new Hyperlink();
-                link.Inlines.Add(node.FileName);
+                link.Inlines.Add(CxUtils.CapToLen(node.FileName));
+                link.ToolTip = node.FileName;
                 link.Click += new RoutedEventHandler(SolutionExplorerUtils.OpenFile);
                 tb.Inlines.Add(link);
                 item.Tag = FileNode.Builder().WithFileName(node.FileName).WithLine(node.Line).WithColumn(node.Column);

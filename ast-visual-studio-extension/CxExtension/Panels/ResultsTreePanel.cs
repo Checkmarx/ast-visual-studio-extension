@@ -32,12 +32,13 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         {
             this.package = package;
             cxWindowUI = cxWindow;
-            resultInfoPanel = new ResultInfoPanel(cxWindow);
+            resultInfoPanel = ResultInfoPanel.GetInstance(cxWindow);
+
             resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package, cxWindow);
             UIUtils.CxWindowUI = cxWindowUI;
         }
 
-        public void Redraw()
+        public void Redraw(bool clearSecondAndThirdPanel)
         {
             if (currentScanId != null && currentResults != null)
             {
@@ -45,7 +46,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                 var expanded = CollectExpandedNodes(treeView.Items[0] as TreeViewItem);
 
-                ClearPanels();
+                ClearPanels(clearSecondAndThirdPanel);
 
                 TreeViewItem rootNode = BuildTree();
 
@@ -95,8 +96,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         // Get AST results
         private async Task<Results> GetResultsAsync(Guid scanId)
         {
-            CxPreferencesModule preferences = (CxPreferencesModule)package.GetDialogPage(typeof(CxPreferencesModule));
-            CxConfig configuration = preferences.GetCxConfig;
+            CxPreferencesModule preferences = (CxPreferencesModule) package.GetDialogPage(typeof(CxPreferencesModule));
+            CxConfig configuration = preferences.GetCxConfig();
 
             CxWrapper cxWrapper = new CxWrapper(configuration);
 
@@ -157,7 +158,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// </summary>
         public void ClearAll()
         {
-            ClearPanels();
+            ClearPanels(true);
             currentResults = null;
             currentScanId = null;
         }
@@ -165,11 +166,16 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <summary>
         /// Clear panels
         /// </summary>
-        private void ClearPanels()
+        /// <param name="clearSecondAndThirdPanel"></param>
+        private void ClearPanels(bool clearSecondAndThirdPanel)
         {
             cxWindowUI.TreeViewResults.Items.Clear();
-            resultInfoPanel.Clear();
-            resultVulnerabilitiesPanel.Clear();
+
+            if (clearSecondAndThirdPanel)
+            {
+                resultInfoPanel.Clear();
+                resultVulnerabilitiesPanel.Clear();
+            }
         }
 
         // Iterates the tree to collect all expanded nodes.

@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly CxToolbar cxToolbar;
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly AsyncPackage package;
-
+        
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -27,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this);
 
-            resultInfoPanel = new ResultInfoPanel(this);
+            resultInfoPanel = Panels.ResultInfoPanel.GetInstance(this);
 
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
@@ -84,6 +84,8 @@ namespace ast_visual_studio_extension.CxExtension
             {
                 CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
                 Content = new CxInitialPanel(package);
+
+                return;
             }
 
             cxToolbar.ProjectsCombo.Items.Clear();
@@ -179,7 +181,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// <param name="e"></param>
         private void OnClickTriageUpdate(object sender, RoutedEventArgs e)
         {
-            _ = resultInfoPanel.TriageUpdateAsync(TriageUpdateBtn, TreeViewResults, cxToolbar, TriageSeverityCombobox, TriageStateCombobox, (ResultTabControl.SelectedItem as TabItem).Name, TriageChangesTab, TriageComment);
+            _ = resultInfoPanel.TriageUpdateAsync(TriageUpdateBtn, cxToolbar, TriageSeverityCombobox, TriageStateCombobox, (ResultTabControl.SelectedItem as TabItem).Name, TriageChangesTab, TriageComment);
         }
 
         /// <summary>
@@ -189,7 +191,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// <param name="e"></param>
         private void OnClickTriageChanges(object sender, MouseButtonEventArgs e)
         {
-            _ = resultInfoPanel.TriageShowAsync(TreeViewResults, cxToolbar, TriageChangesTab);
+            _ = resultInfoPanel.TriageShowAsync(cxToolbar, TriageChangesTab);
         }
 
         /// <summary>

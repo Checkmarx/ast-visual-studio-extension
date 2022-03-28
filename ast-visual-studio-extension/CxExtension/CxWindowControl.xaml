@@ -574,9 +574,18 @@
                         </DataTemplate>
                     </TabItem.HeaderTemplate>
                     <TabItem.Content>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{Binding ElementName=ParentGrid, Path=ActualHeight, Converter={StaticResource CalculateScrollViewerHeight}}">
-                            <StackPanel x:Name="ResultInfoStackPanel">
-                            </StackPanel>
+                        <ScrollViewer>
+                            <ScrollViewer.VerticalScrollBarVisibility>Auto</ScrollViewer.VerticalScrollBarVisibility>
+                            <ScrollViewer.MaxHeight>
+                                <MultiBinding Converter="{StaticResource CalculateScrollViewerHeight}">
+                                    <Binding ElementName="ParentGrid" Path="ActualHeight"/>
+                                    <Binding ElementName="TriageComment" Path="IsVisible"/>
+                                </MultiBinding>
+                            </ScrollViewer.MaxHeight>
+                            <ScrollViewer.Content>
+                                <StackPanel x:Name="ResultInfoStackPanel" CanVerticallyScroll="True">
+                                </StackPanel>
+                            </ScrollViewer.Content>
                         </ScrollViewer>
                     </TabItem.Content>
                 </TabItem>
@@ -596,8 +605,16 @@
                         </DataTemplate>
                     </TabItem.HeaderTemplate>
                     <TabItem.Content>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{Binding ElementName=ParentGrid, Path=ActualHeight, Converter={StaticResource CalculateScrollViewerHeight}}">
-                            <StackPanel Name="TriageChangesTab" Margin="10,10,10,0"></StackPanel>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer.MaxHeight>
+                                <MultiBinding Converter="{StaticResource CalculateScrollViewerHeight}">
+                                    <Binding ElementName="ParentGrid" Path="ActualHeight"/>
+                                    <Binding ElementName="TriageComment" Path="IsVisible"/>
+                                </MultiBinding>
+                            </ScrollViewer.MaxHeight>
+                            <ScrollViewer.Content>
+                                <StackPanel Name="TriageChangesTab" Margin="10,10,10,0"></StackPanel>
+                            </ScrollViewer.Content>
                         </ScrollViewer>
                     </TabItem.Content>
                 </TabItem>

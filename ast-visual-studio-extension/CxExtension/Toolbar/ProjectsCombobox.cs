@@ -13,24 +13,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
     {
         private readonly CxToolbar cxToolbar;
         private readonly BranchesCombobox branchesCombobox;
-        private static ProjectsCombobox instance;
 
-        private ProjectsCombobox(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
+        public ProjectsCombobox(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
         {
             this.cxToolbar = cxToolbar;
             this.branchesCombobox = branchesCombobox;
 
             _ = LoadProjectsAsync();
-        }
-
-        public static ProjectsCombobox GetInstance(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
-        {
-            if (instance == null)
-            {
-                instance = new ProjectsCombobox(cxToolbar, branchesCombobox);
-            }
-
-            return instance;
         }
 
         /// <summary>
@@ -115,12 +104,16 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 cxToolbar.ResultsTree.Items.Clear();
                 cxToolbar.ResultsTree.Items.Add(errorMessage);
 
+                cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_SELECT_BRANCH;
                 cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_SELECT_PROJECT;
                 cxToolbar.ProjectsCombo.IsEnabled = true;
+                cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_SELECT_SCAN;
                 cxToolbar.ScansCombo.IsEnabled = true;
 
                 return;
             }
+
+            cxToolbar.ProjectsCombo.Items.Clear();
 
             for (int i = 0; i < projects.Count; i++)
             {

@@ -44,13 +44,13 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             var children = treeResults;
             foreach (GroupBy groupBy in enabledGroupBys)
             {
-                var generator = getGroupByTitleGenerator(groupBy);
+                var generator = GetGroupByTitleGenerator(groupBy);
                 if (generator == null)
                 {
                     continue;
                 }
 
-                var childNodeName = getGroupByTitleGenerator(groupBy).Invoke(result);
+                var childNodeName = GetGroupByTitleGenerator(groupBy).Invoke(result);
                 if (childNodeName == null)
                 {
                     continue;
@@ -80,7 +80,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return children;
         }
 
-        private static Func<Result, string> getGroupByTitleGenerator(GroupBy groupBy)
+        private static Func<Result, string> GetGroupByTitleGenerator(GroupBy groupBy)
         {
             switch (groupBy)
             {

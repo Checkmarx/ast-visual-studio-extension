@@ -7,22 +7,26 @@ namespace ast_visual_studio_extension.CxExtension
     /// <summary>
     /// This class is used to calculate values for CxWindowControl.xaml file
     /// </summary>
-    internal class XAMLCalculations : IValueConverter
+    internal class XAMLCalculations : IMultiValueConverter
     {
-        #region IValueConverter Members
+        #region IMultiValueConverter Members
 
-        // Calculate the scroll bar height in the ResultInfoPanel for description section when the extension window is resized
-        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
+            double gridHeigh = System.Convert.ToDouble(values[0]);
+            
+            if (gridHeigh == 0) return gridHeigh;
+            
+            bool triageCommentVisible = System.Convert.ToBoolean(values[1]);
 
-            int gridHeigh = System.Convert.ToInt32(value);
+            double offset = triageCommentVisible ? 201 : 146;
 
-            return gridHeigh - 212;
+            return (double) gridHeigh - offset;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Going back to what you had isn't supported.");
         }
 
         #endregion

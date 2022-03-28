@@ -20,6 +20,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// <returns></returns>
         public static TextBlock CreateTreeViewItemHeader(string severity, string displayName)
         {
+            displayName = displayName.Replace("_", "__");
+
             StackPanel stackPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal
