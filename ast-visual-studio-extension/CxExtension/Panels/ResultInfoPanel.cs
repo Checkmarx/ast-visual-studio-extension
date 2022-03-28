@@ -2,6 +2,7 @@
 using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
@@ -71,6 +72,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
             cxWindowUI.ResultTitle.Text = result.Data.QueryName ?? result.Id;
+            cxWindowUI.CodebashingTextBlock.Visibility = result.Type.Equals("sast") ? Visibility.Visible : Visibility.Hidden;
         }
 
         // Draw description tab
@@ -178,7 +180,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    _ = CxUtils.DisplayMessageInfoBarAsync(cxToolbar.Package, string.Format(CxConstants.TRIAGE_UPDATE_FAILED, ex.Message));
+                    CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, string.Format(CxConstants.TRIAGE_UPDATE_FAILED, ex.Message), KnownMonikers.StatusWarning);
                     
                     return false;
                 }
@@ -257,7 +259,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    _ = CxUtils.DisplayMessageInfoBarAsync(cxToolbar.Package, string.Format(CxConstants.TRIAGE_SHOW_FAILED, ex.Message));
+                    CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, string.Format(CxConstants.TRIAGE_SHOW_FAILED, ex.Message), KnownMonikers.StatusWarning);
                     errorMessage = ex.Message;
 
                     return null;
@@ -302,6 +304,41 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                 triageChangesTab.Children.Add(new Separator());
             }
+        }
+
+        public async Task CodeBashingListAsync(CxToolbar cxToolbar)
+        {
+            CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+            if (cxWrapper == null) return;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    CodeBashing codeBashing = cxWrapper.CodeBashingList(result.VulnerabilityDetails.CweId, result.Data.LanguageName, result.Data.QueryName)[0];
+
+                    if (codeBashing.Path.Contains("http"))
+                    {
+                        System.Diagnostics.Process.Start(codeBashing.Path);
+                    }
+                    else
+                    {
+                        CxUtils.DisplayMessageInInfoWithLinkBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LICENSE, KnownMonikers.StatusWarning, CxConstants.CODEBASHING_LINK, CxConstants.CODEBASHING_LINK);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    if (ex.GetType() == typeof(CxCLI.CxException))
+                    {
+                        CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LESSON, KnownMonikers.StatusWarning);
+                    }
+                    else
+                    {
+                        // TODO: log error
+                    }
+                }
+            });
         }
 
         /// <summary>

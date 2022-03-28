@@ -496,12 +496,28 @@
         <StackPanel Grid.Row="1" x:Name="ResultInfoPanel" Grid.Column="1" Visibility="Hidden">
 
             <!-- Result Title -->
-            <WrapPanel Name="ResultTitleWrapPanel" Orientation="Horizontal" Margin="10" MinHeight="25">
-                <Label Name="hiddenLbl" Content="My Label" Visibility="Hidden" Width="0"/>
-                <Label Name="hiddenLblHoverColor" Visibility="Hidden" Width="0" Foreground="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
-                <Image x:Name="ResultSeverityIcon" Stretch="None" />
-                <TextBlock TextWrapping="WrapWithOverflow" Grid.Column="1" x:Name="ResultTitle" FontSize="15" Margin="7,2,0,0"></TextBlock>
-            </WrapPanel>
+            <Label Name="hiddenLbl" Content="My Label" Visibility="Hidden" Width="0" Height="0"/>
+            <Label Name="hiddenLblHoverColor" Visibility="Hidden" Width="0" Foreground="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}" Height="0"/>
+
+            <!-- Result Title -->
+            <Grid x:Name="TitleGrid" Margin="10" MinHeight="25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <WrapPanel Name="ResultTitleWrapPanel" Orientation="Horizontal">
+                    <Image x:Name="ResultSeverityIcon" Stretch="None" />
+                    <TextBlock TextWrapping="WrapWithOverflow" Grid.Column="1" x:Name="ResultTitle" FontSize="15" Margin="7,2,0,0"/>
+                </WrapPanel>
+
+                <TextBlock Visibility="Hidden" x:Name="CodebashingTextBlock" Grid.Column="2" Margin="0,6,0,0">
+		            <Run>Learn more at</Run>
+		            <Run Cursor="Hand" Foreground="Orange" FontWeight="Bold" MouseUp="OnClickCodebashingLink"> >_</Run>
+		            <Run Cursor="Hand" MouseUp="OnClickCodebashingLink">codebashing</Run>
+                </TextBlock>
+            </Grid>
 
             <Separator Margin="5,0,5,0"/>
 

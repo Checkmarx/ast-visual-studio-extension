@@ -236,6 +236,27 @@ namespace ast_visual_studio_extension.CxCli
             return JsonConvert.DeserializeObject<List<Predicate>>(predicates);
         }
 
+        public List<CodeBashing> CodeBashingList(string cweId, string language, string queryName)
+        {
+            logger.Info("Fetching codebashing link...");
+
+            List<string> codebashingArguments = new List<string>
+            {
+                "results",
+                "codebashing",
+                "--language",
+                language,
+                "--vulnerabity-type",
+                queryName,
+                "--cwe-id",
+                cweId,
+            };
+
+            string codebashingLink = Execution.ExecuteCommand(WithConfigArguments(codebashingArguments));
+
+            return JsonConvert.DeserializeObject<List<CodeBashing>>(codebashingLink);
+        }
+
         /// <summary>
         /// Add base arguments to command
         /// </summary>

@@ -95,8 +95,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeBranch(object sender, SelectionChangedEventArgs e)
         {
-            ComboBox branchesCombo = sender as ComboBox;
-            if (branchesCombo == null || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
+            if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
 
             cxToolbar.EnableCombos(false);
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_LOADING_SCANS : CxToolbar.currentScanId;
