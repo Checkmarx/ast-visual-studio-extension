@@ -21,7 +21,7 @@
 <p align="center">
     The CxAST Visual Studio plugin enableds you to import results from a CxAST scan directly into your IDE.
     <br />
-    <a href="https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6030557208/JetBrains"><strong>Explore the docs »</strong></a>
+    <a href="https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336643630/CxAST+Visual+Studio+Plugin"><strong>Explore the docs »</strong></a>
     <br />
     <a href=""><strong>Marketplace »</strong></a>
     <br />
