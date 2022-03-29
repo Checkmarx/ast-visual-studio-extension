@@ -306,6 +306,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             }
         }
 
+        /// <summary>
+        /// Get codebashing link
+        /// </summary>
+        /// <param name="cxToolbar"></param>
+        /// <returns></returns>
         public async Task CodeBashingListAsync(CxToolbar cxToolbar)
         {
             CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
@@ -323,9 +328,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                     }
                     else
                     {
-                        CxUtils.DisplayMessageInInfoWithLinkBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LICENSE, KnownMonikers.StatusWarning, CxConstants.CODEBASHING_LINK, CxConstants.CODEBASHING_LINK);
+                        CxUtils.DisplayMessageInInfoWithLinkBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LICENSE, KnownMonikers.StatusWarning, CxConstants.CODEBASHING_LINK, CxConstants.CODEBASHING_OPEN_HTTP_LINK_ID);
                     }
-
                 }
                 catch (Exception ex)
                 {

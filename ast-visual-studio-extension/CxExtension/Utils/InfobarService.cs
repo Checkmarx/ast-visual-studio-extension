@@ -1,11 +1,9 @@
 ﻿using Microsoft;
-using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
@@ -13,11 +11,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     {
         private readonly IServiceProvider serviceProvider;
         private uint cookie;
+
         private InfobarService(IServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
         }
-        public static InfobarService Instance { get; private set; }
+
+        private static InfobarService Instance { get; set; }
+
         public static InfobarService Initialize(IServiceProvider serviceProvider)
         {
             if(Instance == null)
@@ -28,6 +29,31 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return Instance;
         }
 
+        /// <summary>
+        /// Show a message in the info bar
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="messageSeverity"></param>
+        /// <returns></returns>
+        public async Task ShowInfoBarAsync(string message, ImageMoniker messageSeverity)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            InfoBarTextSpan text = new InfoBarTextSpan(message);
+            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
+            InfoBarModel infoBarModel = new InfoBarModel(spans, messageSeverity, isCloseButtonVisible: true);
+            
+           _ = DisplayInfoBarAsync(infoBarModel);
+        }
+
+        /// <summary>
+        /// Show a message in the info bar with a http link
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="messageSeverity"></param>
+        /// <param name="linkDisplayName"></param>
+        /// <param name="linkId"></param>
+        /// <returns></returns>
         public async Task ShowInfoBarWithLinkAsync(string message, ImageMoniker messageSeverity, string linkDisplayName, string linkId)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -38,21 +64,15 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             InfoBarActionItem[] actions = new InfoBarActionItem[] { hyperLink };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, messageSeverity, isCloseButtonVisible: true);
 
-            _ = ShowInfoBar(infoBarModel);
+            _ = DisplayInfoBarAsync(infoBarModel);
         }
 
-        public async Task ShowInfoBarAsync(string message, ImageMoniker messageSeverity)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            InfoBarTextSpan text = new InfoBarTextSpan(message);
-            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
-            InfoBarModel infoBarModel = new InfoBarModel(spans, messageSeverity, isCloseButtonVisible: true);
-            
-           _ = ShowInfoBar(infoBarModel);
-        }
-
-        private async Task ShowInfoBar(InfoBarModel infoBarModel)
+        /// <summary>
+        /// Show info bar
+        /// </summary>
+        /// <param name="infoBarModel"></param>
+        /// <returns></returns>
+        private async Task DisplayInfoBarAsync(InfoBarModel infoBarModel)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -82,6 +102,11 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             }
         }
 
+        /// <summary>
+        /// Trigerred when a info bar link is clicked
+        /// </summary>
+        /// <param name="infoBarUIElement"></param>
+        /// <param name="actionItem"></param>
         public void OnActionItemClicked(IVsInfoBarUIElement infoBarUIElement, IVsInfoBarActionItem actionItem)
         {
             ThreadHelper.ThrowIfNotOnUIThread();

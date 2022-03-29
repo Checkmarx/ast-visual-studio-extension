@@ -127,6 +127,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             _ = InfobarService.Initialize(package).ShowInfoBarAsync(message, messageSeverity);
         }
 
+        /// <summary>
+        /// Display a warning notification in the info bar with http link
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="message"></param>
+        /// <param name="messageSeverity"></param>
+        /// <param name="linkDisplayName"></param>
+        /// <param name="linkId"></param>
         public static void DisplayMessageInInfoWithLinkBar(AsyncPackage package, string message, ImageMoniker messageSeverity, string linkDisplayName, string linkId)
         {
             _ = InfobarService.Initialize(package).ShowInfoBarWithLinkAsync(message, messageSeverity, linkDisplayName, linkId);
