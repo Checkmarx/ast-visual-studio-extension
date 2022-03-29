@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json.schemastore.org/vsix-publish",
+  "categories": [ "security", "other" ],
+  "identity": {
+    "internalName": "astVisualStudioExtension"
+  },
+  "overview": "README.md",
+  "publisher": "checkmarx",
+  "repo": "https://github.com/Checkmarx/ast-visual-studio-extension"
+}

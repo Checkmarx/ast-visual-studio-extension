@@ -53,7 +53,8 @@ namespace ast_visual_studio_extension.CxCli
 
             List<string> resultsArguments = new List<string>
             {
-                CxConstants.CLI_RESULT_CMD,
+                CxConstants.CLI_RESULTS_CMD,
+                CxConstants.CLI_SHOW_CMD,
                 CxConstants.FLAG_SCAN_ID,
                 scanId.ToString(),
                 CxConstants.FLAG_REPORT_FORMAT,

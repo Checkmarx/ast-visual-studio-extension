@@ -74,13 +74,13 @@ Once you have run a CxAST scan on the source code of your Visual Studio project,
 ### Setting Up
 
 
-All the procedures to set the visual studio extension up can be found [here](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6058442786/Installing+the+CxAST+JetBrains+Plugin).
+All the procedures to set the visual studio extension up can be found [here](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336708609/Installation+and+Initial+Setup+of+the+CxAST+Visual+Studio+Plugin).
 
 
 
 ## Usage
 
-To see how you can use our tool, please refer to the [Documentation](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6030557208/JetBrains)
+To see how you can use our tool, please refer to the [Documentation](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336643130/Viewing+CxAST+Results+in+Visual+Studio)
 
 
 ## Contribution
@@ -118,4 +118,4 @@ Find more integrations from our team [here](https://github.com/Checkmarx/ci-cd-i
 [issues-shield]: https://img.shields.io/github/issues/Checkmarx/ast-visual-studio-extension.svg
 [issues-url]: https://github.com/Checkmarx/ast-visual-studio-extension/issues
 [license-shield]: https://img.shields.io/github/license/Checkmarx/ast-visual-studio-extension.svg
-[license-url]: https://github.com/Checkmarx/ast-visual-studio-extension/blob/main/LICENSE
+[license-url]: https://github.com/Checkmarx/ast-visual-studio-extension/blob/main/LICENSE.txt

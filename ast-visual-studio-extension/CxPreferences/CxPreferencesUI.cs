@@ -46,22 +46,22 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void OnServerUrlChange(object sender, EventArgs e)
         {
-            cxPreferencesModule.ServerUrl = tbServerUrl.Text;
+            cxPreferencesModule.ServerUrl = tbServerUrl.Text.Trim();
         }
 
         private void OnAuthUrlChange(object sender, EventArgs e)
         {
-            cxPreferencesModule.AuthUrl = tbAuthUrl.Text;
+            cxPreferencesModule.AuthUrl = tbAuthUrl.Text.Trim();
         }
 
         private void OnTenantNameChange(object sender, EventArgs e)
         {
-            cxPreferencesModule.TenantName = tbTenantName.Text;
+            cxPreferencesModule.TenantName = tbTenantName.Text.Trim();
         }
 
         private void OnApiKeyChange(object sender, EventArgs e)
         {
-            cxPreferencesModule.ApiKey = tbApiKey.Text;
+            cxPreferencesModule.ApiKey = tbApiKey.Text.Trim();
         }
 
         private void OnAdditionalParametersChange(object sender, EventArgs e)
