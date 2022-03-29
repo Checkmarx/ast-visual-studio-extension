@@ -10,5 +10,7 @@ namespace ast_visual_studio_extension.CxCLI
         {
             this.exitCode = exitCode;
         }
+
+        public int ExitCode { get { return exitCode; } }
     }
 }

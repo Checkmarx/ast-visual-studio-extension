@@ -322,25 +322,23 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 {
                     CodeBashing codeBashing = cxWrapper.CodeBashingList(result.VulnerabilityDetails.CweId, result.Data.LanguageName, result.Data.QueryName)[0];
 
-                    if (codeBashing.Path.Contains("http"))
-                    {
-                        System.Diagnostics.Process.Start(codeBashing.Path);
-                    }
-                    else
+                    System.Diagnostics.Process.Start(codeBashing.Path);
+                }
+                catch (CxCLI.CxException ex)
+                {
+                    if (ex.ExitCode == CxConstants.LICENSE_NOT_FOUND_EXIT_CODE)
                     {
                         CxUtils.DisplayMessageInInfoWithLinkBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LICENSE, KnownMonikers.StatusWarning, CxConstants.CODEBASHING_LINK, CxConstants.CODEBASHING_OPEN_HTTP_LINK_ID);
                     }
-                }
-                catch (Exception ex)
-                {
-                    if (ex.GetType() == typeof(CxCLI.CxException))
+                    else if (ex.ExitCode == CxConstants.LESSON_NOT_FOUND_EXIT_CODE)
                     {
                         CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LESSON, KnownMonikers.StatusWarning);
                     }
-                    else
-                    {
-                        // TODO: log error
-                    }
+                }
+                catch(Exception ex)
+                {
+                    //TODO: send error message to log
+                    CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, string.Format(CxConstants.ERROR_GETTING_CODEBASHING_LINK, ex.Message), KnownMonikers.StatusError);
                 }
             });
         }

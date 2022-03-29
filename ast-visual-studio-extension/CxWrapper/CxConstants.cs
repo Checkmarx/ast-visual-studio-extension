@@ -18,6 +18,7 @@
         public static string CLI_SHOW_CMD => "show";
         public static string CLI_TRIAGE_CMD => "triage";
         public static string CLI_UPDATE_CMD => "update";
+        public static string CLI_CODEBASHING_CMD => "codebashing";
 
         /** CLI FLAGS **/
         public static string FLAG_BASE_URI => "--base-uri";
@@ -37,6 +38,9 @@
         public static string FLAG_COMMENT => "--comment";
         public static string FLAG_SEVERITY => "--severity";
         public static string FLAG_DEBUG => "--debug";
+        public static string FLAG_LANGUAGE => "--language";
+        public static string FLAG_VULNERABILITY_TYPE => "--vulnerability-type";
+        public static string FLAG_CWE_ID => "--cwe-id";
 
         /** EXCEPTIONS **/
         public static string EXCEPTION_URI_NOT_SET => "Checkmarx server URL is not set";
@@ -53,6 +57,7 @@
         public static string LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD => "Updating the similarityId {0} with state {1} and severity {2}...";
         public static string LOG_RUNNING_TRIAGE_SHOW_CMD => "Executing 'triage show' command using the CLI...";
         public static string LOG_RUNNING_TRIAGE_SHOW_INFO_CMD => "Fetching the list of predicates for projectId {0} , similarityId {1} and scan-type {2}...";
+        public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link...";
 
         /** FILE EXTENSIONS **/
         public static string EXTENSION_JSON => ".json";
