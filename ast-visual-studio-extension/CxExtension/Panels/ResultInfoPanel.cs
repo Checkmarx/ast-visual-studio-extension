@@ -73,6 +73,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
             cxWindowUI.ResultTitle.Text = result.Data.QueryName ?? result.Id;
             cxWindowUI.CodebashingTextBlock.Visibility = result.Type.Equals("sast") ? Visibility.Visible : Visibility.Hidden;
+
+            if(cxWindowUI.CodebashingTextBlock.Visibility == Visibility.Visible)
+            {
+                cxWindowUI.CodebashingTextBlock.ToolTip = string.Format(CxConstants.CODEBASHING_LINK_TOOLTIP, result.Data.QueryName);
+            }
         }
 
         // Draw description tab

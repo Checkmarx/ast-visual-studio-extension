@@ -19,10 +19,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string RESOURCES_BASE_DIR => "pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/";
         public static int FILE_PATH_MAX_LEN => 45;
         public static string COLLAPSE_CRUMB => "...";
-        public static string CODEBASHING_NO_LESSON => "Currently, this vulnerability has no lesson.";
-        public static string CODEBASHING_NO_LICENSE => "You don't have a license for Codebashing. Please Contact your Admin for the full version implementation. Meanwhile, you can use:";
-        public static string CODEBASHING_LINK => "https://free.codebashing.com";
-        public static string CODEBASHING_OPEN_HTTP_LINK_ID => "OpenHTTPLink";
 
         /************ ICONS ************/
         public static string ICON_HIGH => "high.png";
@@ -72,5 +68,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /************ EXIT CODES ************/
         public static int LICENSE_NOT_FOUND_EXIT_CODE => 3;
         public static int LESSON_NOT_FOUND_EXIT_CODE => 4;
+
+        /************ CODEBASHING ************/
+        public static string CODEBASHING_NO_LESSON => "Currently, this vulnerability has no lesson.";
+        public static string CODEBASHING_NO_LICENSE => "You don't have a license for Codebashing. Please Contact your Admin for the full version implementation. Meanwhile, you can use:";
+        public static string CODEBASHING_LINK => "https://free.codebashing.com";
+        public static string CODEBASHING_OPEN_HTTP_LINK_ID => "OpenHTTPLink";
+        public static string CODEBASHING_LINK_TOOLTIP => "Learn more about {0} using Checkmarx's eLearning platform";
     }
 }
