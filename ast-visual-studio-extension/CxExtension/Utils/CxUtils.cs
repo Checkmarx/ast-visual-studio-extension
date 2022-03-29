@@ -4,11 +4,14 @@ using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxPreferences;
 using Microsoft.VisualStudio.Imaging;
+using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
@@ -119,31 +122,22 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// <param name="package"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public async static Task DisplayMessageInfoBarAsync(AsyncPackage package, string message)
+        public static void DisplayMessageInInfoBar(AsyncPackage package, string message, ImageMoniker messageSeverity)
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            _ = InfobarService.Initialize(package).ShowInfoBarAsync(message, messageSeverity);
+        }
 
-            if (await package.GetServiceAsync((typeof(SVsShell))) is IVsShell shell)
-            {
-                // Get the main window handle to host our InfoBar
-                shell.GetProperty((int)__VSSPROPID7.VSSPROPID_MainWindowInfoBarHost, out var obj);
-                
-                var host = (IVsInfoBarHost)obj;
-
-                if (host == null) return;
-
-                InfoBarModel infoBarModel = new InfoBarModel(message, KnownMonikers.StatusWarning, isCloseButtonVisible: true);
-
-                if (!(await package.GetServiceAsync(typeof(SVsInfoBarUIFactory)) is IVsInfoBarUIFactory factory)) return;
-
-                IVsInfoBarUIElement element = factory.CreateInfoBar(infoBarModel);
-
-                host.AddInfoBar(element);
-
-                await Task.Delay(10000);
-
-                host.RemoveInfoBar(element);
-            }
+        /// <summary>
+        /// Display a warning notification in the info bar with http link
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="message"></param>
+        /// <param name="messageSeverity"></param>
+        /// <param name="linkDisplayName"></param>
+        /// <param name="linkId"></param>
+        public static void DisplayMessageInInfoWithLinkBar(AsyncPackage package, string message, ImageMoniker messageSeverity, string linkDisplayName, string linkId)
+        {
+            _ = InfobarService.Initialize(package).ShowInfoBarWithLinkAsync(message, messageSeverity, linkDisplayName, linkId);
         }
 
         /// <summary>

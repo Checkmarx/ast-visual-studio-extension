@@ -40,6 +40,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /************ INFO MESSAGES ************/
         public static string INFO_GETTING_RESULTS => "Getting results...";
 
+        /************ ERROR MESSAGES ************/
+        public static string ERROR_GETTING_CODEBASHING_LINK => "An error occurred while getting codebashing link: {0}";
+
         /************ NOTIFICATIONS ************/
         public static string NOTIFY_FILE_NOT_FOUND => "File {0} not found in the solution. Please ensure you are in the correct scan.";
 
@@ -61,5 +64,16 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         /************ DATE FORMATS ************/
         public static string DATE_OUTPUT_FORMAT => "dd/MM/yyyy HH:mm:ss";
+
+        /************ EXIT CODES ************/
+        public static int LICENSE_NOT_FOUND_EXIT_CODE => 3;
+        public static int LESSON_NOT_FOUND_EXIT_CODE => 4;
+
+        /************ CODEBASHING ************/
+        public static string CODEBASHING_NO_LESSON => "Currently, this vulnerability has no lesson.";
+        public static string CODEBASHING_NO_LICENSE => "You don't have a license for Codebashing. Please Contact your Admin for the full version implementation. Meanwhile, you can use:";
+        public static string CODEBASHING_LINK => "https://free.codebashing.com";
+        public static string CODEBASHING_OPEN_HTTP_LINK_ID => "OpenHTTPLink";
+        public static string CODEBASHING_LINK_TOOLTIP => "Learn more about {0} using Checkmarx's eLearning platform";
     }
 }

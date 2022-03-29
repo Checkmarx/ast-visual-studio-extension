@@ -259,5 +259,10 @@ namespace ast_visual_studio_extension.CxExtension
             SettingsBtn.IsChecked = false;
             package.ShowOptionPage(typeof(CxPreferencesModule));
         }
+
+        private void OnClickCodebashingLink(object sender, MouseButtonEventArgs e)
+        {
+            resultInfoPanel.CodeBashingListAsync(cxToolbar);
+        }
     }
 }

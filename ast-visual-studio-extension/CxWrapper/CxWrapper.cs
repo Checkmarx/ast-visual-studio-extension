@@ -238,6 +238,34 @@ namespace ast_visual_studio_extension.CxCli
         }
 
         /// <summary>
+        /// COdebashing link command
+        /// </summary>
+        /// <param name="cweId"></param>
+        /// <param name="language"></param>
+        /// <param name="queryName"></param>
+        /// <returns></returns>
+        public List<CodeBashing> CodeBashingList(string cweId, string language, string queryName)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_CODEBASHING_CMD);
+
+            List<string> codebashingArguments = new List<string>
+            {
+                CxConstants.CLI_RESULTS_CMD,
+                CxConstants.CLI_CODEBASHING_CMD,
+                CxConstants.FLAG_LANGUAGE,
+                language,
+                CxConstants.FLAG_VULNERABILITY_TYPE,
+                queryName,
+                CxConstants.FLAG_CWE_ID,
+                cweId,
+            };
+
+            string codebashingLink = Execution.ExecuteCommand(WithConfigArguments(codebashingArguments));
+
+            return JsonConvert.DeserializeObject<List<CodeBashing>>(codebashingLink);
+        }
+
+        /// <summary>
         /// Add base arguments to command
         /// </summary>
         /// <param name="baseArguments"></param>

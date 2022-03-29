@@ -2,6 +2,7 @@
 using ast_visual_studio_extension.CxCLI.Models;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
@@ -71,6 +72,12 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
             cxWindowUI.ResultTitle.Text = result.Data.QueryName ?? result.Id;
+            cxWindowUI.CodebashingTextBlock.Visibility = result.Type.Equals("sast") ? Visibility.Visible : Visibility.Hidden;
+
+            if(cxWindowUI.CodebashingTextBlock.Visibility == Visibility.Visible)
+            {
+                cxWindowUI.CodebashingTextBlock.ToolTip = string.Format(CxConstants.CODEBASHING_LINK_TOOLTIP, result.Data.QueryName);
+            }
         }
 
         // Draw description tab
@@ -178,7 +185,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    _ = CxUtils.DisplayMessageInfoBarAsync(cxToolbar.Package, string.Format(CxConstants.TRIAGE_UPDATE_FAILED, ex.Message));
+                    CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, string.Format(CxConstants.TRIAGE_UPDATE_FAILED, ex.Message), KnownMonikers.StatusWarning);
                     
                     return false;
                 }
@@ -257,7 +264,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 }
                 catch (Exception ex)
                 {
-                    _ = CxUtils.DisplayMessageInfoBarAsync(cxToolbar.Package, string.Format(CxConstants.TRIAGE_SHOW_FAILED, ex.Message));
+                    CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, string.Format(CxConstants.TRIAGE_SHOW_FAILED, ex.Message), KnownMonikers.StatusWarning);
                     errorMessage = ex.Message;
 
                     return null;
@@ -302,6 +309,43 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                 triageChangesTab.Children.Add(new Separator());
             }
+        }
+
+        /// <summary>
+        /// Get codebashing link
+        /// </summary>
+        /// <param name="cxToolbar"></param>
+        /// <returns></returns>
+        public async Task CodeBashingListAsync(CxToolbar cxToolbar)
+        {
+            CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+            if (cxWrapper == null) return;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    CodeBashing codeBashing = cxWrapper.CodeBashingList(result.VulnerabilityDetails.CweId, result.Data.LanguageName, result.Data.QueryName)[0];
+
+                    System.Diagnostics.Process.Start(codeBashing.Path);
+                }
+                catch (CxCLI.CxException ex)
+                {
+                    if (ex.ExitCode == CxConstants.LICENSE_NOT_FOUND_EXIT_CODE)
+                    {
+                        CxUtils.DisplayMessageInInfoWithLinkBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LICENSE, KnownMonikers.StatusWarning, CxConstants.CODEBASHING_LINK, CxConstants.CODEBASHING_OPEN_HTTP_LINK_ID);
+                    }
+                    else if (ex.ExitCode == CxConstants.LESSON_NOT_FOUND_EXIT_CODE)
+                    {
+                        CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, CxConstants.CODEBASHING_NO_LESSON, KnownMonikers.StatusWarning);
+                    }
+                }
+                catch(Exception ex)
+                {
+                    //TODO: send error message to log
+                    CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, string.Format(CxConstants.ERROR_GETTING_CODEBASHING_LINK, ex.Message), KnownMonikers.StatusError);
+                }
+            });
         }
 
         /// <summary>

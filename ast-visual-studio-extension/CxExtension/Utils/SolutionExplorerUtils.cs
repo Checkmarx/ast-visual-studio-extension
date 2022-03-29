@@ -1,5 +1,6 @@
 ﻿using ast_visual_studio_extension.CxExtension.Panels;
 using EnvDTE;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -40,7 +41,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             if (files.Count == 0)
             {
-                _ = CxUtils.DisplayMessageInfoBarAsync(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, node.FileName));
+                CxUtils.DisplayMessageInInfoBar(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, node.FileName), KnownMonikers.StatusWarning);
             }
 
             var dte = GetDTE();
