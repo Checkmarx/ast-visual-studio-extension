@@ -118,4 +118,4 @@ Find more integrations from our team [here](https://github.com/Checkmarx/ci-cd-i
 [issues-shield]: https://img.shields.io/github/issues/Checkmarx/ast-visual-studio-extension.svg
 [issues-url]: https://github.com/Checkmarx/ast-visual-studio-extension/issues
 [license-shield]: https://img.shields.io/github/license/Checkmarx/ast-visual-studio-extension.svg
-[license-url]: https://github.com/Checkmarx/ast-visual-studio-extension/blob/main/LICENSE
+[license-url]: https://github.com/Checkmarx/ast-visual-studio-extension/blob/main/LICENSE.txt
