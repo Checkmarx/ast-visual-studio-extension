@@ -41,12 +41,12 @@ namespace ast_visual_studio_extension.CxPreferences
             this.tbApiKey = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.AdditionalParametersHelPage = new System.Windows.Forms.LinkLabel();
             this.tbAdditionalParameters = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.lblValidationResult = new System.Windows.Forms.TextBox();
             this.helpPage = new System.Windows.Forms.LinkLabel();
-            this.AdditionalParametersHelPage = new System.Windows.Forms.LinkLabel();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -173,16 +173,25 @@ namespace ast_visual_studio_extension.CxPreferences
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Additional settings";
             // 
+            // AdditionalParametersHelPage
+            // 
+            this.AdditionalParametersHelPage.AutoSize = true;
+            this.AdditionalParametersHelPage.Location = new System.Drawing.Point(152, 52);
+            this.AdditionalParametersHelPage.Name = "AdditionalParametersHelPage";
+            this.AdditionalParametersHelPage.Size = new System.Drawing.Size(237, 13);
+            this.AdditionalParametersHelPage.TabIndex = 2;
+            this.AdditionalParametersHelPage.TabStop = true;
+            this.AdditionalParametersHelPage.Text = "Checkmarx AST additional parameters help page";
+            this.AdditionalParametersHelPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.AdditionalParametersHelPage_LinkClicked);
+            // 
             // tbAdditionalParameters
             // 
             this.tbAdditionalParameters.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbAdditionalParameters.Location = new System.Drawing.Point(155, 20);
             this.tbAdditionalParameters.Name = "tbAdditionalParameters";
-            this.tbAdditionalParameters.PasswordChar = '*';
             this.tbAdditionalParameters.Size = new System.Drawing.Size(625, 20);
             this.tbAdditionalParameters.TabIndex = 1;
-            this.tbAdditionalParameters.UseSystemPasswordChar = true;
             this.tbAdditionalParameters.TextChanged += new System.EventHandler(this.OnAdditionalParametersChange);
             // 
             // label5
@@ -228,17 +237,6 @@ namespace ast_visual_studio_extension.CxPreferences
             this.helpPage.TabStop = true;
             this.helpPage.Text = "Checkmarx AST Visual Studio Extension help page";
             this.helpPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HelpPage_LinkClicked);
-            // 
-            // AdditionalParametersHelPage
-            // 
-            this.AdditionalParametersHelPage.AutoSize = true;
-            this.AdditionalParametersHelPage.Location = new System.Drawing.Point(152, 52);
-            this.AdditionalParametersHelPage.Name = "AdditionalParametersHelPage";
-            this.AdditionalParametersHelPage.Size = new System.Drawing.Size(237, 13);
-            this.AdditionalParametersHelPage.TabIndex = 2;
-            this.AdditionalParametersHelPage.TabStop = true;
-            this.AdditionalParametersHelPage.Text = "Checkmarx AST additional parameters help page";
-            this.AdditionalParametersHelPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.AdditionalParametersHelPage_LinkClicked);
             // 
             // CxPreferencesUI
             // 
