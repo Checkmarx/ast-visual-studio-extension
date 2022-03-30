@@ -22,19 +22,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     {
         private Result result;
         private readonly CxWindowControl cxWindowUI;
-        private static ResultInfoPanel instance;
 
-        public static ResultInfoPanel GetInstance(CxWindowControl cxWindow)
-        {
-            if(instance == null)
-            {
-                instance = new ResultInfoPanel(cxWindow);
-            }
-
-            return instance;
-        }
-
-        private ResultInfoPanel(CxWindowControl cxWindow)
+        public ResultInfoPanel(CxWindowControl cxWindow)
         {
             cxWindowUI = cxWindow;
             UIUtils.CxWindowUI = cxWindowUI;

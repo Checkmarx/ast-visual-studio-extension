@@ -28,11 +28,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private readonly CxWindowControl cxWindowUI;
         private readonly AsyncPackage package;
 
-        public ResultsTreePanel(AsyncPackage package, CxWindowControl cxWindow)
+        public ResultsTreePanel(AsyncPackage package, CxWindowControl cxWindow, ResultInfoPanel resultInfoPanel)
         {
             this.package = package;
             cxWindowUI = cxWindow;
-            resultInfoPanel = ResultInfoPanel.GetInstance(cxWindow);
+            this.resultInfoPanel = resultInfoPanel;
 
             resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package, cxWindow);
             UIUtils.CxWindowUI = cxWindowUI;

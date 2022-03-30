@@ -25,9 +25,9 @@ namespace ast_visual_studio_extension.CxExtension
 
             this.package = package;
 
-            ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this);
+            resultInfoPanel = new ResultInfoPanel(this);
 
-            resultInfoPanel = Panels.ResultInfoPanel.GetInstance(this);
+            ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel);
 
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
@@ -262,7 +262,7 @@ namespace ast_visual_studio_extension.CxExtension
 
         private void OnClickCodebashingLink(object sender, MouseButtonEventArgs e)
         {
-            resultInfoPanel.CodeBashingListAsync(cxToolbar);
+            _ = resultInfoPanel.CodeBashingListAsync(cxToolbar);
         }
     }
 }

@@ -51,6 +51,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             TextBlock resultUIElement = new TextBlock();
             resultUIElement.Inlines.Add(uiContainer);
             resultUIElement.Tag = displayName;
+            resultUIElement.TextWrapping = TextWrapping.WrapWithOverflow;
 
             return resultUIElement;
         }
@@ -85,7 +86,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             return new TextBlock
             {
-                Text = message
+                Text = message,
+                TextWrapping = TextWrapping.WrapWithOverflow
             };
         }
 
