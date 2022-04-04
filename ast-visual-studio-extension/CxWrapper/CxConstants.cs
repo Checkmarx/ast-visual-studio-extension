@@ -1,6 +1,6 @@
 ﻿namespace ast_visual_studio_extension.CxCLI
 {
-    internal static class CxConstants
+    public static class CxConstants
     {
         /** GENERAL **/
         public static string LIMIT_FILTER => "limit=10000";
@@ -19,6 +19,7 @@
         public static string CLI_TRIAGE_CMD => "triage";
         public static string CLI_UPDATE_CMD => "update";
         public static string CLI_CODEBASHING_CMD => "codebashing";
+        public static string CLI_CREATE_CMD => "create";
 
         /** CLI FLAGS **/
         public static string FLAG_BASE_URI => "--base-uri";
@@ -32,6 +33,7 @@
         public static string FLAG_FILTER => "--filter";
         public static string FLAG_FORMAT => "--format";
         public static string FLAG_PROJECT_ID => "--project-id";
+        public static string FLAG_PROJECT_NAME => "--project-name";
         public static string FLAG_SIMILARITY_ID => "--similarity-id";
         public static string FLAG_SCAN_TYPE => "--scan-type";
         public static string FLAG_STATE => "--state";
@@ -40,7 +42,13 @@
         public static string FLAG_DEBUG => "--debug";
         public static string FLAG_LANGUAGE => "--language";
         public static string FLAG_VULNERABILITY_TYPE => "--vulnerability-type";
-        public static string FLAG_CWE_ID => "--cwe-id";
+        public static string FLAG_CWE_ID => "--cwe-id"; 
+        public static string FLAG_SCAN_INFO_FORMAT => "--scan-info-format";
+        public static string FLAG_BRANCH => "--branch";
+        public static string FLAG_FILE_FILTER => "--file-filter";
+        public static string FLAG_SAST_PRESET_NAME => "--sast-preset-name";
+        public static string FLAG_AGENT => "--agent";
+        public static string FLAG_SOURCE => "-s";
 
         /** EXCEPTIONS **/
         public static string EXCEPTION_URI_NOT_SET => "Checkmarx server URL is not set";
@@ -52,12 +60,15 @@
         public static string LOG_RUNNING_GET_PROJECTS_CMD => "Getting projects...";
         public static string LOG_RUNNING_GET_BRANCHES_CMD => "Getting branches for project id {0}...";
         public static string LOG_RUNNING_GET_SCANS_FOR_BRANCH_CMD => "Getting scans for branch {0}...";
+        public static string LOG_RUNNING_GET_SCANS_CMD => "Getting scans...";
         public static string LOG_RUNNING_GET_SCAN_DETAILS_CMD => "Retrieving details for scan id {0}...";
         public static string LOG_RUNNING_TRIAGE_UPDATE_CMD => "Executing 'triage update' command using the CLI...";
         public static string LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD => "Updating the similarityId {0} with state {1} and severity {2}...";
         public static string LOG_RUNNING_TRIAGE_SHOW_CMD => "Executing 'triage show' command using the CLI...";
         public static string LOG_RUNNING_TRIAGE_SHOW_INFO_CMD => "Fetching the list of predicates for projectId {0} , similarityId {1} and scan-type {2}...";
-        public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link...";
+        public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link..."; 
+        public static string LOG_RUNNING_SCAN_CREATE_CMD => "Executing 'scan create' command using the CLI...";
+        public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Retrieving details for project id: {0}...";
 
         /** FILE EXTENSIONS **/
         public static string EXTENSION_JSON => ".json";

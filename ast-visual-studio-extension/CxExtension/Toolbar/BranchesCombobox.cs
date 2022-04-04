@@ -1,6 +1,5 @@
-﻿using ast_visual_studio_extension.CxCli;
-using ast_visual_studio_extension.CxCLI.Models;
-using ast_visual_studio_extension.CxExtension.Utils;
+﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
@@ -28,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <returns></returns>
         public async Task LoadBranchesAsync(string projectId)
         {
-            CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
             if (cxWrapper == null)
             {
                 cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_SELECT_BRANCH;

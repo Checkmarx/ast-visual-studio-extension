@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace ast_visual_studio_extension.CxExtension
+namespace ast_visual_studio_extension.CxExtension.Utils
 {
     /// <summary>
     /// This class is used to calculate values for CxWindowControl.xaml file

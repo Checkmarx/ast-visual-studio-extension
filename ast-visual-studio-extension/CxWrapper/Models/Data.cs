@@ -1,9 +1,9 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace ast_visual_studio_extension.CxCLI.Models
+namespace ast_visual_studio_extension.CxWrapper.Models
 {
-    internal class Data
+    public class Data
     {
         [JsonProperty("queryId")]
         public string QueryId { get; set; }

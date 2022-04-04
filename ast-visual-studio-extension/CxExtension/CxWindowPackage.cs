@@ -1,9 +1,10 @@
-﻿using Microsoft.VisualStudio.Shell;
+﻿using ast_visual_studio_extension.CxExtension.Commands;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Task = System.Threading.Tasks.Task;
+using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -28,7 +29,7 @@ namespace ast_visual_studio_extension.CxExtension
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus1.ctmenu", 1)]
     [ProvideToolWindow(typeof(CxWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Right, Window = EnvDTE.Constants.vsWindowKindOutput)]
-    [Guid(CxWindowPackage.PackageGuidString)]
+    [Guid(PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
     {
         /// <summary>
@@ -87,7 +88,7 @@ namespace ast_visual_studio_extension.CxExtension
             return base.GetToolWindowTitle(toolWindowType, id);
         }
 
-        protected override System.Threading.Tasks.Task<object> InitializeToolWindowAsync(Type toolWindowType, int id, CancellationToken cancellationToken)
+        protected override Task<object> InitializeToolWindowAsync(Type toolWindowType, int id, CancellationToken cancellationToken)
         {
             return Task.FromResult(this as object);
         }

@@ -1,8 +1,9 @@
-﻿using System;
+﻿using ast_visual_studio_extension.CxCLI;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace ast_visual_studio_extension.CxCLI
+namespace ast_visual_studio_extension.CxWrapper.Models
 {
     public class CxConfig
     {

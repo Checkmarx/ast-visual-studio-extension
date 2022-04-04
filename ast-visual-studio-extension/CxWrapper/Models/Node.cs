@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace ast_visual_studio_extension.CxCLI.Models
+namespace ast_visual_studio_extension.CxWrapper.Models
 {
-    internal class Node
+    public class Node
     {
         [JsonProperty("id")]
         public string Id { get; set; }

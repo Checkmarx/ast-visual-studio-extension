@@ -93,6 +93,7 @@
     <Compile Include="CxWrapper\Models\Project.cs" />
     <Compile Include="CxWrapper\Models\Result.cs" />
     <Compile Include="CxWrapper\Models\Results.cs" />
+    <Compile Include="CxWrapper\Models\ResultsSummary.cs" />
     <Compile Include="CxWrapper\Models\Scan.cs" />
     <Compile Include="CxWrapper\Models\VulnerabilityCVSS.cs" />
     <Compile Include="CxWrapper\Models\VulnerabilityDetails.cs" />
@@ -158,6 +159,9 @@
       <Version>17.0.32112.339</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5234" />
+    <PackageReference Include="System.Json">
+      <Version>4.7.1</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="LICENSE.txt">

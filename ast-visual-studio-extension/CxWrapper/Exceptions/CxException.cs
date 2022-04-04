@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ast_visual_studio_extension.CxCLI
+namespace ast_visual_studio_extension.CxWrapper.Exceptions
 {
     public sealed class CxException : Exception
     {

@@ -1,17 +1,10 @@
-﻿using ast_visual_studio_extension.CxCli;
-using ast_visual_studio_extension.CxCLI;
-using ast_visual_studio_extension.CxCLI.Models;
-using ast_visual_studio_extension.CxExtension.Enums;
+﻿using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxPreferences;
-using Microsoft.VisualStudio.Imaging;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
@@ -58,14 +51,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// <param name="package"></param>
         /// <param name="resultsTree"></param>
         /// <returns></returns>
-        public static CxWrapper GetCxWrapper(AsyncPackage package, TreeView resultsTree)
+        public static CxCLI.CxWrapper GetCxWrapper(AsyncPackage package, TreeView resultsTree, Type type)
         {
             try
             {
                 CxPreferencesModule preferences = (CxPreferencesModule) package.GetDialogPage(typeof(CxPreferencesModule));
                 CxConfig configuration = preferences.GetCxConfig();
 
-                return new CxWrapper(configuration);
+                return new CxCLI.CxWrapper(configuration, type);
             }
             catch (Exception e)
             {

@@ -1,7 +1,8 @@
-﻿using ast_visual_studio_extension.CxCli;
-using ast_visual_studio_extension.CxCLI.Models;
+﻿using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using System;
@@ -58,6 +59,15 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.DescriptionTabItem.IsSelected = true;
             cxWindowUI.TriageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
             cxWindowUI.TriageComment.Foreground = new SolidColorBrush(Colors.Gray);
+
+            cxWindowUI.TriageStateCombobox.Items.Clear();
+
+            foreach(State state in Enum.GetValues(typeof(State)))
+            {
+                if (isNotScaEngine && (state == State.IGNORED || state == State.NOT_IGNORED)) continue;
+
+                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() });
+            }
 
             DrawTitle();
             DrawDesrciptionTab();
@@ -160,7 +170,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             string severity = (severityCombobox.SelectedValue as ComboBoxItem).Content as string;
             string comment = triageComment.Text.Equals(CxConstants.TRIAGE_COMMENT_PLACEHOLDER) ? string.Empty : triageComment.Text;
 
-            CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
             if (cxWrapper == null)
             {
                 triageUpdateBtn.IsEnabled = true;
@@ -242,7 +252,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             string similarityId = result.SimilarityId;
             string engineType = result.Type;
 
-            CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
             if (cxWrapper == null) return;
 
             triageChangesTab.Children.Clear();
@@ -313,7 +323,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <returns></returns>
         public async Task CodeBashingListAsync(CxToolbar cxToolbar)
         {
-            CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
             if (cxWrapper == null) return;
 
             await Task.Run(() =>
@@ -324,7 +334,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
                     System.Diagnostics.Process.Start(codeBashing.Path);
                 }
-                catch (CxCLI.CxException ex)
+                catch (CxException ex)
                 {
                     if (ex.ExitCode == CxConstants.LICENSE_NOT_FOUND_EXIT_CODE)
                     {
