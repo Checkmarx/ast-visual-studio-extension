@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace ast_visual_studio_extension.CxCLI.Models
+namespace ast_visual_studio_extension.CxWrapper.Models
 {
-    internal class Result
+    public class Result
     {
         [JsonProperty("type")]
         public string Type { get; set; }
@@ -50,7 +50,7 @@ namespace ast_visual_studio_extension.CxCLI.Models
         public Data Data { get; set; }
 
         [JsonProperty("comments")]
-        public Comments Comments { get; set; }
+        public Comments GetComments { get; set; }
 
         [JsonProperty("vulnerabilityDetails")]
         public VulnerabilityDetails VulnerabilityDetails { get; set; }

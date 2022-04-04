@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace ast_visual_studio_extension.CxCLI.Models
+namespace ast_visual_studio_extension.CxWrapper.Models
 {
-    internal class Predicate
+    public class Predicate
     {
 
         [JsonProperty("ID")]

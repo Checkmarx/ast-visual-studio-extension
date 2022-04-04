@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:ast_visual_studio_extension"
-             xmlns:GenericWPF="clr-namespace:ast_visual_studio_extension.CxExtension"
+             xmlns:GenericWPF="clr-namespace:ast_visual_studio_extension.CxExtension.Utils"
              xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
              xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
@@ -528,15 +528,7 @@
                     <ComboBoxItem>LOW</ComboBoxItem>
                     <ComboBoxItem>INFO</ComboBoxItem>
                 </ComboBox>
-                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageStateCombobox" Margin="5,5,0,0">
-                    <ComboBoxItem>CONFIRMED</ComboBoxItem>
-                    <ComboBoxItem>TO_VERIFY</ComboBoxItem>
-                    <ComboBoxItem>URGENT</ComboBoxItem>
-                    <ComboBoxItem>NOT_EXPLOITABLE</ComboBoxItem>
-                    <ComboBoxItem>PROPOSED_NOT_EXPLOITABLE</ComboBoxItem>
-                    <ComboBoxItem>IGNORED</ComboBoxItem>
-                    <ComboBoxItem>NOT_IGNORED</ComboBoxItem>
-                </ComboBox>
+                <ComboBox VerticalAlignment="Center" IsEditable="True" IsReadOnly="True"  Name="TriageStateCombobox" Margin="5,5,0,0"/>
                 <Button Name="TriageUpdateBtn" Click="OnClickTriageUpdate" Margin="5,5,5,0">Update</Button>
             </UniformGrid>
 

@@ -3,9 +3,9 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace ast_visual_studio_extension.CxCLI.Models
+namespace ast_visual_studio_extension.CxWrapper.Models
 {
-    internal class Project
+    public class Project
     {
         [JsonProperty("ID")]
         public string Id { get; set; }

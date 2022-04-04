@@ -1,10 +1,7 @@
-﻿using ast_visual_studio_extension.Cx;
-using ast_visual_studio_extension.CxCli;
-using ast_visual_studio_extension.CxCLI;
-using ast_visual_studio_extension.CxCLI.Models;
-using ast_visual_studio_extension.CxExtension.Toolbar;
+﻿using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
@@ -99,9 +96,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             CxPreferencesModule preferences = (CxPreferencesModule) package.GetDialogPage(typeof(CxPreferencesModule));
             CxConfig configuration = preferences.GetCxConfig();
 
-            CxWrapper cxWrapper = new CxWrapper(configuration);
+            CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(configuration, GetType());
 
-            var resultsAsync = Task.Run(() => cxWrapper.GetResults(scanId, ReportFormat.json));
+            var resultsAsync = Task.Run(() => cxWrapper.GetResults(scanId));
 
             Results results = await resultsAsync;
 

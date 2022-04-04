@@ -1,5 +1,5 @@
-﻿using ast_visual_studio_extension.CxCLI.Models;
-using ast_visual_studio_extension.CxExtension.Enums;
+﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;

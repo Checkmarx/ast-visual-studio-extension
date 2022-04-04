@@ -1,7 +1,9 @@
-﻿using System;
+﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Json;
 
 namespace ast_visual_studio_extension.CxCLI
 {
@@ -31,8 +33,27 @@ namespace ast_visual_studio_extension.CxCLI
                 StartInfo = GetProcessStartInfo(arguments)
             })
             {
-                process.OutputDataReceived += (s, args) => outputData += string.IsNullOrEmpty(outputData) ? args.Data : Environment.NewLine + args.Data;
                 process.ErrorDataReceived += (s, args) => errorData += string.IsNullOrEmpty(errorData) ? args.Data : Environment.NewLine + args.Data;
+
+                process.OutputDataReceived += (s, args) =>
+                {
+                    bool isValidFormat = true;
+
+                    // avoid invalid json string in the output result
+                    try
+                    {
+                        var tmpObj = JsonValue.Parse(args.Data);
+                    }
+                    catch (Exception)
+                    {
+                        isValidFormat = false;
+                    }
+
+                    if (isValidFormat)
+                    {
+                        outputData += string.IsNullOrEmpty(outputData) ? args.Data : Environment.NewLine + args.Data;
+                    }
+                };
 
                 process.Start();
                 process.BeginOutputReadLine();
@@ -44,15 +65,7 @@ namespace ast_visual_studio_extension.CxCLI
                     throw new CxException(process.ExitCode, errorData.Trim());
                 }
 
-                // When debug flag is used as additional parameters the 'ErrorDataReceived' constains the additional details
-                if (arguments.Contains(CxConstants.FLAG_DEBUG) && outputData.Trim().Length > 0)
-                {
-                    return outputData.Trim();
-                }
-                else
-                {
-                    return !string.IsNullOrEmpty(errorData.Trim()) ? errorData.Trim() : outputData.Trim();
-                }
+                return !string.IsNullOrEmpty(outputData.Trim()) ? outputData.Trim() : errorData.Trim();
             }
         }
 

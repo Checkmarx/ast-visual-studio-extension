@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace ast_visual_studio_extension.CxCLI.Models
+namespace ast_visual_studio_extension.CxWrapper.Models
 {
-    internal class CodeBashing
+    public class CodeBashing
     {
         [JsonProperty("path")]
         public string Path { get; set; }

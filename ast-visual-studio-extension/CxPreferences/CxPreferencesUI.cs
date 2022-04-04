@@ -1,5 +1,4 @@
-﻿using ast_visual_studio_extension.CxCli;
-using ast_visual_studio_extension.CxCLI;
+﻿using ast_visual_studio_extension.CxWrapper.Models;
 using System;
 using System.Windows.Forms;
 
@@ -75,7 +74,7 @@ namespace ast_visual_studio_extension.CxPreferences
 
             try
             {
-                CxWrapper cxWrapper = new CxWrapper(GetCxConfig());
+                CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
                 lblValidationResult.Text = cxWrapper.AuthValidate();
             }
             catch (Exception ex)

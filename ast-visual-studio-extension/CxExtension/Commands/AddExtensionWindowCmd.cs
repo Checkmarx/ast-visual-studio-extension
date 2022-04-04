@@ -3,7 +3,7 @@ using System;
 using System.ComponentModel.Design;
 using Task = System.Threading.Tasks.Task;
 
-namespace ast_visual_studio_extension.CxExtension
+namespace ast_visual_studio_extension.CxExtension.Commands
 {
     /// <summary>
     /// This class represents the command used to create a tool window for the Checkmarx plugin

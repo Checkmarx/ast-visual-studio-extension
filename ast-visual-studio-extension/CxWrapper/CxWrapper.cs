@@ -1,24 +1,24 @@
-﻿using ast_visual_studio_extension.Cx;
-using ast_visual_studio_extension.CxCLI;
-using ast_visual_studio_extension.CxCLI.Models;
+﻿using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ast_visual_studio_extension.CxCli
+namespace ast_visual_studio_extension.CxCLI
 {
-    internal class CxWrapper
+    public class CxWrapper
     {
         private readonly CxConfig cxConfig;
         private readonly ILog logger;
 
-        public CxWrapper(CxConfig cxConfiguration)
+        public CxWrapper(CxConfig cxConfiguration, Type type)
         {
             cxConfiguration.Validate();
             cxConfig = cxConfiguration;
-            logger = LogManager.GetLogger(GetType());
+
+
+            logger = LogManager.GetLogger(type);
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace ast_visual_studio_extension.CxCli
         public string AuthValidate()
         {
             logger.Info(CxConstants.LOG_RUNNING_AUTH_VALIDATE_CMD);
-            
+
             List<string> authValidateArguments = new List<string>
             {
                 CxConstants.CLI_AUTH_CMD,
@@ -44,12 +44,75 @@ namespace ast_visual_studio_extension.CxCli
         /// <param name="scanId"></param>
         /// <param name="reportFormat"></param>
         /// <returns></returns>
-        public Results GetResults(Guid scanId, ReportFormat reportFormat)
+        public Results GetResults(Guid scanId)
         {
             logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_RESULTS_CMD, scanId));
 
             string tempDir = Path.GetTempPath();
             string fileName = System.Guid.NewGuid().ToString();
+
+            List<string> resultsArguments = new List<string>
+            {
+                CxConstants.CLI_RESULTS_CMD,
+                CxConstants.CLI_SHOW_CMD,
+                CxConstants.FLAG_SCAN_ID,
+                scanId.ToString(),
+                CxConstants.FLAG_REPORT_FORMAT,
+                ReportFormat.json.ToString(),
+                CxConstants.FLAG_OUTPUT_NAME,
+                fileName,
+                CxConstants.FLAG_OUTPUT_PATH,
+                tempDir
+            };
+
+            string results = Execution.ExecuteCommand(WithConfigArguments(resultsArguments), tempDir, fileName + CxConstants.EXTENSION_JSON);
+
+            return JsonConvert.DeserializeObject<Results>(results);
+        }
+
+        /// <summary>
+        /// Get Results Summary command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <returns></returns>
+        public ResultsSummary GetResultsSummary(string scanId)
+        {
+            logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_RESULTS_CMD, scanId));
+
+            string tempDir = Path.GetTempPath();
+            string fileName = System.Guid.NewGuid().ToString();
+
+            List<string> resultsArguments = new List<string>
+            {
+                CxConstants.CLI_RESULTS_CMD,
+                CxConstants.CLI_SHOW_CMD,
+                CxConstants.FLAG_SCAN_ID,
+                scanId.ToString(),
+                CxConstants.FLAG_REPORT_FORMAT,
+                ReportFormat.summaryJSON.ToString(),
+                CxConstants.FLAG_OUTPUT_NAME,
+                fileName,
+                CxConstants.FLAG_OUTPUT_PATH,
+                tempDir
+            };
+
+            string results = Execution.ExecuteCommand(WithConfigArguments(resultsArguments), tempDir, fileName + CxConstants.EXTENSION_JSON);
+
+            return JsonConvert.DeserializeObject<ResultsSummary>(results);
+        }
+
+        /// <summary>
+        /// Get Results with provided report format
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <param name="reportFormat"></param>
+        /// <returns></returns>
+        public string GetResults(Guid scanId, ReportFormat reportFormat)
+        {
+            logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_RESULTS_CMD, scanId));
+
+            string tempDir = Path.GetTempPath();
+            string fileName = Guid.NewGuid().ToString();
 
             List<string> resultsArguments = new List<string>
             {
@@ -65,16 +128,36 @@ namespace ast_visual_studio_extension.CxCli
                 tempDir
             };
 
-            string results = Execution.ExecuteCommand(WithConfigArguments(resultsArguments), tempDir, fileName + CxConstants.EXTENSION_JSON);
+            string extension = string.Empty;
 
-            return JsonConvert.DeserializeObject<Results>(results);
+            switch (reportFormat)
+            {
+                case ReportFormat.json:
+                    extension = ".json";
+                    break;
+                case ReportFormat.summaryHTML: 
+                    extension = ".html";
+                    break;
+            }
+
+            return Execution.ExecuteCommand(WithConfigArguments(resultsArguments), tempDir, fileName + extension);
         }
 
         /// <summary>
-        /// Get Projects command
+        /// Get Projects command with default filter
         /// </summary>
         /// <returns></returns>
         public List<Project> GetProjects()
+        {
+            return GetProjects(CxConstants.LIMIT_FILTER);
+        }
+
+        /// <summary>
+        /// Get Projects command with provided filter
+        /// </summary>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        public List<Project> GetProjects(string filter)
         {
             logger.Info(CxConstants.LOG_RUNNING_GET_PROJECTS_CMD);
 
@@ -83,7 +166,7 @@ namespace ast_visual_studio_extension.CxCli
                 CxConstants.CLI_PROJECT_CMD,
                 CxConstants.CLI_LIST_CMD,
                 CxConstants.FLAG_FILTER,
-                CxConstants.LIMIT_FILTER,
+                filter,
                 CxConstants.FLAG_FORMAT,
                 CxConstants.JSON_FORMAT_VALUE
             };
@@ -91,6 +174,31 @@ namespace ast_visual_studio_extension.CxCli
             string projects = Execution.ExecuteCommand(WithConfigArguments(resultsArguments));
 
             return JsonConvert.DeserializeObject<List<Project>>(projects);
+
+        }
+
+        /// <summary>
+        /// Show project command
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <returns></returns>
+        public Project ProjectShow(string projectId)
+        {
+            logger.Info(string.Format(CxConstants.LOG_RUNNING_PROJECT_SHOW_CMD, projectId));
+
+            List<string> projectShowArguments = new List<string>
+            {
+                CxConstants.CLI_PROJECT_CMD,
+                CxConstants.CLI_SHOW_CMD,
+                CxConstants.FLAG_PROJECT_ID,
+                projectId,
+                CxConstants.FLAG_FORMAT,
+                CxConstants.JSON_FORMAT_VALUE
+            };
+
+            string project = Execution.ExecuteCommand(WithConfigArguments(projectShowArguments));
+
+            return JsonConvert.DeserializeObject<Project>(project);
         }
 
         /// <summary>
@@ -112,7 +220,7 @@ namespace ast_visual_studio_extension.CxCli
 
             string branches = Execution.ExecuteCommand(WithConfigArguments(branchesArguments));
 
-            return JsonConvert.DeserializeObject<List<string>>(branches); ;
+            return JsonConvert.DeserializeObject<List<string>>(branches);
         }
 
         /// <summary>
@@ -127,15 +235,40 @@ namespace ast_visual_studio_extension.CxCli
 
             string filter = string.Format(CxConstants.FILTER_SCANS_FOR_BRANCH, projectId, branch);
 
+            return GetScans(filter);
+        }
+
+        /// <summary>
+        /// Get scans command with no filter
+        /// </summary>
+        /// <returns></returns>
+        public List<Scan> GetScans()
+        {
+            logger.Info(CxConstants.LOG_RUNNING_GET_SCANS_CMD);
+
+            return GetScans(string.Empty);
+        }
+
+        /// <summary>
+        /// Get scans command with provided filter
+        /// </summary>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        public List<Scan> GetScans(string filter)
+        {
             List<string> scansArguments = new List<string>
             {
                 CxConstants.CLI_SCAN_CMD,
                 CxConstants.CLI_LIST_CMD,
                 CxConstants.FLAG_FORMAT,
-                CxConstants.JSON_FORMAT_VALUE,
-                CxConstants.FLAG_FILTER,
-                filter
+                CxConstants.JSON_FORMAT_VALUE
             };
+
+            if (!string.IsNullOrEmpty(filter))
+            {
+                scansArguments.Add(CxConstants.FLAG_FILTER);
+                scansArguments.Add(filter);
+            }
 
             string scans = Execution.ExecuteCommand(WithConfigArguments(scansArguments));
 
@@ -263,6 +396,34 @@ namespace ast_visual_studio_extension.CxCli
             string codebashingLink = Execution.ExecuteCommand(WithConfigArguments(codebashingArguments));
 
             return JsonConvert.DeserializeObject<List<CodeBashing>>(codebashingLink);
+        }
+
+        /// <summary>
+        /// Scan create command
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public Scan ScanCreate(Dictionary<string, string> parameters)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_SCAN_CREATE_CMD);
+
+            List<string> scanCreateArguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_CREATE_CMD,
+                CxConstants.FLAG_SCAN_INFO_FORMAT,
+                CxConstants.JSON_FORMAT_VALUE
+            };
+
+            foreach (KeyValuePair<string, string> entry in parameters)
+            {
+                scanCreateArguments.Add(entry.Key);
+                scanCreateArguments.Add(entry.Value);
+            }
+
+            string scan = Execution.ExecuteCommand(WithConfigArguments(scanCreateArguments));
+
+            return JsonConvert.DeserializeObject<Scan>(scan);
         }
 
         /// <summary>

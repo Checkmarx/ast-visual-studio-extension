@@ -1,6 +1,5 @@
-﻿using ast_visual_studio_extension.CxCli;
-using ast_visual_studio_extension.CxCLI.Models;
-using ast_visual_studio_extension.CxExtension.Utils;
+﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
@@ -27,7 +26,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <returns></returns>
         public async Task LoadScansAsync(string projectId, string branch)
         {
-            CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
             if (cxWrapper == null)
             {
                 cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_SELECT_SCAN;
@@ -126,7 +125,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 string scanId = ValidateScanId((e.OriginalSource as TextBox).Text);
                 if (string.IsNullOrEmpty(scanId)) return;
 
-                CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree);
+                CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
                 if (cxWrapper == null) return;
 
                 string currentProjectName = cxToolbar.ProjectsCombo.SelectedItem is ComboBoxItem projectCombo ? (projectCombo.Tag as Project).Name : CxConstants.TOOLBAR_SELECT_PROJECT;
