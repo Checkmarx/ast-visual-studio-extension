@@ -12,6 +12,9 @@ jobs:
 
       - name: Setup VSTest
         uses: darenm/Setup-VSTest@v1
+        
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.2
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
@@ -28,4 +31,4 @@ jobs:
           CX_BASE_AUTH_URI: ${{ secrets.CX_BASE_AUTH_URI }}
           CX_TENANT: ${{ secrets.CX_TENANT }}
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe **\*tests.dll
+        run: vstest.console.exe /Platform:x64 **\*tests.dll
