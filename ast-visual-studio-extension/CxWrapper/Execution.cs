@@ -30,6 +30,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public static string CheckValidJSONString(string line)
         {
+            line = line ?? string.Empty;
             bool isValidJsonString = true;
 
             try
