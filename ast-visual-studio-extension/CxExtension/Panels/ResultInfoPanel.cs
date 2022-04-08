@@ -23,19 +23,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     {
         private Result result;
         private readonly CxWindowControl cxWindowUI;
-        private static ResultInfoPanel instance;
 
-        public static ResultInfoPanel GetInstance(CxWindowControl cxWindow)
-        {
-            if(instance == null)
-            {
-                instance = new ResultInfoPanel(cxWindow);
-            }
-
-            return instance;
-        }
-
-        private ResultInfoPanel(CxWindowControl cxWindow)
+        public ResultInfoPanel(CxWindowControl cxWindow)
         {
             cxWindowUI = cxWindow;
             UIUtils.CxWindowUI = cxWindowUI;
@@ -83,6 +72,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
             cxWindowUI.ResultTitle.Text = result.Data.QueryName ?? result.Id;
             cxWindowUI.CodebashingTextBlock.Visibility = result.Type.Equals("sast") ? Visibility.Visible : Visibility.Hidden;
+
+            if(cxWindowUI.CodebashingTextBlock.Visibility == Visibility.Visible)
+            {
+                cxWindowUI.CodebashingTextBlock.ToolTip = string.Format(CxConstants.CODEBASHING_LINK_TOOLTIP, result.Data.QueryName);
+            }
         }
 
         // Draw description tab
