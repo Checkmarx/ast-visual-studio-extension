@@ -37,9 +37,8 @@ namespace ast_visual_studio_extension.CxCLI
             {
                 JsonValue.Parse(line);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e.ToString());
                 isValidJsonString = false;
             }
 
