@@ -12,16 +12,13 @@ jobs:
 
       - name: Setup VSTest
         uses: darenm/Setup-VSTest@v1
-        
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1.0.2
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Restore
         run: dotnet restore
-
+      
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
         
