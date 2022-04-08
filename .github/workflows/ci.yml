@@ -23,4 +23,4 @@ jobs:
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
         
       - name: Tests
-        run: vstest.console.exe **\*.Tests.dll
+        run: vstest.console.exe **\*Test.dll
