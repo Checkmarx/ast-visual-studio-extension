@@ -19,7 +19,7 @@ jobs:
       - run: msbuild /p:Configuration=Release /p:DeployExtension=False
 
       - name: Upload release
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release
           path: |
