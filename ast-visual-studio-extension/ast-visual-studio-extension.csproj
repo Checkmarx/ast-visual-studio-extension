@@ -145,7 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Community.VisualStudio.Toolkit.17">
-      <Version>17.0.394</Version>
+      <Version>17.0.430</Version>
     </PackageReference>
     <PackageReference Include="Community.VisualStudio.VSCT">
       <Version>16.0.29.6</Version>
@@ -156,9 +156,9 @@
       <Version>2.0.14</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK">
-      <Version>17.0.32112.339</Version>
+      <Version>17.1.32210.191</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5234" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.1.4054" />
     <PackageReference Include="System.Json">
       <Version>4.7.1</Version>
     </PackageReference>

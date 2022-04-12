@@ -29,3 +29,5 @@ jobs:
           CX_TENANT: ${{ secrets.CX_TENANT }}
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
         run: vstest.console.exe /Platform:x64 **\*tests.dll
+        
+       
