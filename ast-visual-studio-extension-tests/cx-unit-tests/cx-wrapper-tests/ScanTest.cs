@@ -24,12 +24,5 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.True(scanList.Count <= 10);
         }
 
-        [Fact]
-        public void TestScanCreate()
-        {
-            Dictionary<string, string> parameters = GetCommonParams();
-            Scan scan = cxWrapper.ScanCreate(parameters);
-            Assert.Equal("Completed", cxWrapper.ScanShow(scan.ID).Status);
-        }
     }
 }

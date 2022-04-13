@@ -16,7 +16,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.True(scanList.Any());
 
             string scanId = scanList[0].ID;
-            string results = cxWrapper.GetResults(new Guid(scanId), ReportFormat.summaryHTML);
+            string results = cxWrapper.GetResults(scanId, ReportFormat.summaryHTML);
 
             Assert.True(!string.IsNullOrEmpty(results));
         }
@@ -28,7 +28,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.True(scanList.Any());
 
             string scanId = scanList[0].ID;
-            string results = cxWrapper.GetResults(new Guid(scanId), ReportFormat.json);
+            string results = cxWrapper.GetResults(scanId, ReportFormat.json);
 
             Assert.True(!string.IsNullOrEmpty(results));
         }

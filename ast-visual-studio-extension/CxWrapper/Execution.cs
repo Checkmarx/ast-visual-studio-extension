@@ -11,19 +11,41 @@ namespace ast_visual_studio_extension.CxCLI
     {
         private readonly static string executablePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources", "cx.exe");
 
-        public static string ExecuteCommand(List<string> arguments)
+        public static string ExecuteCommand(List<string> arguments, Func<string, string> lineParser)
         {
-            return InitProcess(arguments);
+            return InitProcess(arguments, lineParser);
         }
 
         public static string ExecuteCommand(List<string> arguments, string directory, string file)
         {
-            InitProcess(arguments);
+            InitProcess(arguments, CheckValidJSONString);
 
             return File.ReadAllText(Path.Combine(directory, file));
         }
 
-        private static string InitProcess(List<string> arguments)
+        /// <summary>
+        /// Check if provided string can be parsed
+        /// </summary>
+        /// <param name="line"></param>
+        /// <returns></returns>
+        public static string CheckValidJSONString(string line)
+        {
+            line = line ?? string.Empty;
+            bool isValidJsonString = true;
+
+            try
+            {
+                JsonValue.Parse(line);
+            }
+            catch (Exception)
+            {
+                isValidJsonString = false;
+            }
+
+            return isValidJsonString ? line : string.Empty;
+        }
+
+        private static string InitProcess(List<string> arguments, Func<string, string> lineParser)
         {
             string outputData = string.Empty;
             string errorData = string.Empty;
@@ -37,21 +59,11 @@ namespace ast_visual_studio_extension.CxCLI
 
                 process.OutputDataReceived += (s, args) =>
                 {
-                    bool isValidFormat = true;
+                    string parsedValue = lineParser.Invoke(args.Data);
 
-                    // avoid invalid json string in the output result
-                    try
+                    if (!string.IsNullOrEmpty(parsedValue))
                     {
-                        var tmpObj = JsonValue.Parse(args.Data);
-                    }
-                    catch (Exception)
-                    {
-                        isValidFormat = false;
-                    }
-
-                    if (isValidFormat)
-                    {
-                        outputData += string.IsNullOrEmpty(outputData) ? args.Data : Environment.NewLine + args.Data;
+                        outputData += string.IsNullOrEmpty(outputData) ? parsedValue : Environment.NewLine + parsedValue;
                     }
                 };
 

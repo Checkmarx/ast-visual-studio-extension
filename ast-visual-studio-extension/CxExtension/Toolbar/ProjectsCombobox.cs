@@ -34,6 +34,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             if (!string.IsNullOrEmpty(projectId))
             {
                 cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(projectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
+
+                if(cxToolbar.ProjectsCombo.SelectedIndex == -1)
+                {
+                    cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_SELECT_BRANCH;
+                    cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_SELECT_SCAN;
+                }
             }
 
             cxToolbar.ProjectsCombo.IsEnabled = true;
