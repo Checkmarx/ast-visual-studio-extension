@@ -15,9 +15,12 @@ jobs:
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
+      
+      - name: Restore NuGet packages
+        run: nuget restore .
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore .
       
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
