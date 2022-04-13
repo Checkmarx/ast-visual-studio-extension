@@ -31,6 +31,6 @@ jobs:
           CX_BASE_AUTH_URI: ${{ secrets.CX_BASE_AUTH_URI }}
           CX_TENANT: ${{ secrets.CX_TENANT }}
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation **\*tests.dll
+        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net6.0\ast-visual-studio-extension-tests.dll
         
        
