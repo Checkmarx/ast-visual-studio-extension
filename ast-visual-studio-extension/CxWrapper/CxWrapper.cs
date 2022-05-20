@@ -74,6 +74,14 @@ namespace ast_visual_studio_extension.CxCLI
             logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_RESULTS_CMD, scanId));
 
             string tempDir = Path.GetTempPath();
+            // Remove backslashes at the end of path, due to paths with spaces
+            // \"C:\\My temp\\\"" -> "C:\My temp\" -> the last double quotes gets escaped
+            // \"C:\\My temp\" -> "C:\My temp"
+            if (tempDir.EndsWith("\\"))
+            {
+                tempDir = tempDir.Substring(0, tempDir.Length - 1);
+            }
+
             string fileName = Guid.NewGuid().ToString();
 
             List<string> resultsArguments = new List<string>
