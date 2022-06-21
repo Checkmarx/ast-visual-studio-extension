@@ -51,9 +51,18 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 // Open the file itself
                 _ = dte.ItemOperations.OpenFile(file, EnvDTE.Constants.vsViewKindTextView);
 
-                // move the cursor for the specific line and column
-                EnvDTE.TextSelection textSelection = dte.ActiveDocument.Selection as EnvDTE.TextSelection;
-                textSelection.MoveToLineAndOffset(node.Line, node.Column);
+                try
+                {
+                    // move the cursor for the specific line and column
+                    EnvDTE.TextSelection textSelection = dte.ActiveDocument.Selection as EnvDTE.TextSelection;
+                    textSelection.MoveToLineAndOffset(node.Line, node.Column);
+                }
+                catch (Exception)
+                {
+                    // Avoid Visual Studio to crash if something goes wrong when moving cursor to the specific line
+                    continue;
+                }
+                
             }
         }
 
@@ -65,6 +74,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         private static List<string> FindFilesInSolutionExplorerProjects(string fileName)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+
+            string fileNamePath = fileName.Replace("/", "\\");
 
             fileName = fileName.Substring(fileName.LastIndexOf('/') + 1);
 
@@ -89,9 +100,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
                 try
                 {
-                    files = Directory.GetFiles(projectPath, fileName, SearchOption.AllDirectories).Where(x => !foldersToIgnore.Any(c => x.StartsWith(c)));
+                    files = Directory.GetFiles(projectPath, fileName, SearchOption.AllDirectories).Where(x => !foldersToIgnore.Any(c => x.StartsWith(c)) && x.Contains(fileNamePath));
                 }
-                catch(Exception e)
+                catch(Exception)
                 {
                     continue;
                 }
