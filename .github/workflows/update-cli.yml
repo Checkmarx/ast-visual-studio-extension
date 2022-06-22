@@ -26,8 +26,9 @@ jobs:
         run: |
           release=${{ steps.checkmarx-ast-cli.outputs.release_tag }}
           filename_windows=ast-cli_${release}_windows_x64.zip
+          mkdir ./tmp/
           wget https://github.com/Checkmarx/ast-cli/releases/download/${release}/${filename_windows}
-          unzip ${filename_windows} -d tmp
+          unzip ${filename_windows} -d ./tmp/
           mv ./tmp/cx.exe ./ast-visual-studio-extension/ast-visual-studio-extension/CxWrapper/Resources/cx.exe
           rm -r tmp
           rm ${filename_windows}
