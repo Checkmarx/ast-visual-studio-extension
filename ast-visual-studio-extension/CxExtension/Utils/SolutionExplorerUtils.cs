@@ -88,7 +88,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             foreach (Project project in projects)
             {
-                if (string.IsNullOrEmpty(project.FullName)) continue;
+                bool projectIsUnloadedInSolution = string.Compare(EnvDTE.Constants.vsProjectKindUnmodeled, project.Kind, System.StringComparison.OrdinalIgnoreCase) == 0;
+                
+                if (projectIsUnloadedInSolution || string.IsNullOrEmpty(project.FullName)) continue;
 
                 FileInfo projectFileInfo = new FileInfo(project.FullName);
                 string projectPath = Directory.GetParent(projectFileInfo.Directory.FullName).FullName;
