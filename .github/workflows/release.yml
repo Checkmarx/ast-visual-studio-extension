@@ -46,7 +46,7 @@ jobs:
            Write-Output "::set-output name=PFX_CERTIFICATE_PATH::$pfxPath";
 
       - name: Sign the VSIX
-        run: tools/vsixsigntool.exe sign /f '${{ env.PFX_CERTIFICATE_PATH }}' /p '${{ secrets.CERTIFICATE_PASSWORD }}' /sha1 1631134dde84109340374b0975cfa766dcc5a0e4 .\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
+        run: tools/vsixsigntool.exe sign /f '${{ env.PFX_CERTIFICATE_PATH }}' /p ${{ secrets.CERTIFICATE_PASSWORD }} /sha1 1631134dde84109340374b0975cfa766dcc5a0e4 .\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
 
       - name: Publish Release
         uses: cezarypiatek/VsixPublisherAction@0.2
