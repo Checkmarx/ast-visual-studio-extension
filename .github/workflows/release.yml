@@ -27,13 +27,6 @@ jobs:
       
       - run: msbuild /p:Configuration=Release /p:DeployExtension=False
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          generate_release_notes: true
-          files: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
-
       - name: Create PFX certificate
         id: create-pfx
         shell: pwsh
@@ -51,19 +44,26 @@ jobs:
          PFX_CERTIFICATE_PATH: ${{ steps.create-pfx.outputs.PFX_CERTIFICATE_PATH }}
         run: tools/vsixsigntool.exe sign /f '${{ env.PFX_CERTIFICATE_PATH }}' /p ${{ secrets.CERTIFICATE_PASSWORD }} /sha1 1631134dde84109340374b0975cfa766dcc5a0e4 .\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
 
-#       - name: Publish Release
-#         uses: cezarypiatek/VsixPublisherAction@0.2
-#         with:
-#           extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
-#           publish-manifest-file: '.\vs-publish.json'
-#           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
-
       - name: Delete PFX certificate
         shell: pwsh
         env:
          PFX_CERTIFICATE_PATH: ${{ steps.create-pfx.outputs.PFX_CERTIFICATE_PATH }}
         run: |
           Remove-Item -Path $env:PFX_CERTIFICATE_PATH;
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          generate_release_notes: true
+          files: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
+
+#       - name: Publish Release
+#         uses: cezarypiatek/VsixPublisherAction@0.2
+#         with:
+#           extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
+#           publish-manifest-file: '.\vs-publish.json'
+#           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
 
   notify:
     runs-on: ubuntu-latest
