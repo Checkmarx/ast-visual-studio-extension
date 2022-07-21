@@ -51,12 +51,12 @@ jobs:
          PFX_CERTIFICATE_PATH: ${{ steps.create-pfx.outputs.PFX_CERTIFICATE_PATH }}
         run: tools/vsixsigntool.exe sign /f '${{ env.PFX_CERTIFICATE_PATH }}' /p ${{ secrets.CERTIFICATE_PASSWORD }} /sha1 1631134dde84109340374b0975cfa766dcc5a0e4 .\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
 
-      - name: Publish Release
-        uses: cezarypiatek/VsixPublisherAction@0.2
-        with:
-          extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
-          publish-manifest-file: '.\vs-publish.json'
-          personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
+#       - name: Publish Release
+#         uses: cezarypiatek/VsixPublisherAction@0.2
+#         with:
+#           extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
+#           publish-manifest-file: '.\vs-publish.json'
+#           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
 
       - name: Delete PFX certificate
         shell: pwsh
@@ -89,9 +89,9 @@ jobs:
           clean="$(echo "${{ steps.convert.outputs.html }}" | awk '{gsub(/id=.[a-z]+/,"");print}' | tr -d '\n')"
           echo "$clean"
           echo "::set-output name=clean::$clean"
-      - name: Send a Notification
-        id: notify
-        uses: thechetantalwar/teams-notify@v2
-        with:
-          teams_webhook_url: ${{ secrets.TEAMS_WEBHOOK_URI }}
-          message: "<h1>Checkmarx Visual Studio Plugin ${{ env.RELEASE_VERSION }}</h1>${{ steps.clean.outputs.clean }}"
+#       - name: Send a Notification
+#         id: notify
+#         uses: thechetantalwar/teams-notify@v2
+#         with:
+#           teams_webhook_url: ${{ secrets.TEAMS_WEBHOOK_URI }}
+#           message: "<h1>Checkmarx Visual Studio Plugin ${{ env.RELEASE_VERSION }}</h1>${{ steps.clean.outputs.clean }}"
