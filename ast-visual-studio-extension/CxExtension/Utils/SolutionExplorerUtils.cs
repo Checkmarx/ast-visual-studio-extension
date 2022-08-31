@@ -51,9 +51,18 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 // Open the file itself
                 _ = dte.ItemOperations.OpenFile(file, EnvDTE.Constants.vsViewKindTextView);
 
-                // move the cursor for the specific line and column
-                EnvDTE.TextSelection textSelection = dte.ActiveDocument.Selection as EnvDTE.TextSelection;
-                textSelection.MoveToLineAndOffset(node.Line, node.Column);
+                try
+                {
+                    // move the cursor for the specific line and column
+                    EnvDTE.TextSelection textSelection = dte.ActiveDocument.Selection as EnvDTE.TextSelection;
+                    textSelection.MoveToLineAndOffset(node.Line, node.Column);
+                }
+                catch (Exception)
+                {
+                    // Avoid Visual Studio to crash if something goes wrong when moving cursor to the specific line
+                    continue;
+                }
+                
             }
         }
 
@@ -66,6 +75,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
+            string fileNamePath = fileName.Replace("/", "\\");
+
             fileName = fileName.Substring(fileName.LastIndexOf('/') + 1);
 
             var dte = GetDTE();
@@ -77,7 +88,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             foreach (Project project in projects)
             {
-                if (string.IsNullOrEmpty(project.FullName)) continue;
+                bool projectIsUnloadedInSolution = string.Compare(EnvDTE.Constants.vsProjectKindUnmodeled, project.Kind, System.StringComparison.OrdinalIgnoreCase) == 0;
+                
+                if (projectIsUnloadedInSolution || string.IsNullOrEmpty(project.FullName)) continue;
 
                 FileInfo projectFileInfo = new FileInfo(project.FullName);
                 string projectPath = Directory.GetParent(projectFileInfo.Directory.FullName).FullName;
@@ -89,9 +102,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
                 try
                 {
-                    files = Directory.GetFiles(projectPath, fileName, SearchOption.AllDirectories).Where(x => !foldersToIgnore.Any(c => x.StartsWith(c)));
+                    files = Directory.GetFiles(projectPath, fileName, SearchOption.AllDirectories).Where(x => !foldersToIgnore.Any(c => x.StartsWith(c)) && x.Contains(fileNamePath));
                 }
-                catch(Exception e)
+                catch(Exception)
                 {
                     continue;
                 }
