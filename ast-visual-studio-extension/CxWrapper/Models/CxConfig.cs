@@ -7,33 +7,12 @@ namespace ast_visual_studio_extension.CxWrapper.Models
 {
     public class CxConfig
     {
-        public string BaseUri { get; set; }
-        public string BaseAuthURI { get; set; }
-        public string Tenant { get; set; }
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
 
         public List<string> ToArguments()
         {
             List<string> arguments = new List<string>();    
-
-            if (!string.IsNullOrEmpty(BaseUri))
-            {
-                arguments.Add(CxConstants.FLAG_BASE_URI);
-                arguments.Add(BaseUri.Trim());
-            }
-
-            if (!string.IsNullOrEmpty(BaseAuthURI))
-            {
-                arguments.Add(CxConstants.FLAG_BASE_AUTH_URI);
-                arguments.Add(BaseAuthURI.Trim());
-            }
-
-            if (!string.IsNullOrEmpty(Tenant))
-            {
-                arguments.Add(CxConstants.FLAG_TENANT);
-                arguments.Add(Tenant.Trim());
-            }
 
             if (!string.IsNullOrEmpty(ApiKey))
             {
@@ -69,10 +48,6 @@ namespace ast_visual_studio_extension.CxWrapper.Models
 
         public void Validate()
         {
-            if (string.IsNullOrEmpty(BaseUri))
-            {
-                throw new InvalidCLIConfigException(CxConstants.EXCEPTION_URI_NOT_SET);
-            }
 
             if (string.IsNullOrEmpty(ApiKey))
             {

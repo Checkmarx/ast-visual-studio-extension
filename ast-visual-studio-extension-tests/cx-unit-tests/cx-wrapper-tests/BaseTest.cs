@@ -8,9 +8,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
 {
     public abstract class BaseTest : IDisposable
     {
-        private static readonly string? CX_BASE_URI = GetEnvOrNull("CX_BASE_URI");
-        private static readonly string? CX_BASE_AUTH_URI = GetEnvOrNull("CX_BASE_AUTH_URI");
-        private static readonly string? CX_TENANT = GetEnvOrNull("CX_TENANT");
         private static readonly string? CX_APIKEY = GetEnvOrNull("CX_APIKEY");
         private static readonly string? CX_ADDITIONAL_PARAMETERS = GetEnvOrNull("CX_ADDITIONAL_PARAMETERS");
         
@@ -36,9 +33,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         {
             CxConfig configuration = new()
             {
-                BaseUri = CX_BASE_URI,
-                BaseAuthURI = CX_BASE_AUTH_URI,
-                Tenant = CX_TENANT,
                 ApiKey = CX_APIKEY,
                 AdditionalParameters = CX_ADDITIONAL_PARAMETERS,
             };
