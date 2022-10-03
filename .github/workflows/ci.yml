@@ -2,6 +2,7 @@ name: AST visual studio extension CI
 
 on: [ pull_request, workflow_dispatch ]
 
+permissions: read-all|write-all
 
 jobs:
   integration-tests:
