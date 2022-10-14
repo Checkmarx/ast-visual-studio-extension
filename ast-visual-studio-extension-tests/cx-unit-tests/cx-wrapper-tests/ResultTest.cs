@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxWrapper.Models;
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,8 @@ using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
 {
+    [Collection("cx")]
+
     public class ResultTest : BaseTest
     {
         [Fact]
