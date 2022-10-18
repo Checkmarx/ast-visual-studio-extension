@@ -1,12 +1,11 @@
-﻿using ast_visual_studio_extension.CxWrapper.Models;
+using ast_visual_studio_extension.CxWrapper.Models;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
 {
-    [Collection("cx")]
-
+    [Collection("Cx Collection")]
     public class ProjectTest : BaseTest
     {
         [Fact]
