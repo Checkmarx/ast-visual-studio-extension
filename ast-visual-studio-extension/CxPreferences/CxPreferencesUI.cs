@@ -35,27 +35,8 @@ namespace ast_visual_studio_extension.CxPreferences
         public void Initialize(CxPreferencesModule preferencesModule)
         {
             cxPreferencesModule = preferencesModule;
-
-            tbServerUrl.Text = cxPreferencesModule.ServerUrl;
-            tbAuthUrl.Text = cxPreferencesModule.AuthUrl;
-            tbTenantName.Text = cxPreferencesModule.TenantName;
             tbApiKey.Text = cxPreferencesModule.ApiKey;
             tbAdditionalParameters.Text = cxPreferencesModule.AdditionalParameters;
-        }
-
-        private void OnServerUrlChange(object sender, EventArgs e)
-        {
-            cxPreferencesModule.ServerUrl = tbServerUrl.Text.Trim();
-        }
-
-        private void OnAuthUrlChange(object sender, EventArgs e)
-        {
-            cxPreferencesModule.AuthUrl = tbAuthUrl.Text.Trim();
-        }
-
-        private void OnTenantNameChange(object sender, EventArgs e)
-        {
-            cxPreferencesModule.TenantName = tbTenantName.Text.Trim();
         }
 
         private void OnApiKeyChange(object sender, EventArgs e)
@@ -87,9 +68,6 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             CxConfig configuration = new CxConfig
             {
-                BaseUri = tbServerUrl.Text,
-                BaseAuthURI = tbAuthUrl.Text,
-                Tenant = tbTenantName.Text,
                 ApiKey = tbApiKey.Text,
                 AdditionalParameters = tbAdditionalParameters.Text,
             };

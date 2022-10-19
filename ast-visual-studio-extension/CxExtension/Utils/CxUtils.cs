@@ -143,7 +143,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             CxPreferencesModule preferences = (CxPreferencesModule) package.GetDialogPage(typeof(CxPreferencesModule));
             CxConfig configuration = preferences.GetCxConfig();
             
-            if (configuration == null || string.IsNullOrEmpty(configuration.BaseUri) || string.IsNullOrEmpty(configuration.Tenant) || string.IsNullOrEmpty(configuration.ApiKey)) return false;
+            if (configuration == null || string.IsNullOrEmpty(configuration.ApiKey)) return false;
 
             return true;
         }
