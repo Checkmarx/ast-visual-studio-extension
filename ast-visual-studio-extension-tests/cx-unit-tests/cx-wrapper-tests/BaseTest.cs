@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ast_visual_studio_extension.CxCLI;
@@ -6,7 +6,7 @@ using ast_visual_studio_extension.CxWrapper.Models;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
 {
-    public abstract class BaseTest : IDisposable
+    public class BaseTest : IDisposable
     {
         private static readonly string? CX_BASE_URI = GetEnvOrNull("CX_BASE_URI");
         private static readonly string? CX_BASE_AUTH_URI = GetEnvOrNull("CX_BASE_AUTH_URI");
