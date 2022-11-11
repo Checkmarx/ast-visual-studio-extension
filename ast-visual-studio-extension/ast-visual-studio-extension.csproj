@@ -156,9 +156,9 @@
       <Version>2.0.15</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK">
-      <Version>17.3.32804.24</Version>
+      <Version>17.4.33103.184</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.4.2118" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.4.2119" />
     <PackageReference Include="System.Json">
       <Version>4.7.1</Version>
     </PackageReference>

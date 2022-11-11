@@ -22,9 +22,6 @@
         public static string CLI_CREATE_CMD => "create";
 
         /** CLI FLAGS **/
-        public static string FLAG_BASE_URI => "--base-uri";
-        public static string FLAG_BASE_AUTH_URI => "--base-auth-uri";
-        public static string FLAG_TENANT => "--tenant";
         public static string FLAG_API_KEY => "--apikey";
         public static string FLAG_SCAN_ID => "--scan-id";
         public static string FLAG_REPORT_FORMAT => "--report-format";
@@ -51,7 +48,7 @@
         public static string FLAG_SOURCE => "-s";
 
         /** EXCEPTIONS **/
-        public static string EXCEPTION_URI_NOT_SET => "Checkmarx server URL is not set";
+
         public static string EXCEPTION_CREDENTIALS_NOT_SET => "Credentials are not set";
 
         /** LOGGING **/

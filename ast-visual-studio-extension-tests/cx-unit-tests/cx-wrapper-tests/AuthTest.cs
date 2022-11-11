@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         public void TestAuthFailute()
         {
             CxConfig config = GetCxConfig();
-            config.BaseAuthURI = "WrongAuthURI";
+            config.ApiKey = "invalidAPIKEY";
             
             Assert.Throws<CxException>(() =>
             {
