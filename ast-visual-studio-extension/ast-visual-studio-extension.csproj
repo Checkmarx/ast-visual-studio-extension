@@ -159,6 +159,9 @@
       <Version>17.4.33103.184</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.4.2119" />
+    <PackageReference Include="Microsoft.VSSDK.Vsixsigntool">
+      <Version>16.2.29116.78</Version>
+    </PackageReference>
     <PackageReference Include="System.Json">
       <Version>4.7.1</Version>
     </PackageReference>
