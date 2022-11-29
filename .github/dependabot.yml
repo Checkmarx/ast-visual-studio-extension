@@ -11,4 +11,4 @@ updates:
     schedule:
       interval: "daily"
     reviewers:
-      - "Checkmarx/ast-galactica-team"
+      - "hmmachadocx"
