@@ -1,4 +1,4 @@
-name: Update checkmarx ast cli
+name: Update checkmarx one cli
 on:
   workflow_dispatch:
   schedule:
