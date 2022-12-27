@@ -1,4 +1,4 @@
-name: AST visual studio extension CI
+name: Checkmarx One visual studio extension CI
 
 on: [ pull_request, workflow_dispatch ]
 
