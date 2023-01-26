@@ -42,7 +42,7 @@ jobs:
       - name: Sign the VSIX
         env:
          PFX_CERTIFICATE_PATH: ${{ steps.create-pfx.outputs.PFX_CERTIFICATE_PATH }}
-        run: tools/vsixsigntool.exe sign /f '${{ env.PFX_CERTIFICATE_PATH }}' /p ${{ secrets.CERTIFICATE_PASSWORD }} /sha1 1631134dde84109340374b0975cfa766dcc5a0e4 .\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
+        run: C:\Users\runneradmin\.nuget\packages\microsoft.vssdk.vsixsigntool\*\tools\vssdk\vsixsigntool.exe sign /f '${{ env.PFX_CERTIFICATE_PATH }}' /p ${{ secrets.CERTIFICATE_PASSWORD }} /sha1 1631134dde84109340374b0975cfa766dcc5a0e4 .\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
 
       - name: Delete PFX certificate
         shell: pwsh

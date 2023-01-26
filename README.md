@@ -16,7 +16,7 @@
     <img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/logo.png" alt="Logo" width="80" height="80" />
   </a>
 
-<h3 align="center">AST VISUAL STUDIO PLUGIN</h3>
+<h3 align="center">CHECKMARX ONE VISUAL STUDIO PLUGIN</h3>
 
 <p align="center">
     The CxAST Visual Studio plugin enableds you to import results from a CxAST scan directly into your IDE.

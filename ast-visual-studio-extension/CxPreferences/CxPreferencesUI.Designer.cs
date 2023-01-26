@@ -106,7 +106,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.AdditionalParametersHelPage.Size = new System.Drawing.Size(354, 20);
             this.AdditionalParametersHelPage.TabIndex = 2;
             this.AdditionalParametersHelPage.TabStop = true;
-            this.AdditionalParametersHelPage.Text = "Checkmarx AST additional parameters help page";
+            this.AdditionalParametersHelPage.Text = "Checkmarx One additional parameters help page";
             this.AdditionalParametersHelPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.AdditionalParametersHelPage_LinkClicked);
             // 
             // tbAdditionalParameters
@@ -165,7 +165,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.helpPage.Size = new System.Drawing.Size(368, 20);
             this.helpPage.TabIndex = 12;
             this.helpPage.TabStop = true;
-            this.helpPage.Text = "Checkmarx AST Visual Studio Extension help page";
+            this.helpPage.Text = "Checkmarx One Visual Studio Extension help page";
             this.helpPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HelpPage_LinkClicked);
             // 
             // CxPreferencesUI
