@@ -1,12 +1,10 @@
-﻿using ast_visual_studio_extension.CxExtension.Panels;
+using ast_visual_studio_extension.CxExtension.Panels;
 using EnvDTE;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -37,83 +35,84 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             FileNode node = (((sender as Hyperlink).Parent as TextBlock).Parent as ListViewItem).Tag as FileNode;
 
-            List<string> files = FindFilesInSolutionExplorerProjects(node.FileName);
+            string partialFileLocation = PrepareFileName(node.FileName);
+            EnvDTE.DTE dte = GetDTE();
 
-            if (files.Count == 0)
+            string solutionPath = Path.GetDirectoryName(dte.Solution.FullName);
+
+            string fullPath = Path.Combine(solutionPath, partialFileLocation);
+            if (File.Exists(fullPath))
             {
-                CxUtils.DisplayMessageInInfoBar(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, node.FileName), KnownMonikers.StatusWarning);
+                OpenFile(fullPath, node);
+                return;
             }
 
-            var dte = GetDTE();
 
-            foreach (string file in files)
+            if (dte.Solution.Projects.Count > 0)
             {
-                // Open the file itself
-                _ = dte.ItemOperations.OpenFile(file, EnvDTE.Constants.vsViewKindTextView);
-
-                try
+                foreach (EnvDTE.Project project in dte.Solution.Projects)
                 {
-                    // move the cursor for the specific line and column
-                    EnvDTE.TextSelection textSelection = dte.ActiveDocument.Selection as EnvDTE.TextSelection;
-                    textSelection.MoveToLineAndOffset(node.Line, node.Column);
+                    fullPath = GetFullPath(project, partialFileLocation);
+                    if (fullPath != null && File.Exists(fullPath))
+                    {
+                        OpenFile(fullPath, node);
+                        dte.ItemOperations.OpenFile(fullPath);
+                        return;
+                    }
                 }
-                catch (Exception)
-                {
-                    // Avoid Visual Studio to crash if something goes wrong when moving cursor to the specific line
-                    continue;
-                }
-                
             }
+
+            CxUtils.DisplayMessageInInfoBar(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, partialFileLocation), KnownMonikers.StatusWarning);
         }
 
-        /// <summary>
-        /// Find files with the provided name
-        /// </summary>
-        /// <param name="partialName"></param>
-        /// <returns></returns>
-        private static List<string> FindFilesInSolutionExplorerProjects(string fileName)
+        private static void OpenFile(string filePath, FileNode node)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            string fileNamePath = fileName.Replace("/", "\\");
+            // Open the file itself
+            _ = GetDTE().ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
 
-            fileName = fileName.Substring(fileName.LastIndexOf('/') + 1);
-
-            var dte = GetDTE();
-
-            // Get all projects in the solution
-            var projects = dte.Solution.Projects;
-
-            List<string> allFiles = new List<string>();
-
-            foreach (Project project in projects)
+            try
             {
-                bool projectIsUnloadedInSolution = string.Compare(EnvDTE.Constants.vsProjectKindUnmodeled, project.Kind, System.StringComparison.OrdinalIgnoreCase) == 0;
-                
-                if (projectIsUnloadedInSolution || string.IsNullOrEmpty(project.FullName)) continue;
+                // move the cursor for the specific line and column
+                EnvDTE.TextSelection textSelection = GetDTE().ActiveDocument.Selection as EnvDTE.TextSelection;
+                textSelection.MoveToLineAndOffset(node.Line, node.Column);
+            }
+            catch (Exception)
+            {
+            }
+        }
 
+        private static string PrepareFileName(string partialFileLocation)
+        {
+            if (partialFileLocation[0] == '/')
+            {
+                partialFileLocation = partialFileLocation.Substring(1);
+            }
+            return partialFileLocation.Replace('/', '\\');
+        }
+
+        private static string GetFullPath(EnvDTE.Project project, string partialFileLocation)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            string fullPath = null;
+            try
+            {
                 FileInfo projectFileInfo = new FileInfo(project.FullName);
                 string projectPath = Directory.GetParent(projectFileInfo.Directory.FullName).FullName;
-
-                // Ignore bin folder
-                var foldersToIgnore = Directory.GetDirectories(projectPath, "bin", SearchOption.AllDirectories);
-
-                IEnumerable<string> files;
-
-                try
+                fullPath = Path.Combine(projectPath, partialFileLocation);
+                if (File.Exists(fullPath))
                 {
-                    files = Directory.GetFiles(projectPath, fileName, SearchOption.AllDirectories).Where(x => !foldersToIgnore.Any(c => x.StartsWith(c)) && x.Contains(fileNamePath));
+                    return fullPath;
                 }
-                catch(Exception)
-                {
-                    continue;
-                }
-                
+            }
+            catch (Exception)
+            {
 
-                allFiles.AddRange(files);
             }
 
-            return allFiles;
+            return fullPath;
         }
     }
 }
