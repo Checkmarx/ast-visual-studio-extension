@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,16 +38,15 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             string partialFileLocation = PrepareFileName(node.FileName);
             EnvDTE.DTE dte = GetDTE();
+            List<string> files = new List<string>();
 
             string solutionPath = Path.GetDirectoryName(dte.Solution.FullName);
 
             string fullPath = Path.Combine(solutionPath, partialFileLocation);
             if (File.Exists(fullPath))
             {
-                OpenFile(fullPath, node);
-                return;
+                files.Add(fullPath);
             }
-
 
             if (dte.Solution.Projects.Count > 0)
             {
@@ -55,14 +55,21 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                     fullPath = GetFullPath(project, partialFileLocation);
                     if (fullPath != null && File.Exists(fullPath))
                     {
-                        OpenFile(fullPath, node);
-                        dte.ItemOperations.OpenFile(fullPath);
-                        return;
+                        files.Add(fullPath);
                     }
                 }
             }
 
-            CxUtils.DisplayMessageInInfoBar(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, partialFileLocation), KnownMonikers.StatusWarning);
+            if (files.Count > 0)
+            {
+                foreach (string filePath in files)
+                {
+                    OpenFile(filePath, node);
+                }
+            } else
+            {
+                CxUtils.DisplayMessageInInfoBar(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, partialFileLocation), KnownMonikers.StatusWarning);
+            }
         }
 
         private static void OpenFile(string filePath, FileNode node)
