@@ -59,7 +59,7 @@ jobs:
           files: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
 
       - name: Publish Release
-        uses: cezarypiatek/VsixPublisherAction@0.2
+        uses: cezarypiatek/VsixPublisherAction@1.0
         with:
           extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
           publish-manifest-file: '.\vs-publish.json'
