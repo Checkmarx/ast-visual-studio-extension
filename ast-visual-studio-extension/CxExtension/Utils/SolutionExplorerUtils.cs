@@ -167,12 +167,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             {
                 files.Add(fullPath);
             }
-
-            string fullParentPath = GetFullPathParent(fullName, partialFileLocation);
-            if (File.Exists(fullParentPath))
-            {
-                files.Add(fullParentPath);
-            }
         }
 
         private static string GetFullPathParent(string fullName, string partialFileLocation)
