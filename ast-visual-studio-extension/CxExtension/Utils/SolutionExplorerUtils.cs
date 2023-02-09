@@ -169,13 +169,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             }
         }
 
-        private static string GetFullPathParent(string fullName, string partialFileLocation)
-        {
-            FileInfo projectFileInfo = new FileInfo(fullName);
-            string projectPath = Directory.GetParent(projectFileInfo.Directory.FullName).FullName;
-            return Path.Combine(projectPath, partialFileLocation);
-        }
-
         private static string GetFullPath(string fullName, string partialFileLocation)
         {
             return Path.Combine(fullName, partialFileLocation);
