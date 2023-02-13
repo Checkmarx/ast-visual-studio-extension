@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System.Collections.Generic;
@@ -74,7 +74,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 Hyperlink link = new Hyperlink();
                 link.Inlines.Add(CxUtils.CapToLen(node.FileName));
                 link.ToolTip = node.FileName;
-                link.Click += new RoutedEventHandler(SolutionExplorerUtils.OpenFile);
+                link.Click += new RoutedEventHandler(SolutionExplorerUtils.OpenFileAsync);
                 tb.Inlines.Add(link);
                 item.Tag = FileNode.Builder().WithFileName(node.FileName).WithLine(node.Line).WithColumn(node.Column);
                 item.Content = tb;
@@ -134,7 +134,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             tb.Inlines.Add(CxConstants.LBL_LOCATION_FILE);
             Hyperlink link = new Hyperlink();
             link.Inlines.Add(result.Data.FileName);
-            link.Click += new RoutedEventHandler(SolutionExplorerUtils.OpenFile);
+            link.Click += new RoutedEventHandler(SolutionExplorerUtils.OpenFileAsync);
             tb.Inlines.Add(link);
             item.Tag = FileNode.Builder().WithFileName(result.Data.FileName).WithLine(result.Data.Line).WithColumn(1);
             item.Content = tb;
