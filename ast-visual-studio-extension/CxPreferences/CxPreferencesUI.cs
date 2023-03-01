@@ -84,12 +84,12 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void HelpPage_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            System.Diagnostics.Process.Start("https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336643630/CxAST+Visual+Studio+Plugin");
+            System.Diagnostics.Process.Start("https://checkmarx.com/resource/documents/en/34965-68738-checkmarx-one-visual-studio-extension--plugin-.html");
         }
 
         private void AdditionalParametersHelPage_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            System.Diagnostics.Process.Start("https://checkmarx.atlassian.net/wiki/spaces/AST/pages/3044541180/Global+Flags");
+            System.Diagnostics.Process.Start("https://checkmarx.com/resource/documents/en/34965-68626-global-flags.html");
         }
     }
 }
