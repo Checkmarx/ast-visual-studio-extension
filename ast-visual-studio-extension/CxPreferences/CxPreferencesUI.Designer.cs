@@ -106,7 +106,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.AdditionalParametersHelPage.Size = new System.Drawing.Size(354, 20);
             this.AdditionalParametersHelPage.TabIndex = 2;
             this.AdditionalParametersHelPage.TabStop = true;
-            this.AdditionalParametersHelPage.Text = "Checkmarx One additional parameters help page";
+            this.AdditionalParametersHelPage.Text = "CLI command that supports a set of global flags";
             this.AdditionalParametersHelPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.AdditionalParametersHelPage_LinkClicked);
             // 
             // tbAdditionalParameters
