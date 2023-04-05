@@ -35,7 +35,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           commit-message: Update checkmarx-ast-cli to ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
