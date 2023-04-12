@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>ast_visual_studio_extension_tests</RootNamespace>
     <Nullable>enable</Nullable>
 
