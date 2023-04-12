@@ -126,27 +126,9 @@
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
+      <Generator>VsixManifestGenerator</Generator>
+      <LastGenOutput>source.extension.cs</LastGenOutput>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Community.VisualStudio.Toolkit.17">
-      <Version>17.0.394</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime">
-      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.4.2120">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Community.VisualStudio.VSCT" Version="16" />
-    <PackageReference Include="log4net" Version="2.0.12.0" />
-    <PackageReference Include="Microsoft.VSSDK.Vsixsigntool" Version="16" />
-    <PackageReference Include="System.Json" Version="4" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="LICENSE.txt">
@@ -234,7 +216,7 @@
     <Page Include="CxExtension\CxInitialPanel.xaml" />
     <Page Include="CxExtension\CxWindowControl.xaml" />
   </ItemGroup>
-    <ItemGroup>
+  <ItemGroup>
         <Reference Include="Microsoft.CSharp" />
         <Reference Include="PresentationCore" />
         <Reference Include="PresentationFramework" />
@@ -248,7 +230,29 @@
         <Reference Include="UIAutomationProvider" />
         <Reference Include="WindowsBase" />
         <Reference Include="WindowsFormsIntegration" />
-    </ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6" PrivateAssets="all" />
+    <PackageReference Include="Community.VisualStudio.Toolkit" Version="17.0.76.303" ExcludeAssets="Runtime" />
+
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime">
+      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.4.2120">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
+    <PackageReference Include="log4net" Version="2.0.12.0" />
+    <PackageReference Include="Microsoft.VSSDK.Vsixsigntool" Version="16" />
+    <PackageReference Include="System.Json" Version="4" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
