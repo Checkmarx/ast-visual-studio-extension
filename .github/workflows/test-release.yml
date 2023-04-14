@@ -25,9 +25,9 @@ jobs:
           manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
 
       - name: Restore NuGet packages
-        run: nuget restore .  
+        run: msbuild -t:restore  
 
-      - run: msbuild . /p:Configuration=Release /p:DeployExtension=False
+      - run: msbuild /p:Configuration=Release /p:DeployExtension=False
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
