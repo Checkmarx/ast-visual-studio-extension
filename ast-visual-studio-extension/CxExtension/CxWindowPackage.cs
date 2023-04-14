@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.Commands;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -37,16 +37,6 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CxWindowPackage"/> class.
-        /// </summary>
-        public CxWindowPackage()
-        {
-            // Inside this method you can place any initialization code that does not require
-            // any Visual Studio service because at this point the package object is created but
-            // not sited yet inside Visual Studio environment. The place to do all the other
-            // initialization is the Initialize method.
-        }
 
         #region Package Members
 
