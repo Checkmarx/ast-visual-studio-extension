@@ -1,4 +1,5 @@
 using ast_visual_studio_extension.CxExtension.Commands;
+using log4net;
 using log4net.Repository.Hierarchy;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -39,7 +40,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
-
+        
         #region Package Members
 
         /// <summary>
@@ -64,7 +65,7 @@ namespace ast_visual_studio_extension.CxExtension
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error");
+                Console.WriteLine(ex.ToString());
             }
         }
 
