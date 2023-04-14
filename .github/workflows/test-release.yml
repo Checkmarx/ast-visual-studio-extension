@@ -13,7 +13,7 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1
         with:
-          vs-version: '[17.0,17.2)'
+          vs-version: '[17.2,17.3)'
 
       - name: Set env
         run: echo "RELEASE_VERSION=dev" >> $GITHUB_ENV
