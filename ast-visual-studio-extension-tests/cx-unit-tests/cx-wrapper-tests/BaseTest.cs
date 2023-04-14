@@ -8,8 +8,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
 {
     public class BaseTest : IDisposable
     {
-        private static readonly string? CX_APIKEY = GetEnvOrNull("CX_APIKEY");
-        private static readonly string? CX_ADDITIONAL_PARAMETERS = GetEnvOrNull("CX_ADDITIONAL_PARAMETERS");
+        private static readonly string CX_APIKEY = GetEnvOrNull("CX_APIKEY");
+        private static readonly string CX_ADDITIONAL_PARAMETERS = GetEnvOrNull("CX_ADDITIONAL_PARAMETERS");
         
         protected  CxWrapper cxWrapper;
 
@@ -24,18 +24,19 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
            
         }
 
-        private static string? GetEnvOrNull(string param)
+        private static string GetEnvOrNull(string param)
         {
             return string.IsNullOrEmpty(param) ? string.Empty : Environment.GetEnvironmentVariable(param);
         }
 
         protected static CxConfig GetCxConfig()
         {
-            CxConfig configuration = new()
+            CxConfig configuration = new CxConfig
             {
                 ApiKey = CX_APIKEY,
-                AdditionalParameters = CX_ADDITIONAL_PARAMETERS,
+                AdditionalParameters = CX_ADDITIONAL_PARAMETERS
             };
+
 
             return configuration;
         }
@@ -55,7 +56,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
 
         protected Dictionary<Scan, Results> GetFirstScanWithResults(List<Scan> scanList)
         {
-            Dictionary<Scan, Results> result = new();
+            Dictionary<Scan, Results> result = new Dictionary<Scan, Results>();
 
             for (int i = 0; i < scanList.Count; i++)
             {
