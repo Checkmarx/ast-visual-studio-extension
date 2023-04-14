@@ -21,7 +21,6 @@ jobs:
         with:
           vs-version: '17.2'
 
-      
       - name: Restore NuGet packages
         run: msbuild -t:restore  
       

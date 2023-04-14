@@ -15,7 +15,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1.3.1
         with:
           vs-version: '17.2'
-          
+
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
@@ -25,7 +25,8 @@ jobs:
         with:
           manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
           
-      - run: msbuild -t:restore  
+      - name: Restore NuGet packages
+        run: msbuild -t:restore
       
       - run: msbuild /p:Configuration=Release /p:DeployExtension=False
 
