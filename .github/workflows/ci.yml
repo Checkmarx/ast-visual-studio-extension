@@ -22,7 +22,10 @@ jobs:
           vs-version: '17.2'
 
       - name: Restore NuGet packages
-        run: msbuild -t:restore  
+        run: nuget restore .
+
+      - name: Restore
+        run: dotnet restore . 
       
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
