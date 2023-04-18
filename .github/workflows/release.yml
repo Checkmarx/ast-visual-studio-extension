@@ -13,6 +13,8 @@ jobs:
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.3.1
+        with:
+          vs-version: '17.2'
 
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -23,9 +25,10 @@ jobs:
         with:
           manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
           
-      - run: dotnet restore
+      - name: Restore NuGet packages
+        run: msbuild -t:restore
       
-      - run: msbuild /p:Configuration=Release /p:DeployExtension=False
+      - run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create PFX certificate
         id: create-pfx

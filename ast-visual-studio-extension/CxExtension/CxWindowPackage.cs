@@ -1,4 +1,6 @@
-﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.Commands;
+using log4net;
+using log4net.Repository.Hierarchy;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -28,6 +30,7 @@ namespace ast_visual_studio_extension.CxExtension
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus1.ctmenu", 1)]
+    [ProvideAutoLoad(PackageGuidString, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideToolWindow(typeof(CxWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Right, Window = EnvDTE.Constants.vsWindowKindOutput)]
     [Guid(PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
@@ -37,17 +40,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CxWindowPackage"/> class.
-        /// </summary>
-        public CxWindowPackage()
-        {
-            // Inside this method you can place any initialization code that does not require
-            // any Visual Studio service because at this point the package object is created but
-            // not sited yet inside Visual Studio environment. The place to do all the other
-            // initialization is the Initialize method.
-        }
-
+        
         #region Package Members
 
         /// <summary>
@@ -59,12 +52,19 @@ namespace ast_visual_studio_extension.CxExtension
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            // When initialized asynchronously, the current thread may be a background thread at this point.
-            // Do any initialization that requires the UI thread after switching to the UI thread.
-            await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            try
+            { 
+                // When initialized asynchronously, the current thread may be a background thread at this point.
+                // Do any initialization that requires the UI thread after switching to the UI thread.
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            // Command to create Checkmarx extension main window
-            await CxWindowCommand.InitializeAsync(this);
+                // Command to create Checkmarx extension main window
+                await CxWindowCommand.InitializeAsync(this);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
         }
 
         public override IVsAsyncToolWindowFactory GetAsyncToolWindowFactory(Guid toolWindowType)

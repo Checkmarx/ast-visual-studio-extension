@@ -18,12 +18,14 @@ jobs:
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.3.1
-      
+        with:
+          vs-version: '17.2'
+
       - name: Restore NuGet packages
         run: nuget restore .
 
       - name: Restore
-        run: dotnet restore .
+        run: dotnet restore . 
       
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
@@ -31,6 +33,6 @@ jobs:
       - name: Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net6.0\ast-visual-studio-extension-tests.dll
+        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
         
        

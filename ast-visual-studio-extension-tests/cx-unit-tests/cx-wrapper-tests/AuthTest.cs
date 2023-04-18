@@ -22,7 +22,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             
             Assert.Throws<CxException>(() =>
             {
-                CxWrapper cxWrapper = new(config, GetType());
+                CxWrapper cxWrapper = new CxWrapper(config, GetType());
                 cxWrapper.AuthValidate();
             });
         }

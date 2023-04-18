@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -15,8 +15,6 @@ namespace ast_visual_studio_extension.CxPreferences
     public sealed class CxPreferencesPackage : AsyncPackage
     {
         public const string PackageGuidString = "e2527bed-dc52-4188-9e62-c8037a3fc796";
-
-        public CxPreferencesPackage(){ }
 
         #region Package Members
 
