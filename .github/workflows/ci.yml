@@ -33,6 +33,6 @@ jobs:
       - name: Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60\ast-visual-studio-extension-tests.dll
+        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
         
        
