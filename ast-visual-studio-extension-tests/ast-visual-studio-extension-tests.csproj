@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
-    <RootNamespace>ast_visual_studio_extension_tests</RootNamespace>
-    <IsPackable>false</IsPackable>
+    <TargetFramework>net60-windows</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ast-visual-studio-extension\ast-visual-studio-extension.csproj" />
+    <ProjectReference Include="..\ast-visual-studio-extension\ast-visual-studio-extension.csproj" /> 
   </ItemGroup>
 
 </Project>
