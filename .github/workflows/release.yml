@@ -28,7 +28,7 @@ jobs:
       - name: Restore NuGet packages
         run: msbuild -t:restore
       
-      - run: msbuild /p:Configuration=Release /p:DeployExtension=False
+      - run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create PFX certificate
         id: create-pfx
