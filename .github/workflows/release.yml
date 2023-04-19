@@ -14,7 +14,7 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
-          vs-version: '17.2
+          vs-version: '17.2'
 
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -29,3 +29,4 @@ jobs:
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj -t:restore
       
       - run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
+
