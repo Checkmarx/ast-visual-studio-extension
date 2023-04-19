@@ -6,9 +6,3 @@ updates:
       interval: "daily"
     reviewers:
       - "Checkmarx/ast-galactica-team"
-  - package-ecosystem: "nuget"
-    directory: "/" 
-    schedule:
-      interval: "daily"
-    reviewers:
-      - "hmmachadocx"
