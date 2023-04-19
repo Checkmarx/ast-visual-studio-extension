@@ -158,7 +158,7 @@
   <ItemGroup>
     <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.492" />
     <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6" />
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.5.33428.388" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.5.4072" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="7.0.1" />
     <PackageReference Include="log4net" Version="2.0.15" />
