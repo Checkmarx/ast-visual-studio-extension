@@ -20,6 +20,7 @@
         public static string CLI_UPDATE_CMD => "update";
         public static string CLI_CODEBASHING_CMD => "codebashing";
         public static string CLI_CREATE_CMD => "create";
+        public static string CLI_CANCEL_CMD => "cancel";
 
         /** CLI FLAGS **/
         public static string FLAG_API_KEY => "--apikey";
@@ -65,6 +66,7 @@
         public static string LOG_RUNNING_TRIAGE_SHOW_INFO_CMD => "Fetching the list of predicates for projectId {0} , similarityId {1} and scan-type {2}...";
         public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link..."; 
         public static string LOG_RUNNING_SCAN_CREATE_CMD => "Executing 'scan create' command using the CLI...";
+        public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Executing 'scan cancel' command using the CLI...";
         public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Retrieving details for project id: {0}...";
 
         /** FILE EXTENSIONS **/

@@ -100,7 +100,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 catch (Exception ex)
                 {
                     errorMessage = ex.Message;
-                    return null;
+                    return new List<Project>();
                 }
             });
 

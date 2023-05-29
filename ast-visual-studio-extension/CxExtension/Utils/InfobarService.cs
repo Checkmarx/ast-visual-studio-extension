@@ -1,4 +1,5 @@
-﻿using Microsoft;
+﻿using ast_visual_studio_extension.CxExtension.Toolbar;
+using Microsoft;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -63,7 +64,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { hyperLink };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, messageSeverity, isCloseButtonVisible: true);
-
             _ = DisplayInfoBarAsync(infoBarModel);
         }
 
@@ -113,9 +113,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             string actionId = (string) actionItem.ActionContext;
 
+            bool isGuid = Guid.TryParse(actionId, out var guid);
+
             if (string.Equals(actionId, CxConstants.CODEBASHING_OPEN_HTTP_LINK_ID, StringComparison.OrdinalIgnoreCase))
             {
                 System.Diagnostics.Process.Start(actionItem.Text);
+            } else if (isGuid)
+            {
+                _ = CxToolbar.instance.ResultsTreePanel.DrawAsync(actionId, CxToolbar.instance);
             }
         }
 

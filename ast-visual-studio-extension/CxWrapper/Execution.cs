@@ -74,10 +74,10 @@ namespace ast_visual_studio_extension.CxCLI
 
                 if (process.ExitCode != 0)
                 {
-                    throw new CxException(process.ExitCode, errorData.Trim());
+                    throw new CxException(process.ExitCode, string.IsNullOrEmpty(errorData) ? outputData.Trim() : errorData.Trim());
                 }
 
-                return !string.IsNullOrEmpty(outputData.Trim()) ? outputData.Trim() : errorData.Trim();
+                return !string.IsNullOrEmpty(outputData) ? outputData.Trim() : errorData.Trim();
             }
         }
 

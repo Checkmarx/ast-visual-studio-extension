@@ -4,6 +4,9 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows.Navigation;
 
 namespace ast_visual_studio_extension.CxCLI
 {
@@ -108,7 +111,7 @@ namespace ast_visual_studio_extension.CxCLI
                 case ReportFormat.summaryJSON:
                     extension = ".json";
                     break;
-                case ReportFormat.summaryHTML: 
+                case ReportFormat.summaryHTML:
                     extension = ".html";
                     break;
             }
@@ -272,6 +275,16 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
+        /// Scan show command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <returns></returns>
+        public async Task<Scan> ScanShowAsync(string scanId)
+        {
+            return await Task.Run(() => ScanShow(scanId));
+        }
+
+        /// <summary>
         /// Triage Update command
         /// </summary>
         /// <param name="projectId"></param>
@@ -374,8 +387,9 @@ namespace ast_visual_studio_extension.CxCLI
         /// Scan create command
         /// </summary>
         /// <param name="parameters"></param>
+        /// <param name="additionalParameters"></param>
         /// <returns></returns>
-        public Scan ScanCreate(Dictionary<string, string> parameters)
+        public Scan ScanCreate(Dictionary<string, string> parameters, string additionalParameters)
         {
             logger.Info(CxConstants.LOG_RUNNING_SCAN_CREATE_CMD);
 
@@ -393,12 +407,69 @@ namespace ast_visual_studio_extension.CxCLI
                 scanCreateArguments.Add(entry.Value);
             }
 
+            scanCreateArguments.AddRange(ParseAdditionalParameters(additionalParameters));
+
             string scan = Execution.ExecuteCommand(WithConfigArguments(scanCreateArguments), Execution.CheckValidJSONString);
 
             return JsonConvert.DeserializeObject<Scan>(scan);
         }
 
         /// <summary>
+        /// Scan create command async
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="additionalParameters"></param>
+        /// <returns></returns>
+        public async Task<Scan> ScanCreateAsync(Dictionary<string, string> parameters, string additionalParameters)
+        {
+            return await Task.Run(() => ScanCreate(parameters, additionalParameters));
+        }
+
+        /// <summary>
+        /// Scan cancel command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <returns></returns>
+        public void ScanCancel(string scanId)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_SCAN_CANCEL_CMD);
+
+            List<string> scanCancelArguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_CANCEL_CMD,
+                CxConstants.FLAG_SCAN_ID,
+                scanId
+            };
+
+            Execution.ExecuteCommand(WithConfigArguments(scanCancelArguments), line => null);
+        }
+
+        /// <summary>
+        /// Scan cancel command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <returns></returns>
+        public async Task ScanCancelAsync(string scanId)
+        {
+
+            await Task.Run(() => ScanCancel(scanId));
+        }
+
+        private static List<string> ParseAdditionalParameters(String additionalParameters)
+        {
+            List<string> additionalParametersList = new List<string>();
+            if (!string.IsNullOrEmpty(additionalParameters))
+            {
+                foreach (Match match in Regex.Matches(additionalParameters, "(?:[^\\s\"]+|\"[^\"]*\")+", RegexOptions.IgnoreCase))
+                {
+                    additionalParametersList.Add(match.Captures[0].Value.Replace("\"", ""));
+                }
+            }
+            return additionalParametersList;
+        }
+
+        /// <summary>   
         /// Add base arguments to command
         /// </summary>
         /// <param name="baseArguments"></param>

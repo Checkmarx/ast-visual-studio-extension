@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly CxToolbar cxToolbar;
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly AsyncPackage package;
-        
+
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -69,7 +69,8 @@ namespace ast_visual_studio_extension.CxExtension
                     { SeverityGroupBy, GroupBy.SEVERITY },
                     { StateGroupBy, GroupBy.STATE },
                     { QueryNameGroupBy, GroupBy.QUERY_NAME },
-                });
+                })
+                .WithScanButtons(ScanningSeparator, ScanStartBtn);
 
             // Init toolbar elements
             cxToolbar.Init();
@@ -258,6 +259,12 @@ namespace ast_visual_studio_extension.CxExtension
         {
             SettingsBtn.IsChecked = false;
             package.ShowOptionPage(typeof(CxPreferencesModule));
+        }
+
+        private void ScanStartBtn_Click(object sender, RoutedEventArgs e)
+        {
+            ScanStartBtn.IsChecked = false;
+            cxToolbar.ScanStart_Click();
         }
 
         private void OnClickCodebashingLink(object sender, MouseButtonEventArgs e)
