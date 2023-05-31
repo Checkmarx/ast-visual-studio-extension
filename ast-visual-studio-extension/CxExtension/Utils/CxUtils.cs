@@ -114,10 +114,24 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// </summary>
         /// <param name="package"></param>
         /// <param name="message"></param>
+        /// <param name="messageSeverity"></param>
         /// <returns></returns>
         public static void DisplayMessageInInfoBar(AsyncPackage package, string message, ImageMoniker messageSeverity)
         {
-            _ = InfobarService.Initialize(package).ShowInfoBarAsync(message, messageSeverity);
+            _ = InfobarService.Initialize(package).ShowInfoBarAsync(message, messageSeverity, true);
+        }
+
+        /// <summary>
+        /// Display a warning notification in the info bar
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="message"></param>
+        /// <param name="messageSeverity"></param>
+        /// <param name="autoDismiss"></param>
+        /// <returns></returns>
+        public static void DisplayMessageInInfoBar(AsyncPackage package, string message, ImageMoniker messageSeverity, bool autoDismiss)
+        {
+            _ = InfobarService.Initialize(package).ShowInfoBarAsync(message, messageSeverity, autoDismiss);
         }
 
         /// <summary>
@@ -130,7 +144,21 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// <param name="linkId"></param>
         public static void DisplayMessageInInfoWithLinkBar(AsyncPackage package, string message, ImageMoniker messageSeverity, string linkDisplayName, string linkId)
         {
-            _ = InfobarService.Initialize(package).ShowInfoBarWithLinkAsync(message, messageSeverity, linkDisplayName, linkId);
+            _ = InfobarService.Initialize(package).ShowInfoBarWithLinkAsync(message, messageSeverity, linkDisplayName, linkId, true);
+        }
+
+        /// <summary>
+        /// Display a warning notification in the info bar with http link
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="message"></param>
+        /// <param name="messageSeverity"></param>
+        /// <param name="linkDisplayName"></param>
+        /// <param name="linkId"></param>
+        /// <param name="autoDismiss"></param>
+        public static void DisplayMessageInInfoWithLinkBar(AsyncPackage package, string message, ImageMoniker messageSeverity, string linkDisplayName, string linkId, bool autoDismiss)
+        {
+            _ = InfobarService.Initialize(package).ShowInfoBarWithLinkAsync(message, messageSeverity, linkDisplayName, linkId, autoDismiss);
         }
 
         /// <summary>

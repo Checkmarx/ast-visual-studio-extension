@@ -3,9 +3,11 @@
     public static class CxConstants
     {
         /** GENERAL **/
+        public static string EXTENSION_AGENT => "Visual Studio";
         public static string LIMIT_FILTER => "limit=10000";
         public static string JSON_FORMAT_VALUE => "json";
         public static string FILTER_SCANS_FOR_BRANCH => "project-id={0},branch={1},limit=10000,statuses=Completed";
+        public static string IDE_SCANS_KEY = "scan.config.plugins.ideScans";
 
         /** CLI COMMANDS **/
         public static string CLI_AUTH_CMD => "auth";
@@ -21,6 +23,8 @@
         public static string CLI_CODEBASHING_CMD => "codebashing";
         public static string CLI_CREATE_CMD => "create";
         public static string CLI_CANCEL_CMD => "cancel";
+        public static string CLI_UTILS_CMD = "utils";
+        public static string CLI_TENANT_CMD = "tenant";
 
         /** CLI FLAGS **/
         public static string FLAG_API_KEY => "--apikey";
@@ -47,9 +51,11 @@
         public static string FLAG_SAST_PRESET_NAME => "--sast-preset-name";
         public static string FLAG_AGENT => "--agent";
         public static string FLAG_SOURCE => "-s";
+        public static string FLAG_ASYNC => "--async";
+        public static string FLAG_INCREMENTAL => "--sast-incremental";
+        public static string FLAG_RESUBMIT => "--resubmit";
 
         /** EXCEPTIONS **/
-
         public static string EXCEPTION_CREDENTIALS_NOT_SET => "Credentials are not set";
 
         /** LOGGING **/
@@ -68,8 +74,14 @@
         public static string LOG_RUNNING_SCAN_CREATE_CMD => "Executing 'scan create' command using the CLI...";
         public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Executing 'scan cancel' command using the CLI...";
         public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Retrieving details for project id: {0}...";
+        public static string LOG_RUNNING_TENANT_SETTINGS_CMD => "Getting tenant settings...";
 
         /** FILE EXTENSIONS **/
         public static string EXTENSION_JSON => ".json";
+
+        /** SCAN STATUS **/
+        public static string SCAN_RUNNING => "running";
+        public static string SCAN_PARTIAL => "partial";
+        public static string SCAN_COMPLETED => "completed";
     }
 }

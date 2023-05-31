@@ -36,15 +36,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// <param name="message"></param>
         /// <param name="messageSeverity"></param>
         /// <returns></returns>
-        public async Task ShowInfoBarAsync(string message, ImageMoniker messageSeverity)
+        public async Task ShowInfoBarAsync(string message, ImageMoniker messageSeverity, bool autoDismiss)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             InfoBarTextSpan text = new InfoBarTextSpan(message);
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarModel infoBarModel = new InfoBarModel(spans, messageSeverity, isCloseButtonVisible: true);
-            
-           _ = DisplayInfoBarAsync(infoBarModel);
+            await DisplayInfoBarAsync(infoBarModel, autoDismiss);
         }
 
         /// <summary>
@@ -55,7 +54,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// <param name="linkDisplayName"></param>
         /// <param name="linkId"></param>
         /// <returns></returns>
-        public async Task ShowInfoBarWithLinkAsync(string message, ImageMoniker messageSeverity, string linkDisplayName, string linkId)
+        public async Task ShowInfoBarWithLinkAsync(string message, ImageMoniker messageSeverity, string linkDisplayName, string linkId, bool autoDismiss)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -64,7 +63,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { hyperLink };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, messageSeverity, isCloseButtonVisible: true);
-            _ = DisplayInfoBarAsync(infoBarModel);
+            await DisplayInfoBarAsync(infoBarModel, autoDismiss);
         }
 
         /// <summary>
@@ -72,7 +71,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// </summary>
         /// <param name="infoBarModel"></param>
         /// <returns></returns>
-        private async Task DisplayInfoBarAsync(InfoBarModel infoBarModel)
+        private async Task DisplayInfoBarAsync(InfoBarModel infoBarModel, bool autoDismiss)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -96,9 +95,11 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
                 host.AddInfoBar(element);
 
-                await Task.Delay(10000);
-
-                host.RemoveInfoBar(element);
+                if (autoDismiss)
+                {
+                    await Task.Delay(10000);
+                    host.RemoveInfoBar(element);
+                }
             }
         }
 
@@ -120,8 +121,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 System.Diagnostics.Process.Start(actionItem.Text);
             } else if (isGuid)
             {
-                _ = CxToolbar.instance.ResultsTreePanel.DrawAsync(actionId, CxToolbar.instance);
+                _ = CxToolbar.instance.ScansCombobox.LoadScanByIdAsync(actionId);
             }
+            infoBarUIElement.Close();
         }
 
         public void OnClosed(IVsInfoBarUIElement infoBarUIElement)

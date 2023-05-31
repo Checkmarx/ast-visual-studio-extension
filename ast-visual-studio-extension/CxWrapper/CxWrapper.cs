@@ -1,4 +1,5 @@
-﻿using ast_visual_studio_extension.CxWrapper.Models;
+﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
 using Newtonsoft.Json;
 using System;
@@ -356,7 +357,7 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
-        /// COdebashing link command
+        /// Codebashing link command
         /// </summary>
         /// <param name="cweId"></param>
         /// <param name="language"></param>
@@ -381,6 +382,51 @@ namespace ast_visual_studio_extension.CxCLI
             string codebashingLink = Execution.ExecuteCommand(WithConfigArguments(codebashingArguments), Execution.CheckValidJSONString);
 
             return JsonConvert.DeserializeObject<List<CodeBashing>>(codebashingLink);
+        }
+
+        /// <summary>
+        /// Tenant settings command
+        /// </summary>
+        /// <returns></returns>
+        public List<TenantSetting> TenantSettings()
+        {
+            logger.Info(CxConstants.LOG_RUNNING_TENANT_SETTINGS_CMD);
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_UTILS_CMD,
+                CxConstants.CLI_TENANT_CMD,
+                CxConstants.FLAG_FORMAT,
+                CxConstants.JSON_FORMAT_VALUE
+            };
+
+            string jsonStr = Execution.ExecuteCommand(WithConfigArguments(arguments), Execution.CheckValidJSONString);
+
+            var tenantSettings = JsonConvert.DeserializeObject<List<TenantSetting>>(jsonStr);
+
+            return tenantSettings ?? throw new CxException(1, "Unable to get tenant settings");
+        }
+
+
+        /// <summary>
+        /// Check tenant settings for IDE scans enabled
+        /// </summary>
+        /// <returns></returns>
+        public bool IdeScansEnabled()
+        {
+            List<TenantSetting> tenantSettings = TenantSettings();
+
+            return bool.Parse(tenantSettings.Find(s => s.Key.Equals(CxConstants.IDE_SCANS_KEY)).Value);
+        }
+
+
+        /// <summary>
+        /// Check tenant settings for IDE scans enabled
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> IdeScansEnabledAsync()
+        {
+            return await Task.Run(() => IdeScansEnabled());
         }
 
         /// <summary>
