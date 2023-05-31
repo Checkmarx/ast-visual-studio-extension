@@ -103,9 +103,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             string selectedBranch = (branchesCombo.SelectedItem as ComboBoxItem).Content as string;
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
 
-            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "branch", selectedBranch);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, selectedBranch);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.scanIdProperty, string.Empty);
 
             _ = scansCombobox.LoadScansAsync(projectId, selectedBranch);
+
+            cxToolbar.ScanButtonByCombos();
         }
     }
 }

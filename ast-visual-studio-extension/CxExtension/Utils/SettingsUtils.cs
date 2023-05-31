@@ -16,6 +16,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static readonly string projectIdProperty = "projectId";
         public static readonly string branchProperty = "branch";
         public static readonly string scanIdProperty = "scanId";
+        public static readonly string createdScanIdProperty = "createdScanId";
 
         public static readonly Dictionary<object, bool> severityDefaultValues = new Dictionary<object, bool>
         {

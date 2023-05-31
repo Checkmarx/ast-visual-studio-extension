@@ -58,7 +58,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             cxToolbar.ScansCombo.Items.Clear();
 
-            foreach(Scan scan in scans)
+            foreach (Scan scan in scans)
             {
                 DateTime scanCreatedAt = DateTime.Parse(scan.CreatedAt, System.Globalization.CultureInfo.InvariantCulture);
                 string createdAt = scanCreatedAt.ToString(CxConstants.DATE_OUTPUT_FORMAT);
@@ -125,54 +125,60 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 string scanId = ValidateScanId((e.OriginalSource as TextBox).Text);
                 if (string.IsNullOrEmpty(scanId)) return;
 
-                CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
-                if (cxWrapper == null) return;
+                await LoadScanByIdAsync(scanId);
+            }
+        }
 
-                string currentProjectName = cxToolbar.ProjectsCombo.SelectedItem is ComboBoxItem projectCombo ? (projectCombo.Tag as Project).Name : CxConstants.TOOLBAR_SELECT_PROJECT;
-                string currentBranch = cxToolbar.BranchesCombo.SelectedItem is ComboBoxItem branchCombo ? branchCombo.Content.ToString() : CxConstants.TOOLBAR_SELECT_BRANCH;
 
-                CxToolbar.reverseSearch = true;
-                cxToolbar.ProjectsCombo.IsEnabled = false;
-                cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_LOADING_PROJECTS;
-                cxToolbar.BranchesCombo.IsEnabled = false;
-                cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_LOADING_BRANCHES;
-                cxToolbar.ScansCombo.IsEnabled = false;
-                cxToolbar.ResultsTreePanel.ClearAll();
+        public async Task LoadScanByIdAsync(string scanId)
+        {
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
+            if (cxWrapper == null) return;
 
-                Scan scan = null;
+            string currentProjectName = cxToolbar.ProjectsCombo.SelectedItem is ComboBoxItem projectCombo ? (projectCombo.Tag as Project).Name : CxConstants.TOOLBAR_SELECT_PROJECT;
+            string currentBranch = cxToolbar.BranchesCombo.SelectedItem is ComboBoxItem branchCombo ? branchCombo.Content.ToString() : CxConstants.TOOLBAR_SELECT_BRANCH;
 
-                string scanShowSuccessfully = await Task.Run(() =>
+            CxToolbar.reverseSearch = true;
+            cxToolbar.ProjectsCombo.IsEnabled = false;
+            cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_LOADING_PROJECTS;
+            cxToolbar.BranchesCombo.IsEnabled = false;
+            cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_LOADING_BRANCHES;
+            cxToolbar.ScansCombo.IsEnabled = false;
+            cxToolbar.ResultsTreePanel.ClearAll();
+
+            Scan scan = null;
+
+            string scanShowSuccessfully = await Task.Run(() =>
+            {
+                try
                 {
-                    try
-                    {
-                        scan = cxWrapper.ScanShow(scanId);
+                    scan = cxWrapper.ScanShow(scanId);
 
-                        return string.Empty;
-                    }
-                    catch (Exception ex)
-                    {
-                        return ex.Message;
-                    }
-                });
-
-                if (string.IsNullOrEmpty(scanShowSuccessfully))
-                {
-                    CxToolbar.currentBranch = scan.Branch;
-                    CxToolbar.currentScanId = scanId;
-
-                    cxToolbar.ProjectsCombo.SelectedIndex = -1; // used to trigger onChangeProjects when the provided scanId belongs to the current project
-                    cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(scan.ProjectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
+                    return string.Empty;
                 }
-                else
+                catch (Exception ex)
                 {
-                    cxToolbar.ProjectsCombo.IsEnabled = true;
-                    cxToolbar.ProjectsCombo.Text = currentProjectName;
-                    cxToolbar.BranchesCombo.IsEnabled = cxToolbar.ProjectsCombo.SelectedIndex != -1;
-                    cxToolbar.BranchesCombo.Text = currentBranch;
-                    cxToolbar.ScansCombo.IsEnabled = true;
-
-                    AddMessageToTree(scanShowSuccessfully);
+                    return ex.Message;
                 }
+            });
+
+            if (string.IsNullOrEmpty(scanShowSuccessfully))
+            {
+                CxToolbar.currentBranch = scan.Branch;
+                CxToolbar.currentScanId = scanId;
+
+                cxToolbar.ProjectsCombo.SelectedIndex = -1; // used to trigger onChangeProjects when the provided scanId belongs to the current project
+                cxToolbar.ProjectsCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(scan.ProjectId, cxToolbar.ProjectsCombo, Enums.ComboboxType.PROJECTS);
+            }
+            else
+            {
+                cxToolbar.ProjectsCombo.IsEnabled = true;
+                cxToolbar.ProjectsCombo.Text = currentProjectName;
+                cxToolbar.BranchesCombo.IsEnabled = cxToolbar.ProjectsCombo.SelectedIndex != -1;
+                cxToolbar.BranchesCombo.Text = currentBranch;
+                cxToolbar.ScansCombo.IsEnabled = true;
+
+                AddMessageToTree(scanShowSuccessfully);
             }
         }
 
@@ -187,12 +193,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             bool isValidScanId = Guid.TryParse(scanId, out _) && !string.IsNullOrEmpty(scanId);
 
-            if(isValidScanId) return scanId;
+            if (isValidScanId) return scanId;
 
             AddMessageToTree(CxConstants.INVALID_SCAN_ID);
 
             return string.Empty;
-            
+
         }
 
         /// <summary>

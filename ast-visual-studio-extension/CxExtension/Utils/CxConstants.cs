@@ -1,5 +1,4 @@
-﻿
-namespace ast_visual_studio_extension.CxExtension.Utils
+﻿namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class CxConstants
     {
@@ -75,5 +74,16 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string CODEBASHING_LINK => "https://free.codebashing.com";
         public static string CODEBASHING_OPEN_HTTP_LINK_ID => "OpenHTTPLink";
         public static string CODEBASHING_LINK_TOOLTIP => "Learn more about {0} using Checkmarx's eLearning platform";
+
+        /************ SCANNING ************/
+        public static string STATUS_CREATING_SCAN => "Checkmarx: Creating scan";
+        public static string STATUS_CREATING_SCAN_FAILED => "Checkmarx: Failed creating scan";
+        public static string STATUS_FORMAT_CREATED_SCAN => "Checkmarx: Scan created with ID {0}";
+        public static string STATUS_FORMAT_POLLING_SCAN => "Checkmarx: Scan {0} is {1}";
+        public static string STATUS_FORMAT_POLLING_SCAN_FAILED => "Checkmarx: Failed polling scan {0}";
+        public static string STATUS_FORMAT_CANCELLING_SCAN => "Checkmarx: Cancelling scan {0}";
+        public static string STATUS_FORMAT_FINISHED_SCAN => "Checkmarx: Scan {0} finished with status {1}";
+        public static string INFOBAR_SCAN_COMPLETED => "Checkmarx scan completed successfully.";
+        public static string INFOBAR_RESULTS_LINK => "Load scan results";
     }
 }

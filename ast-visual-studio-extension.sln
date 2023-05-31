@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ast-visual-studio-extension", "ast-visual-studio-extension\ast-visual-studio-extension.csproj", "{4A956E62-2014-4D64-8A5B-B703A82B0EC9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ast-visual-studio-extension-tests", "ast-visual-studio-extension-tests\ast-visual-studio-extension-tests.csproj", "{EDDDC6E3-A02F-419C-BF9C-1493C39DE2E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ast-visual-studio-extension-tests", "ast-visual-studio-extension-tests\ast-visual-studio-extension-tests.csproj", "{EDDDC6E3-A02F-419C-BF9C-1493C39DE2E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

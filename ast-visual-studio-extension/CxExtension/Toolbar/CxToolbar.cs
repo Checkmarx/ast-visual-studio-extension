@@ -1,14 +1,20 @@
 ﻿using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Imaging;
+using Microsoft.VisualStudio.TaskStatusCenter;
+using System.Threading;
+using Microsoft.VisualStudio.Imaging;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
@@ -21,6 +27,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public static bool resetExtension = false;
         public static bool redrawExtension = false;
         public static bool reverseSearch = false;
+        public static CxToolbar instance = null;
 
         public AsyncPackage Package { get; set; }
         public ResultsTreePanel ResultsTreePanel { get; set; }
@@ -35,10 +42,15 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public Dictionary<Severity, Image> SeverityFilterImages { get; set; }
         public Dictionary<MenuItem, State> StateFilters { get; set; }
         public Dictionary<MenuItem, GroupBy> GroupByOptions { get; set; }
+        public StackPanel ScanningSeparator { get; set; }
+        public ToggleButton ScanStartButton { get; set; }
+
+        private static bool initPolling = false;
 
         public static CxToolbar Builder()
         {
-            return new CxToolbar();
+            instance = new CxToolbar();
+            return instance;
         }
 
         public CxToolbar WithPackage(AsyncPackage package)
@@ -96,13 +108,20 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return this;
         }
 
+        public CxToolbar WithScanButtons(StackPanel scanningSeparator, ToggleButton scanStartButton)
+        {
+            ScanStartButton = scanStartButton;
+            ScanningSeparator = scanningSeparator;
+            return this;
+        }
+
         /// <summary>
         /// Initialize toolbar elements
         /// </summary>
         public void Init()
         {
             ScansCombobox = new ScansCombobox(this);
-            BranchesCombobox = new BranchesCombobox(this, ScansCombobox); 
+            BranchesCombobox = new BranchesCombobox(this, ScansCombobox);
             ProjectsCombobox = new ProjectsCombobox(this, BranchesCombobox);
 
             if (resetExtension)
@@ -140,6 +159,16 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 var groupBy = pair.Value;
                 control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.groupByCollection, groupBy.ToString(), SettingsUtils.groupByDefaultValues[groupBy]);
             }
+
+            ScanButtonByCombos();
+
+            _ = IdeScansEnabledAsync();
+
+            if (!initPolling)
+            {
+                initPolling = true;
+                _ = PollScanStartedAsync();
+            }
         }
 
         /// <summary>
@@ -169,6 +198,166 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             SettingsUtils.Store(Package, SettingsUtils.groupByCollection, GroupByOptions[groupByControl], SettingsUtils.groupByDefaultValues);
             ResultsTreePanel.Redraw(true);
+        }
+
+        public void ScanStart_Click()
+        {
+            SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
+            _ = ScanStartedAsync();
+        }
+
+        public void ScanButtonByCombos()
+        {
+            var projectId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.projectIdProperty);
+            var branch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
+            ScanStartButton.IsEnabled = !(string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(branch));
+        }
+
+        private async Task IdeScansEnabledAsync()
+        {
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(Package, ResultsTree, GetType());
+            var ideScansEnabled = false;
+            try
+            {
+                ideScansEnabled = await cxWrapper.IdeScansEnabledAsync();
+            }
+            catch (CxException ex)
+            {
+                UpdateStatusBar("Checkmarx: " + ex.Message);
+            }
+            if (!ideScansEnabled)
+            {
+                ScanStartButton.Visibility = ScanningSeparator.Visibility = System.Windows.Visibility.Collapsed;
+            }
+
+        }
+
+        public async Task ScanStartedAsync()
+        {
+            ScanStartButton.IsEnabled = false;
+            var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
+            var options = default(TaskHandlerOptions);
+            options.Title = CxConstants.STATUS_CREATING_SCAN;
+            options.ActionsAfterCompletion = CompletionActions.None;
+            TaskProgressData data = default;
+            ITaskHandler handler = tsc.PreRegister(options, data);
+            var t = StartScanAsync();
+            handler.RegisterTask(t);
+            await t;
+
+            var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
+            if (string.IsNullOrEmpty(scanId))
+            {
+                ScanStartButton.IsEnabled = true;
+                return;
+            }
+
+            await PollScanStartedAsync();
+        }
+
+        private async Task StartScanAsync()
+        {
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(Package, ResultsTree, GetType());
+            var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
+            if (cxWrapper == null || !string.IsNullOrWhiteSpace(scanId)) return;
+
+            Dictionary<string, string> parameters = new Dictionary<string, string>
+            {
+                { CxCLI.CxConstants.FLAG_SOURCE, "." },
+                { CxCLI.CxConstants.FLAG_PROJECT_NAME, ProjectsCombo.Text },
+                { CxCLI.CxConstants.FLAG_BRANCH, BranchesCombo.Text },
+                { CxCLI.CxConstants.FLAG_AGENT, CxCLI.CxConstants.EXTENSION_AGENT }
+            };
+            const string additionalParamaters = "{0} {1} {2}";
+
+            UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN);
+            Scan scan = await cxWrapper.ScanCreateAsync(parameters, string.Format(additionalParamaters, CxCLI.CxConstants.FLAG_ASYNC, CxCLI.CxConstants.FLAG_INCREMENTAL, CxCLI.CxConstants.FLAG_RESUBMIT));
+
+            if (scan != null)
+            {
+                SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, scan.ID);
+                UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_CREATED_SCAN, scan.ID));
+            }
+            else
+            {
+                UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED);
+            }
+        }
+
+        private async Task PollScanStartedAsync()
+        {
+            ScanStartButton.IsEnabled = false;
+            var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
+            var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
+            if (string.IsNullOrWhiteSpace(scanId))
+            {
+                ScanStartButton.IsEnabled = true;
+                return;
+            };
+            var options = default(TaskHandlerOptions);
+            options.Title = string.Format(CxConstants.STATUS_FORMAT_POLLING_SCAN, scanId, CxCLI.CxConstants.SCAN_RUNNING);
+            options.ActionsAfterCompletion = CompletionActions.None;
+            TaskProgressData data = default;
+            data.CanBeCanceled = true;
+            ITaskHandler handler = tsc.PreRegister(options, data);
+            var token = handler.UserCancellation;
+            var t = PollScanAsync(token);
+            handler.RegisterTask(t);
+            try
+            {
+                await t;
+            }
+            catch (OperationCanceledException)
+            {
+                UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_CANCELLING_SCAN, scanId));
+                CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(Package, ResultsTree, GetType());
+                _ = cxWrapper.ScanCancelAsync(scanId);
+            }
+            finally
+            {
+                SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
+                ScanStartButton.IsEnabled = true;
+            }
+        }
+
+        private async Task PollScanAsync(CancellationToken token)
+        {
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(Package, ResultsTree, GetType());
+            var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
+            if (cxWrapper == null || string.IsNullOrWhiteSpace(scanId)) return;
+            Scan scan = null;
+            while (scan == null || scan.Status.ToLower() == CxCLI.CxConstants.SCAN_RUNNING)
+            {
+                await Task.Delay(1000 * 15, token);
+                scan = await cxWrapper.ScanShowAsync(scanId);
+                if (scan == null)
+                {
+                    UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_POLLING_SCAN_FAILED, scanId));
+                    return;
+                }
+                UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_POLLING_SCAN, scanId, scan.Status.ToLower()));
+                token.ThrowIfCancellationRequested();
+
+            }
+            UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_FINISHED_SCAN, scanId, scan.Status.ToLower()));
+            if (scan.Status.ToLower() == CxCLI.CxConstants.SCAN_COMPLETED || scan.Status.ToLower() == CxCLI.CxConstants.SCAN_PARTIAL)
+            {
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.INFOBAR_SCAN_COMPLETED, KnownMonikers.StatusInformation, CxConstants.INFOBAR_RESULTS_LINK, scanId, false);
+            }
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "VSTHRD102:Implement internal logic asynchronously", Justification = "Readbility")]
+        private static void UpdateStatusBar(string message)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                var dte = (EnvDTE.DTE)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE));
+                var statusBar = dte.StatusBar;
+
+                statusBar.Text = message;
+            });
         }
     }
 }

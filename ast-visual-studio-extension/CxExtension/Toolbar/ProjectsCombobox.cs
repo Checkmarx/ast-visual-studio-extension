@@ -100,7 +100,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 catch (Exception ex)
                 {
                     errorMessage = ex.Message;
-                    return null;
+                    return new List<Project>();
                 }
             });
 
@@ -154,8 +154,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             Project selectedProject = (projectsCombo.SelectedItem as ComboBoxItem).Tag as Project;
 
             SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.projectIdProperty, selectedProject.Id);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, string.Empty);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.scanIdProperty, string.Empty);
 
             _ = branchesCombobox.LoadBranchesAsync(selectedProject.Id);
+
+            cxToolbar.ScanButtonByCombos();
         }
     }
 }

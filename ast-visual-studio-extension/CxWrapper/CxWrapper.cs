@@ -1,9 +1,13 @@
-﻿using ast_visual_studio_extension.CxWrapper.Models;
+﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows.Navigation;
 
 namespace ast_visual_studio_extension.CxCLI
 {
@@ -108,7 +112,7 @@ namespace ast_visual_studio_extension.CxCLI
                 case ReportFormat.summaryJSON:
                     extension = ".json";
                     break;
-                case ReportFormat.summaryHTML: 
+                case ReportFormat.summaryHTML:
                     extension = ".html";
                     break;
             }
@@ -272,6 +276,16 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
+        /// Scan show command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <returns></returns>
+        public async Task<Scan> ScanShowAsync(string scanId)
+        {
+            return await Task.Run(() => ScanShow(scanId));
+        }
+
+        /// <summary>
         /// Triage Update command
         /// </summary>
         /// <param name="projectId"></param>
@@ -343,7 +357,7 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
-        /// COdebashing link command
+        /// Codebashing link command
         /// </summary>
         /// <param name="cweId"></param>
         /// <param name="language"></param>
@@ -371,11 +385,57 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
+        /// Tenant settings command
+        /// </summary>
+        /// <returns></returns>
+        public List<TenantSetting> TenantSettings()
+        {
+            logger.Info(CxConstants.LOG_RUNNING_TENANT_SETTINGS_CMD);
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_UTILS_CMD,
+                CxConstants.CLI_TENANT_CMD,
+                CxConstants.FLAG_FORMAT,
+                CxConstants.JSON_FORMAT_VALUE
+            };
+
+            string jsonStr = Execution.ExecuteCommand(WithConfigArguments(arguments), Execution.CheckValidJSONString);
+
+            var tenantSettings = JsonConvert.DeserializeObject<List<TenantSetting>>(jsonStr);
+
+            return tenantSettings ?? throw new CxException(1, "Unable to get tenant settings");
+        }
+
+
+        /// <summary>
+        /// Check tenant settings for IDE scans enabled
+        /// </summary>
+        /// <returns></returns>
+        public bool IdeScansEnabled()
+        {
+            List<TenantSetting> tenantSettings = TenantSettings();
+
+            return bool.Parse(tenantSettings.Find(s => s.Key.Equals(CxConstants.IDE_SCANS_KEY)).Value);
+        }
+
+
+        /// <summary>
+        /// Check tenant settings for IDE scans enabled
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> IdeScansEnabledAsync()
+        {
+            return await Task.Run(() => IdeScansEnabled());
+        }
+
+        /// <summary>
         /// Scan create command
         /// </summary>
         /// <param name="parameters"></param>
+        /// <param name="additionalParameters"></param>
         /// <returns></returns>
-        public Scan ScanCreate(Dictionary<string, string> parameters)
+        public Scan ScanCreate(Dictionary<string, string> parameters, string additionalParameters)
         {
             logger.Info(CxConstants.LOG_RUNNING_SCAN_CREATE_CMD);
 
@@ -393,12 +453,69 @@ namespace ast_visual_studio_extension.CxCLI
                 scanCreateArguments.Add(entry.Value);
             }
 
+            scanCreateArguments.AddRange(ParseAdditionalParameters(additionalParameters));
+
             string scan = Execution.ExecuteCommand(WithConfigArguments(scanCreateArguments), Execution.CheckValidJSONString);
 
             return JsonConvert.DeserializeObject<Scan>(scan);
         }
 
         /// <summary>
+        /// Scan create command async
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="additionalParameters"></param>
+        /// <returns></returns>
+        public async Task<Scan> ScanCreateAsync(Dictionary<string, string> parameters, string additionalParameters)
+        {
+            return await Task.Run(() => ScanCreate(parameters, additionalParameters));
+        }
+
+        /// <summary>
+        /// Scan cancel command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <returns></returns>
+        public void ScanCancel(string scanId)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_SCAN_CANCEL_CMD);
+
+            List<string> scanCancelArguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_CANCEL_CMD,
+                CxConstants.FLAG_SCAN_ID,
+                scanId
+            };
+
+            Execution.ExecuteCommand(WithConfigArguments(scanCancelArguments), line => null);
+        }
+
+        /// <summary>
+        /// Scan cancel command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <returns></returns>
+        public async Task ScanCancelAsync(string scanId)
+        {
+
+            await Task.Run(() => ScanCancel(scanId));
+        }
+
+        private static List<string> ParseAdditionalParameters(String additionalParameters)
+        {
+            List<string> additionalParametersList = new List<string>();
+            if (!string.IsNullOrEmpty(additionalParameters))
+            {
+                foreach (Match match in Regex.Matches(additionalParameters, "(?:[^\\s\"]+|\"[^\"]*\")+", RegexOptions.IgnoreCase))
+                {
+                    additionalParametersList.Add(match.Captures[0].Value.Replace("\"", ""));
+                }
+            }
+            return additionalParametersList;
+        }
+
+        /// <summary>   
         /// Add base arguments to command
         /// </summary>
         /// <param name="baseArguments"></param>

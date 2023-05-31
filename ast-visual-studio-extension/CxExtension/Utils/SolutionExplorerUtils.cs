@@ -50,6 +50,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 CxUtils.DisplayMessageInInfoBar(AsyncPackage, string.Format(CxConstants.NOTIFY_FILE_NOT_FOUND, node.FileName), KnownMonikers.StatusWarning);
             }
         }
+        
         internal static Task<List<string>> SearchAllFilesAsync(string partialFileLocation, EnvDTE.DTE dte)
         {
             return Task.Run(async () =>

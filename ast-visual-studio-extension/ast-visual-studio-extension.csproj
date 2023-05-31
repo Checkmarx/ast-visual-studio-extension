@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
@@ -7,10 +7,9 @@
     <VSIXSubPath>
     </VSIXSubPath>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-      <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-      <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
-
-      <TargetFrameworkProfile />
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -94,6 +93,7 @@
     <Compile Include="CxWrapper\CxConstants.cs" />
     <Compile Include="CxWrapper\Exceptions\CxException.cs" />
     <Compile Include="CxWrapper\Execution.cs" />
+    <Compile Include="CxWrapper\Models\TenantSetting.cs" />
     <Compile Include="CxWrapper\Models\CodeBashing.cs" />
     <Compile Include="CxWrapper\Models\Comments.cs" />
     <Compile Include="CxWrapper\Models\CxConfig.cs" />
@@ -158,6 +158,9 @@
   <ItemGroup>
     <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.492" />
     <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client">
+      <Version>16.205.1</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5240" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0" />
