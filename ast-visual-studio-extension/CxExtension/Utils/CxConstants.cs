@@ -1,7 +1,4 @@
-﻿
-using ast_visual_studio_extension.CxWrapper.Models;
-
-namespace ast_visual_studio_extension.CxExtension.Utils
+﻿namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class CxConstants
     {
