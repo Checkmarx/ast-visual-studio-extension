@@ -48,11 +48,13 @@ jobs:
 
       - name: Download CLI
         if: inputs.cliTag
+        shell: bash 
         run: |
           chmod +x ./.github/scripts/update_cli.sh
           ./.github/scripts/update_cli.sh ${{ inputs.cliTag }}
 
       - name: Tag
+        shell: bash
         run: |
           echo ${{ inputs.tag }}
           tag=${{ inputs.tag }}
