@@ -24,14 +24,9 @@ jobs:
       - name: Download latest cli and update branch
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
         run: |
-          release=${{ steps.checkmarx-ast-cli.outputs.release_tag }}
-          filename_windows=ast-cli_${release}_windows_x64.zip
-          mkdir ./tmp/
-          wget https://github.com/Checkmarx/ast-cli/releases/download/${release}/${filename_windows}
-          unzip ${filename_windows} -d ./tmp/
-          mv ./tmp/cx.exe ./ast-visual-studio-extension/CxWrapper/Resources/cx.exe
-          rm -r ./tmp/
-          rm ${filename_windows}
+          # Update binaries
+          chmod +x ./.github/scripts/update_cli.sh
+          ./.github/scripts/update_cli.sh ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
 
       - name: Create Pull Request
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
