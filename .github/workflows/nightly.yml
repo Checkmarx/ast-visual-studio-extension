@@ -23,6 +23,17 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "dependabotExists=$(echo $GITHUB_CONTEXT | jq '.event.commits[].author | any(. == "dependabot[bot]")')" >> $GITHUB_OUTPUT
 
+  delete-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete release
+        uses: dev-drprasad/delete-tag-and-release@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          delete_release: true
+          tag_name: 2.0.0-nightly
+
   nightly:
     needs: check-dependabot-commits
     if: ${{needs.check-dependabot-commits.outputs.isDependabot == 'false'}}
