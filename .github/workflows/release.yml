@@ -82,12 +82,12 @@ jobs:
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v0.1.13
         with:
           tag_name: ${{ inputs.tag }}
           prerelease: ${{ inputs.dev }}
           generate_release_notes: true
-          files: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
+          files: '.\ast-visual-studio-extension\bin\Release\*'
 
       - name: Publish Release
         uses: cezarypiatek/VsixPublisherAction@1.0
