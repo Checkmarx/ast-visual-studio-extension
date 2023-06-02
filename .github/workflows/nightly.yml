@@ -21,7 +21,7 @@ jobs:
         id: check-dependabot
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "dependabotExists=$(echo $GITHUB_CONTEXT | jq '.event.commits[].author | any(. == "dependabot[bot]")')" >> $GITHUB_OUTPUT
+        run: echo "dependabotExists=$(echo $GITHUB_CONTEXT | jq '.event.commits[0].author | any(. == "dependabot[bot]")')" >> $GITHUB_OUTPUT
 
   delete-tag:
     runs-on: ubuntu-latest
