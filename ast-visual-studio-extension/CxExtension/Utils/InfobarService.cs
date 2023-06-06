@@ -119,7 +119,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             if (string.Equals(actionId, CxConstants.CODEBASHING_OPEN_HTTP_LINK_ID, StringComparison.OrdinalIgnoreCase))
             {
                 System.Diagnostics.Process.Start(actionItem.Text);
-            } else if (isGuid)
+            }
+            else if (string.Equals(actionId, CxConstants.RUN_SCAN_ACTION, StringComparison.OrdinalIgnoreCase))
+            {
+                _ = CxToolbar.instance.ScanStartedAsync();
+            }
+            else if (isGuid)
             {
                 _ = CxToolbar.instance.ScansCombobox.LoadScanByIdAsync(actionId);
             }

@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.TaskStatusCenter;
 using System.Threading;
 using Microsoft.VisualStudio.Imaging;
 using ast_visual_studio_extension.CxWrapper.Exceptions;
+using System.Linq;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
@@ -200,10 +201,110 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             ResultsTreePanel.Redraw(true);
         }
 
-        public void ScanStart_Click()
+        public async Task ScanStart_ClickAsync()
         {
-            SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
-            _ = ScanStartedAsync();
+            ScanStartButton.IsEnabled = false;
+
+            string currentGitBranch = await GetCurrentGitBranchAsync();
+            bool matchProject = await ASTProjectMatchesWorkspaceProjectAsync();
+
+            if (string.IsNullOrEmpty(currentGitBranch))
+            {
+                if (matchProject)
+                {
+                    SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
+                    _ = ScanStartedAsync();
+                } else
+                {
+                    CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                    ScanStartButton.IsEnabled = true;
+                }
+            } 
+            else
+            {
+                var checkmarxBranch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
+                var matchBranch = currentGitBranch.Equals(checkmarxBranch);
+
+                if (matchProject && matchBranch)
+                {
+                    SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
+                    _ = ScanStartedAsync();
+                }
+                else
+                {
+                    if (!matchProject)
+                    {
+                        CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                    }
+                    else
+                    {
+                        CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.BRANCH_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                    }
+
+                    ScanStartButton.IsEnabled = true;
+                }
+            }
+        }
+
+        private static async Task<string> GetCurrentGitBranchAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            try
+            {
+                EnvDTE.DTE dte = SolutionExplorerUtils.GetDTE();
+                string workingDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                RepositoryInformation repository = RepositoryInformation.GetRepositoryInformation(workingDir);
+                return repository.CurrentBranch;
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusBar("Checkmarx: Error getting git branch: " + ex.Message);
+            }
+
+            return string.Empty;
+        } 
+
+        private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync()
+        {
+            if(ResultsTreePanel.currentResults == null || !ResultsTreePanel.currentResults.results.Any())
+            {
+                return false;
+            }
+
+            List<Result> astResults = ResultsTreePanel.currentResults.results;
+            HashSet<string> resultsFileNames = new HashSet<string>();
+
+            foreach (Result result in astResults)
+            {
+                if (result.Data.Nodes != null && result.Data.Nodes.Any())
+                {
+                    resultsFileNames.Add(result.Data.Nodes[0].FileName);
+                }
+                else if (!string.IsNullOrEmpty(result.Data.FileName))
+                {
+                    resultsFileNames.Add(result.Data.FileName);
+                }
+            }
+
+            EnvDTE.DTE dte = SolutionExplorerUtils.GetDTE();
+            
+            foreach (string fileName in resultsFileNames)
+            {
+                string partialFileLocation = SolutionExplorerUtils.PrepareFileName(fileName);
+
+                List<string> files = await SolutionExplorerUtils.SearchFilesBasedOnProjectDirectoryAsync(partialFileLocation, dte);
+                if (files.Count == 0)
+                {
+                    files = await SolutionExplorerUtils.SearchAllFilesAsync(partialFileLocation, dte);
+                }
+
+                if (files.Count > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void ScanButtonByCombos()
