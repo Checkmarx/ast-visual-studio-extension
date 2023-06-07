@@ -12,6 +12,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
     {
         private readonly CxToolbar cxToolbar;
         private readonly BranchesCombobox branchesCombobox;
+        private bool initialized = false;
 
         public ProjectsCombobox(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
         {
@@ -45,6 +46,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ProjectsCombo.IsEnabled = true;
             cxToolbar.ScansCombo.IsEnabled = true;
             CxToolbar.redrawExtension = false;
+            initialized = true;
         }
 
         /// <summary>
@@ -65,7 +67,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ResultsTreePanel.ClearAll();
             SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.projectIdProperty, string.Empty);
             SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, string.Empty);
-            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.scanIdProperty, string.Empty);
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.scanIdProperty, string.Empty);            
 
             await LoadProjectsComboboxAsync();
 
@@ -154,8 +156,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             Project selectedProject = (projectsCombo.SelectedItem as ComboBoxItem).Tag as Project;
 
             SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.projectIdProperty, selectedProject.Id);
-            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, string.Empty);
-            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.scanIdProperty, string.Empty);
+            
+            if (initialized)
+            {
+                SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, string.Empty);
+                SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.scanIdProperty, string.Empty);
+            }
 
             _ = branchesCombobox.LoadBranchesAsync(selectedProject.Id);
 
