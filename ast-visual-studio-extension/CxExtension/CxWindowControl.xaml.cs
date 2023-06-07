@@ -264,7 +264,7 @@ namespace ast_visual_studio_extension.CxExtension
         private void ScanStartBtn_Click(object sender, RoutedEventArgs e)
         {
             ScanStartBtn.IsChecked = false;
-            cxToolbar.ScanStart_Click();
+            _ = cxToolbar.ScanStart_ClickAsync();
         }
 
         private void OnClickCodebashingLink(object sender, MouseButtonEventArgs e)

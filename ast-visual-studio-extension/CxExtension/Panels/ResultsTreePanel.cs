@@ -21,7 +21,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
 
         private string currentScanId;
-        private Results currentResults;
+        public static Results currentResults;
         private readonly CxWindowControl cxWindowUI;
         private readonly AsyncPackage package;
 

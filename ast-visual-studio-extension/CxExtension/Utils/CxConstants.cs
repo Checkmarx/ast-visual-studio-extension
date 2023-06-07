@@ -85,5 +85,9 @@
         public static string STATUS_FORMAT_FINISHED_SCAN => "Checkmarx: Scan {0} finished with status {1}";
         public static string INFOBAR_SCAN_COMPLETED => "Checkmarx scan completed successfully.";
         public static string INFOBAR_RESULTS_LINK => "Load scan results";
+        public static string BRANCH_DOES_NOT_MATCH => "The Git branch open in your workspace isn't the same as the branch that was previously scanned in this Checkmarx project. Do you want to scan anyway?";
+        public static string PROJECT_DOES_NOT_MATCH => "The files open in your workspace don't match the files previously scanned in this Checkmarx project. Do you want to scan anyway?";
+        public static string RUN_SCAN => "Run scan";
+        public static string RUN_SCAN_ACTION => "RUN_SCAN_ACTION";
     }
 }

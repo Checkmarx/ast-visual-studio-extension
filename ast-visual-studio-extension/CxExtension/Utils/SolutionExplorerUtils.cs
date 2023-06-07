@@ -23,7 +23,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         /// Get current EnvDTE
         /// </summary>
         /// <returns></returns>
-        private static DTE GetDTE()
+        internal static DTE GetDTE()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             return Package.GetGlobalService(typeof(SDTE)) as DTE;
@@ -152,7 +152,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return !(projectIsUnloadedInSolution || string.IsNullOrEmpty(project.FullName));
         }
 
-        private static string PrepareFileName(string partialFileLocation)
+        internal static string PrepareFileName(string partialFileLocation)
         {
             if (partialFileLocation[0] == '/')
             {
