@@ -326,11 +326,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 UpdateStatusBar("Checkmarx: " + ex.Message);
             }
-            if (!ideScansEnabled)
-            {
-                ScanStartButton.Visibility = ScanningSeparator.Visibility = System.Windows.Visibility.Collapsed;
-            }
 
+            ScanStartButton.Visibility = ScanningSeparator.Visibility = ideScansEnabled ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
         }
 
         public async Task ScanStartedAsync()
