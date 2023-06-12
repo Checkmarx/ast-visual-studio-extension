@@ -205,45 +205,34 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             ScanStartButton.IsEnabled = false;
 
-            string currentGitBranch = await GetCurrentGitBranchAsync();
-            bool matchProject = await ASTProjectMatchesWorkspaceProjectAsync();
+            var currentGitBranch = await GetCurrentGitBranchAsync();
+            var checkmarxBranch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
+            var matchProject = await ASTProjectMatchesWorkspaceProjectAsync();
+            var matchBranch = string.IsNullOrEmpty(currentGitBranch) || currentGitBranch.Equals(checkmarxBranch);
 
-            if (string.IsNullOrEmpty(currentGitBranch))
+            if (!matchProject && !matchBranch)
             {
-                if (matchProject)
-                {
-                    SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
-                    _ = ScanStartedAsync();
-                } else
-                {
-                    CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
-                    ScanStartButton.IsEnabled = true;
-                }
-            } 
-            else
-            {
-                var checkmarxBranch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
-                var matchBranch = currentGitBranch.Equals(checkmarxBranch);
-
-                if (matchProject && matchBranch)
-                {
-                    SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
-                    _ = ScanStartedAsync();
-                }
-                else
-                {
-                    if (!matchProject)
-                    {
-                        CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
-                    }
-                    else
-                    {
-                        CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.BRANCH_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
-                    }
-
-                    ScanStartButton.IsEnabled = true;
-                }
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_AND_BRANCH_DO_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                ScanStartButton.IsEnabled = true;
+                return;
             }
+
+            if (!matchBranch)
+            {
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.BRANCH_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                ScanStartButton.IsEnabled = true;
+                return;
+            }
+
+            if (!matchProject)
+            {
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_DOES_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                ScanStartButton.IsEnabled = true;
+                return;
+            }
+
+            SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, string.Empty);
+            _ = ScanStartedAsync();
         }
 
         private static async Task<string> GetCurrentGitBranchAsync()
