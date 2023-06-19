@@ -253,9 +253,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 string workingDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
                 RepositoryInformation repository = RepositoryInformation.GetRepositoryInformation(workingDir);
-
+sim s
                 if (repository == null) {
-                    UpdateStatusBar("Checkmarx: Project in solution is not a git repository");
                     return string.Empty;
                 }
 
