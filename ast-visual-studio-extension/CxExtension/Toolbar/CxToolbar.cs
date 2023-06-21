@@ -257,7 +257,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             if(ResultsTreePanel.currentResults == null || !ResultsTreePanel.currentResults.results.Any())
             {
-                return false;
+                return true;
             }
 
             List<Result> astResults = ResultsTreePanel.currentResults.results;
