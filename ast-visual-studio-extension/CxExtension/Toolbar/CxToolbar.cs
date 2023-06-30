@@ -203,11 +203,22 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         public async Task ScanStart_ClickAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             ScanStartButton.IsEnabled = false;
 
-            var currentGitBranch = await GetCurrentGitBranchAsync();
+            EnvDTE.DTE dte = SolutionExplorerUtils.GetDTE();
+
+            if (string.IsNullOrEmpty(dte.Solution.FullName))
+            {
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_AND_BRANCH_DO_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                ScanStartButton.IsEnabled = true;
+                return;
+            }
+
+            var currentGitBranch = await GetCurrentGitBranchAsync(dte);
             var checkmarxBranch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
-            var matchProject = await ASTProjectMatchesWorkspaceProjectAsync();
+            var matchProject = await ASTProjectMatchesWorkspaceProjectAsync(dte);
             var matchBranch = string.IsNullOrEmpty(currentGitBranch) || currentGitBranch.Equals(checkmarxBranch);
 
             if (!matchProject && !matchBranch)
@@ -235,14 +246,18 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             _ = ScanStartedAsync();
         }
 
-        private static async Task<string> GetCurrentGitBranchAsync()
+        private static async Task<string> GetCurrentGitBranchAsync(EnvDTE.DTE dte)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             try
             {
-                EnvDTE.DTE dte = SolutionExplorerUtils.GetDTE();
                 string workingDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
                 RepositoryInformation repository = RepositoryInformation.GetRepositoryInformation(workingDir);
+
+                if (repository == null) {
+                    return string.Empty;
+                }
+
                 return repository.CurrentBranch;
             }
             catch (Exception ex)
@@ -253,7 +268,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return string.Empty;
         } 
 
-        private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync()
+        private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync(EnvDTE.DTE dte)
         {
             if(ResultsTreePanel.currentResults == null || !ResultsTreePanel.currentResults.results.Any())
             {
@@ -274,8 +289,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     resultsFileNames.Add(result.Data.FileName);
                 }
             }
-
-            EnvDTE.DTE dte = SolutionExplorerUtils.GetDTE();
             
             foreach (string fileName in resultsFileNames)
             {
