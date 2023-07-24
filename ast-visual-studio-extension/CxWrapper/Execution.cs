@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Json;
+using System.Web.UI.WebControls;
 
 namespace ast_visual_studio_extension.CxCLI
 {
@@ -103,9 +104,9 @@ namespace ast_visual_studio_extension.CxCLI
                 result += " ";
 
                 // Quote string if it contains spaces
-                result += arg.Contains(" ") ? "\"" + arg + "\"" : arg;
+                result += arg.Contains(" ") && (!arg.StartsWith("\"") && !arg.EndsWith("\"")) ? "\"" + arg + "\"" : arg;
+           
             }
-
             return result;
         }
     }

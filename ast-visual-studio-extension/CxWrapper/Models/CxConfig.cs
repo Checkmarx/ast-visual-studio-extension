@@ -40,8 +40,9 @@ namespace ast_visual_studio_extension.CxWrapper.Models
 
             foreach (Match parameter in parameters)
             {
-                string trimmedParameter = Regex.Replace(parameter.Value, @"\s", "");
-                additionalParameters.Add(trimmedParameter);
+
+                additionalParameters.Add(parameter.Value.Trim());
+               
             }
 
             return additionalParameters;

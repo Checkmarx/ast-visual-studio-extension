@@ -525,7 +525,6 @@ namespace ast_visual_studio_extension.CxCLI
             List<string> arguments = new List<string>();
             arguments.AddRange(baseArguments);
             arguments.AddRange(cxConfig.ToArguments());
-
             return arguments;
         }
     }
