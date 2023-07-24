@@ -22,31 +22,12 @@ namespace ast_visual_studio_extension.CxWrapper.Models
 
             if (!string.IsNullOrEmpty(AdditionalParameters))
             {
-                arguments.AddRange(ParseAdditionalParameters());
+                arguments.AddRange(CxUtils.ParseAdditionalParameters(AdditionalParameters));
             }
 
             return arguments;
         }
 
-        private List<string> ParseAdditionalParameters()
-        {
-            List<string> additionalParameters = new List<string>();
-
-            string pattern = "([^\"]\\S*|\".+?\")\\s*";
-            Regex rg = new Regex(pattern);
-
-            // TODO: check this validation. It's allowing all strings. It's giving error when validating. In Jetbrains ignores additional parameters
-            MatchCollection parameters = rg.Matches(AdditionalParameters);
-
-            foreach (Match parameter in parameters)
-            {
-
-                additionalParameters.Add(parameter.Value.Trim());
-               
-            }
-
-            return additionalParameters;
-        }
 
         public void Validate()
         {
