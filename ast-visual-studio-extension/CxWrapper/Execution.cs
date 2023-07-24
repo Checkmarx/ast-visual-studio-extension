@@ -97,7 +97,6 @@ namespace ast_visual_studio_extension.CxCLI
         private static string BuildArguments(List<string> arguments)
         {
             string result = string.Empty;
-
             foreach(string arg in arguments)
             {
                 result += " ";
