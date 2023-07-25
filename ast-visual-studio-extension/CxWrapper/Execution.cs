@@ -97,15 +97,14 @@ namespace ast_visual_studio_extension.CxCLI
         private static string BuildArguments(List<string> arguments)
         {
             string result = string.Empty;
-
             foreach(string arg in arguments)
             {
                 result += " ";
 
                 // Quote string if it contains spaces
-                result += arg.Contains(" ") ? "\"" + arg + "\"" : arg;
+                result += arg.Contains(" ") && (!arg.StartsWith("\"") && !arg.EndsWith("\"")) ? "\"" + arg + "\"" : arg;
+           
             }
-
             return result;
         }
     }

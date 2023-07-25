@@ -453,7 +453,7 @@ namespace ast_visual_studio_extension.CxCLI
                 scanCreateArguments.Add(entry.Value);
             }
 
-            scanCreateArguments.AddRange(ParseAdditionalParameters(additionalParameters));
+            scanCreateArguments.AddRange(CxUtils.ParseAdditionalParameters(additionalParameters));
 
             string scan = Execution.ExecuteCommand(WithConfigArguments(scanCreateArguments), Execution.CheckValidJSONString);
 
@@ -502,18 +502,6 @@ namespace ast_visual_studio_extension.CxCLI
             await Task.Run(() => ScanCancel(scanId));
         }
 
-        private static List<string> ParseAdditionalParameters(String additionalParameters)
-        {
-            List<string> additionalParametersList = new List<string>();
-            if (!string.IsNullOrEmpty(additionalParameters))
-            {
-                foreach (Match match in Regex.Matches(additionalParameters, "(?:[^\\s\"]+|\"[^\"]*\")+", RegexOptions.IgnoreCase))
-                {
-                    additionalParametersList.Add(match.Captures[0].Value.Replace("\"", ""));
-                }
-            }
-            return additionalParametersList;
-        }
 
         /// <summary>   
         /// Add base arguments to command
@@ -525,7 +513,6 @@ namespace ast_visual_studio_extension.CxCLI
             List<string> arguments = new List<string>();
             arguments.AddRange(baseArguments);
             arguments.AddRange(cxConfig.ToArguments());
-
             return arguments;
         }
     }

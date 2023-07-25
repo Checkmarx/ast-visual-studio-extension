@@ -91,6 +91,7 @@
     <Compile Include="CxExtension\Utils\SolutionExplorerUtils.cs" />
     <Compile Include="CxExtension\Utils\UIUtils.cs" />
     <Compile Include="CxExtension\Utils\XAMLCalculations.cs" />
+    <Compile Include="CxWrapper\CxUtils.cs" />
     <Compile Include="CxWrapper\CxConstants.cs" />
     <Compile Include="CxWrapper\Exceptions\CxException.cs" />
     <Compile Include="CxWrapper\Execution.cs" />
