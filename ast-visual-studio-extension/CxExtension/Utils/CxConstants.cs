@@ -90,5 +90,16 @@
         public static string PROJECT_AND_BRANCH_DO_NOT_MATCH => "The Git branch and files open in your workspace don't match the branch and project that were previously scanned in this Checkmarx project. Do you want to scan anyway?";
         public static string RUN_SCAN => "Run scan";
         public static string RUN_SCAN_ACTION => "RUN_SCAN_ACTION";
+
+        /** LEARN MORE AND REMEDIATION **/
+        public static string NO_INFORMATION => "No information";
+        public static string LOADING_INFORMATION => "Loading Information...";
+
+        public static string RISK => "Risk";
+        public static string CAUSE => "Cause";
+        public static string GENERAL_RECOMENDATIONS => "General Recommendations";
+
+        public static string ERROR_GETTING_LEARNMORE => "ERROR GETTING LEARN MORE AND REMEDIATIONS";
+
     }
 }
