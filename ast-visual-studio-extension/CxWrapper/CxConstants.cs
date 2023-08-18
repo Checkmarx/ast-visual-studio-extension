@@ -25,6 +25,8 @@
         public static string CLI_CANCEL_CMD => "cancel";
         public static string CLI_UTILS_CMD = "utils";
         public static string CLI_TENANT_CMD = "tenant";
+        public static string CLI_LEARN_MORE_CMD = "learn-more";
+
 
         /** CLI FLAGS **/
         public static string FLAG_API_KEY => "--apikey";
@@ -54,6 +56,8 @@
         public static string FLAG_ASYNC => "--async";
         public static string FLAG_INCREMENTAL => "--sast-incremental";
         public static string FLAG_RESUBMIT => "--resubmit";
+        public static string FLAG_QUERY_ID => "--query-id";
+
 
         /** EXCEPTIONS **/
         public static string EXCEPTION_CREDENTIALS_NOT_SET => "Credentials are not set";
@@ -83,5 +87,6 @@
         public static string SCAN_RUNNING => "running";
         public static string SCAN_PARTIAL => "partial";
         public static string SCAN_COMPLETED => "completed";
+
     }
 }

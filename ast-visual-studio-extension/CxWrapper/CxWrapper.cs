@@ -385,6 +385,30 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
+        /// Learn More and Code Samples
+        /// </summary>
+        /// <param name="queryId"></param>
+        /// <returns></returns>
+        public List<LearnMore> LearnMoreAndRemediation(string queryId)
+        {
+            logger.Info("getting learn more and remediation examples");
+
+            List<string> learnMoreRemediation = new List<string>
+            {
+                CxConstants.CLI_UTILS_CMD,
+                CxConstants.CLI_LEARN_MORE_CMD,
+                CxConstants.FLAG_QUERY_ID,
+                queryId,
+                CxConstants.FLAG_FORMAT,
+                CxConstants.JSON_FORMAT_VALUE,
+            };
+
+            string learnMoreRemediationSamples = Execution.ExecuteCommand(WithConfigArguments(learnMoreRemediation), Execution.CheckValidJSONString);
+
+            return JsonConvert.DeserializeObject<List<LearnMore>>(learnMoreRemediationSamples);
+        }
+
+        /// <summary>
         /// Tenant settings command
         /// </summary>
         /// <returns></returns>

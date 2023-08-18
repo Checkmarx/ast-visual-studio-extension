@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly CxToolbar cxToolbar;
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly AsyncPackage package;
-
+        private readonly ResultsTreePanel resultsTreePanel;
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -27,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             resultInfoPanel = new ResultInfoPanel(this);
 
-            ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel);
+            resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel);
 
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
@@ -105,21 +105,11 @@ namespace ast_visual_studio_extension.CxExtension
         }
 
         /// <summary>
-        /// Handle mouse wheel in the vulnerabilities panel
+        /// Handle mouse wheel
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void VulnerabilitiesPanelPreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            HandleScrollViewer((ScrollViewer)sender, e);
-        }
-
-        /// <summary>
-        /// Handle mouse wheel in the results tree panel
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ResultsTreePanelPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        private void PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             HandleScrollViewer((ScrollViewer)sender, e);
         }
@@ -270,6 +260,10 @@ namespace ast_visual_studio_extension.CxExtension
         private void OnClickCodebashingLink(object sender, MouseButtonEventArgs e)
         {
             _ = resultInfoPanel.CodeBashingListAsync(cxToolbar);
+        }
+        private void OnClickLearnMoreRemediation(object sender, RoutedEventArgs e)
+        {
+            _ = resultsTreePanel.resultVulnerabilitiesPanel.LearnMoreAndRemediationAsync(cxToolbar);
         }
     }
 }

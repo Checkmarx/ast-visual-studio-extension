@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     internal class ResultsTreePanel
     {
         private readonly ResultInfoPanel resultInfoPanel;
-        private readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
+        public readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
 
         private string currentScanId;
         public static Results currentResults;
