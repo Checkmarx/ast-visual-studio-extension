@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly CxToolbar cxToolbar;
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly AsyncPackage package;
-        private readonly ResultsTreePanel resultsTreePanel;
+        private ResultVulnerabilitiesPanel resultsVulnPanel;
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -27,7 +27,9 @@ namespace ast_visual_studio_extension.CxExtension
 
             resultInfoPanel = new ResultInfoPanel(this);
 
-            resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel);
+            resultsVulnPanel = new ResultVulnerabilitiesPanel(package, this);
+
+            ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel, resultsVulnPanel);
 
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
@@ -263,7 +265,7 @@ namespace ast_visual_studio_extension.CxExtension
         }
         private void OnClickLearnMoreRemediation(object sender, RoutedEventArgs e)
         {
-            _ = resultsTreePanel.resultVulnerabilitiesPanel.LearnMoreAndRemediationAsync(cxToolbar);
+            _ = resultsVulnPanel.LearnMoreAndRemediationAsync(cxToolbar);
         }
     }
 }

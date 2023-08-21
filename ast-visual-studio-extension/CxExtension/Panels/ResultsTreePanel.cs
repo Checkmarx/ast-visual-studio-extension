@@ -18,20 +18,20 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     internal class ResultsTreePanel
     {
         private readonly ResultInfoPanel resultInfoPanel;
-        public readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
+        private readonly ResultVulnerabilitiesPanel resultVulnerabilitiesPanel;
 
         private string currentScanId;
         public static Results currentResults;
         private readonly CxWindowControl cxWindowUI;
         private readonly AsyncPackage package;
 
-        public ResultsTreePanel(AsyncPackage package, CxWindowControl cxWindow, ResultInfoPanel resultInfoPanel)
+        public ResultsTreePanel(AsyncPackage package, CxWindowControl cxWindow, ResultInfoPanel resultInfoPanel, ResultVulnerabilitiesPanel resultsVulnPanel)
         {
             this.package = package;
             cxWindowUI = cxWindow;
             this.resultInfoPanel = resultInfoPanel;
 
-            resultVulnerabilitiesPanel = new ResultVulnerabilitiesPanel(package, cxWindow);
+            resultVulnerabilitiesPanel = resultsVulnPanel;
             UIUtils.CxWindowUI = cxWindowUI;
         }
 

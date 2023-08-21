@@ -391,8 +391,6 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<LearnMore> LearnMoreAndRemediation(string queryId)
         {
-            logger.Info("getting learn more and remediation examples");
-
             List<string> learnMoreRemediation = new List<string>
             {
                 CxConstants.CLI_UTILS_CMD,

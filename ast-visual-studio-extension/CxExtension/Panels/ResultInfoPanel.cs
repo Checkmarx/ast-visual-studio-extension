@@ -347,8 +347,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             });
         }
 
-       
-
         /// <summary>
         /// Clear Result Info panel
         /// </summary>

@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 
 namespace ast_visual_studio_extension.CxWrapper.Models
-{
-    // LearnMore myDeserializedClass = JsonConvert.DeserializeObject<List<LearnMore>>(myJsonResponse);
+{   
     public class LearnMore {
 
         [JsonProperty("queryId", NullValueHandling = NullValueHandling.Ignore)]
