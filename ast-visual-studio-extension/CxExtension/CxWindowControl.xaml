@@ -7,6 +7,7 @@
              xmlns:GenericWPF="clr-namespace:ast_visual_studio_extension.CxExtension.Utils"
              xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
              xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
+             xmlns:theming="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Imaging"
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0" xmlns:cxextension="clr-namespace:ast_visual_studio_extension.CxExtension" d:DataContext="{d:DesignInstance Type=cxextension:CxWindowControl}"
              local:VsTheme.UseVsTheme="True"
              mc:Ignorable="d"
@@ -412,7 +413,7 @@
         <GridSplitter Grid.Row="1" Grid.Column ="0" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
         <GridSplitter Grid.Row="1" Grid.Column ="1" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
 
-        <StackPanel Grid.ColumnSpan="3" Grid.Row="0" Orientation="Horizontal">
+        <StackPanel Grid.ColumnSpan="3" Grid.Row="0" Orientation="Horizontal" theming:ImageThemingUtilities.ImageBackgroundColor="{Binding Background, ElementName=CxWindow, Converter={StaticResource BrushToColorConverter}}">
             <TextBlock VerticalAlignment="Center" Text="Project:" Grid.Column="1" Margin="4"/>
             <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Loading projects..." Name="ProjectsCombobox" Margin="4" Width="250" SelectionChanged="OnChangeProject"/>
             <TextBlock Text="Branch:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
