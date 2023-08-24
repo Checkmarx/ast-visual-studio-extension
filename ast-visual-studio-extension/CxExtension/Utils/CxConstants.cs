@@ -92,6 +92,7 @@
         public static string RUN_SCAN_ACTION => "RUN_SCAN_ACTION";
 
         /** LEARN MORE AND REMEDIATION **/
+        public static string CODE_SAMPLE_TITLE => "{0} using {1}";
         public static string NO_INFORMATION => "No information";
         public static string LOADING_INFORMATION => "Loading Information...";
 
