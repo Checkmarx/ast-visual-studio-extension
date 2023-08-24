@@ -194,7 +194,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 try
                 {
                     learnMore = cxWrapper.LearnMoreAndRemediation(result.Data.QueryId);
-
                 }
                 catch (Exception ex)
                 {
