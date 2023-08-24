@@ -224,7 +224,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                     if (learnInfo.samples == null || learnInfo.samples.Count == 0)
                     {
                         AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
-
                     }
 
                     foreach (var sample in learnInfo.samples)
