@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly CxToolbar cxToolbar;
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly AsyncPackage package;
-        private ResultVulnerabilitiesPanel resultsVulnPanel;
+        private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();

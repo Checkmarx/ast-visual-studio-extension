@@ -35,7 +35,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <param name="result"></param>
         public void Draw(Result result)
         {
-            learnMore = null;
             this.result = result;
             nodes = result.Data.Nodes ?? new List<Node>();
             packageDataList = result.Data.PackageData ?? new List<PackageData>();
@@ -45,9 +44,12 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             switch (result.Type)
             {
                 case "sast":
+                    cxWindowUI.LearnMorePanelTitle.Children.Clear();
+                    cxWindowUI.RemediationPanelTitle.Children.Clear();
                     BuildAttackVectorPanel();
                     cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Visible;
                     cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
+                    learnMore = null;
                     break;
                 case "sca":
                     BuildPackageDataPanel();
@@ -182,7 +184,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 return;
             };
 
-
             cxWindowUI.LearnMorePanelTitle.Children.Clear();
             cxWindowUI.RemediationPanelTitle.Children.Clear();
 
@@ -204,47 +205,40 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.LearnMorePanelTitle.Children.Clear();
             cxWindowUI.RemediationPanelTitle.Children.Clear();
 
-            if (learnMore != null) {
+            if (learnMore != null)
+            {
                 foreach (var learnInfo in learnMore)
                 {
-                    if (learnInfo.risk != null)
+                    AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.RISK);
+                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.risk);
+                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
+
+                    AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.CAUSE);
+                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.cause);
+                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
+
+                    AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.GENERAL_RECOMENDATIONS);
+                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.generalRecommendations);
+                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
+
+                    if (learnInfo.samples == null || learnInfo.samples.Count == 0)
                     {
-                        AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.RISK);
-                        AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.risk);
+                        AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
 
-                        AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
-
-
-                        AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.CAUSE);
-                        AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.cause);
-
-                        AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
-
-
-                        AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.GENERAL_RECOMENDATIONS);
-                        AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.generalRecommendations);
                     }
 
-                    if (learnInfo.samples != null)
+                    foreach (var sample in learnInfo.samples)
                     {
-                        foreach (var sample in learnInfo.samples)
+                        AddSectionTitle(cxWindowUI.RemediationPanelTitle, string.Format(CxConstants.CODE_SAMPLE_TITLE, sample.title, sample.progLanguage));
+                        TextBox codeTextBox = new TextBox
                         {
-                            if (cxWindowUI.RemediationPanelTitle.Children.Count > 0)
-                            {
-                                AddTextWithTitle(cxWindowUI.RemediationPanelTitle, string.Empty);
-                            }
-
-                            AddSectionTitle(cxWindowUI.RemediationPanelTitle, sample.title);
-
-                            TextBox codeTextBox = new TextBox
-                            {
-                                Text = sample.code.Trim(),
-                                IsReadOnly = true,
-                                TextWrapping = TextWrapping.WrapWithOverflow,
-                                Margin = new Thickness(10, 5, 0, 0)
-                            };
-                            cxWindowUI.RemediationPanelTitle.Children.Add(codeTextBox);
-                        }
+                            Text = sample.code.Trim(),
+                            IsReadOnly = true,
+                            TextWrapping = TextWrapping.WrapWithOverflow,
+                            Margin = new Thickness(10, 5, 0, 0)
+                        };
+                        cxWindowUI.RemediationPanelTitle.Children.Add(codeTextBox);
+                        AddTextWithTitle(cxWindowUI.RemediationPanelTitle, string.Empty);
                     }
                 }
             }
@@ -252,7 +246,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.NO_INFORMATION);
                 AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
-                learnMore = new List<LearnMore>();
             }
         }
         /// <summary>
