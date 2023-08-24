@@ -225,7 +225,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                         AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.generalRecommendations);
                     }
 
-                    if (learnInfo.samples[0].code != null)
+                    if (learnInfo.samples != null)
                     {
                         foreach (var sample in learnInfo.samples)
                         {
