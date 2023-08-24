@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using CxUtils = ast_visual_studio_extension.CxExtension.Utils.CxUtils;
 
 namespace ast_visual_studio_extension.CxExtension.Panels
 {
@@ -224,6 +223,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                     if (learnInfo.samples == null || learnInfo.samples.Count == 0)
                     {
                         AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
+                        continue;
                     }
 
                     foreach (var sample in learnInfo.samples)
