@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -246,6 +247,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.NO_INFORMATION);
                 AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
+                learnMore = new List<LearnMore>();
             }
         }
         /// <summary>
@@ -255,6 +257,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <param name="title"></param
         private static void AddSectionTitle(StackPanel panel, string title)
         {
+            byte[] bytes = Encoding.Default.GetBytes(title);
+            title = Encoding.UTF8.GetString(bytes);
+
             TextBlock sectionTitle = new TextBlock
             {
                 Text = title.Trim(),
@@ -265,13 +270,14 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             panel.Children.Add(sectionTitle);
         }
         /// <summary>
-        /// Add text 
+        /// Add Text with title
         /// </summary>
         /// <param name="panel"></param>
         /// <param name="text"></param
         private static void AddTextWithTitle(StackPanel panel, string text)
         {
-            text = text.Replace("Â", "").Replace("À", "").Replace("\r", "");
+            byte[] bytes = Encoding.Default.GetBytes(text);
+            text = Encoding.UTF8.GetString(bytes);
 
             TextBlock textBlock = new TextBlock
             {
