@@ -6,11 +6,13 @@ using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ast_visual_studio_extension.CxExtension.Panels
 {
@@ -255,18 +257,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <param name="title"></param
         private static void AddSectionTitle(StackPanel panel, string title)
         {
-            byte[] bytes = Encoding.Default.GetBytes(title);
-            title = Encoding.UTF8.GetString(bytes);
-
-            TextBlock sectionTitle = new TextBlock
-            {
-                Text = title.Trim(),
-                FontWeight = FontWeights.Bold,
-                TextWrapping = TextWrapping.WrapWithOverflow,
-                Margin = new Thickness(10, 5, 0, 0)
-            };
+            TextBlock sectionTitle = CreateParsedTextBlock(title);
+            sectionTitle.FontWeight = FontWeights.Bold;
             panel.Children.Add(sectionTitle);
         }
+
         /// <summary>
         /// Add Text with title
         /// </summary>
@@ -274,16 +269,27 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         /// <param name="text"></param
         private static void AddTextWithTitle(StackPanel panel, string text)
         {
+            TextBlock textBlock = CreateParsedTextBlock(text);
+            panel.Children.Add(textBlock);
+        }
+
+        /// <summary>
+        /// Create a text block
+        /// </summary>
+        /// <param name="text"></param
+        /// <returns></returns>
+        private static TextBlock CreateParsedTextBlock(string text)
+        {
             byte[] bytes = Encoding.Default.GetBytes(text);
             text = Encoding.UTF8.GetString(bytes);
-
+            text = WebUtility.HtmlDecode(text);
             TextBlock textBlock = new TextBlock
             {
-                Text = text.Trim(), 
+                Text = text.Trim(),
                 TextWrapping = TextWrapping.WrapWithOverflow,
                 Margin = new Thickness(10, 5, 0, 0)
             };
-            panel.Children.Add(textBlock);
+            return textBlock;
         }
 
 
