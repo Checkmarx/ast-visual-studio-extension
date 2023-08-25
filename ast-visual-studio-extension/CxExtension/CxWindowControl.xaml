@@ -491,7 +491,7 @@
         </StackPanel>
 
         <!-- Column 1 -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="1,1,2,0" PreviewMouseWheel="ResultsTreePanelPreviewMouseWheel">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="1,1,2,0" PreviewMouseWheel="PreviewMouseWheel">
             <TreeView Background="Transparent" Margin="10,5,0,13" x:Name="TreeViewResults" HorizontalAlignment="Left" VerticalAlignment="Top" BorderThickness="0">
                 <TreeView.Resources>
                     <!-- Style the inactive selection the same as active -->
@@ -638,8 +638,9 @@
             </TabControl>
         </StackPanel>
 
+
         <!-- Column 3 -->
-        <ScrollViewer Grid.Row="1" Grid.Column="2" x:Name="VulnerabilitiesPanel" Visibility="Hidden" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="1,1,2,0" PreviewMouseWheel="VulnerabilitiesPanelPreviewMouseWheel">
+        <ScrollViewer Grid.Row="1" Grid.Column="2" x:Name="VulnerabilitiesPanel" Visibility="Hidden" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="1,1,2,0" PreviewMouseWheel="PreviewMouseWheel">
             <StackPanel>
                 <!-- Result Title -->
                 <WrapPanel Orientation="Horizontal" Margin="10" MinHeight="24">
@@ -657,6 +658,122 @@
                     </ListView.ItemContainerStyle>
                 </ListView>
             </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer Grid.Row="1" Grid.Column="2" x:Name="SastVulnerabilitiesPanel" Visibility="Hidden" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled" Margin="1,1,2,0">
+            <TabControl x:Name="LearnMoreAndRemediationTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" Background="Transparent" BorderBrush="Transparent" Margin="0,10,0,0">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TabItem">
+                                    <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical">
+                                        <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="10,2"/>
+                                        <TextBlock Name="BottomBar" Background="Transparent" Height="3" />
+                                        <StackPanel.Style>
+                                            <Style TargetType="{x:Type StackPanel}">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                    </StackPanel>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="BottomBar" Property="Background" Value="LightBlue" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TabControl.Resources>
+                <TabItem x:Name="VulnerabilitiesTabItem">
+                     <TabItem.HeaderTemplate>
+                        <DataTemplate>
+                            <DataTemplate.Resources>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                            </DataTemplate.Resources>
+                            <Grid HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="5*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Attack Vector" Grid.Column="1" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </TabItem.HeaderTemplate>
+                    <TabItem.Content>
+                        <ScrollViewer  PreviewMouseWheel="PreviewMouseWheel">
+                            <ScrollViewer.VerticalScrollBarVisibility>Auto</ScrollViewer.VerticalScrollBarVisibility>
+                            <ScrollViewer.Content>
+                                <StackPanel>
+                                    <ListView x:Name="VulnerabilitiesListSast" Grid.Column="2" Background="Transparent" BorderThickness="0">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Focusable" Value="false"/>
+                                                <Setter Property="Margin" Value="5"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                    </ListView>
+                                </StackPanel>
+                            </ScrollViewer.Content>
+                        </ScrollViewer>
+                    </TabItem.Content>
+                </TabItem>
+                <TabItem Name="LearnMore" MouseUp="OnClickLearnMoreRemediation">
+                    <TabItem.HeaderTemplate>
+                        <DataTemplate>
+                            <DataTemplate.Resources>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                            </DataTemplate.Resources>
+                            <Grid HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="5*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Learn More" Grid.Column="1" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </TabItem.HeaderTemplate>
+                    <TabItem.Content>
+                        <ScrollViewer  PreviewMouseWheel="PreviewMouseWheel">
+                            <ScrollViewer.VerticalScrollBarVisibility>Auto</ScrollViewer.VerticalScrollBarVisibility>
+                            <ScrollViewer.Content>
+                                <StackPanel x:Name="LearnMorePanelTitle" CanVerticallyScroll="True">
+                                </StackPanel>
+                            </ScrollViewer.Content>
+                        </ScrollViewer>
+                    </TabItem.Content>
+                </TabItem>
+                <TabItem Name="Remediation" MouseUp="OnClickLearnMoreRemediation">
+                    <TabItem.HeaderTemplate>
+                        <DataTemplate>
+                            <DataTemplate.Resources>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                            </DataTemplate.Resources>
+                            <Grid HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="5*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Remediation" Grid.Column="1" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </TabItem.HeaderTemplate>
+                    <TabItem.Content>
+                        <ScrollViewer PreviewMouseWheel="PreviewMouseWheel">
+                            <ScrollViewer.VerticalScrollBarVisibility>Auto</ScrollViewer.VerticalScrollBarVisibility>
+                            <ScrollViewer.Content>
+                                <StackPanel x:Name="RemediationPanelTitle" CanVerticallyScroll="True">
+                                </StackPanel>
+                            </ScrollViewer.Content>
+                        </ScrollViewer>
+                    </TabItem.Content>
+                </TabItem>
+            </TabControl>
         </ScrollViewer>
     </Grid>
 
