@@ -759,7 +759,7 @@
                                     <ColumnDefinition Width="1*" />
                                     <ColumnDefinition Width="5*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Remediation" Grid.Column="1" VerticalAlignment="Center"/>
+                                <TextBlock Text="Remediation Examples" Grid.Column="1" VerticalAlignment="Center"/>
                             </Grid>
                         </DataTemplate>
                     </TabItem.HeaderTemplate>
