@@ -167,7 +167,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         private void ClearPanels(bool clearSecondAndThirdPanel)
         {
             cxWindowUI.TreeViewResults.Items.Clear();
-
             if (clearSecondAndThirdPanel)
             {
                 resultInfoPanel.Clear();

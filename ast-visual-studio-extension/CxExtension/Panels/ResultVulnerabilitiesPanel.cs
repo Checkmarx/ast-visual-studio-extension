@@ -299,6 +299,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         public void Clear()
         {
             cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
+            cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Hidden;
         }
     }
 }
