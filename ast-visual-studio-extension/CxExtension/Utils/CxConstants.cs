@@ -45,7 +45,7 @@
         /************ NOTIFICATIONS ************/
         public static string NOTIFY_FILE_NOT_FOUND => "File {0} not found in the solution. Please ensure you are in the correct scan.";
 
-        public static string NOTIFY_SOLUTION_NOT_FOUND => "Unable to find source in project. Please ensure you have an open project or solution. If you don't have an existing project, you can create a new one using 'File > New > Project'.";
+        public static string NOTIFY_SOLUTION_NOT_FOUND => "Unable to find source in project. Please ensure you have an open project or solution.";
 
         /************ TOOLBAR ************/
         public static string TOOLBAR_SELECT_PROJECT => "Select a project";
