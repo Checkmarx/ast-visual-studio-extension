@@ -2,6 +2,7 @@ using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxWrapper.Models;
 using EnvDTE;
 using EnvDTE80;
+using Microsoft.TeamFoundation.Common;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -32,6 +33,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         internal static async void OpenFileAsync(object sender, RoutedEventArgs e) {
             FileNode node = (((sender as Hyperlink).Parent as TextBlock).Parent as ListViewItem).Tag as FileNode;
             EnvDTE.DTE dte = GetDTE();
+
+            if (dte.Solution == null || dte.Solution.FullName.IsNullOrEmpty())
+            {
+                CxUtils.DisplayMessageInInfoBar(AsyncPackage, string.Format(CxConstants.NOTIFY_SOLUTION_NOT_FOUND), KnownMonikers.StatusWarning);
+                return;
+            }
 
             string partialFileLocation = PrepareFileName(node.FileName);
 
