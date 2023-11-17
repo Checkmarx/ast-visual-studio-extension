@@ -20,6 +20,8 @@
         public static string COLLAPSE_CRUMB => "...";
 
         /************ ICONS ************/
+        public static string ICON_CRITICAL => "critical.png";
+        public static string ICON_CRITICAL_TITLE => "critical_18x22.png";
         public static string ICON_HIGH => "high.png";
         public static string ICON_HIGH_TITLE => "high_18x22.png";
         public static string ICON_MEDIUM => "medium.png";

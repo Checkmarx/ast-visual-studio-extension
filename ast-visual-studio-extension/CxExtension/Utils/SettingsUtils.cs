@@ -20,6 +20,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         public static readonly Dictionary<object, bool> severityDefaultValues = new Dictionary<object, bool>
         {
+            { Severity.CRITICAL, true},
             { Severity.HIGH, true },
             { Severity.MEDIUM, true },
             { Severity.LOW, false },

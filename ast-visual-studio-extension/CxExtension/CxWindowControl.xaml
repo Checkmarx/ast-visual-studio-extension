@@ -425,6 +425,10 @@
                 <Separator Style="{StaticResource SeparatorStyle}" />
             </StackPanel>
 
+
+            <ToggleButton ToolTip="Critical" Style="{StaticResource SeverityFilterStyle}" x:Name="CriticalSeverityFilter" Click="SeverityFilter_Click">
+                <Image x:Name="CriticalSeverityFilterImage" Stretch="None"></Image>
+            </ToggleButton>
             <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
@@ -532,6 +536,7 @@
 
             <UniformGrid Rows="1" Columns="3">
                 <ComboBox IsEditable="True" IsReadOnly="True"  Name="TriageSeverityCombobox" Margin="5,5,0,0">
+                    <ComboBoxItem>CRITICAL</ComboBoxItem>
                     <ComboBoxItem>HIGH</ComboBoxItem>
                     <ComboBoxItem>MEDIUM</ComboBoxItem>
                     <ComboBoxItem>LOW</ComboBoxItem>

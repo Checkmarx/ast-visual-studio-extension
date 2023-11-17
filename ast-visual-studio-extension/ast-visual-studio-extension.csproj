@@ -172,6 +172,15 @@
     <PackageReference Include="System.Json" Version="4.7.1" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="CxExtension\Resources\critical.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="CxExtension\Resources\critical_18x22.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="CxExtension\Resources\critical_title.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Content Include="LICENSE.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -182,7 +191,6 @@
     </Content>
     <Resource Include="CxExtension\Resources\checkmarx-80.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
     </Resource>
     <Resource Include="CxExtension\Resources\Comment.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
