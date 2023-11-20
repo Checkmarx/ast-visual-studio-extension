@@ -14,7 +14,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestTriageShow()
         {
-            List<Scan> scanList = cxWrapper.GetScans("statuses = Completed");
+
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Count > 0);
             
             Scan scan = GetFirstScanWithResults(scanList).First().Key;
@@ -28,7 +29,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestTriageUpdate()
         {
-            List<Scan> scanList = cxWrapper.GetScans("statuses = Completed");
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Count > 0);
 
             Scan scan = scanList.FirstOrDefault(scan => scan.Status.ToLower() == "completed");
