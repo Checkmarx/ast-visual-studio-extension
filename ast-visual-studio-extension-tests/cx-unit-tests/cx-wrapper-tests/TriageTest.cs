@@ -30,8 +30,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             List<Scan> scanList = cxWrapper.GetScans("statuses = Completed");
             Assert.True(scanList.Count > 0);
 
-            Scan scan = GetFirstScanWithResults(scanList).First().Key;
+            Scan scan = scanList.FirstOrDefault(scan => scan.Status.ToLower() == "completed");
             Result result = GetFirstScanWithResults(scanList).First().Value.results.Where(r => r.Type.Equals("sast")).First();
+
 
             try
             {
