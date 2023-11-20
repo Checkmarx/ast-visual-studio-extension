@@ -51,8 +51,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         {
             List<Scan> scanList = cxWrapper.GetScans();
             Assert.True(scanList.Any());
+            List<Scan> completedScans = scanList.Where(scan => scan.Status.Equals("completed", StringComparison.OrdinalIgnoreCase)).ToList();
 
-            Results results = GetFirstScanWithResults(scanList).First().Value;
+            Results results = GetFirstScanWithResults(completedScans).First().Value;
 
             Assert.Equal(results.totalCount, results.results.Count);
         }
