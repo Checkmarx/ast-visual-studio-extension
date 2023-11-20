@@ -27,8 +27,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         {
             List<Scan> scanList = cxWrapper.GetScans();
             Assert.True(scanList.Any());
+            Scan scan = scanList.FirstOrDefault(scan => scan.Status.ToLower() == "completed");
 
-            string scanId = scanList[0].ID;
+            string scanId = scan.ID;
             string results = cxWrapper.GetResults(scanId, ReportFormat.json);
 
             Assert.True(!string.IsNullOrEmpty(results));
