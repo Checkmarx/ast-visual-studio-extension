@@ -181,6 +181,11 @@
     <Resource Include="CxExtension\Resources\critical_title.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="CxExtension\Resources\C-L.png" />
+    <Resource Include="CxExtension\Resources\H-L.png" />
+    <Resource Include="CxExtension\Resources\I-L.png" />
+    <Resource Include="CxExtension\Resources\L-L.png" />
+    <Resource Include="CxExtension\Resources\M-L.png" />
     <Content Include="LICENSE.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
