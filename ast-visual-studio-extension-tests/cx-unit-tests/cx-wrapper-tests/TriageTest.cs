@@ -1,4 +1,5 @@
 using ast_visual_studio_extension.CxWrapper.Models;
+using Microsoft.VisualStudio.Text.Editor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,9 +14,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestTriageShow()
         {
-            List<Scan> scanList = cxWrapper.GetScans("statuses = Completed");
-            Assert.True(scanList.Any());
 
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
+            Assert.True(scanList.Count > 0);
+            
             Scan scan = GetFirstScanWithResults(scanList).First().Key;
             Result result = GetFirstScanWithResults(scanList).First().Value.results.Where(r => r.Type.Equals("sast")).First();
 
@@ -27,11 +29,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestTriageUpdate()
         {
-            List<Scan> scanList = cxWrapper.GetScans("statuses = Completed");
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Count > 0);
 
-            Scan scan = GetFirstScanWithResults(scanList).First().Key;
+            Scan scan = scanList.FirstOrDefault(scan => scan.Status.ToLower() == "completed");
             Result result = GetFirstScanWithResults(scanList).First().Value.results.Where(r => r.Type.Equals("sast")).First();
+
 
             try
             {

@@ -7,6 +7,9 @@ namespace ast_visual_studio_extension.CxWrapper.Models
         [JsonProperty("TotalIssues")]
         public int TotalIssues { get; set; }
 
+        [JsonProperty("CriticalIssues")]
+        public int CriticalIssues { get; set; }
+
         [JsonProperty("HighIssues")]
         public int HighIssues { get; set; }
 
