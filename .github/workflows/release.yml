@@ -90,7 +90,7 @@ jobs:
           files: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
 
       - name: Publish Release
-        uses: cezarypiatek/VsixPublisherAction@1.0
+        uses: cezarypiatek/VsixPublisherAction@1.1
         if: inputs.dev == false
         with:
           extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
