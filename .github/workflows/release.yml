@@ -42,7 +42,7 @@ jobs:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.3.1
+        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
         with:
           vs-version: '17.2'
       
@@ -71,7 +71,7 @@ jobs:
 
       - name: Increment VSIX version
         id: vsix_version
-        uses: timheuer/vsix-version-stamp@v2
+        uses: timheuer/vsix-version-stamp@9d38292e99e54046455bb68c6a2b5113d269a7d0 #v2
         with:
           manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
           
@@ -82,7 +82,7 @@ jobs:
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create Release
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 #v0.1.15
         with:
           tag_name: ${{ inputs.tag }}
           prerelease: ${{ inputs.dev }}
@@ -90,7 +90,7 @@ jobs:
           files: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
 
       - name: Publish Release
-        uses: cezarypiatek/VsixPublisherAction@1.0
+        uses: cezarypiatek/VsixPublisherAction@9c6b58b5955df9901a6e9834be1d0a94cd54aeba #1.0
         if: inputs.dev == false
         with:
           extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
@@ -124,7 +124,7 @@ jobs:
           echo "::set-output name=clean::$clean"
       - name: Send a Notification
         id: notify
-        uses: thechetantalwar/teams-notify@v2
+        uses: thechetantalwar/teams-notify@8a78811f5e8f58cdd204efebd79158006428c46b #v2
         with:
           teams_webhook_url: ${{ secrets.TEAMS_WEBHOOK_URI }}
           message: "<h1>Checkmarx Visual Studio Plugin ${{ env.RELEASE_VERSION }}</h1>${{ steps.clean.outputs.clean }}"
