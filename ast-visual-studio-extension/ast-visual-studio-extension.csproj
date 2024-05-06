@@ -159,24 +159,21 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.507" />
+    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.492" />
     <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens">
-      <Version>7.5.1</Version>
+      <Version>7.4.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.TeamFoundationServer.Client">
-      <Version>19.225.1</Version>
+      <Version>16.205.1</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.9.37000" />
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.9.3184">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5240" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0" />
-    <PackageReference Include="log4net" Version="2.0.17" />
+    <PackageReference Include="log4net" Version="2.0.15" />
     <PackageReference Include="Microsoft.VSSDK.Vsixsigntool" Version="16.2.29116.78" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt">
-      <Version>7.5.1</Version>
+      <Version>7.4.1</Version>
     </PackageReference>
     <PackageReference Include="System.Json" Version="4.7.1" />
   </ItemGroup>
