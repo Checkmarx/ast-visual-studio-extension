@@ -49,7 +49,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestResultsStructure()
         {
-            List<Scan> scanList = cxWrapper.GetScans();
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Any());
 
             Results results = GetFirstScanWithResults(scanList).First().Value;
