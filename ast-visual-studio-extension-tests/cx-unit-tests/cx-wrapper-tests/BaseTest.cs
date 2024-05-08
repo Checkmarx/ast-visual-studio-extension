@@ -64,7 +64,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
 
                 Results results = cxWrapper.GetResults(new Guid(scan.ID));
 
-                if (results != null && results.results.Any() && results.results.Where(r => r.Type.Equals("sast")).Any())
+                if (results != null && results.results != null && results.results.Any(r => r.Type.Equals("sast")))
                 {
                     result.Add(scan, results);
                     break;
