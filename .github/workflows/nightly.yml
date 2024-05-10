@@ -29,7 +29,7 @@ jobs:
     if: ${{needs.check-dependabot-commits.outputs.isDependabot == 'false'}}
     steps:
       - name: Delete release
-        uses: dev-drprasad/delete-tag-and-release@8cd619d00037e4aeb781909c9a6b03940507d0da #v1.0.1
+        uses: dev-drprasad/delete-tag-and-release@82600feb9527126eca69833f07bafe53279bd9b4 #v1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
