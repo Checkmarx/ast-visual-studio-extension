@@ -95,7 +95,7 @@ namespace ast_visual_studio_extension.CxCLI
                 CxConstants.FLAG_SCAN_ID, scanId.ToString(),
                 CxConstants.FLAG_REPORT_FORMAT, reportFormat.ToString(),
                 CxConstants.FLAG_OUTPUT_NAME, fileName,
-                CxConstants.FLAG_OUTPUT_PATH, tempDir
+                CxConstants.FLAG_OUTPUT_PATH, tempDir,
                 CxConstants.FLAG_AGENT, CxCLI.CxConstants.EXTENSION_AGENT
             };
 
