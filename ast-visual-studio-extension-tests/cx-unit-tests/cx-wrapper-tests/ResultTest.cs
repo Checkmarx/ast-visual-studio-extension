@@ -13,7 +13,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestResultsHTML()
         {
-            List<Scan> scanList = cxWrapper.GetScans();
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Any());
 
             string scanId = scanList[0].ID;
@@ -25,7 +25,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestResultsJSON()
         {
-            List<Scan> scanList = cxWrapper.GetScans();
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Any());
             Scan scan = scanList.FirstOrDefault(scan => scan.Status.ToLower() == "completed");
 
@@ -38,7 +38,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestResultsSummaryJSON()
         {
-            List<Scan> scanList = cxWrapper.GetScans();
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Any());
 
             string scanId = scanList[0].ID;
@@ -50,7 +50,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         [Fact]
         public void TestResultsStructure()
         {
-            List<Scan> scanList = cxWrapper.GetScans();
+            List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Any());
             List<Scan> completedScans = scanList.Where(scan => scan.Status.Equals("completed", StringComparison.OrdinalIgnoreCase)).ToList();
 
