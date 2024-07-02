@@ -44,12 +44,14 @@ namespace ast_visual_studio_extension.CxExtension
                 .WithResultsTree(TreeViewResults)
                 .WithSeverityFilters(new Dictionary<ToggleButton, Severity>
                 {
+                    { CriticalSeverityFilter, Severity.CRITICAL },
                     { HighSeverityFilter, Severity.HIGH },
                     { MediumSeverityFilter , Severity.MEDIUM},
                     { LowSeverityFilter, Severity.LOW },
                     { InfoSeverityFilter, Severity.INFO },
                 }, new Dictionary<Severity, Image>
                 {
+                    { Severity.CRITICAL, CriticalSeverityFilterImage },
                     { Severity.HIGH, HighSeverityFilterImage },
                     { Severity.MEDIUM, MediumSeverityFilterImage },
                     { Severity.LOW, LowSeverityFilterImage },

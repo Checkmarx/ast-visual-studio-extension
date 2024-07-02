@@ -19,7 +19,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static string GetIconPathFromSeverity(string severity, Boolean iconForTitle)
         {
             switch (GetSeverityFromString(severity))
-            {               
+            {
+                case Severity.CRITICAL:
+                    return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_CRITICAL_TITLE   : CxConstants.ICON_CRITICAL);
                 case Severity.HIGH:
                     return Path.Combine(CxConstants.RESOURCES_BASE_DIR, iconForTitle ? CxConstants.ICON_HIGH_TITLE : CxConstants.ICON_HIGH);
                 case Severity.MEDIUM:
