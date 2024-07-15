@@ -18,7 +18,7 @@ jobs:
           version-type: 'build'
           manifest-file: 'ast-visual-studio-extension/source.extension.vsixmanifest'
           build-number: ${{ github.run_number }}
-          version-number: '' # אם תרצה להשתמש במספר גרסה מסויים
+          version-number: '' 
 
       - name: Output version number
         run: echo "Version number is ${{ steps.vsix_version.outputs.version-number }}"
