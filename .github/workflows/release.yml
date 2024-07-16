@@ -63,7 +63,6 @@ jobs:
           echo ${{ inputs.tag }}
           tag=${{ inputs.tag }}
           echo "RELEASE_VERSION=${{ inputs.tag }}" >> $GITHUB_ENV
-          echo ${{ env.RELEASE_VERSION }}
           message='${{ inputs.tag }}'
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
@@ -75,8 +74,7 @@ jobs:
         uses: timheuer/vsix-version-stamp@9d38292e99e54046455bb68c6a2b5113d269a7d0 #v2
         with:
           manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
-          version-type: custom
-          version: ${{ env.RELEASE_VERSION }}
+          version-number: ${{ inputs.tag }}
 
       - name: Restore NuGet packages
         run: msbuild -t:restore
