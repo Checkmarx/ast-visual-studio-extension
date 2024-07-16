@@ -74,7 +74,8 @@ jobs:
         uses: timheuer/vsix-version-stamp@9d38292e99e54046455bb68c6a2b5113d269a7d0 #v2
         with:
           manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
-          
+          version-number: ${{ inputs.tag }}
+
       - name: Restore NuGet packages
         run: msbuild -t:restore
       
