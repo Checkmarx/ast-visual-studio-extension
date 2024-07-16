@@ -63,6 +63,7 @@ jobs:
           echo ${{ inputs.tag }}
           tag=${{ inputs.tag }}
           echo "RELEASE_VERSION=${{ inputs.tag }}" >> $GITHUB_ENV
+          echo ${{ env.RELEASE_VERSION }}
           message='${{ inputs.tag }}'
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
