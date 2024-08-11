@@ -722,7 +722,7 @@
                         </DataTemplate>
                     </TabItem.HeaderTemplate>
                     <TabItem.Content>
-                        <ScrollViewer  PreviewMouseWheel="PreviewMouseWheel" HorizontalScrollBarVisibility="Auto">
+                        <ScrollViewer  PreviewMouseWheel="PreviewMouseWheel" >
                             <ScrollViewer.VerticalScrollBarVisibility>Auto</ScrollViewer.VerticalScrollBarVisibility>
                             <ScrollViewer.Content>
                                 <StackPanel>
