@@ -383,7 +383,7 @@
 
     <Grid Name="ParentGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="35"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -412,84 +412,100 @@
 
         <GridSplitter Grid.Row="1" Grid.Column ="0" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
         <GridSplitter Grid.Row="1" Grid.Column ="1" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
+        
+        <Grid Grid.ColumnSpan="3" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+                <ScrollViewer  Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+                <StackPanel VerticalAlignment="Stretch" Orientation="Horizontal" theming:ImageThemingUtilities.ImageBackgroundColor="{Binding Background, ElementName=CxWindow, Converter={StaticResource BrushToColorConverter}}">
 
-        <StackPanel Grid.ColumnSpan="3" Grid.Row="0" Orientation="Horizontal" theming:ImageThemingUtilities.ImageBackgroundColor="{Binding Background, ElementName=CxWindow, Converter={StaticResource BrushToColorConverter}}">
-            <TextBlock VerticalAlignment="Center" Text="Project:" Grid.Column="1" Margin="4"/>
-            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Loading projects..." Name="ProjectsCombobox" Margin="4" Width="250" SelectionChanged="OnChangeProject"/>
-            <TextBlock Text="Branch:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
-            <ComboBox VerticalAlignment="Center" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Select a branch" Name="BranchesCombobox"  Margin="4" Width="250" SelectionChanged="OnChangeBranch"></ComboBox>
-            <TextBlock Text="Scan:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
-            <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Margin="4" Width="350" SelectionChanged="OnChangeScan" KeyDown="OnTypeScan"></ComboBox>
 
-            <StackPanel Orientation="Horizontal">
-                <Separator Style="{StaticResource SeparatorStyle}" />
+                    <TextBlock VerticalAlignment="Center" Text="Project:" Grid.Column="1" Margin="4"/>
+                    <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Loading projects..." Name="ProjectsCombobox" Margin="4"  SelectionChanged="OnChangeProject"/>
+                    <TextBlock Text="Branch:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
+                    <ComboBox VerticalAlignment="Center" IsEnabled="False" IsEditable="True" IsReadOnly="True" Text="Select a branch" Name="BranchesCombobox"  Margin="4"  SelectionChanged="OnChangeBranch"></ComboBox>
+                    <TextBlock Text="Scan:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
+                    <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="False" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Margin="4"  SelectionChanged="OnChangeScan" KeyDown="OnTypeScan"></ComboBox>
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel Height="35" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right"  Orientation="Horizontal" >
+                <StackPanel Orientation="Horizontal">
+                    <Separator Style="{StaticResource SeparatorStyle}" />
+                </StackPanel>
+
+                <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
+                    <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
+                </ToggleButton>
+                <ToggleButton ToolTip="Medium" Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
+                    <Image x:Name="MediumSeverityFilterImage" Stretch="None"></Image>
+                </ToggleButton>
+                <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
+                    <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
+                </ToggleButton>
+                <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
+                    <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
+                </ToggleButton>
+
+                <Menu Background="Transparent">
+                    <MenuItem ToolTip="Filter by state" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
+                        <MenuItem.Icon>
+                            <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Filter}"/>
+                        </MenuItem.Icon>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ConfirmedStateFilter" Header="Confirmed" Click="StateFilter_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ToVerifyStateFilter" Header="To Verify" Click="StateFilter_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="UrgentStateFilter" Header="Urgent" Click="StateFilter_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotExploitableStateFilter" Header="Not Exploitable" Click="StateFilter_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ProposedNotExploitableStateFilter" Header="Proposed Not Exploitable" Click="StateFilter_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="IgnoredStateFilter" Header="Ignored" Click="StateFilter_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotIgnoredStateFilter" Header="Not Ignored" Click="StateFilter_Click"/>
+                    </MenuItem>
+                </Menu>
+
+                <StackPanel Orientation="Horizontal">
+                    <Separator Style="{StaticResource SeparatorStyle}" />
+                </StackPanel>
+
+                <Menu Background="Transparent">
+                    <MenuItem ToolTip="Group by" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
+                        <MenuItem.Icon>
+                            <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.GroupBy}"/>
+                        </MenuItem.Icon>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="FileGroupBy" Header="File" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="SeverityGroupBy" Header="Severity" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StateGroupBy" Header="State" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="QueryNameGroupBy" Header="Query Name" Click="GroupBy_Click"/>
+                    </MenuItem>
+                </Menu>
+
+                <StackPanel Orientation="Horizontal">
+                    <Separator Style="{StaticResource SeparatorStyle}" />
+                </StackPanel>
+
+                <ToggleButton ToolTip="Reset extension" Style="{StaticResource SeverityFilterStyle}" x:Name="RefreshBtn" Click="RefreshBtn_Click">
+                    <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Refresh}"/>
+                </ToggleButton>
+
+                <ToggleButton ToolTip="Open Checkmarx settings" Style="{StaticResource SeverityFilterStyle}" x:Name="SettingsBtn" Click="SettingsBtn_Click">
+                    <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Settings}"/>
+                </ToggleButton>
+
+                <StackPanel Orientation="Horizontal" x:Name="ScanningSeparator" Visibility="Visible">
+                    <Separator Style="{StaticResource SeparatorStyle}" />
+                </StackPanel>
+
+                <ToggleButton ToolTip="Start a scan" Style="{StaticResource SeverityFilterStyle}" x:Name="ScanStartBtn" Click="ScanStartBtn_Click" Visibility="Visible">
+                    <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Play}"/>
+                </ToggleButton>
             </StackPanel>
-
-            <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
-            </ToggleButton>
-            <ToggleButton ToolTip="Medium" Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="MediumSeverityFilterImage" Stretch="None"></Image>
-            </ToggleButton>
-            <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
-            </ToggleButton>
-            <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
-            </ToggleButton>
-
-            <Menu Background="Transparent">
-                <MenuItem ToolTip="Filter by state" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
-                    <MenuItem.Icon>
-                        <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Filter}"/>
-                    </MenuItem.Icon>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ConfirmedStateFilter" Header="Confirmed" Click="StateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ToVerifyStateFilter" Header="To Verify" Click="StateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="UrgentStateFilter" Header="Urgent" Click="StateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotExploitableStateFilter" Header="Not Exploitable" Click="StateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ProposedNotExploitableStateFilter" Header="Proposed Not Exploitable" Click="StateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="IgnoredStateFilter" Header="Ignored" Click="StateFilter_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotIgnoredStateFilter" Header="Not Ignored" Click="StateFilter_Click"/>
-                </MenuItem>
-            </Menu>
-
-            <StackPanel Orientation="Horizontal">
-                <Separator Style="{StaticResource SeparatorStyle}" />
-            </StackPanel>
-
-            <Menu Background="Transparent">
-                <MenuItem ToolTip="Group by" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
-                    <MenuItem.Icon>
-                        <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.GroupBy}"/>
-                    </MenuItem.Icon>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="FileGroupBy" Header="File" Click="GroupBy_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="SeverityGroupBy" Header="Severity" Click="GroupBy_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StateGroupBy" Header="State" Click="GroupBy_Click"/>
-                    <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="QueryNameGroupBy" Header="Query Name" Click="GroupBy_Click"/>
-                </MenuItem>
-            </Menu>
-
-            <StackPanel Orientation="Horizontal">
-                <Separator Style="{StaticResource SeparatorStyle}" />
-            </StackPanel>
-
-            <ToggleButton ToolTip="Reset extension" Style="{StaticResource SeverityFilterStyle}" x:Name="RefreshBtn" Click="RefreshBtn_Click">
-                <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Refresh}"/>
-            </ToggleButton>
-
-            <ToggleButton ToolTip="Open Checkmarx settings" Style="{StaticResource SeverityFilterStyle}" x:Name="SettingsBtn" Click="SettingsBtn_Click">
-                <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Settings}"/>
-            </ToggleButton>
-
-            <StackPanel Orientation="Horizontal" x:Name="ScanningSeparator" Visibility="Visible">
-                <Separator Style="{StaticResource SeparatorStyle}" />
-            </StackPanel>
-
-            <ToggleButton ToolTip="Start a scan" Style="{StaticResource SeverityFilterStyle}" x:Name="ScanStartBtn" Click="ScanStartBtn_Click" Visibility="Visible">
-                <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Play}"/>
-            </ToggleButton>
-        </StackPanel>
-
+        </Grid>
+        
         <!-- Column 1 -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="1,1,2,0" PreviewMouseWheel="PreviewMouseWheel">
             <TreeView Background="Transparent" Margin="10,5,0,13" x:Name="TreeViewResults" HorizontalAlignment="Left" VerticalAlignment="Top" BorderThickness="0">
