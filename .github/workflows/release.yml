@@ -74,7 +74,8 @@ jobs:
         uses: timheuer/vsix-version-stamp@9d38292e99e54046455bb68c6a2b5113d269a7d0 #v2
         with:
           manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
-          
+          version-number: ${{ inputs.tag }}
+
       - name: Restore NuGet packages
         run: msbuild -t:restore
       
@@ -82,7 +83,7 @@ jobs:
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create Release
-        uses: softprops/action-gh-release@a74c6b72af54cfa997e81df42d94703d6313a2d0 #v0.1.15
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v0.1.15
         with:
           tag_name: ${{ inputs.tag }}
           prerelease: ${{ inputs.dev }}
