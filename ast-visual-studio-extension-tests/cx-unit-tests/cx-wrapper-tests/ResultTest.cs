@@ -10,6 +10,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
     [Collection("Cx Collection")]
     public class ResultTest : BaseTest
     {
+        public static string SCAN_COMPLETED => "completed";
+
         [Fact]
         public void TestResultsHTML()
         {
@@ -27,7 +29,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         {
             List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Any());
-            Scan scan = scanList.FirstOrDefault(scan => scan.Status.ToLower() == "completed");
+            Scan scan = scanList.FirstOrDefault(scan => scan.Status.ToLower() == SCAN_COMPLETED);
 
             string scanId = scan.ID;
             string results = cxWrapper.GetResults(scanId, ReportFormat.json);
