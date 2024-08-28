@@ -20,14 +20,16 @@
         public static string COLLAPSE_CRUMB => "...";
 
         /************ ICONS ************/
+        public static string ICON_CRITICAL => "critical.png";
+        public static string ICON_CRITICAL_TITLE => "C-L.png";
         public static string ICON_HIGH => "high.png";
-        public static string ICON_HIGH_TITLE => "high_18x22.png";
+        public static string ICON_HIGH_TITLE => "H-L.png";
         public static string ICON_MEDIUM => "medium.png";
-        public static string ICON_MEDIUM_TITLE => "medium_18x22.png";
+        public static string ICON_MEDIUM_TITLE => "M-L.png";
         public static string ICON_LOW => "low.png";
-        public static string ICON_LOW_TITLE => "low_18x22.png";
+        public static string ICON_LOW_TITLE => "L-L.png";
         public static string ICON_INFO => "info.png";
-        public static string ICON_INFO_TITLE => "info_18x22.png";
+        public static string ICON_INFO_TITLE => "I-L.png";
         public static string ICON_FLAG => "Flag.png";
         public static string ICON_COMMENT => "Comment.png";
         public static string ICON_CX_LOGO_INITIAL_PANEL => "checkmarx-80.png";

@@ -319,7 +319,7 @@ namespace ast_visual_studio_extension.CxCLI
             triageArguments.Add(CxConstants.FLAG_SEVERITY);
             triageArguments.Add(severity);
 
-            Execution.ExecuteCommand(WithConfigArguments(triageArguments), line => null);
+            Execution.ExecuteCommand(WithConfigArguments(triageArguments), line => line);
         }
 
         /// <summary>

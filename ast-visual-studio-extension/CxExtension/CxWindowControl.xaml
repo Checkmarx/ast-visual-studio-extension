@@ -440,18 +440,22 @@
                     <Separator Style="{StaticResource SeparatorStyle}" />
                 </StackPanel>
 
-                <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
-                    <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
-                </ToggleButton>
-                <ToggleButton ToolTip="Medium" Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
-                    <Image x:Name="MediumSeverityFilterImage" Stretch="None"></Image>
-                </ToggleButton>
-                <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
-                    <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
-                </ToggleButton>
-                <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
-                    <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
-                </ToggleButton>
+
+            <ToggleButton ToolTip="Critical" Style="{StaticResource SeverityFilterStyle}" x:Name="CriticalSeverityFilter" Click="SeverityFilter_Click">
+                <Image x:Name="CriticalSeverityFilterImage" Stretch="None"></Image>
+            </ToggleButton>
+            <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
+                <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
+            </ToggleButton>
+            <ToggleButton ToolTip="Medium" Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
+                <Image x:Name="MediumSeverityFilterImage" Stretch="None"></Image>
+            </ToggleButton>
+            <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
+                <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
+            </ToggleButton>
+            <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
+                <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
+            </ToggleButton>
 
                 <Menu Background="Transparent">
                     <MenuItem ToolTip="Filter by state" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
@@ -548,6 +552,7 @@
 
             <UniformGrid Rows="1" Columns="3">
                 <ComboBox IsEditable="True" IsReadOnly="True"  Name="TriageSeverityCombobox" Margin="5,5,0,0">
+                    <ComboBoxItem>CRITICAL</ComboBoxItem>
                     <ComboBoxItem>HIGH</ComboBoxItem>
                     <ComboBoxItem>MEDIUM</ComboBoxItem>
                     <ComboBoxItem>LOW</ComboBoxItem>
