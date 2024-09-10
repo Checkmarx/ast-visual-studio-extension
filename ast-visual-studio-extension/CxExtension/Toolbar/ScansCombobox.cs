@@ -106,9 +106,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             ComboBoxItem selectedScan = (scansCombo.SelectedItem as ComboBoxItem);
             string selectedScanID = (selectedScan.Tag as Scan).ID;
-           
-            previousText = selectedScan.Content.ToString();
 
+            // Reset filtering state and update combobox with all items
+            previousText = selectedScan.Content.ToString();
             if (isFiltering)
             {
                 Mouse.OverrideCursor = Cursors.Wait;

@@ -102,6 +102,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
             ComboBoxItem selectedBranch = branchesCombo.SelectedItem as ComboBoxItem;
             string selectedBranchContent = selectedBranch.Content as string;
+
+            // Reset filtering state and update combobox with all items
             previousText = selectedBranchContent;
             if (isFiltering)
             {
