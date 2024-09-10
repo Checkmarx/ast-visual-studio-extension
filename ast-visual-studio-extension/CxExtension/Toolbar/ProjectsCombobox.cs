@@ -10,23 +10,16 @@ using System.Windows.Input;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
-    internal class ProjectsCombobox
+    internal class ProjectsCombobox : ComboboxBase
     {
-        private readonly CxToolbar cxToolbar;
         private readonly BranchesCombobox branchesCombobox;
         private bool initialized = false;
-        private List<ComboBoxItem> _allProjects;
-        private string _previousText = string.Empty;
-        private bool _isFiltering = false;
-
         public ProjectsCombobox(CxToolbar cxToolbar, BranchesCombobox branchesCombobox)
+            : base(cxToolbar, cxToolbar.ProjectsCombo)
         {
-            this.cxToolbar = cxToolbar;
             this.branchesCombobox = branchesCombobox;
-            _allProjects = new List<ComboBoxItem>();
             _ = LoadProjectsAsync();
         }
-
         /// <summary>
         /// Populate Projects combobox
         /// </summary>
@@ -126,7 +119,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
 
             cxToolbar.ProjectsCombo.Items.Clear();
-            _allProjects.Clear();
+            allItems.Clear();
 
             for (int i = 0; i < projects.Count; i++)
             {
@@ -136,7 +129,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     Tag = projects[i]
                 };
                 cxToolbar.ProjectsCombo.Items.Add(comboBoxItem);
-                _allProjects.Add(comboBoxItem);
+                allItems.Add(comboBoxItem);
             }
 
             cxToolbar.ProjectsCombo.Text = CxConstants.TOOLBAR_SELECT_PROJECT;
@@ -154,12 +147,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             ComboBoxItem selectedProject = projectsCombo.SelectedItem as ComboBoxItem;
 
-            _previousText = selectedProject.Content.ToString();
-            if (_isFiltering)
+            previousText = selectedProject.Content.ToString();
+            if (isFiltering)
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                _isFiltering = false;
-                UpdateProjectsComboBox(_allProjects);
+                isFiltering = false;
+                UpdateCombobox(allItems);
                 cxToolbar.ProjectsCombo.SelectedItem = selectedProject;
                 Mouse.OverrideCursor = null;
             }
@@ -185,52 +178,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ScanButtonByCombos();
         }
 
-        public void OnProjectTextChanged(object sender, EventArgs e)
-        {
-            if (!(sender is ComboBox comboBox)) return;
-            {
-                string newText = comboBox.Text;
-                if (newText == _previousText) return;
-                {
-                    int savedSelectionStart = 0;
-                    var textBox = (TextBox)cxToolbar.ProjectsCombo.Template.FindName("PART_EditableTextBox", cxToolbar.ProjectsCombo);
-                    Mouse.OverrideCursor = Cursors.Wait;
-                    if (textBox != null)
-                    {
-                        savedSelectionStart = textBox.SelectionStart;
-                        _previousText = newText;
-                        ResetCombosAndResults();
-                        cxToolbar.ProjectsCombo.SelectedItem = null;
-
-                        if (string.IsNullOrEmpty(newText))
-                        {
-                            UpdateProjectsComboBox(_allProjects);
-                        }
-                        else
-                        {
-                            var filteredItems = _allProjects.Where(item => item.Content.ToString().IndexOf(newText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                            UpdateProjectsComboBox(filteredItems);
-                            _isFiltering = true;
-                        }
-                    }
-                    Mouse.OverrideCursor = null;
-                    cxToolbar.ProjectsCombo.IsDropDownOpen = true;
-                    cxToolbar.ProjectsCombo.Text = newText;
-
-                    textBox.SelectionStart = Math.Min(savedSelectionStart, newText.Length);
-                    textBox.SelectionLength = 0;
-                }
-            }
-        }
-        private void UpdateProjectsComboBox(List<ComboBoxItem> items)
-        {
-            cxToolbar.ProjectsCombo.Items.Clear();
-            foreach (var item in items)
-            {
-                cxToolbar.ProjectsCombo.Items.Add(item);
-            }
-        }
-        private void ResetCombosAndResults()
+        protected override void ResetCombosAndResults()
         {
             cxToolbar.BranchesCombo.IsEnabled = false;
             cxToolbar.BranchesCombo.Items.Clear();
@@ -241,6 +189,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_SELECT_SCAN : CxToolbar.currentScanId;
 
             cxToolbar.ResultsTreePanel.ClearAll();
+        }
+
+        public void OnProjectTextChanged(object sender, EventArgs e)
+        {
+            OnTextChanged(sender, e);
         }
     }
 }

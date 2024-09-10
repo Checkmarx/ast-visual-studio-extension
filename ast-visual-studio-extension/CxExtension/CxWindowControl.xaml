@@ -432,7 +432,7 @@
                     <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="True" IsEditable="True" IsReadOnly="False" Text="Select a branch" Name="BranchesCombobox" Margin="4" MinWidth="100" SelectionChanged="OnChangeBranch" KeyUp="OnBranchTextChanged"/>
 
                     <TextBlock Text="Scan:" Grid.Column="1" VerticalAlignment="Center" Margin="4"/>
-                    <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="True" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Margin="4" MinWidth="100" SelectionChanged="OnChangeScan" KeyUp="OnTypeScan"/>
+                    <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="True" IsEditable="True" IsReadOnly="False" Text="Select a scan" Name="ScansCombobox" Margin="4" MinWidth="100" SelectionChanged="OnChangeScan" KeyUp="OnScanTextChanged"/>
                 </StackPanel>
             </ScrollViewer>
             <StackPanel Height="35" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right"  Orientation="Horizontal" >

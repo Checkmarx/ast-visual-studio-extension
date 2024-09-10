@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -143,23 +144,7 @@ namespace ast_visual_studio_extension.CxExtension
         }
         private async void OnProjectTextChanged(object sender, KeyEventArgs e)
         {
-            typingCts?.Cancel();
-            typingCts?.Dispose();
-
-            typingCts = new CancellationTokenSource();
-            var token = typingCts.Token;
-            try
-            {
-                await Task.Delay(500, token);
-                if (!token.IsCancellationRequested)
-                {
-                    cxToolbar.ProjectsCombobox.OnProjectTextChanged(sender, e);
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                // Ignore the exception if the task was canceled
-            }
+            await HandleTextChangedAsync(() => cxToolbar.ProjectsCombobox.OnProjectTextChanged(sender, e));
         }
 
         /// <summary>
@@ -171,25 +156,9 @@ namespace ast_visual_studio_extension.CxExtension
         {
             cxToolbar.BranchesCombobox.OnChangeBranch(sender, e);
         }
-       private async void OnBranchTextChanged(object sender, KeyEventArgs e)
+        private async void OnBranchTextChanged(object sender, KeyEventArgs e)
         {
-            typingCts?.Cancel();
-            typingCts?.Dispose();
-
-            typingCts = new CancellationTokenSource();
-            var token = typingCts.Token;
-            try
-            {
-                await Task.Delay(500, token);
-                if (!token.IsCancellationRequested)
-                {
-                    cxToolbar.BranchesCombobox.OnBranchTextChanged(sender, e);
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                // Ignore the exception if the task was canceled
-            }
+            await HandleTextChangedAsync(() => cxToolbar.BranchesCombobox.OnBranchTextChanged(sender, e));
         }
 
         /// <summary>
@@ -207,10 +176,16 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void OnTypeScan(object sender, KeyEventArgs e)
+        private async void OnScanTextChanged(object sender, KeyEventArgs e)
+        {
+            await HandleTextChangedAsync(() => cxToolbar.ScansCombobox.OnScanTextChanged(sender, e));
+        }
+
+        private async Task HandleTextChangedAsync(Action action)
         {
             typingCts?.Cancel();
             typingCts?.Dispose();
+
             typingCts = new CancellationTokenSource();
             var token = typingCts.Token;
             try
@@ -218,7 +193,7 @@ namespace ast_visual_studio_extension.CxExtension
                 await Task.Delay(500, token);
                 if (!token.IsCancellationRequested)
                 {
-                    cxToolbar.ScansCombobox.OnScanTextChanged(sender, e);
+                    action();
                 }
             }
             catch (TaskCanceledException)

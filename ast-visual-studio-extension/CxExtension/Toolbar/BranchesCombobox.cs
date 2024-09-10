@@ -10,21 +10,16 @@ using System.Windows.Input;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
-    internal class BranchesCombobox
+    internal class BranchesCombobox : ComboboxBase
     {
         private readonly ScansCombobox scansCombobox;
 
-        private readonly CxToolbar cxToolbar;
         private bool initialized = false;
-        private List<ComboBoxItem> _allBranches;
-        private string _previousText = string.Empty;
-        private bool _isFiltering = false;
 
         public BranchesCombobox(CxToolbar cxToolbar, ScansCombobox scansCombobox)
+            : base(cxToolbar, cxToolbar.BranchesCombo)
         {
-            this.cxToolbar = cxToolbar;
             this.scansCombobox = scansCombobox;
-            _allBranches = new List<ComboBoxItem>();
         }
 
         /// <summary>
@@ -65,7 +60,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
 
             cxToolbar.BranchesCombo.Items.Clear();
-            _allBranches.Clear();
+            allItems.Clear();
             for (int i = 0; i < branches.Count; i++)
             {
                 ComboBoxItem comboBoxItem = new ComboBoxItem
@@ -74,7 +69,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 };
 
                 cxToolbar.BranchesCombo.Items.Add(comboBoxItem);
-                _allBranches.Add(comboBoxItem);
+                allItems.Add(comboBoxItem);
             }
 
             cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_SELECT_BRANCH;
@@ -107,12 +102,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
             ComboBoxItem selectedBranch = branchesCombo.SelectedItem as ComboBoxItem;
             string selectedBranchContent = selectedBranch.Content as string;
-            _previousText = selectedBranchContent;
-            if (_isFiltering)
+            previousText = selectedBranchContent;
+            if (isFiltering)
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                _isFiltering = false;
-                UpdateBranchesComboBox(_allBranches);
+                isFiltering = false;
+                UpdateCombobox(allItems);
                 cxToolbar.BranchesCombo.SelectedItem = selectedBranch;
                 Mouse.OverrideCursor = null;
             }
@@ -134,59 +129,18 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             cxToolbar.ScanButtonByCombos();
         }
-        public void OnBranchTextChanged(object sender, EventArgs e)
-        {
-            if (!(sender is ComboBox comboBox)) return;
-            {
-                string newText = comboBox.Text;
-                if (newText == _previousText) return;
-                {
-                    int savedSelectionStart = 0;
-                    var textBox = (TextBox)cxToolbar.BranchesCombo.Template.FindName("PART_EditableTextBox", cxToolbar.BranchesCombo);
-
-                    if (textBox != null)
-                    {
-                        savedSelectionStart = textBox.SelectionStart;
-                        _previousText = newText;
-                        ResetCombosAndResults();
-                        cxToolbar.BranchesCombo.SelectedItem = null;
-                        Mouse.OverrideCursor = Cursors.Wait;
-
-                        if (string.IsNullOrEmpty(newText))
-                        {
-                            UpdateBranchesComboBox(_allBranches);
-                        }
-                        else
-                        {
-                            var filteredItems = _allBranches.Where(item => item.Content.ToString().IndexOf(newText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                            UpdateBranchesComboBox(filteredItems);
-                            _isFiltering = true;
-                        }
-                    }
-                    Mouse.OverrideCursor = null;
-                    cxToolbar.BranchesCombo.IsDropDownOpen = true;
-                    cxToolbar.BranchesCombo.Text = newText;
-
-                    textBox.SelectionStart = Math.Min(savedSelectionStart, newText.Length);
-                    textBox.SelectionLength = 0;
-                }
-            }
-        }
-        private void UpdateBranchesComboBox(List<ComboBoxItem> items)
-        {
-            cxToolbar.BranchesCombo.Items.Clear();
-            foreach (var item in items)
-            {
-                cxToolbar.BranchesCombo.Items.Add(item);
-            }
-        }
-        private void ResetCombosAndResults()
+        protected override void ResetCombosAndResults()
         {
             cxToolbar.ScansCombo.IsEnabled = false;
             cxToolbar.ScansCombo.Items.Clear();
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_SELECT_SCAN : CxToolbar.currentScanId;
 
             cxToolbar.ResultsTreePanel.ClearAll();
+        }
+
+        public void OnBranchTextChanged(object sender, EventArgs e)
+        {
+            OnTextChanged(sender, e);
         }
     }
 }
