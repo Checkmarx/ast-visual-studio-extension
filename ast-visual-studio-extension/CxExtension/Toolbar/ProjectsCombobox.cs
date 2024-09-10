@@ -147,6 +147,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             ComboBoxItem selectedProject = projectsCombo.SelectedItem as ComboBoxItem;
 
+            // Reset filtering state and update combobox with all items
             previousText = selectedProject.Content.ToString();
             if (isFiltering)
             {
