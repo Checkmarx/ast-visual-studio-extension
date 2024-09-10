@@ -104,22 +104,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             if (!(sender is ComboBox scansCombo) || scansCombo.SelectedItem == null || scansCombo.SelectedIndex == -1) return;
 
-            ComboBoxItem selectedScan = (scansCombo.SelectedItem as ComboBoxItem);
-            string selectedScanID = (selectedScan.Tag as Scan).ID;
 
-            // Reset filtering state and update combobox with all items
-            previousText = selectedScan.Content.ToString();
-            if (isFiltering)
-            {
-                Mouse.OverrideCursor = Cursors.Wait;
-                isFiltering = false;
-                UpdateCombobox(allItems);
-                cxToolbar.ScansCombo.SelectedItem = selectedScan;
-                Mouse.OverrideCursor = null;
-            }
-            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "scanId", selectedScanID);
+            ResetFilteringState(scansCombo.SelectedItem as ComboBoxItem);
 
-            _ = cxToolbar.ResultsTreePanel.DrawAsync(selectedScanID, cxToolbar);
+            string selectedScan = ((scansCombo.SelectedItem as ComboBoxItem).Tag as Scan).ID;
+
+            SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "scanId", selectedScan);
+
+            _ = cxToolbar.ResultsTreePanel.DrawAsync(selectedScan, cxToolbar);
 
             CxToolbar.currentBranch = string.Empty;
             CxToolbar.currentScanId = string.Empty;
@@ -188,14 +180,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ResultsTree.Items.Add(message);
         }
 
-        protected override void ResetCombosAndResults()
+        protected override void ResetOthersComboBoxesAndResults()
         {
             cxToolbar.ResultsTreePanel.ClearAll();
-        }
-
-        public void OnScanTextChanged(object sender, EventArgs e)
-        {
-            OnTextChanged(sender, e);
         }
     }
 }

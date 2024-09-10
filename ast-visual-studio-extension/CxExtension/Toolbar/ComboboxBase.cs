@@ -19,41 +19,69 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             this.comboBox = comboBox;
             allItems = new List<ComboBoxItem>();
         }
-         
-        public void OnTextChanged(object sender, EventArgs e)
+        protected void ResetFilteringState(ComboBoxItem selectedItem)
         {
-            if (comboBox == null) return;
-
-            string newText = comboBox.Text;
-            if (newText == previousText) return;
+            previousText = selectedItem.Content.ToString();
+            if (isFiltering)
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                isFiltering = false;
+                UpdateCombobox(allItems);
+                comboBox.SelectedItem = selectedItem;
+                Mouse.OverrideCursor = null;
+            }
+        }
+        public void OnComboBoxTextChanged(object sender, EventArgs e)
+        {
+            
+            if (comboBox == null || IsTextUnchanged()) return;
 
             Mouse.OverrideCursor = Cursors.Wait;
-            int savedSelectionStart = 0;
-            var textBox = (TextBox)comboBox.Template.FindName("PART_EditableTextBox", comboBox);
+
+            TextBox textBox = GetTextBoxFromComboBox();
 
             if (textBox != null)
             {
-                savedSelectionStart = textBox.SelectionStart;
-                previousText = newText;
+                string newText = textBox.Text;
+                int savedSelectionStart = textBox.SelectionStart;
 
-                ResetCombosAndResults();
+                ResetOthersComboBoxesAndResults();
 
-                comboBox.SelectedItem = null;
+                UpdateComboBoxWithFilteredItems(newText);
 
-                if (string.IsNullOrEmpty(newText))
-                {
-                    UpdateCombobox(allItems);
-                }
-                else
-                {
-                    var filteredItems = allItems.Where(item => item.Content.ToString().IndexOf(newText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                    UpdateCombobox(filteredItems);
-                    isFiltering = true;
-                }
+                comboBox.IsDropDownOpen = true;
+                RestoreTextBoxState(textBox, savedSelectionStart, newText);
             }
             Mouse.OverrideCursor = null;
-            comboBox.IsDropDownOpen = true;
-            RestoreTextBoxState(textBox, savedSelectionStart, newText);
+        }
+        private TextBox GetTextBoxFromComboBox()
+        {
+            return (TextBox)comboBox.Template.FindName("PART_EditableTextBox", comboBox);
+        }
+        private bool IsTextUnchanged()
+        {
+            
+            if (comboBox.Text == previousText) return true;
+
+            previousText = comboBox.Text;
+            return false;
+        }
+        private void UpdateComboBoxWithFilteredItems(string newText)
+        {
+            comboBox.SelectedItem = null;
+
+            if (string.IsNullOrEmpty(newText))
+            {
+                UpdateCombobox(allItems);
+            }
+            else
+            {
+                var filteredItems = allItems.Where(item => item.Content.ToString()
+                .IndexOf(newText, StringComparison.OrdinalIgnoreCase) >= 0)
+                .ToList();
+                UpdateCombobox(filteredItems);
+                isFiltering = true;
+            }
         }
 
         private void RestoreTextBoxState(TextBox textBox, int selectionStart, string text)
@@ -72,6 +100,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
         }
 
-        protected abstract void ResetCombosAndResults();
+        protected abstract void ResetOthersComboBoxesAndResults();
     }
 }

@@ -144,7 +144,7 @@ namespace ast_visual_studio_extension.CxExtension
         }
         private async void OnProjectTextChanged(object sender, KeyEventArgs e)
         {
-            await HandleTextChangedAsync(() => cxToolbar.ProjectsCombobox.OnProjectTextChanged(sender, e));
+            await HandleTextChangedAsync(() => cxToolbar.ProjectsCombobox.OnComboBoxTextChanged(sender, e));
         }
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace ast_visual_studio_extension.CxExtension
         }
         private async void OnBranchTextChanged(object sender, KeyEventArgs e)
         {
-            await HandleTextChangedAsync(() => cxToolbar.BranchesCombobox.OnBranchTextChanged(sender, e));
+            await HandleTextChangedAsync(() => cxToolbar.BranchesCombobox.OnComboBoxTextChanged(sender, e));
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// <param name="e"></param>
         private async void OnScanTextChanged(object sender, KeyEventArgs e)
         {
-            await HandleTextChangedAsync(() => cxToolbar.ScansCombobox.OnScanTextChanged(sender, e));
+            await HandleTextChangedAsync(() => cxToolbar.ScansCombobox.OnComboBoxTextChanged(sender, e));
         }
 
         private async Task HandleTextChangedAsync(Action action)
