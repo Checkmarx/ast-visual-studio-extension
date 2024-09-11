@@ -181,7 +181,7 @@ namespace ast_visual_studio_extension.CxExtension
             await HandleTextChangedAsync(() => cxToolbar.ScansCombobox.OnComboBoxTextChanged(sender, e));
         }
 
-        private async Task HandleTextChangedAsync(Action action)
+        private async Task HandleTextChangedAsync(Action onTextChangedAction)
         {
             typingCts?.Cancel();
             typingCts?.Dispose();
@@ -193,7 +193,7 @@ namespace ast_visual_studio_extension.CxExtension
                 await Task.Delay(500, token);
                 if (!token.IsCancellationRequested)
                 {
-                    action();
+                    onTextChangedAction();
                 }
             }
             catch (TaskCanceledException)

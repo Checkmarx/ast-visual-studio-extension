@@ -3,10 +3,8 @@ using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
@@ -19,7 +17,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             
         }
-        //protected override List<ComboBoxItem> AllItems => _allScans;
         /// <summary>
         /// Populate Scans combobox
         /// </summary>

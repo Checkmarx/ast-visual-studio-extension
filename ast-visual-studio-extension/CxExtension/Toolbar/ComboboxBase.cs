@@ -11,7 +11,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         protected CxToolbar cxToolbar;
         protected ComboBox comboBox;
         protected string previousText = string.Empty;
-        protected bool isFiltering = false;
+        protected bool isFiltered = false;
         protected List<ComboBoxItem> allItems;
         public ComboboxBase(CxToolbar cxToolbar, ComboBox comboBox)
         {
@@ -22,10 +22,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         protected void ResetFilteringState(ComboBoxItem selectedItem)
         {
             previousText = selectedItem.Content.ToString();
-            if (isFiltering)
+            if (isFiltered)
             {
                 Mouse.OverrideCursor = Cursors.Wait;
-                isFiltering = false;
+                isFiltered = false;
                 UpdateCombobox(allItems);
                 comboBox.SelectedItem = selectedItem;
                 Mouse.OverrideCursor = null;
@@ -80,7 +80,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 .IndexOf(newText, StringComparison.OrdinalIgnoreCase) >= 0)
                 .ToList();
                 UpdateCombobox(filteredItems);
-                isFiltering = true;
+                isFiltered = true;
             }
         }
 

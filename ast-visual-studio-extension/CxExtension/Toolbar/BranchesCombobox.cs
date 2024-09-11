@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Windows.Input;
+using ast_visual_studio_extension.CxWrapper.Models;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
@@ -107,7 +107,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_LOADING_SCANS : CxToolbar.currentScanId;
             cxToolbar.ResultsTreePanel.ClearAll();
 
-            string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as ast_visual_studio_extension.CxWrapper.Models.Project).Id;
+            string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
 
             SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, selectedBranch);
 
