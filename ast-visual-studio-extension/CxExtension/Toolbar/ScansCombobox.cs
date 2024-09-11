@@ -5,19 +5,18 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
-    internal class ScansCombobox
+    internal class ScansCombobox : ComboboxBase
     {
-        private readonly CxToolbar cxToolbar;
+        
 
         public ScansCombobox(CxToolbar cxToolbar)
+            : base(cxToolbar, cxToolbar.ScansCombo)
         {
-            this.cxToolbar = cxToolbar;
+            
         }
-
         /// <summary>
         /// Populate Scans combobox
         /// </summary>
@@ -55,9 +54,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
                 return;
             }
-
             cxToolbar.ScansCombo.Items.Clear();
-
+            allItems.Clear();
             foreach (Scan scan in scans)
             {
                 DateTime scanCreatedAt = DateTime.Parse(scan.CreatedAt, System.Globalization.CultureInfo.InvariantCulture);
@@ -69,9 +67,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     Tag = scan,
                 };
 
+                allItems.Add(comboBoxItem);
                 cxToolbar.ScansCombo.Items.Add(comboBoxItem);
             }
-
             cxToolbar.ScansCombo.IsEnabled = true;
             cxToolbar.ScansCombo.Text = CxConstants.TOOLBAR_SELECT_SCAN;
             cxToolbar.ProjectsCombo.IsEnabled = true;
@@ -103,6 +101,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             if (!(sender is ComboBox scansCombo) || scansCombo.SelectedItem == null || scansCombo.SelectedIndex == -1) return;
 
+
+            ResetFilteringState(scansCombo.SelectedItem as ComboBoxItem);
+
             string selectedScan = ((scansCombo.SelectedItem as ComboBoxItem).Tag as Scan).ID;
 
             SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, "scanId", selectedScan);
@@ -112,23 +113,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             CxToolbar.currentBranch = string.Empty;
             CxToolbar.currentScanId = string.Empty;
         }
-
-        /// <summary>
-        /// On press enter or tab in Scans combobox
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public async Task OnTypeScanAsync(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Return || e.Key == Key.Tab)
-            {
-                string scanId = ValidateScanId((e.OriginalSource as TextBox).Text);
-                if (string.IsNullOrEmpty(scanId)) return;
-
-                await LoadScanByIdAsync(scanId);
-            }
-        }
-
 
         public async Task LoadScanByIdAsync(string scanId)
         {
@@ -183,25 +167,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         }
 
         /// <summary>
-        /// Validate if provided scan id is valid to get results
-        /// </summary>
-        /// <param name="scan"></param>
-        /// <returns></returns>
-        private string ValidateScanId(string scan)
-        {
-            string scanId = !string.IsNullOrEmpty(scan) ? scan.Trim() : string.Empty;
-
-            bool isValidScanId = Guid.TryParse(scanId, out _) && !string.IsNullOrEmpty(scanId);
-
-            if (isValidScanId) return scanId;
-
-            AddMessageToTree(CxConstants.INVALID_SCAN_ID);
-
-            return string.Empty;
-
-        }
-
-        /// <summary>
         /// Add a message to the results tree
         /// </summary>
         /// <param name="message"></param>
@@ -210,6 +175,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.ResultsTreePanel.ClearAll();
             cxToolbar.ResultsTree.Items.Clear();
             cxToolbar.ResultsTree.Items.Add(message);
+        }
+
+        protected override void ResetOthersComboBoxesAndResults()
+        {
+            cxToolbar.ResultsTreePanel.ClearAll();
         }
     }
 }

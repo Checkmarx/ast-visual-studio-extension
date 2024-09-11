@@ -79,6 +79,7 @@
     <Compile Include="CxExtension\Panels\ResultsTreePanel.cs" />
     <Compile Include="CxExtension\Panels\ResultVulnerabilitiesPanel.cs" />
     <Compile Include="CxExtension\Toolbar\BranchesCombobox.cs" />
+    <Compile Include="CxExtension\Toolbar\ComboboxBase.cs" />
     <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ScansCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\CxToolbar.cs" />

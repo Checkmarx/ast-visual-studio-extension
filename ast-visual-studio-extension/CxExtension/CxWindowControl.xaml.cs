@@ -10,6 +10,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -19,6 +22,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly ResultInfoPanel resultInfoPanel;
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
+        private CancellationTokenSource typingCts;
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -138,6 +142,10 @@ namespace ast_visual_studio_extension.CxExtension
         {
             cxToolbar.ProjectsCombobox.OnChangeProject(sender, e);
         }
+        private async void OnProjectTextChanged(object sender, KeyEventArgs e)
+        {
+            await HandleTextChangedAsync(() => cxToolbar.ProjectsCombobox.OnComboBoxTextChanged(sender, e));
+        }
 
         /// <summary>
         /// On change event for Branches combobox
@@ -147,6 +155,10 @@ namespace ast_visual_studio_extension.CxExtension
         private void OnChangeBranch(object sender, SelectionChangedEventArgs e)
         {
             cxToolbar.BranchesCombobox.OnChangeBranch(sender, e);
+        }
+        private async void OnBranchTextChanged(object sender, KeyEventArgs e)
+        {
+            await HandleTextChangedAsync(() => cxToolbar.BranchesCombobox.OnComboBoxTextChanged(sender, e));
         }
 
         /// <summary>
@@ -164,9 +176,30 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void OnTypeScan(object sender, KeyEventArgs e)
+        private async void OnScanTextChanged(object sender, KeyEventArgs e)
         {
-            _ = cxToolbar.ScansCombobox.OnTypeScanAsync(sender, e);
+            await HandleTextChangedAsync(() => cxToolbar.ScansCombobox.OnComboBoxTextChanged(sender, e));
+        }
+
+        private async Task HandleTextChangedAsync(Action onTextChangedAction)
+        {
+            typingCts?.Cancel();
+            typingCts?.Dispose();
+
+            typingCts = new CancellationTokenSource();
+            var token = typingCts.Token;
+            try
+            {
+                await Task.Delay(500, token);
+                if (!token.IsCancellationRequested)
+                {
+                    onTextChangedAction();
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Ignore the exception if the task was canceled
+            }
         }
 
         /// <summary>

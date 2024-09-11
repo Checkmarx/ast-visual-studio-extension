@@ -1,23 +1,22 @@
 ﻿using ast_visual_studio_extension.CxExtension.Utils;
-using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using ast_visual_studio_extension.CxWrapper.Models;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
-    internal class BranchesCombobox
+    internal class BranchesCombobox : ComboboxBase
     {
         private readonly ScansCombobox scansCombobox;
 
-        private readonly CxToolbar cxToolbar;
         private bool initialized = false;
 
         public BranchesCombobox(CxToolbar cxToolbar, ScansCombobox scansCombobox)
+            : base(cxToolbar, cxToolbar.BranchesCombo)
         {
-            this.cxToolbar = cxToolbar;
             this.scansCombobox = scansCombobox;
         }
 
@@ -59,7 +58,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
 
             cxToolbar.BranchesCombo.Items.Clear();
-
+            allItems.Clear();
             for (int i = 0; i < branches.Count; i++)
             {
                 ComboBoxItem comboBoxItem = new ComboBoxItem
@@ -68,12 +67,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 };
 
                 cxToolbar.BranchesCombo.Items.Add(comboBoxItem);
+                allItems.Add(comboBoxItem);
             }
 
             cxToolbar.BranchesCombo.Text = CxConstants.TOOLBAR_SELECT_BRANCH;
             cxToolbar.EnableCombos(true);
 
-            if(CxToolbar.reverseSearch)
+            if (CxToolbar.reverseSearch)
             {
                 cxToolbar.BranchesCombo.SelectedIndex = CxUtils.GetItemIndexInCombo(CxToolbar.currentBranch, cxToolbar.BranchesCombo, Enums.ComboboxType.BRANCHES);
             }
@@ -99,11 +99,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
 
+            ResetFilteringState(branchesCombo.SelectedItem as ComboBoxItem);
+
+            string selectedBranch = (branchesCombo.SelectedItem as ComboBoxItem).Content as string;
+
             cxToolbar.EnableCombos(false);
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_LOADING_SCANS : CxToolbar.currentScanId;
             cxToolbar.ResultsTreePanel.ClearAll();
 
-            string selectedBranch = (branchesCombo.SelectedItem as ComboBoxItem).Content as string;
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
 
             SettingsUtils.StoreToolbarValue(cxToolbar.Package, SettingsUtils.toolbarCollection, SettingsUtils.branchProperty, selectedBranch);
@@ -116,6 +119,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             _ = scansCombobox.LoadScansAsync(projectId, selectedBranch);
 
             cxToolbar.ScanButtonByCombos();
+        }
+        protected override void ResetOthersComboBoxesAndResults()
+        {
+            cxToolbar.ScansCombo.IsEnabled = false;
+            cxToolbar.ScansCombo.Items.Clear();
+            cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_SELECT_SCAN : CxToolbar.currentScanId;
+
+            cxToolbar.ResultsTreePanel.ClearAll();
         }
     }
 }
