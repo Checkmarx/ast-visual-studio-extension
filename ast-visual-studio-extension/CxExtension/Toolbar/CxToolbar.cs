@@ -16,6 +16,8 @@ using System.Threading;
 using Microsoft.VisualStudio.Imaging;
 using ast_visual_studio_extension.CxWrapper.Exceptions;
 using System.Linq;
+using EnvDTE;
+using EnvDTE80;
 
 namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
@@ -361,9 +363,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
             if (cxWrapper == null || !string.IsNullOrWhiteSpace(scanId)) return;
 
+            string currentPath = await GetCurrentWorkingDirAsync();
+
             Dictionary<string, string> parameters = new Dictionary<string, string>
             {
-                { CxCLI.CxConstants.FLAG_SOURCE, "." },
+                { CxCLI.CxConstants.FLAG_SOURCE, currentPath },
                 { CxCLI.CxConstants.FLAG_PROJECT_NAME, ProjectsCombo.Text },
                 { CxCLI.CxConstants.FLAG_BRANCH, BranchesCombo.Text },
                 { CxCLI.CxConstants.FLAG_AGENT, CxCLI.CxConstants.EXTENSION_AGENT }
@@ -384,7 +388,22 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
         }
 
-        private async Task PollScanStartedAsync()
+        private static async Task<string> GetCurrentWorkingDirAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            DTE2 dte = (DTE2)ServiceProvider.GlobalProvider.GetService(typeof(DTE));
+
+            var solutionExplorer = dte.ToolWindows.SolutionExplorer;
+
+            if ((solutionExplorer.DTE.ActiveSolutionProjects as Array)?.Length > 0)
+            {
+                return System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+            }
+            return ".";
+        }
+
+            private async Task PollScanStartedAsync()
         {
             ScanStartButton.IsEnabled = false;
             var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
