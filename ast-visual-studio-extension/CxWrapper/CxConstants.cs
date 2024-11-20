@@ -17,6 +17,7 @@
         public static string CLI_LIST_CMD => "list";
         public static string CLI_BRANCHES_CMD => "branches";
         public static string CLI_SCAN_CMD => "scan";
+        public static string CLI_ASCA_CMD => "asca";
         public static string CLI_SHOW_CMD => "show";
         public static string CLI_TRIAGE_CMD => "triage";
         public static string CLI_UPDATE_CMD => "update";
@@ -31,6 +32,8 @@
         /** CLI FLAGS **/
         public static string FLAG_API_KEY => "--apikey";
         public static string FLAG_SCAN_ID => "--scan-id";
+        public static string FLAG_FILE_SOURCE => "--file-source";
+        public static string FLAG_ASCA_LATEST_VERSION => "--asca-latest-version";
         public static string FLAG_REPORT_FORMAT => "--report-format";
         public static string FLAG_OUTPUT_NAME => "--output-name";
         public static string FLAG_OUTPUT_PATH => "--output-path";
@@ -46,7 +49,7 @@
         public static string FLAG_DEBUG => "--debug";
         public static string FLAG_LANGUAGE => "--language";
         public static string FLAG_VULNERABILITY_TYPE => "--vulnerability-type";
-        public static string FLAG_CWE_ID => "--cwe-id"; 
+        public static string FLAG_CWE_ID => "--cwe-id";
         public static string FLAG_SCAN_INFO_FORMAT => "--scan-info-format";
         public static string FLAG_BRANCH => "--branch";
         public static string FLAG_FILE_FILTER => "--file-filter";
@@ -64,6 +67,8 @@
 
         /** LOGGING **/
         public static string LOG_RUNNING_AUTH_VALIDATE_CMD => "Initialized authentication validation command";
+        public static string LOG_RUNNING_ASCA_SCAN_CMD => "Running ASCA scan on file: {0}";
+        public static string LOG_RUNNING_ASCA_UPDATE_CMD => "Running ASCA update version";
         public static string LOG_RUNNING_GET_RESULTS_CMD => "Retrieving the scan result for scan id {0}...";
         public static string LOG_RUNNING_GET_PROJECTS_CMD => "Getting projects...";
         public static string LOG_RUNNING_GET_BRANCHES_CMD => "Getting branches for project id {0}...";
@@ -74,7 +79,7 @@
         public static string LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD => "Updating the similarityId {0} with state {1} and severity {2}...";
         public static string LOG_RUNNING_TRIAGE_SHOW_CMD => "Executing 'triage show' command using the CLI...";
         public static string LOG_RUNNING_TRIAGE_SHOW_INFO_CMD => "Fetching the list of predicates for projectId {0} , similarityId {1} and scan-type {2}...";
-        public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link..."; 
+        public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link...";
         public static string LOG_RUNNING_SCAN_CREATE_CMD => "Executing 'scan create' command using the CLI...";
         public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Executing 'scan cancel' command using the CLI...";
         public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Retrieving details for project id: {0}...";

@@ -11,15 +11,14 @@ namespace ast_visual_studio_extension.CxPreferences
     {
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
+        public bool AscaCheckBox { get; set; } = true;
 
         protected override IWin32Window Window
         {
             get
             {
                 CxPreferencesUI preferencesUI = CxPreferencesUI.GetInstance();
-
                 preferencesUI.Initialize(this);
-
                 return preferencesUI;
             }
         }
@@ -31,7 +30,6 @@ namespace ast_visual_studio_extension.CxPreferences
         protected override void OnApply(PageApplyEventArgs e)
         {
             base.OnApply(e);
-
             CxPreferencesUI.GetInstance().ThrowEventOnApply();
         }
 
@@ -45,9 +43,18 @@ namespace ast_visual_studio_extension.CxPreferences
             {
                 ApiKey = ApiKey,
                 AdditionalParameters = AdditionalParameters,
+                AscaEnabled = AscaCheckBox // Add the ASCA setting to configuration
             };
-
             return configuration;
+        }
+
+        /// <summary>
+        /// Checks if ASCA scanning is enabled in preferences
+        /// </summary>
+        /// <returns>True if ASCA is enabled, false otherwise</returns>
+        public bool IsAscaEnabled()
+        {
+            return AscaCheckBox;
         }
     }
 }

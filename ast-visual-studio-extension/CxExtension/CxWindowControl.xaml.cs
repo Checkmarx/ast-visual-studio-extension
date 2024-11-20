@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Threading;
 using System.Threading.Tasks;
 using System;
+using ast_visual_studio_extension.CxExtension.Services;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -23,6 +24,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
+        private ASCAService _ascaService; // 
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -82,12 +84,53 @@ namespace ast_visual_studio_extension.CxExtension
 
             // Init toolbar elements
             cxToolbar.Init();
+            _ = RegisterAsca();
+
+        }
+
+        private async Task RegisterAsca()
+        {
+            try
+            {
+                var preferences = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
+                bool isAscaEnabled = preferences?.AscaCheckBox ?? false;
+
+                if (isAscaEnabled)
+                {
+                    var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
+                    if (cxWrapper != null)
+                    {
+                        // If ASCAService already exists, dispose it
+                        //_ascaService?.Dispose();
+
+                        // Create new service 
+                        _ascaService = ASCAService.GetInstance(cxWrapper);
+
+                        // _ascaService = new ASCAService(cxWrapper); // 
+
+                        await _ascaService.InitializeASCAAsync();
+                    }
+                }
+                //else
+                //{
+                //    // If ASCA is disabled, dispose the service if it exists
+                //    if (_ascaService != null)
+                //    {
+                //        _ascaService.Dispose();
+                //        _ascaService = null;
+                //    }
+                //}
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ASCA initialization failed: {ex.Message}");
+            }
         }
 
         /// <summary>
         /// Check if panel should be redraw after applying new checkmarx settings
         /// </summary>
-        private void CheckToolWindowPanel()
+        private async void CheckToolWindowPanel()
         {
             if (!CxUtils.AreCxCredentialsDefined(package))
             {
@@ -110,6 +153,8 @@ namespace ast_visual_studio_extension.CxExtension
 
             CxToolbar.redrawExtension = true;
             cxToolbar.Init();
+            // await RegisterAsca(); // need if click ok in setting to change apikey etc..
+
         }
 
         /// <summary>
