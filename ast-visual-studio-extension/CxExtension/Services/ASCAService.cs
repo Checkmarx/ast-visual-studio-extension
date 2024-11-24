@@ -204,7 +204,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                     {
                         Category = TaskCategory.CodeSense,
                         ErrorCategory = GetErrorCategory(detail.Severity),
-                        Text = $"{detail.RuleName} - {detail.RemediationAdvise}",
+                        Text = $"{detail.RuleName} - {detail.RemediationAdvise} (ASCA)",
                         Document = document.FullName,
                         Line = detail.Line - 1,
                         Column = 0
