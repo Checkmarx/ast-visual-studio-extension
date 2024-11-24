@@ -105,14 +105,12 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             try
             {
-                bool isChecked = ascaCheckBox.Checked;  // 
+                bool isChecked = ascaCheckBox.Checked;  
                 cxPreferencesModule.AscaCheckBox = isChecked;
                 if (isChecked)
                 {
                     CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
                     _ascaService = ASCAService.GetInstance(cxWrapper);
-
-                    //_ascaService = new ASCAService(cxWrapper); // 
 
                     await _ascaService.InitializeASCAAsync();
 

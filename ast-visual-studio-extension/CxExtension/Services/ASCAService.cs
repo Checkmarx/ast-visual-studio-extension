@@ -117,7 +117,8 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
                         if (scanResult.Error != null)
                         {
-                            Debug.WriteLine($"ASCA scan failed: {scanResult.Error.Description}");
+                            string errorMessage = $"ASCA Warning: {scanResult.Error.Description ?? scanResult.Error.ToString()}";
+                            WriteToOutputPane(errorMessage);
                             return;
                         }
 

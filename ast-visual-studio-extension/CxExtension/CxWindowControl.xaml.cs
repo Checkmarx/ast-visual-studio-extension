@@ -24,7 +24,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
-        private ASCAService _ascaService; // 
+        private ASCAService _ascaService; 
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -114,7 +114,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// <summary>
         /// Check if panel should be redraw after applying new checkmarx settings
         /// </summary>
-        private async void CheckToolWindowPanel()
+        private void CheckToolWindowPanel()
         {
             if (!CxUtils.AreCxCredentialsDefined(package))
             {
