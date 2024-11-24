@@ -8,7 +8,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
-using Microsoft.VisualStudio.Shell.Interop;
+using System.IO;
+
+
+
 using Microsoft.VisualStudio.TextManager.Interop;
 using MARKERTYPE = Microsoft.VisualStudio.TextManager.Interop.MARKERTYPE;
 using Microsoft.VisualStudio;
@@ -17,10 +20,10 @@ namespace ast_visual_studio_extension.CxExtension.Services
 {
     public class ASCAService
     {
-        private readonly Timer _debounceTimer;
+        private readonly System.Timers.Timer _debounceTimer;
+
         private readonly CxCLI.CxWrapper cxWrapper;
         private const int DEBOUNCE_DELAY = 2000; // Delay of 2 seconds
-        private bool _isTyping = false;
         private bool _isSubscribed = false;
         private bool _isInitialized = false;
 
@@ -38,7 +41,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
         private ASCAService(CxCLI.CxWrapper cxWrapper)
         {
             this.cxWrapper = cxWrapper;
-            _debounceTimer = new Timer(DEBOUNCE_DELAY);
+            _debounceTimer = new System.Timers.Timer(DEBOUNCE_DELAY);
             _debounceTimer.Elapsed += OnDebounceTimerElapsed;
             _debounceTimer.AutoReset = false;
 
@@ -80,10 +83,8 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
         private async void OnDebounceTimerElapsed(object sender, ElapsedEventArgs e)
         {
-            if (!_isTyping) return;
 
             _debounceTimer.Stop();
-            _isTyping = false;
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -92,35 +93,51 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 var document = GetActiveDocument();
                 if (document != null)
                 {
-                    // Save the document before scanning
-                    if (!document.Saved)
+
+                    // Retrieve document content
+                    var textDocument = (TextDocument)document.Object("TextDocument");
+                    var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+
+                    // Use the same file name but save it in the Temp directory
+                    var originalFileName = Path.GetFileName(document.FullName);
+                    var tempFilePath = Path.Combine(Path.GetTempPath(), originalFileName);
+                    File.WriteAllText(tempFilePath, content);
+                    Debug.WriteLine($"Temporary file created: {tempFilePath}");
+
+                    try
                     {
-                        WriteToOutputPane($"Saving document: {document.FullName}");
-                        document.Save();
+                        WriteToOutputPane($"Start ASCA scan On File: {document.FullName}");
+
+                        // Perform ASCA scan
+                        CxAsca scanResult = await cxWrapper.ScanAscaAsync(
+                            fileSource: tempFilePath,
+                            ascaLatestVersion: false,
+                            agent: "Visual Studio"
+                        );
+
+                        if (scanResult.Error != null)
+                        {
+                            Debug.WriteLine($"ASCA scan failed: {scanResult.Error.Description}");
+                            return;
+                        }
+
+                        Debug.WriteLine("ASCA scan completed successfully.");
+                        await DisplayDiagnosticsAsync(scanResult.ScanDetails, document.FullName);
                     }
-
-                    WriteToOutputPane($"Starting ASCA scan on document: {document.FullName}");
-
-                    // Perform ASCA scan
-                    CxAsca scanResult = await cxWrapper.ScanAscaAsync(
-                        fileSource: document.FullName,
-                        ascaLatestVersion: false,
-                        agent: "Visual Studio"
-                    );
-
-                    if (scanResult.Error != null)
+                    finally
                     {
-                        WriteToOutputPane($"ASCA scan failed: {scanResult.Error.Description}");
-                        return;
+                        // Delete the temporary file
+                        if (File.Exists(tempFilePath))
+                        {
+                            File.Delete(tempFilePath);
+                            Debug.WriteLine($"Temporary file deleted: {tempFilePath}");
+                        }
                     }
-
-                    WriteToOutputPane("ASCA scan completed successfully.");
-                    await DisplayDiagnosticsAsync(scanResult.ScanDetails, document.FullName);
                 }
             }
             catch (Exception ex)
             {
-                WriteToOutputPane($"Failed to process document: {ex.Message}");
+                Debug.WriteLine($"Failed to process document: {ex.Message}");
             }
         }
 
@@ -134,7 +151,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 }
                 catch (Exception ex)
                 {
-                    WriteToOutputPane($"Failed to invalidate marker: {ex.Message}");
+                    Debug.WriteLine($"Failed to invalidate marker: {ex.Message}");
                 }
             }
 
@@ -177,6 +194,9 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 hr = viewEx.GetBuffer(out buffer);
                 if (ErrorHandler.Failed(hr) || buffer == null) return;
 
+                WriteToOutputPane($"{scanDetails.Count} security best practice violations were found in {document.FullName}");
+
+
                 foreach (var detail in scanDetails)
                 {
                     // Add to Error List
@@ -204,11 +224,6 @@ namespace ast_visual_studio_extension.CxExtension.Services
                     // Create visual marker
                     try
                     {
-                        // Get the text of the problematic line
-                        string lineText = string.Empty;
-                        int lineLength = 0;
-                        buffer.GetLengthOfLine(detail.Line - 1, out lineLength);
-                        buffer.GetLineText(detail.Line - 1, 0, detail.Line - 1, lineLength, out lineText);
 
                         // Find the problematic text position
                         string problemTextValue = detail.ProblematicLine;
@@ -217,7 +232,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                         {
                             startIndex = 0;
                         }
-                        int endIndex = startIndex + (startIndex == 0 ? lineLength : problemTextValue.Length);
+                        int endIndex = startIndex + problemTextValue.Length;
 
                         IVsTextLineMarker[] markers = new IVsTextLineMarker[1];
                         var errorSpan = new TextSpan
@@ -235,7 +250,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                             errorSpan.iStartIndex,
                             errorSpan.iEndLine,
                             errorSpan.iEndIndex,
-                            markerClient,  // Pass the marker client instead of null
+                            markerClient,
                             markers
                         );
 
@@ -245,36 +260,31 @@ namespace ast_visual_studio_extension.CxExtension.Services
                         }
                         else
                         {
-                            WriteToOutputPane($"Failed to create marker on line {detail.Line}");
+                            Debug.WriteLine($"Failed to create marker on line {detail.Line}");
                         }
                     }
                     catch (Exception ex)
                     {
-                        WriteToOutputPane($"Failed to create marker on line {detail.Line}: {ex.Message}");
+                        Debug.WriteLine($"Failed to create marker on line {detail.Line}: {ex.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                WriteToOutputPane($"Failed to setup text view: {ex.Message}");
+                Debug.WriteLine($"Failed to setup text view: {ex.Message}");
             }
 
-            // Show Error List
-            _errorListProvider.Show();
-            _errorListProvider.BringToFront();
         }
 
         private class VsTextMarkerClient : IVsTextMarkerClient
         {
             private readonly string _ruleName;
             private readonly string _remediation;
-            private readonly string _severity;
 
             public VsTextMarkerClient(string ruleName, string remediation, string severity)
             {
                 _ruleName = ruleName;
                 _remediation = remediation;
-                _severity = severity;
             }
 
             public void MarkerInvalidated()
@@ -284,9 +294,10 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
             public int GetTipText(IVsTextMarker pMarker, string[] pbstrText)
             {
-                pbstrText[0] = $"{_ruleName} - {_remediation} ASCA";
+                pbstrText[0] = $"{_ruleName} - {_remediation}\t(ASCA)";
                 return VSConstants.S_OK;
             }
+
 
             public void OnBufferSave(string pszFileName)
             {
@@ -326,14 +337,14 @@ namespace ast_visual_studio_extension.CxExtension.Services
             {
                 case "critical":
                 case "high":
-                    return MARKERTYPE.MARKER_CODESENSE_ERROR;     // קו כחול
+                    return MARKERTYPE.MARKER_CODESENSE_ERROR;
                 case "medium":
-                    return MARKERTYPE.MARKER_COMPILE_ERROR;          // צהוב 
+                    return MARKERTYPE.MARKER_COMPILE_ERROR;
                 case "low":
                 case "info":
-                    return MARKERTYPE.MARKER_BOOKMARK;          // כחול
+                    return MARKERTYPE.MARKER_OTHER_ERROR;
                 default:
-                    return MARKERTYPE.MARKER_CODESENSE_ERROR;
+                    return MARKERTYPE.MARKER_OTHER_ERROR;
             }
         }
 
@@ -365,24 +376,23 @@ namespace ast_visual_studio_extension.CxExtension.Services
         {
             if (_isInitialized)
             {
-                WriteToOutputPane("ASCA Service is already initialized.");
+                Debug.WriteLine("ASCA Service is already initialized.");
                 return;
             }
 
             try
             {
-                WriteToOutputPane("Starting ASCA initialization...");
+                _isInitialized = true;
                 await InstallAscaAsync();
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RegisterTextChangeEvents();
 
-                _isInitialized = true;
-                WriteToOutputPane("ASCA Service initialization completed.");
+                WriteToOutputPane("AI Secure Coding Assistant Engine started");
             }
             catch (Exception ex)
             {
-                WriteToOutputPane($"Failed to initialize ASCA: {ex.Message}");
+                Debug.WriteLine($"Failed to initialize ASCA: {ex.Message}");
                 _isInitialized = false;
                 throw;
             }
@@ -392,28 +402,24 @@ namespace ast_visual_studio_extension.CxExtension.Services
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (_isSubscribed)
-            {
-                WriteToOutputPane("Text change events are already subscribed.");
-                return;
-            }
+            if (_isSubscribed) return;
 
             if (_dte != null && _textEditorEvents == null)
             {
                 _textEditorEvents = _dte.Events.TextEditorEvents;
                 _textEditorEvents.LineChanged += OnTextChanged;
                 _isSubscribed = true;
-                WriteToOutputPane("Successfully registered for text change events.");
+                Debug.WriteLine("Successfully registered for text change events.");
             }
             else
             {
-                WriteToOutputPane("Failed to register text change events: DTE or Events not available.");
+                Debug.WriteLine("Failed to register text change events: DTE or Events not available.");
             }
         }
 
+
         private void OnTextChanged(TextPoint startPoint, TextPoint endPoint, int hint)
         {
-            Debug.WriteLine("in text change change");
             if (!_isSubscribed) return;
 
             var document = GetActiveDocument();
@@ -428,7 +434,6 @@ namespace ast_visual_studio_extension.CxExtension.Services
                         if (_lastDocumentContent != currentContent)
                         {
                             _lastDocumentContent = currentContent;
-                            _isTyping = true;
                             _debounceTimer.Stop();
                             _debounceTimer.Start();
                         }
@@ -446,10 +451,15 @@ namespace ast_visual_studio_extension.CxExtension.Services
             try
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (_errorListProvider?.Tasks != null)
+                {
+                    _errorListProvider.Tasks.Clear();
+                }
+                ClearAllMarkers();
 
                 if (!_isSubscribed || _textEditorEvents == null)
                 {
-                    WriteToOutputPane("No active text change events subscription to unregister.");
+                    Debug.WriteLine("No active text change events subscription to unregister.");
                     return;
                 }
 
@@ -458,11 +468,11 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 _isSubscribed = false;
                 _isInitialized = false;
 
-                WriteToOutputPane("Successfully unregistered text change events.");
+                Debug.WriteLine("Successfully unregistered text change events.");
             }
             catch (Exception ex)
             {
-                WriteToOutputPane($"Error unregistering events: {ex.Message}");
+                Debug.WriteLine($"Error unregistering events: {ex.Message}");
                 throw;
             }
         }
@@ -474,19 +484,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                  ascaLatestVersion: true,
                  agent: "Visual Studio"
              );
-            WriteToOutputPane("ASCA installation or setup completed.");
         }
 
-        public void Dispose()
-        {
-            _debounceTimer?.Dispose();
-            if (_isSubscribed)
-            {
-                ThreadHelper.JoinableTaskFactory.Run(async delegate
-                {
-                    await UnregisterTextChangeEventsAsync();
-                });
-            }
-        }
     }
 }

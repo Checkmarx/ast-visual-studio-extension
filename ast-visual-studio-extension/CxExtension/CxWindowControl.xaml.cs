@@ -100,26 +100,10 @@ namespace ast_visual_studio_extension.CxExtension
                     var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
                     if (cxWrapper != null)
                     {
-                        // If ASCAService already exists, dispose it
-                        //_ascaService?.Dispose();
-
-                        // Create new service 
                         _ascaService = ASCAService.GetInstance(cxWrapper);
-
-                        // _ascaService = new ASCAService(cxWrapper); // 
-
                         await _ascaService.InitializeASCAAsync();
                     }
                 }
-                //else
-                //{
-                //    // If ASCA is disabled, dispose the service if it exists
-                //    if (_ascaService != null)
-                //    {
-                //        _ascaService.Dispose();
-                //        _ascaService = null;
-                //    }
-                //}
             }
             catch (Exception ex)
             {
@@ -153,7 +137,6 @@ namespace ast_visual_studio_extension.CxExtension
 
             CxToolbar.redrawExtension = true;
             cxToolbar.Init();
-            // await RegisterAsca(); // need if click ok in setting to change apikey etc..
 
         }
 
