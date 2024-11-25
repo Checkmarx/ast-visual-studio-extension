@@ -1,5 +1,4 @@
 ﻿using ast_visual_studio_extension.CxExtension.Services;
-using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
 using System;
 using System.Windows.Forms;
@@ -13,13 +12,11 @@ namespace ast_visual_studio_extension.CxPreferences
         public delegate void EventHandler();
         public event EventHandler OnApplySettingsEvent = delegate { };
         private static CxPreferencesUI Instance;
-        private static ASCAService _ascaService; // Initialized once and reused
+        private static ASCAService _ascaService; 
 
         private CxPreferencesUI()
         {
             InitializeComponent();
-            // _ascaService = new ASCAService(); // Initialize once in the constructor
-
         }
 
         public static CxPreferencesUI GetInstance()
@@ -42,7 +39,7 @@ namespace ast_visual_studio_extension.CxPreferences
             cxPreferencesModule = preferencesModule;
             tbApiKey.Text = cxPreferencesModule.ApiKey;
             tbAdditionalParameters.Text = cxPreferencesModule.AdditionalParameters;
-            ascaCheckBox.Checked = cxPreferencesModule.AscaCheckBox; //
+            ascaCheckBox.Checked = cxPreferencesModule.AscaCheckBox; 
 
         }
 
@@ -111,7 +108,6 @@ namespace ast_visual_studio_extension.CxPreferences
                 {
                     CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
                     _ascaService = ASCAService.GetInstance(cxWrapper);
-
                     await _ascaService.InitializeASCAAsync();
 
                 }
@@ -123,7 +119,6 @@ namespace ast_visual_studio_extension.CxPreferences
                         await _ascaService.UnregisterTextChangeEventsAsync();
                     }
                 }
-
 
             }
             catch (Exception ex)
