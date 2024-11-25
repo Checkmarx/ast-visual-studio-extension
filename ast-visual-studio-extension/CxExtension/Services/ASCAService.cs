@@ -15,6 +15,7 @@ using System.IO;
 using Microsoft.VisualStudio.TextManager.Interop;
 using MARKERTYPE = Microsoft.VisualStudio.TextManager.Interop.MARKERTYPE;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace ast_visual_studio_extension.CxExtension.Services
 {
@@ -208,7 +209,8 @@ namespace ast_visual_studio_extension.CxExtension.Services
                         Text = $"{detail.RuleName} - {detail.RemediationAdvise} (ASCA)",
                         Document = document.FullName,
                         Line = detail.Line - 1,
-                        Column = 0
+                        Column = 0,
+                        HierarchyItem = GetHierarchyItem(document)
                     };
 
                     task.Navigate += (s, e) =>
@@ -330,6 +332,25 @@ namespace ast_visual_studio_extension.CxExtension.Services
             {
                 return VSConstants.S_OK;
             }
+        }
+
+        private IVsHierarchy GetHierarchyItem(Document document)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (document?.ProjectItem?.ContainingProject == null)
+                return null;
+
+            var serviceProvider = ServiceProvider.GlobalProvider;
+            var solution = serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+
+            if (solution == null)
+                return null;
+
+            IVsHierarchy hierarchy;
+            solution.GetProjectOfUniqueName(document.ProjectItem.ContainingProject.UniqueName, out hierarchy);
+
+            return hierarchy;
         }
 
         private MARKERTYPE GetMarkerType(string severity)
