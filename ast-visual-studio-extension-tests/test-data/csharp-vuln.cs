@@ -11,7 +11,7 @@ internal class csharp_vuln
 {
     public void PrintPassword()
     {
-        var password = "Aa123456";
+        var password = "Aa12!3456";
         Console.WriteLine(password);
     }
 }
