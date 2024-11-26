@@ -25,7 +25,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         public void TestScanAsca_CSharpVulnerable()
         {
             // Arrange
-            string filePath = Path.Combine(TEST_DATA_PATH, "csharp-vuln.cs");
+            string filePath = Path.Combine(TEST_DATA_PATH, "python-vul-file.py");
 
             // Act
             CxAsca result = cxWrapper.ScanAsca(
@@ -56,7 +56,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.Error);
-            Assert.Contains("extension", result.Error.Description);
+            Assert.Equal("The file name must have an extension.", result.Error.Description);
         }
 
         [Fact]
