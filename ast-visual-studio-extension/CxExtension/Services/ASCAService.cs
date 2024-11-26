@@ -31,7 +31,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
         private readonly DTE2 _dte;
         private string _lastDocumentContent = string.Empty;
         private OutputWindowPane _outputPane;
-        private static ASCAService _instance;
+        private static volatile ASCAService _instance;
         private static readonly object _lock = new object();
         private TextEditorEvents _textEditorEvents;
         private ErrorListProvider _errorListProvider;
@@ -231,7 +231,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                         // Find the problematic text position
                         string problemTextValue = detail.ProblematicLine;
                         int startIndex = problemTextValue.Length - problemTextValue.TrimStart().Length;
-                        if (startIndex == -1)
+                        if (startIndex <0)
                         {
                             startIndex = 0;
                         }
@@ -283,17 +283,19 @@ namespace ast_visual_studio_extension.CxExtension.Services
         {
             private readonly string _ruleName;
             private readonly string _remediation;
-
             public VsTextMarkerClient(string ruleName, string remediation, string severity)
             {
                 _ruleName = ruleName;
                 _remediation = remediation;
             }
 
+            /// <summary>
+            /// Method called when the text marker becomes invalid. 
+            /// This implementation is intentionally left empty as we don't need to perform any cleanup 
+            /// </summary>
             public void MarkerInvalidated()
             {
             }
-
 
             public int GetTipText(IVsTextMarker pMarker, string[] pbstrText)
             {
@@ -301,11 +303,16 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 return VSConstants.S_OK;
             }
 
-
+            /// <summary>
+            /// Called when the buffer is saved. No action needed in our implementation.
+            /// </summary>
             public void OnBufferSave(string pszFileName)
             {
             }
 
+            /// <summary>
+            /// Called before the buffer is closed. No action needed in our implementation.
+            /// </summary>
             public void OnBeforeBufferClose()
             {
             }
@@ -324,6 +331,9 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 return VSConstants.E_NOTIMPL;
             }
 
+            /// <summary>
+            /// Called after the span is reloaded. No action needed in our implementation.
+            /// </summary>
             public void OnAfterSpanReload()
             {
             }
@@ -333,7 +343,6 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 return VSConstants.S_OK;
             }
         }
-
         private IVsHierarchy GetHierarchyItem(Document document)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
