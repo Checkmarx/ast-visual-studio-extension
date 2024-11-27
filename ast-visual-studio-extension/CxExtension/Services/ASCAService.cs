@@ -50,7 +50,6 @@ namespace ast_visual_studio_extension.CxExtension.Services
         {
             _debounceTimer.Stop();
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
             string tempFilePath = null;
 
             try
