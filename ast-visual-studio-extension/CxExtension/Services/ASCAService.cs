@@ -84,62 +84,65 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
         private async void OnDebounceTimerElapsed(object sender, ElapsedEventArgs e)
         {
-
             _debounceTimer.Stop();
-
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            string tempFilePath = null;  // Declare outside try to use in finally
 
             try
             {
                 var document = GetActiveDocument();
                 if (document != null)
                 {
-
-                    // Retrieve document content
                     var textDocument = (TextDocument)document.Object("TextDocument");
                     var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
 
-                    // Use the same file name but save it in the Temp directory
+                    // Create unique temp file for this scan
                     var originalFileName = Path.GetFileName(document.FullName);
-                    var tempFilePath = Path.Combine(Path.GetTempPath(), originalFileName);
+                    var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                    tempFilePath = Path.Combine(Path.GetTempPath(), $"{originalFileName}_{timestamp}.cs");
+
                     File.WriteAllText(tempFilePath, content);
                     Debug.WriteLine($"Temporary file created: {tempFilePath}");
 
-                    try
+                    WriteToOutputPane($"Start ASCA scan On File: {document.FullName}");
+
+                    CxAsca scanResult = await cxWrapper.ScanAscaAsync(
+                        fileSource: tempFilePath,
+                        ascaLatestVersion: false,
+                        agent: "Visual Studio"
+                    );
+
+                    if (scanResult.Error != null)
                     {
-                        WriteToOutputPane($"Start ASCA scan On File: {document.FullName}");
-
-                        // Perform ASCA scan
-                        CxAsca scanResult = await cxWrapper.ScanAscaAsync(
-                            fileSource: tempFilePath,
-                            ascaLatestVersion: false,
-                            agent: "Visual Studio"
-                        );
-
-                        if (scanResult.Error != null)
-                        {
-                            string errorMessage = $"ASCA Warning: {scanResult.Error.Description ?? scanResult.Error.ToString()}";
-                            WriteToOutputPane(errorMessage);
-                            return;
-                        }
-
-                        Debug.WriteLine("ASCA scan completed successfully.");
-                        await DisplayDiagnosticsAsync(scanResult.ScanDetails, document.FullName);
+                        string errorMessage = $"ASCA Warning: {scanResult.Error.Description ?? scanResult.Error.ToString()}";
+                        WriteToOutputPane(errorMessage);
+                        return;
                     }
-                    finally
-                    {
-                        // Delete the temporary file
-                        if (File.Exists(tempFilePath))
-                        {
-                            File.Delete(tempFilePath);
-                            Debug.WriteLine($"Temporary file deleted: {tempFilePath}");
-                        }
-                    }
+
+                    Debug.WriteLine("ASCA scan completed successfully.");
+                    await DisplayDiagnosticsAsync(scanResult.ScanDetails, document.FullName);
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to process document: {ex.Message}");
+            }
+            finally
+            {
+                // Clean up temp file regardless of success/failure
+                if (tempFilePath != null && File.Exists(tempFilePath))
+                {
+                    try
+                    {
+                        File.Delete(tempFilePath);
+                        Debug.WriteLine($"Temporary file deleted: {tempFilePath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to delete temporary file: {ex.Message}");
+                    }
+                }
             }
         }
 
