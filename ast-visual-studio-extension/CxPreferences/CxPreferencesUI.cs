@@ -106,6 +106,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 cxPreferencesModule.AscaCheckBox = isChecked;
                 if (isChecked)
                 {
+                    // Display the "AI Secure Coding Assistant..." label text
+                    label1.Visible = true;
                     CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
                     _ascaService = ASCAService.GetInstance(cxWrapper);
                     await _ascaService.InitializeASCAAsync();
@@ -113,6 +115,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 }
                 else
                 {
+                    // Hide the "AI Secure Coding Assistant..." label text
+                    label1.Visible = false;
                     // If ASCA is disabled, dispose the service if it exists
                     if (_ascaService != null)
                     {
