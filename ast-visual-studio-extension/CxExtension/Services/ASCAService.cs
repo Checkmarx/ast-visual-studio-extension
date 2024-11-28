@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Timers;
 using System.IO;
+using ast_visual_studio_extension.CxCLI;
 
 namespace ast_visual_studio_extension.CxExtension.Services
 {
@@ -72,7 +73,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                     CxAsca scanResult = await _cxWrapper.ScanAscaAsync(
                         fileSource: tempFilePath,
                         ascaLatestVersion: false,
-                        agent: "Visual Studio"
+                        agent: CxConstants.EXTENSION_AGENT
                     );
 
                     if (scanResult.Error != null)
@@ -212,7 +213,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
             await _cxWrapper.ScanAscaAsync(
                 fileSource: "",
                 ascaLatestVersion: true,
-                agent: "Visual Studio"
+                agent: CxConstants.EXTENSION_AGENT
             );
         }
     }
