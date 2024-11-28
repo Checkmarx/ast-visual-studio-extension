@@ -1,6 +1,4 @@
-﻿// ASCAUIManager.cs
-
-using ast_visual_studio_extension.CxWrapper.Models;
+﻿using ast_visual_studio_extension.CxWrapper.Models;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
@@ -13,6 +11,8 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using MARKERTYPE = Microsoft.VisualStudio.TextManager.Interop.MARKERTYPE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
+using ast_visual_studio_extension.CxExtension.Utils;
+
 
 namespace ast_visual_studio_extension.CxExtension.Services
 {
@@ -40,8 +40,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
             var outputWindow = _dte.ToolWindows.OutputWindow;
             _outputPane = outputWindow.OutputWindowPanes
                 .Cast<OutputWindowPane>()
-                .FirstOrDefault(p => p.Name == "Checkmarx") ?? outputWindow.OutputWindowPanes.Add("Checkmarx");
-            _outputPane.Activate();
+                .FirstOrDefault(p => p.Name == CxConstants.EXTENSION_TITLE) ?? outputWindow.OutputWindowPanes.Add(CxConstants.EXTENSION_TITLE);
         }
 
         public Document GetActiveDocument()

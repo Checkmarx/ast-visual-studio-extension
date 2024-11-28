@@ -34,19 +34,17 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
         public static ASCAService GetInstance(CxCLI.CxWrapper cxWrapper)
         {
-            if (_instance == null)
+            if (_instance != null) return _instance;
+    
+            lock (_lock)
             {
-                lock (_lock)
+                if (_instance == null)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new ASCAService(cxWrapper);
-                    }
+                    _instance = new ASCAService(cxWrapper);
                 }
             }
             return _instance;
         }
-
         private async void OnDebounceTimerElapsed(object sender, ElapsedEventArgs e)
         {
             _debounceTimer.Stop();
@@ -60,7 +58,10 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 {
                     var textDocument = (TextDocument)document.Object("TextDocument");
                     var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
-
+                    if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
+                    {
+                        return; 
+                    }
                     var originalFileName = Path.GetFileName(document.FullName);
                     var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                     tempFilePath = Path.Combine(Path.GetTempPath(), $"{originalFileName}_{timestamp}.cs");
