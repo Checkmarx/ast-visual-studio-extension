@@ -39,9 +39,14 @@ namespace ast_visual_studio_extension.CxPreferences
             cxPreferencesModule = preferencesModule;
             tbApiKey.Text = cxPreferencesModule.ApiKey;
             tbAdditionalParameters.Text = cxPreferencesModule.AdditionalParameters;
-            ascaCheckBox.Checked = cxPreferencesModule.AscaCheckBox; 
-
+            ascaCheckBox.Checked = cxPreferencesModule.AscaCheckBox;
+            UpdateAscaUiState();
         }
+        private void UpdateAscaUiState()
+        {
+            label1.Visible = ascaCheckBox.Checked; // Show or hide label based on ASCA state
+        }
+
 
         private void OnApiKeyChange(object sender, EventArgs e)
         {
@@ -104,10 +109,9 @@ namespace ast_visual_studio_extension.CxPreferences
             {
                 bool isChecked = ascaCheckBox.Checked;  
                 cxPreferencesModule.AscaCheckBox = isChecked;
+                UpdateAscaUiState();
                 if (isChecked)
                 {
-                    // Display the "AI Secure Coding Assistant..." label text
-                    label1.Visible = true;
                     CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
                     _ascaService = ASCAService.GetInstance(cxWrapper);
                     await _ascaService.InitializeASCAAsync();
@@ -115,8 +119,6 @@ namespace ast_visual_studio_extension.CxPreferences
                 }
                 else
                 {
-                    // Hide the "AI Secure Coding Assistant..." label text
-                    label1.Visible = false;
                     // If ASCA is disabled, dispose the service if it exists
                     if (_ascaService != null)
                     {
