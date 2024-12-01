@@ -38,9 +38,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var outputWindow = _dte.ToolWindows.OutputWindow;
-            _outputPane = outputWindow.OutputWindowPanes
-                .Cast<OutputWindowPane>()
-                .FirstOrDefault(p => p.Name == CxConstants.EXTENSION_TITLE) ?? outputWindow.OutputWindowPanes.Add(CxConstants.EXTENSION_TITLE);
+            _outputPane = OutputPaneUtils.InitializeOutputPane(outputWindow, CxConstants.EXTENSION_TITLE);
         }
 
         public Document GetActiveDocument()
