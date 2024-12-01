@@ -125,7 +125,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RegisterTextChangeEvents();
 
-                _uiManager.WriteToOutputPane("AI Secure Coding Assistant Engine started");
+                _uiManager.WriteToOutputPane(CxConstants.ASCA_ENGINE_STARTED_MESSAGE);
             }
             catch (Exception ex)
             {

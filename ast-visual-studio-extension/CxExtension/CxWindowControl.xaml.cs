@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Threading;
 using System.Threading.Tasks;
 using System;
+using System.Diagnostics;
 using ast_visual_studio_extension.CxExtension.Services;
 
 namespace ast_visual_studio_extension.CxExtension
@@ -98,11 +99,14 @@ namespace ast_visual_studio_extension.CxExtension
                 if (isAscaEnabled)
                 {
                     var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
-                    if (cxWrapper != null)
+                    if (cxWrapper == null)
                     {
-                        _ascaService = ASCAService.GetInstance(cxWrapper);
-                        await _ascaService.InitializeASCAAsync();
+                        Debug.WriteLine("ASCA registration failed: CxWrapper is null");
+                        return;
+
                     }
+                    _ascaService = ASCAService.GetInstance(cxWrapper);
+                    await _ascaService.InitializeASCAAsync();
                 }
             }
             catch (Exception ex)

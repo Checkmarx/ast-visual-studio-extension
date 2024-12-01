@@ -1,5 +1,7 @@
 ﻿
 
+using ast_visual_studio_extension.CxCLI;
+
 namespace ast_visual_studio_extension.CxPreferences
 {
     partial class CxPreferencesUI
@@ -198,7 +200,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(316, 20);
             this.label1.TabIndex = 12;
-            this.label1.Text = "AI Secure Coding Assistant Engine started.";
+            this.label1.Text = CxConstants.ASCA_ENGINE_STARTED_MESSAGE;
             // 
             // ascaCheckBox
             // 

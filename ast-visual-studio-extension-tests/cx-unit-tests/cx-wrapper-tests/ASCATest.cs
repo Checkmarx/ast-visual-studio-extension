@@ -1,5 +1,6 @@
 ﻿using ast_visual_studio_extension.CxWrapper.Models;
 using System.IO;
+using ast_visual_studio_extension.CxCLI;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
@@ -16,10 +17,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: "",
                 ascaLatestVersion: true,
-                agent: "Visual Studio Test"
+                agent: CxConstants.EXTENSION_AGENT
             );
             Assert.NotNull(result);
         }
+        
 
         [Fact]
         public void TestScanAsca_CSharpVulnerable()
@@ -31,7 +33,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: filePath,
                 ascaLatestVersion: false,
-                agent: "Visual Studio Test"
+                agent: CxConstants.EXTENSION_AGENT
             );
 
             // Assert
@@ -50,7 +52,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: filePath,
                 ascaLatestVersion: false,
-                agent: "Visual Studio Test"
+                agent: CxConstants.EXTENSION_AGENT
             );
 
             // Assert
@@ -69,7 +71,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: filePath,
                 ascaLatestVersion: false,
-                agent: "Visual Studio Test"
+                agent: CxConstants.EXTENSION_AGENT
             );
 
             // Assert

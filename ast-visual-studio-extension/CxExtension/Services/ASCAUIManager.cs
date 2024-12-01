@@ -87,7 +87,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 hr = activeTextView.GetBuffer(out buffer);
                 if (ErrorHandler.Failed(hr) || buffer == null) return;
 
-                WriteToOutputPane($"{scanDetails.Count} security best practice violations were found in {document.FullName}");
+                WriteToOutputPane(FormatViolationsMessage(scanDetails.Count, document.FullName));
 
                 foreach (var detail in scanDetails)
                 {
@@ -162,6 +162,19 @@ namespace ast_visual_studio_extension.CxExtension.Services
             {
                 Debug.WriteLine($"Failed to setup text view: {ex.Message}");
             }
+        }
+        
+        private string FormatViolationsMessage(int violationCount, string documentPath)
+        {
+            if (violationCount == 0)
+            {
+                return $"No security best practice violations were found in {documentPath}";
+            }
+            if (violationCount == 1)
+            {
+                return $"1 security best practice violation was found in {documentPath}";
+            }
+            return $"{violationCount} security best practice violations were found in {documentPath}";
         }
 
         private void ClearAllMarkers()
