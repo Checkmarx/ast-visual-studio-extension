@@ -182,12 +182,6 @@ namespace ast_visual_studio_extension.CxExtension.Services
             }
         }
 
-        
-        
-
-        
-        
-        
         private string FormatViolationsMessage(int violationCount, string documentPath)
         {
             if (violationCount == 0)
