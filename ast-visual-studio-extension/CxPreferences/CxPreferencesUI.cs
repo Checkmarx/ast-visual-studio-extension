@@ -1,4 +1,5 @@
-﻿using ast_visual_studio_extension.CxWrapper.Models;
+﻿using ast_visual_studio_extension.CxExtension.Services;
+using ast_visual_studio_extension.CxWrapper.Models;
 using System;
 using System.Windows.Forms;
 
@@ -11,6 +12,7 @@ namespace ast_visual_studio_extension.CxPreferences
         public delegate void EventHandler();
         public event EventHandler OnApplySettingsEvent = delegate { };
         private static CxPreferencesUI Instance;
+        private static ASCAService _ascaService; 
 
         private CxPreferencesUI()
         {
@@ -19,7 +21,7 @@ namespace ast_visual_studio_extension.CxPreferences
 
         public static CxPreferencesUI GetInstance()
         {
-            if(Instance == null)
+            if (Instance == null)
             {
                 Instance = new CxPreferencesUI();
             }
@@ -37,7 +39,14 @@ namespace ast_visual_studio_extension.CxPreferences
             cxPreferencesModule = preferencesModule;
             tbApiKey.Text = cxPreferencesModule.ApiKey;
             tbAdditionalParameters.Text = cxPreferencesModule.AdditionalParameters;
+            ascaCheckBox.Checked = cxPreferencesModule.AscaCheckBox;
+            UpdateAscaUiState();
         }
+        private void UpdateAscaUiState()
+        {
+            label1.Visible = ascaCheckBox.Checked; // Show or hide label based on ASCA state
+        }
+
 
         private void OnApiKeyChange(object sender, EventArgs e)
         {
@@ -91,5 +100,39 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             System.Diagnostics.Process.Start("https://checkmarx.com/resource/documents/en/34965-68626-global-flags.html");
         }
+
+
+
+        private async void AscaCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                bool isChecked = ascaCheckBox.Checked;  
+                cxPreferencesModule.AscaCheckBox = isChecked;
+                UpdateAscaUiState();
+                if (isChecked)
+                {
+                    CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
+                    _ascaService = ASCAService.GetInstance(cxWrapper);
+                    await _ascaService.InitializeASCAAsync();
+
+                }
+                else
+                {
+                    // If ASCA is disabled, dispose the service if it exists
+                    if (_ascaService != null)
+                    {
+                        await _ascaService.UnregisterTextChangeEventsAsync();
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                lblValidationResult.Text = ex.Message;
+            }
+        }
+
+
     }
 }

@@ -13,6 +13,8 @@ using System.Windows.Media;
 using System.Threading;
 using System.Threading.Tasks;
 using System;
+using System.Diagnostics;
+using ast_visual_studio_extension.CxExtension.Services;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -23,6 +25,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
+        private ASCAService _ascaService; 
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -82,6 +85,34 @@ namespace ast_visual_studio_extension.CxExtension
 
             // Init toolbar elements
             cxToolbar.Init();
+            _ = RegisterAsca();
+
+        }
+
+        private async Task RegisterAsca()
+        {
+            try
+            {
+                var preferences = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
+                bool isAscaEnabled = preferences?.AscaCheckBox ?? false;
+
+                if (isAscaEnabled)
+                {
+                    var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
+                    if (cxWrapper == null)
+                    {
+                        Debug.WriteLine("ASCA registration failed: CxWrapper is null");
+                        return;
+
+                    }
+                    _ascaService = ASCAService.GetInstance(cxWrapper);
+                    await _ascaService.InitializeASCAAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ASCA initialization failed: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -110,6 +141,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             CxToolbar.redrawExtension = true;
             cxToolbar.Init();
+
         }
 
         /// <summary>

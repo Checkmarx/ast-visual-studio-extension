@@ -25,6 +25,75 @@ namespace ast_visual_studio_extension.CxCLI
             logger = LogManager.GetLogger(type);
         }
 
+
+        /// <summary>
+        /// Scan file with ASCA
+        /// </summary>
+        /// <param name="fileSource">Source file path</param>
+        /// <param name="ascaLatestVersion">If true, adds latest version flag</param>
+        /// <param name="agent">Agent identifier</param>
+        /// <returns>CxAsca result</returns>
+        public CxAsca ScanAsca(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        {
+            logger.Info(string.Format(CxConstants.LOG_RUNNING_ASCA_SCAN_CMD, fileSource));
+
+            List<string> arguments;
+
+            if (string.IsNullOrWhiteSpace(fileSource))
+            {
+                arguments = new List<string>
+        {
+            CxConstants.CLI_SCAN_CMD,
+            CxConstants.CLI_ASCA_CMD,
+            CxConstants.FLAG_ASCA_LATEST_VERSION
+        };
+            }
+            else
+            {
+                arguments = new List<string>
+        {
+            CxConstants.CLI_SCAN_CMD,
+            CxConstants.CLI_ASCA_CMD,
+            CxConstants.FLAG_FILE_SOURCE,
+            fileSource
+        };
+
+                if (ascaLatestVersion)
+                {
+                    arguments.Add(CxConstants.FLAG_ASCA_LATEST_VERSION);
+                }
+            }
+
+            AppendAgentToArguments(agent, arguments);
+
+            string result = Execution.ExecuteCommand(WithConfigArguments(arguments), Execution.CheckValidJSONString);
+            return JsonConvert.DeserializeObject<CxAsca>(result);
+        }
+
+        /// <summary>
+        /// Scan file with ASCA asynchronously
+        /// </summary>
+        public async Task<CxAsca> ScanAscaAsync(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        {
+            return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion, agent));
+        }
+
+        private void AppendAgentToArguments(string agent, List<string> arguments)
+        {
+            arguments.Add(CxConstants.FLAG_AGENT);
+
+            if (!string.IsNullOrEmpty(agent))
+            {
+                arguments.Add(agent);
+            }
+            else
+            {
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+            }
+        }
+
+
+
         /// <summary>
         /// Auth Validate command
         /// </summary>

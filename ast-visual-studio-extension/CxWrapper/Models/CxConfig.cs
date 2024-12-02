@@ -9,10 +9,12 @@ namespace ast_visual_studio_extension.CxWrapper.Models
     {
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
+        public bool AscaEnabled { get; set; } = false;
+
 
         public List<string> ToArguments()
         {
-            List<string> arguments = new List<string>();    
+            List<string> arguments = new List<string>();
 
             if (!string.IsNullOrEmpty(ApiKey))
             {

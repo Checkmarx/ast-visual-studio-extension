@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net60-windows</TargetFramework>
+	    <IsTestProject>true</IsTestProject>   
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,9 +20,13 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\ast-visual-studio-extension\ast-visual-studio-extension.csproj" /> 
+  </ItemGroup>
+  <ItemGroup>
+	  <None Include="test-data\**">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
   </ItemGroup>
 
 </Project>
