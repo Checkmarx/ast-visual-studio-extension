@@ -59,110 +59,134 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            var document = _dte.Documents.Cast<Document>()
-                .FirstOrDefault(doc => doc.FullName == filePath);
-
+            var document = GetDocument(filePath);
             if (document == null) return;
 
+            PrepareErrorListProvider();
+            ClearAllMarkers();
+
+            var buffer = GetActiveBuffer();
+            if (buffer == null) return;
+
+            WriteToOutputPane(FormatViolationsMessage(scanDetails.Count, document.FullName));
+
+            foreach (var detail in scanDetails)
+            {
+                AddTaskToErrorList(detail, document);
+                AddMarker(buffer, detail);
+            }
+        }
+        
+        private Document GetDocument(string filePath)
+        {
+            return _dte.Documents.Cast<Document>()
+                .FirstOrDefault(doc => doc.FullName == filePath);
+        }
+        
+        private void PrepareErrorListProvider()
+        {
             if (_errorListProvider == null)
             {
                 _errorListProvider = new ErrorListProvider(ServiceProvider.GlobalProvider);
             }
-
             _errorListProvider.Tasks.Clear();
-            ClearAllMarkers();
+        }
 
+        private IVsTextLines GetActiveBuffer()
+        {
             var textManager = ServiceProvider.GlobalProvider.GetService(typeof(SVsTextManager)) as IVsTextManager2;
-            if (textManager == null) return;
+            if (textManager == null) return null;
 
             IVsTextView activeTextView = null;
             IVsTextLines buffer = null;
 
+            int hr = textManager.GetActiveView2(1, null, 0, out activeTextView);
+            if (ErrorHandler.Failed(hr) || activeTextView == null) return null;
+
+            hr = activeTextView.GetBuffer(out buffer);
+            if (ErrorHandler.Failed(hr) || buffer == null) return null;
+
+            return buffer;
+        }
+        
+        private void AddTaskToErrorList(CxAscaDetail detail, Document document)
+        {
+            var task = new ErrorTask
+            {
+                Category = TaskCategory.CodeSense,
+                ErrorCategory = GetErrorCategory(detail.Severity),
+                Text = $"{detail.RuleName} - {detail.RemediationAdvise} (ASCA)",
+                Document = document.FullName,
+                Line = detail.Line - 1,
+                Column = 0,
+                HierarchyItem = GetHierarchyItem(document)
+            };
+
+            task.Navigate += (s, e) =>
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var textDocument = (TextDocument)document.Object("TextDocument");
+                var selection = textDocument.Selection;
+                selection.MoveToLineAndOffset(detail.Line, 1);
+                selection.SelectLine();
+            };
+
+            _errorListProvider.Tasks.Add(task);
+        }
+
+        
+        private void AddMarker(IVsTextLines buffer, CxAscaDetail detail)
+        {
             try
             {
-                // Get primary view (1), no buffer filter (null), reserved value (0)
-                int hr = textManager.GetActiveView2(1, null, 0, out activeTextView);
-                if (ErrorHandler.Failed(hr) || activeTextView == null) return;
-
-                hr = activeTextView.GetBuffer(out buffer);
-                if (ErrorHandler.Failed(hr) || buffer == null) return;
-
-                WriteToOutputPane(FormatViolationsMessage(scanDetails.Count, document.FullName));
-
-                foreach (var detail in scanDetails)
+                string problemTextValue = detail.ProblematicLine;
+                int startIndex = problemTextValue.Length - problemTextValue.TrimStart().Length;
+                if (startIndex < 0)
                 {
-                    var task = new ErrorTask
-                    {
-                        Category = TaskCategory.CodeSense,
-                        ErrorCategory = GetErrorCategory(detail.Severity),
-                        Text = $"{detail.RuleName} - {detail.RemediationAdvise} (ASCA)",
-                        Document = document.FullName,
-                        Line = detail.Line - 1,
-                        Column = 0,
-                        HierarchyItem = GetHierarchyItem(document)
-                    };
+                    startIndex = 0;
+                }
+                int endIndex = startIndex + problemTextValue.Length;
 
-                    task.Navigate += (s, e) =>
-                    {
-                        ThreadHelper.ThrowIfNotOnUIThread();
-                        var textDocument = (TextDocument)document.Object("TextDocument");
-                        var selection = textDocument.Selection;
-                        selection.MoveToLineAndOffset(detail.Line, 1);
-                        selection.SelectLine();
-                    };
+                IVsTextLineMarker[] markers = new IVsTextLineMarker[1];
+                var errorSpan = new TextSpan
+                {
+                    iStartLine = detail.Line - 1,
+                    iStartIndex = startIndex,
+                    iEndLine = detail.Line - 1,
+                    iEndIndex = endIndex
+                };
 
-                    _errorListProvider.Tasks.Add(task);
+                var markerClient = new VsTextMarkerClient(detail.RuleName, detail.RemediationAdvise, detail.Severity);
+                int hr = buffer.CreateLineMarker(
+                    (int)GetMarkerType(detail.Severity),
+                    errorSpan.iStartLine,
+                    errorSpan.iStartIndex,
+                    errorSpan.iEndLine,
+                    errorSpan.iEndIndex,
+                    markerClient,
+                    markers
+                );
 
-                    try
-                    {
-                        string problemTextValue = detail.ProblematicLine;
-                        int startIndex = problemTextValue.Length - problemTextValue.TrimStart().Length;
-                        if (startIndex < 0)
-                        {
-                            startIndex = 0;
-                        }
-                        int endIndex = startIndex + problemTextValue.Length;
-
-                        IVsTextLineMarker[] markers = new IVsTextLineMarker[1];
-                        var errorSpan = new TextSpan
-                        {
-                            iStartLine = detail.Line - 1,
-                            iStartIndex = startIndex,
-                            iEndLine = detail.Line - 1,
-                            iEndIndex = endIndex
-                        };
-
-                        var markerClient = new VsTextMarkerClient(detail.RuleName, detail.RemediationAdvise, detail.Severity);
-                        hr = buffer.CreateLineMarker(
-                            (int)GetMarkerType(detail.Severity),
-                            errorSpan.iStartLine,
-                            errorSpan.iStartIndex,
-                            errorSpan.iEndLine,
-                            errorSpan.iEndIndex,
-                            markerClient,
-                            markers
-                        );
-
-                        if (ErrorHandler.Succeeded(hr) && markers[0] != null)
-                        {
-                            _activeMarkers.Add(markers[0]);
-                        }
-                        else
-                        {
-                            Debug.WriteLine($"Failed to create marker on line {detail.Line}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Failed to create marker on line {detail.Line}: {ex.Message}");
-                    }
+                if (ErrorHandler.Succeeded(hr) && markers[0] != null)
+                {
+                    _activeMarkers.Add(markers[0]);
+                }
+                else
+                {
+                    Debug.WriteLine($"Failed to create marker on line {detail.Line}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Failed to setup text view: {ex.Message}");
+                Debug.WriteLine($"Failed to create marker on line {detail.Line}: {ex.Message}");
             }
         }
+
+        
+        
+
+        
+        
         
         private string FormatViolationsMessage(int violationCount, string documentPath)
         {
