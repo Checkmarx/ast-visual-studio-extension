@@ -37,24 +37,37 @@ namespace ast_visual_studio_extension.CxCLI
         {
             logger.Info(string.Format(CxConstants.LOG_RUNNING_ASCA_SCAN_CMD, fileSource));
 
-            List<string> arguments = new List<string>
-            {
-                CxConstants.CLI_SCAN_CMD,
-                CxConstants.CLI_ASCA_CMD,
-                CxConstants.FLAG_FILE_SOURCE,
-                fileSource
-            };
+            List<string> arguments;
 
-            if (ascaLatestVersion)
+            if (string.IsNullOrWhiteSpace(fileSource))
             {
-                arguments.Add(CxConstants.FLAG_ASCA_LATEST_VERSION);
+                arguments = new List<string>
+        {
+            CxConstants.CLI_SCAN_CMD,
+            CxConstants.CLI_ASCA_CMD,
+            CxConstants.FLAG_ASCA_LATEST_VERSION
+        };
+            }
+            else
+            {
+                arguments = new List<string>
+        {
+            CxConstants.CLI_SCAN_CMD,
+            CxConstants.CLI_ASCA_CMD,
+            CxConstants.FLAG_FILE_SOURCE,
+            fileSource
+        };
+
+                if (ascaLatestVersion)
+                {
+                    arguments.Add(CxConstants.FLAG_ASCA_LATEST_VERSION);
+                }
             }
 
             AppendAgentToArguments(agent, arguments);
 
             string result = Execution.ExecuteCommand(WithConfigArguments(arguments), Execution.CheckValidJSONString);
             return JsonConvert.DeserializeObject<CxAsca>(result);
-
         }
 
         /// <summary>

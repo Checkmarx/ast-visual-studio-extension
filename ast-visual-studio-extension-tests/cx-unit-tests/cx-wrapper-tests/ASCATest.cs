@@ -20,6 +20,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
                 agent: CxConstants.EXTENSION_AGENT
             );
             Assert.NotNull(result);
+            Assert.Contains("asca engine is running successfully", result.Message);
         }
         
 
