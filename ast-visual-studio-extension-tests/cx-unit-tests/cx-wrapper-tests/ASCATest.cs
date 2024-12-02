@@ -25,7 +25,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         
 
         [Fact]
-        public void TestScanAsca_CSharpVulnerable()
+        public void TestScanAsca_PYVulnerable()
         {
             // Arrange
             string filePath = Path.Combine(TEST_DATA_PATH, "python-vul-file.py");

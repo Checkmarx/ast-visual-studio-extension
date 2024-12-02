@@ -159,29 +159,25 @@ namespace ast_visual_studio_extension.CxExtension.Services
             if (!_isSubscribed) return;
 
             var document = _uiManager.GetActiveDocument();
-            if (document != null)
+            if (document == null) return;
+
+            try
             {
-                try
-                {
-                    var textDocument = (TextDocument)document.Object("TextDocument");
-                    if (textDocument != null)
-                    {
-                        var currentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
-                        if (_lastDocumentContent != currentContent)
-                        {
-                            _lastDocumentContent = currentContent;
-                            _debounceTimer.Stop();
-                            _debounceTimer.Start();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"COMException: {ex.Message}");
-                }
+                var textDocument = (TextDocument)document.Object("TextDocument");
+                if (textDocument == null) return;
+
+                var currentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+                if (_lastDocumentContent == currentContent) return;
+
+                _lastDocumentContent = currentContent;
+                _debounceTimer.Stop();
+                _debounceTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"COMException: {ex.Message}");
             }
         }
-
         public async Task UnregisterTextChangeEventsAsync()
         {
             try
@@ -191,7 +187,6 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
                 if (!_isSubscribed || _textEditorEvents == null)
                 {
-                    Debug.WriteLine("No active text change events subscription to unregister.");
                     return;
                 }
 
