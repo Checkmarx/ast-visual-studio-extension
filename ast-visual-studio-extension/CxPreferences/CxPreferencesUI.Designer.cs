@@ -172,7 +172,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.helpPage.Size = new System.Drawing.Size(387, 20);
             this.helpPage.TabIndex = 12;
             this.helpPage.TabStop = true;
-            this.helpPage.Text = "Checkmarx One Visual Studio Extension helprrrr page";
+            this.helpPage.Text = "Checkmarx One Visual Studio Extension help page";
             this.helpPage.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.HelpPage_LinkClicked);
             // 
             // ascaGroupBox
