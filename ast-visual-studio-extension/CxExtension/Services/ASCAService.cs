@@ -144,6 +144,15 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 _textEditorEvents = dte.Events.TextEditorEvents;
                 _textEditorEvents.LineChanged += OnTextChanged;
                 _isSubscribed = true;
+
+
+                // Initialize the content of the active document to track changes.
+                var document = _uiManager.GetActiveDocument();
+                if (document == null) return;
+                var textDocument = (TextDocument)document.Object("TextDocument");
+                if (textDocument == null) return;
+                _lastDocumentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+
                 Debug.WriteLine("Successfully registered for text change events.");
             }
             else
