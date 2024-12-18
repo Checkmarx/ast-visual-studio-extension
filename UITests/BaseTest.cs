@@ -33,8 +33,6 @@ namespace UITests
 
        private static async Task SetupVisualStudio()
         {
-            await Task.Delay(5000);
-
             // Find and click the "Continue without code" button
             var continueWithoutCodeButton = _mainWindow.FindFirstDescendant(cf => cf.ByName("Continue without code"));
            if (continueWithoutCodeButton != null)
