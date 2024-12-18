@@ -26,23 +26,26 @@ namespace UITests
 
                 var allMenuItems = _mainWindow.FindAllDescendants(cf =>
                     cf.ByControlType(FlaUI.Core.Definitions.ControlType.MenuItem));
+                bool foundOtherWindows = false;
+
 
                 foreach (var menuItem in allMenuItems)
                 {
                     if (menuItem.Name == "Other Windows")
                     {
+                        foundOtherWindows = true;
                         menuItem.WaitUntilEnabled().Click();
                         await Task.Delay(1000);
 
                         // Now select a specific window from the list "Checkmarx"
                         var checkmarxOption = _mainWindow.FindFirstDescendant(cf => cf.ByName("Checkmarx"));
-                        if (checkmarxOption != null)
-                        {
-                            checkmarxOption.WaitUntilEnabled().Click();
-                        }
+                        Assert.IsNotNull(checkmarxOption, "Checkmarx option not found in Other Windows menu");
+                        checkmarxOption.WaitUntilEnabled().Click();
                         break;
                     }
                 }
+                Assert.IsTrue(foundOtherWindows, "Other Windows menu item not found");
+
             }
         }
     }
