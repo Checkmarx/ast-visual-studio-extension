@@ -16,11 +16,13 @@ namespace UITests
         [TestMethod]
         public async Task OpenCheckmarxWindow()
         {
+            // Find the View menu
             var viewMenu = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
             if (viewMenu != null)
             {
+                // Open the "View" menu by clicking it
                 viewMenu.WaitUntilEnabled().Click();
-                await Task.Delay(1000);
+                await Task.Delay(500);
 
                 var allMenuItems = _mainWindow.FindAllDescendants(cf =>
                     cf.ByControlType(FlaUI.Core.Definitions.ControlType.MenuItem));
@@ -30,8 +32,9 @@ namespace UITests
                     if (menuItem.Name == "Other Windows")
                     {
                         menuItem.WaitUntilEnabled().Click();
-                        await Task.Delay(2000);
+                        await Task.Delay(1000);
 
+                        // Now select a specific window from the list "Checkmarx"
                         var checkmarxOption = _mainWindow.FindFirstDescendant(cf => cf.ByName("Checkmarx"));
                         if (checkmarxOption != null)
                         {

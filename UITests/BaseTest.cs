@@ -23,23 +23,24 @@ namespace UITests
            _automation = new UIA3Automation();
            _app = Application.Launch("devenv.exe");
 
-           // Wait until the main window is available
-           _mainWindow = WaitForMainWindow();
+            // Wait for launch VS
+            Task.Delay(15000).Wait();
+            _mainWindow = WaitForMainWindow();
 
            // Handle initial setup
            SetupVisualStudio().Wait();
        }
 
        private static async Task SetupVisualStudio()
-       {
-           await Task.Delay(5000);
+        {
+            await Task.Delay(5000);
 
-           var continueWithoutCodeButton = _mainWindow.FindFirstDescendant(cf => cf.ByName("Continue without code"));
+            // Find and click the "Continue without code" button
+            var continueWithoutCodeButton = _mainWindow.FindFirstDescendant(cf => cf.ByName("Continue without code"));
            if (continueWithoutCodeButton != null)
            {
                var invokePattern = continueWithoutCodeButton.Patterns.Invoke.Pattern;
                invokePattern.Invoke();
-               await Task.Delay(2000);
                _mainWindow = WaitForMainWindow();
            }
        }
@@ -51,7 +52,8 @@ namespace UITests
            {
                try
                {
-                   Task.Delay(10000).Wait();
+                    // Wait until the main window is available
+                    Task.Delay(5000).Wait();
                    var window = _app.GetMainWindow(_automation);
                    if (window != null && window.IsAvailable)
                    {
