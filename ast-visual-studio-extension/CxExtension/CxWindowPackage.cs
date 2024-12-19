@@ -1,9 +1,15 @@
-using ast_visual_studio_extension.CxExtension.Commands;
+﻿using ast_visual_studio_extension.CxExtension.Commands;
 using log4net;
+using log4net.Appender;
+using log4net.Config;
 using log4net.Repository.Hierarchy;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +46,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
-        
+        private List<string> log4netConfigPaths = new List<string>();
         #region Package Members
 
         /// <summary>
@@ -53,10 +59,12 @@ namespace ast_visual_studio_extension.CxExtension
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             try
-            { 
+            {
                 // When initialized asynchronously, the current thread may be a background thread at this point.
                 // Do any initialization that requires the UI thread after switching to the UI thread.
                 await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                ConfigureLog4net();
 
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
@@ -66,7 +74,71 @@ namespace ast_visual_studio_extension.CxExtension
                 Console.WriteLine(ex.ToString());
             }
         }
+        private string getLogFilePath()
+        {
+            var logDirectory = Path.Combine(Path.GetTempPath(), "ast-visual-studio-extension", "Logs");
 
+            if (!Directory.Exists(logDirectory))
+            {
+                Directory.CreateDirectory(logDirectory);
+            }
+
+            return Path.Combine(logDirectory, "ast-extension.log");
+        }
+
+        private string getLog4netConfigPath()
+        {
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            string baseDirectory = Path.GetDirectoryName(assemblyLocation);
+
+            // Attempt to find the log4net.config in multiple locations
+            string[] possiblePaths = new string[]
+            {
+                    Path.Combine(baseDirectory, "log4net.config"), // Installed extension location
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config"), // Base directory
+                    Path.Combine(Environment.CurrentDirectory, "log4net.config"), // Debug folder during development
+            };
+            log4netConfigPaths = possiblePaths.Where(File.Exists).ToList();
+            return possiblePaths.FirstOrDefault(File.Exists);
+        }
+
+        private void ConfigureLog4net()
+        {
+            try
+            {
+                string logFilePath = getLogFilePath();
+            GlobalContext.Properties["CxLogFileName"] = getLogFilePath();
+
+                string log4netConfigPath = getLog4netConfigPath();
+
+                if (log4netConfigPath == null)
+                {
+                    throw new FileNotFoundException("log4net.config not found in expected locations.");
+                }
+                var logRepository = LogManager.GetRepository();
+                XmlConfigurator.Configure(logRepository, new FileInfo(log4netConfigPath));
+
+                var appender = ((Hierarchy)logRepository).Root.Appenders[0];
+                if (appender is RollingFileAppender fileAppender && fileAppender.File != logFilePath)
+                {
+                    fileAppender.File = logFilePath;
+                    fileAppender.ActivateOptions();
+                }
+
+                //to remove!!
+                var logger = LogManager.GetLogger(typeof(CxWindowPackage));
+                foreach (var item in log4netConfigPaths)
+                {
+                    logger.Info(item);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                var fallbackLogger = LogManager.GetLogger(typeof(CxWindowPackage));
+                fallbackLogger?.Error("Error during InitializeAsync", ex);
+            }
+        }
         public override IVsAsyncToolWindowFactory GetAsyncToolWindowFactory(Guid toolWindowType)
         {
             ThreadHelper.ThrowIfNotOnUIThread();

@@ -144,6 +144,9 @@
     <Compile Include="VsTheme.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
