@@ -146,6 +146,7 @@
   <ItemGroup>
     <Content Include="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
@@ -176,7 +177,7 @@
       <Version>19.225.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5240">
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.12.2069">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
