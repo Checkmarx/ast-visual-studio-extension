@@ -122,6 +122,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         // Convert AST results to tree view item
         private List<TreeViewItem> ConvertResultsToTreeViewItem(Results results)
         {
+            // Check if results or results.results is null and return an empty list if so
+            if (results?.results == null)
+            {
+                return new List<TreeViewItem>();
+            }
             List<Result> allResults = results.results;
             List<TreeViewItem> transformedResults = new List<TreeViewItem>(allResults.Count);
 
