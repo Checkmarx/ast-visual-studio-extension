@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using Task = System.Threading.Tasks.Task;
 
 namespace ast_visual_studio_extension.CxExtension.Commands
@@ -42,16 +44,27 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             Instance = new CxWindowCommand(package, commandService);
         }
 
-        private void Execute(object sender, EventArgs e)
+        public void Execute(object sender, EventArgs e)
         {
             _ = this.package.JoinableTaskFactory.RunAsync(async delegate
-              {
-                  ToolWindowPane window = await this.package.ShowToolWindowAsync(typeof(CxWindow), 0, true, this.package.DisposalToken);
-                  if ((null == window) || (null == window.Frame))
-                  {
-                      throw new NotSupportedException("Cannot create tool window");
-                  }
-              });
+            {
+                try
+                {
+                    await Task.Delay(1000);
+                    ToolWindowPane window = await this.package.ShowToolWindowAsync(typeof(CxWindow), 0, true, this.package.DisposalToken);
+                    if ((null == window) || (null == window.Frame))
+                    {
+                        throw new NotSupportedException("Cannot create tool window");
+                    }
+                    // Explicitly show the window
+                      var frame = (IVsWindowFrame)window.Frame;
+                      Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(frame.Show());
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to show window: {ex}");
+                }
+            });
         }
     }
 }

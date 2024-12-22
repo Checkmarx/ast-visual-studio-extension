@@ -1,6 +1,5 @@
 using ast_visual_studio_extension.CxExtension.Commands;
-using log4net;
-using log4net.Repository.Hierarchy;
+using ast_visual_studio_extension.CxExtension.Utils;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -30,8 +29,8 @@ namespace ast_visual_studio_extension.CxExtension
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus1.ctmenu", 1)]
-    [ProvideAutoLoad(PackageGuidString, PackageAutoLoadFlags.BackgroundLoad)]
-    [ProvideToolWindow(typeof(CxWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Right, Window = EnvDTE.Constants.vsWindowKindOutput)]
+    [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideToolWindow(typeof(CxWindow),Style = VsDockStyle.Tabbed,Orientation = ToolWindowOrientation.Right,Window = EnvDTE.Constants.vsWindowKindOutput,Transient = false)]
     [Guid(PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
     {
@@ -53,13 +52,25 @@ namespace ast_visual_studio_extension.CxExtension
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             try
-            { 
+            {
+                // Adding a delay of 1 second to allow the IDE to stabilize before proceeding with plugin initialization.
+                await Task.Delay(1000);
+
                 // When initialized asynchronously, the current thread may be a background thread at this point.
                 // Do any initialization that requires the UI thread after switching to the UI thread.
                 await this.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
+                // Check credentials and open window
+                if (CxUtils.AreCxCredentialsDefined(this))
+                {
+                    await Task.Delay(1000, cancellationToken);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    CxWindowCommand.Instance.Execute(null, EventArgs.Empty);
+                }
+
+
             }
             catch (Exception ex)
             {
