@@ -46,7 +46,6 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
-        private List<string> log4netConfigPaths = new List<string>();
         #region Package Members
 
         /// <summary>
@@ -98,7 +97,6 @@ namespace ast_visual_studio_extension.CxExtension
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config"), // Base directory
                     Path.Combine(Environment.CurrentDirectory, "log4net.config"), // Debug folder during development
             };
-            log4netConfigPaths = possiblePaths.Where(File.Exists).ToList();
             return possiblePaths.FirstOrDefault(File.Exists);
         }
 
@@ -107,7 +105,7 @@ namespace ast_visual_studio_extension.CxExtension
             try
             {
                 string logFilePath = getLogFilePath();
-            GlobalContext.Properties["CxLogFileName"] = getLogFilePath();
+                GlobalContext.Properties["CxLogFileName"] = getLogFilePath();
 
                 string log4netConfigPath = getLog4netConfigPath();
 
@@ -124,19 +122,11 @@ namespace ast_visual_studio_extension.CxExtension
                     fileAppender.File = logFilePath;
                     fileAppender.ActivateOptions();
                 }
-
-                //to remove!!
-                var logger = LogManager.GetLogger(typeof(CxWindowPackage));
-                foreach (var item in log4netConfigPaths)
-                {
-                    logger.Info(item);
-                }
-
             }
             catch (Exception ex)
             {
                 var fallbackLogger = LogManager.GetLogger(typeof(CxWindowPackage));
-                fallbackLogger?.Error("Error during InitializeAsync", ex);
+                fallbackLogger?.Error("Error during log4net configuration", ex);
             }
         }
         public override IVsAsyncToolWindowFactory GetAsyncToolWindowFactory(Guid toolWindowType)
