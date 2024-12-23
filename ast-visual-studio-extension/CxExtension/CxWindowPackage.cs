@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -75,7 +76,8 @@ namespace ast_visual_studio_extension.CxExtension
         }
         private string getLogFilePath()
         {
-            var logDirectory = Path.Combine(Path.GetTempPath(), "ast-visual-studio-extension", "Logs");
+            string dirName = Debugger.IsAttached ? "ast-visual-studio-extension-debug" : "ast-visual-studio-extension";
+            var logDirectory = Path.Combine(Path.GetTempPath(), dirName, "Logs");
 
             if (!Directory.Exists(logDirectory))
             {
@@ -87,15 +89,18 @@ namespace ast_visual_studio_extension.CxExtension
 
         private string getLog4netConfigPath()
         {
+            if (Debugger.IsAttached)
+            {
+                return Path.Combine(Environment.CurrentDirectory, "log4net.config");
+            }
+
             string assemblyLocation = Assembly.GetExecutingAssembly().Location;
             string baseDirectory = Path.GetDirectoryName(assemblyLocation);
 
-            // Attempt to find the log4net.config in multiple locations
             string[] possiblePaths = new string[]
             {
                     Path.Combine(baseDirectory, "log4net.config"), // Installed extension location
                     Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log4net.config"), // Base directory
-                    Path.Combine(Environment.CurrentDirectory, "log4net.config"), // Debug folder during development
             };
             return possiblePaths.FirstOrDefault(File.Exists);
         }
@@ -105,7 +110,7 @@ namespace ast_visual_studio_extension.CxExtension
             try
             {
                 string logFilePath = getLogFilePath();
-                GlobalContext.Properties["CxLogFileName"] = getLogFilePath();
+                GlobalContext.Properties["CxLogFileName"] = logFilePath;
 
                 string log4netConfigPath = getLog4netConfigPath();
 
