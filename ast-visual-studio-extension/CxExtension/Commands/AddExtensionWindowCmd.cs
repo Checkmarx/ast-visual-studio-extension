@@ -59,7 +59,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                     }
                     // Explicitly show the window
                       var frame = (IVsWindowFrame)window.Frame;
-                      Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(frame.Show());
+                      Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(frame.ShowNoActivate());
                 }
                 catch (Exception ex)
                 {
