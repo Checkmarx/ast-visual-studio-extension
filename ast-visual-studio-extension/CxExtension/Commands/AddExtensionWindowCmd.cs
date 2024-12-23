@@ -52,14 +52,15 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 {
                     // Adds a 5-second delay to allow background processes initialization to complete before proceeding.
                     await Task.Delay(5000);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     ToolWindowPane window = await this.package.ShowToolWindowAsync(typeof(CxWindow), 0, true, this.package.DisposalToken);
                     if ((null == window) || (null == window.Frame))
                     {
                         throw new NotSupportedException("Cannot create tool window");
                     }
                     // Explicitly show the window
-                      var frame = (IVsWindowFrame)window.Frame;
-                      Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(frame.ShowNoActivate());
+                    var frame = (IVsWindowFrame)window.Frame;
+                    Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(frame.ShowNoActivate());
                 }
                 catch (Exception ex)
                 {
