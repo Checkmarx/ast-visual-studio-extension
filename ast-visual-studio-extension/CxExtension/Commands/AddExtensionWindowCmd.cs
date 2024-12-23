@@ -43,8 +43,19 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             OleMenuCommandService commandService = await package.GetServiceAsync((typeof(IMenuCommandService))) as OleMenuCommandService;
             Instance = new CxWindowCommand(package, commandService);
         }
+        private void Execute(object sender, EventArgs e)
+        {
+            _ = this.package.JoinableTaskFactory.RunAsync(async delegate
+            {
+                ToolWindowPane window = await this.package.ShowToolWindowAsync(typeof(CxWindow), 0, true, this.package.DisposalToken);
+                if ((null == window) || (null == window.Frame))
+                {
+                    throw new NotSupportedException("Cannot create tool window");
+                }
+            });
+        }
 
-        public void Execute(object sender, EventArgs e)
+        public void InitializeInBackground()
         {
             _ = this.package.JoinableTaskFactory.RunAsync(async delegate
             {

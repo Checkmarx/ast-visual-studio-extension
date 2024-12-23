@@ -38,8 +38,10 @@ namespace ast_visual_studio_extension.CxExtension
         /// CxWindowPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
+        private static bool isInitialized = false;
 
-        
+
+
         #region Package Members
 
         /// <summary>
@@ -58,17 +60,21 @@ namespace ast_visual_studio_extension.CxExtension
 
                 // When initialized asynchronously, the current thread may be a background thread at this point.
                 // Do any initialization that requires the UI thread after switching to the UI thread.
-                await this.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 // Command to create Checkmarx extension main window
-                await CxWindowCommand.InitializeAsync(this);
                 // Check credentials and open window
-                if (CxUtils.AreCxCredentialsDefined(this))
+                await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                if (CxUtils.AreCxCredentialsDefined(this) && !isInitialized)
                 {
+                    await CxWindowCommand.InitializeAsync(this);
+                    isInitialized = true;
                     await Task.Delay(1000, cancellationToken);
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    CxWindowCommand.Instance.Execute(null, EventArgs.Empty);
+                    CxWindowCommand.Instance.InitializeInBackground();
+                    return;
                 }
+                await CxWindowCommand.InitializeAsync(this);
+
 
 
             }
