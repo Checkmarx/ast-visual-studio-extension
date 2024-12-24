@@ -62,8 +62,8 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             {
                 try
                 {
-                    // Adds a 7-second delay to allow background processes initialization to complete before proceeding.
-                    await Task.Delay(7000);
+                    // Adds a 5-second delay to allow background processes initialization to complete before proceeding.
+                    await Task.Delay(5000);
                     // Load the tool window in the background without affecting the UI
                     ToolWindowPane window = await this.package.FindToolWindowAsync(typeof(CxWindow), 0, create: true, this.package.DisposalToken);
                     if ((null == window) || (null == window.Frame))
