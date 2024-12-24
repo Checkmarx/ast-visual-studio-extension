@@ -55,9 +55,6 @@ namespace ast_visual_studio_extension.CxExtension
         {
             try
             {
-                // Adding a delay of 1 second to allow the IDE to stabilize before proceeding with plugin initialization.
-                //await Task.Delay(1000);
-
                 // When initialized asynchronously, the current thread may be a background thread at this point.
                 // Do any initialization that requires the UI thread after switching to the UI thread.
                 await this.JoinableTaskFactory.SwitchToMainThreadAsync();
