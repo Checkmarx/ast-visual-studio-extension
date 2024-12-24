@@ -56,7 +56,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             });
         }
 
-        public void InitializeInBackground()
+        private void InitializeInBackground()
         {
             _ = this.package.JoinableTaskFactory.RunAsync(async delegate
             {

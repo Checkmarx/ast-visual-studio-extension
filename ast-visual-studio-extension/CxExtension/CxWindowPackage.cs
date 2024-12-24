@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxExtension.Commands;
-using ast_visual_studio_extension.CxExtension.Utils;
+using log4net;
+using log4net.Repository.Hierarchy;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -38,7 +39,6 @@ namespace ast_visual_studio_extension.CxExtension
         /// CxWindowPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
-        private static bool isInitialized = false;
 
 
         #region Package Members
