@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.Shell;
 using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using Task = System.Threading.Tasks.Task;
 
 namespace ast_visual_studio_extension.CxExtension.Commands
@@ -26,6 +27,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             var menuCommandID = new CommandID(CommandSet, CxWindowCommandId);
             var menuItem = new MenuCommand(this.Execute, menuCommandID);
             commandService.AddCommand(menuItem);
+            InitializeInBackground();
         }
 
         public static CxWindowCommand Instance
@@ -41,17 +43,38 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             OleMenuCommandService commandService = await package.GetServiceAsync((typeof(IMenuCommandService))) as OleMenuCommandService;
             Instance = new CxWindowCommand(package, commandService);
         }
-
         private void Execute(object sender, EventArgs e)
         {
             _ = this.package.JoinableTaskFactory.RunAsync(async delegate
-              {
-                  ToolWindowPane window = await this.package.ShowToolWindowAsync(typeof(CxWindow), 0, true, this.package.DisposalToken);
-                  if ((null == window) || (null == window.Frame))
-                  {
-                      throw new NotSupportedException("Cannot create tool window");
-                  }
-              });
+            {
+                ToolWindowPane window = await this.package.ShowToolWindowAsync(typeof(CxWindow), 0, true, this.package.DisposalToken);
+                if ((null == window) || (null == window.Frame))
+                {
+                    throw new NotSupportedException("Cannot create tool window");
+                }
+            });
+        }
+
+        private void InitializeInBackground()
+        {
+            _ = this.package.JoinableTaskFactory.RunAsync(async delegate
+            {
+                try
+                {
+                    // Adds a 5-second delay to allow background processes initialization to complete before proceeding.
+                    await Task.Delay(5000);
+                    // Load the tool window in the background without affecting the UI
+                    ToolWindowPane window = await this.package.FindToolWindowAsync(typeof(CxWindow), 0, create: true, this.package.DisposalToken);
+                    if ((null == window) || (null == window.Frame))
+                    {
+                        throw new NotSupportedException("Cannot create tool window");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to load window in the background: {ex}");
+                }
+            });
         }
     }
 }
