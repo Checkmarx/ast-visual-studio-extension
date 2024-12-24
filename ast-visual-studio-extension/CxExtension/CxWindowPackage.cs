@@ -74,7 +74,7 @@ namespace ast_visual_studio_extension.CxExtension
                 Console.WriteLine(ex.ToString());
             }
         }
-        private string getLogFilePath()
+        private string GetLogFilePath()
         {
             string dirName = Debugger.IsAttached ? "ast-visual-studio-extension-debug" : "ast-visual-studio-extension";
             var logDirectory = Path.Combine(Path.GetTempPath(), dirName, "Logs");
@@ -87,7 +87,7 @@ namespace ast_visual_studio_extension.CxExtension
             return Path.Combine(logDirectory, "ast-extension.log");
         }
 
-        private string getLog4netConfigPath()
+        private string GetLog4netConfigPath()
         {
             if (Debugger.IsAttached)
             {
@@ -109,10 +109,10 @@ namespace ast_visual_studio_extension.CxExtension
         {
             try
             {
-                string logFilePath = getLogFilePath();
+                string logFilePath = GetLogFilePath();
                 GlobalContext.Properties["CxLogFileName"] = logFilePath;
 
-                string log4netConfigPath = getLog4netConfigPath();
+                string log4netConfigPath = GetLog4netConfigPath();
 
                 if (log4netConfigPath == null)
                 {
