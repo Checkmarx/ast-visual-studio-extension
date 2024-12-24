@@ -30,6 +30,7 @@ namespace ast_visual_studio_extension.CxExtension
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
     [ProvideMenuResource("Menus1.ctmenu", 1)]
+    [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideToolWindow(typeof(CxWindow),Style = VsDockStyle.Tabbed,Orientation = ToolWindowOrientation.Right,Window = EnvDTE.Constants.vsWindowKindOutput,Transient = false)]
     [Guid(PackageGuidString)]
@@ -55,7 +56,7 @@ namespace ast_visual_studio_extension.CxExtension
             try
             {
                 // Adding a delay of 1 second to allow the IDE to stabilize before proceeding with plugin initialization.
-                await Task.Delay(1000);
+                //await Task.Delay(1000);
 
                 // When initialized asynchronously, the current thread may be a background thread at this point.
                 // Do any initialization that requires the UI thread after switching to the UI thread.
