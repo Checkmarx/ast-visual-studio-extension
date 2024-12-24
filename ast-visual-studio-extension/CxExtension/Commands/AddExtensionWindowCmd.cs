@@ -28,6 +28,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             var menuCommandID = new CommandID(CommandSet, CxWindowCommandId);
             var menuItem = new MenuCommand(this.Execute, menuCommandID);
             commandService.AddCommand(menuItem);
+            InitializeInBackground();
         }
 
         public static CxWindowCommand Instance
