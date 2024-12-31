@@ -97,7 +97,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeBranch(object sender, SelectionChangedEventArgs e)
         {
-            if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
+            if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1)
+            {
+                cxToolbar.CheckScanButtonStateByCombos();
+                return;
+            }
 
             ResetFilteringState(branchesCombo.SelectedItem as ComboBoxItem);
 
@@ -118,7 +122,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             _ = scansCombobox.LoadScansAsync(projectId, selectedBranch);
 
-            cxToolbar.ScanButtonByCombos();
+            cxToolbar.CheckScanButtonStateByCombos();
         }
         protected override void ResetOthersComboBoxesAndResults()
         {

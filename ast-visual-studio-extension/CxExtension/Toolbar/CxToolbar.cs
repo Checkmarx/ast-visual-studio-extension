@@ -163,7 +163,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.groupByCollection, groupBy.ToString(), SettingsUtils.groupByDefaultValues[groupBy]);
             }
 
-            ScanButtonByCombos();
+            CheckScanButtonStateByCombos();
 
             _ = IdeScansEnabledAsync();
 
@@ -311,11 +311,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return false;
         }
 
-        public void ScanButtonByCombos()
+        public void CheckScanButtonStateByCombos()
         {
-            var projectId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.projectIdProperty);
-            var branch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
-            ScanStartButton.IsEnabled = !(string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(branch));
+            var isProject = ProjectsCombo?.SelectedItem != null && ProjectsCombo.SelectedIndex != -1;
+            var isBranch = BranchesCombo?.SelectedItem != null && BranchesCombo.SelectedIndex != -1;
+            ScanStartButton.IsEnabled = isProject && isBranch;
         }
 
         private async Task IdeScansEnabledAsync()
@@ -410,7 +410,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
             if (string.IsNullOrWhiteSpace(scanId))
             {
-                ScanStartButton.IsEnabled = true;
+                CheckScanButtonStateByCombos();
                 return;
             };
             var options = default(TaskHandlerOptions);
