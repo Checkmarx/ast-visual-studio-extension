@@ -99,7 +99,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1)
             {
-                cxToolbar.EnableScanButtonByCombos();
+                cxToolbar.CheckScanButtonStateByCombos();
                 return;
             }
 
@@ -122,7 +122,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             _ = scansCombobox.LoadScansAsync(projectId, selectedBranch);
 
-            cxToolbar.EnableScanButtonByCombos();
+            cxToolbar.CheckScanButtonStateByCombos();
         }
         protected override void ResetOthersComboBoxesAndResults()
         {

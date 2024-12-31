@@ -145,7 +145,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             ComboBox projectsCombo = cxToolbar.ProjectsCombo;
             if (projectsCombo == null || projectsCombo.SelectedItem == null || projectsCombo.SelectedIndex == -1)
             {
-                cxToolbar.EnableScanButtonByCombos();
+                cxToolbar.CheckScanButtonStateByCombos();
                 return;
             }
 
@@ -172,7 +172,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             _ = branchesCombobox.LoadBranchesAsync(selectedProject);
 
-            cxToolbar.EnableScanButtonByCombos();
+            cxToolbar.CheckScanButtonStateByCombos();
         }
 
         protected override void ResetOthersComboBoxesAndResults()

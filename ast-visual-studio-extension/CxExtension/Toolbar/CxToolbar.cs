@@ -163,7 +163,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.groupByCollection, groupBy.ToString(), SettingsUtils.groupByDefaultValues[groupBy]);
             }
 
-            EnableScanButtonByCombos();
+            CheckScanButtonStateByCombos();
 
             _ = IdeScansEnabledAsync();
 
@@ -311,7 +311,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return false;
         }
 
-        public void EnableScanButtonByCombos()
+        public void CheckScanButtonStateByCombos()
         {
             var isProject = ProjectsCombo?.SelectedItem != null && ProjectsCombo.SelectedIndex != -1;
             var isBranch = BranchesCombo?.SelectedItem != null && BranchesCombo.SelectedIndex != -1;
@@ -410,7 +410,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
             if (string.IsNullOrWhiteSpace(scanId))
             {
-                EnableScanButtonByCombos();
+                CheckScanButtonStateByCombos();
                 return;
             };
             var options = default(TaskHandlerOptions);
