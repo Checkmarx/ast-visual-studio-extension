@@ -111,7 +111,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.EnableCombos(false);
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_LOADING_SCANS : CxToolbar.currentScanId;
             cxToolbar.ResultsTreePanel.ClearAll();
-            //cxToolbar.ScanStartButton.IsEnabled = true;
 
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
 
