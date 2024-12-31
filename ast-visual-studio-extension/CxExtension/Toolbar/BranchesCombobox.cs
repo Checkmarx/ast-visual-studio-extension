@@ -97,7 +97,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeBranch(object sender, SelectionChangedEventArgs e)
         {
-            if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1) return;
+            //cxToolbar.ScanStartButton.IsEnabled = false;
+            if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1)
+            {
+                cxToolbar.EnableScanButtonByCombos();
+                return;
+            }
 
             ResetFilteringState(branchesCombo.SelectedItem as ComboBoxItem);
 
@@ -106,6 +111,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             cxToolbar.EnableCombos(false);
             cxToolbar.ScansCombo.Text = string.IsNullOrEmpty(CxToolbar.currentScanId) ? CxConstants.TOOLBAR_LOADING_SCANS : CxToolbar.currentScanId;
             cxToolbar.ResultsTreePanel.ClearAll();
+            //cxToolbar.ScanStartButton.IsEnabled = true;
 
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
 
@@ -118,7 +124,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             _ = scansCombobox.LoadScansAsync(projectId, selectedBranch);
 
-            cxToolbar.ScanButtonByCombos();
+            cxToolbar.EnableScanButtonByCombos();
         }
         protected override void ResetOthersComboBoxesAndResults()
         {
