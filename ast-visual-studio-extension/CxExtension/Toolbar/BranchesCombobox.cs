@@ -97,7 +97,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeBranch(object sender, SelectionChangedEventArgs e)
         {
-            //cxToolbar.ScanStartButton.IsEnabled = false;
             if (!(sender is ComboBox branchesCombo) || branchesCombo.SelectedItem == null || branchesCombo.SelectedIndex == -1)
             {
                 cxToolbar.EnableScanButtonByCombos();
