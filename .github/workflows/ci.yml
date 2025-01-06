@@ -63,6 +63,8 @@ jobs:
       - name: Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
+        run: cd .\ast-visual-studio-extension-tests\bin\Release\net60-windows
+        run: ls
         run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\UITests.dll
         
        
