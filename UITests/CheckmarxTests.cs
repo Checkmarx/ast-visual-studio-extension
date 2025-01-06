@@ -39,12 +39,14 @@ namespace UITests
 
                         // Now select a specific window from the list "Checkmarx"
                         var checkmarxOption = _mainWindow.FindFirstDescendant(cf => cf.ByName("Checkmarx"));
-                        Assert.IsNull(checkmarxOption, "Checkmarx option not found in Other Windows menu");
+                        Assert.IsNotNull(checkmarxOption, "Checkmarx option not found in Other Windows menu");
                         checkmarxOption.WaitUntilEnabled().Click();
                         break;
                     }
                 }
                 Assert.IsTrue(foundOtherWindows, "Other Windows menu item not found");
+                Assert.IsFalse(foundOtherWindows, "Other Windows menu item not found");
+
 
             }
         }
