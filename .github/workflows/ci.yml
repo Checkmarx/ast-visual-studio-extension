@@ -63,6 +63,9 @@ jobs:
       - name: Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: cd .\ast-visual-studio-extension-tests\bin\Release\net60-windows && echo ls
+        run: |
+          cd .\ast-visual-studio-extension-tests\bin\Release\net60-windows
+          dir
+    
         
        
