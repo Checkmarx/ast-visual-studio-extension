@@ -60,12 +60,17 @@ jobs:
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
         
-      - name: Tests
+      - name: Check
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
         run: |
-          cd .\ast-visual-studio-extension-tests\bin\Release\net60-windows
+          cd .\UITests\bin\Release\net60-windows
           dir
+
+      - name: Test
+        env:
+          CX_APIKEY: ${{ secrets.CX_APIKEY }}
+        run: vstest.console.exe /InIsolation .\UITests\bin\Release\net60-windows\UITests.dll
     
         
        
