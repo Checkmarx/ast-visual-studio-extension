@@ -37,35 +37,27 @@ jobs:
 
   UI-tests:
     runs-on: windows-latest
-    permissions:
-      contents: write
     steps:
       # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
-      
-      # Step 2: Set up .NET and Visual Studio
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4      
-      
+  
+      # Step 2: Set up Visual Studio
       - name: Set up Visual Studio
         uses: microsoft/setup-msbuild@v2
-      
+  
       # Step 3: Restore dependencies
       - name: Restore NuGet packages
         run: nuget restore
-      
+  
       # Step 4: Build the solution
       - name: Build solution
         run: msbuild ast-visual-studio-extension.sln /p:Configuration=Release
-      
-      # Step 5: Run UI Tests
-      - name: Run UI Tests
+  
+      # Step 5: Run Tests in GUI
+      - name: Run UITests
         run: |
-          vstest.console.exe ".\UITests\bin\Release\UITests.dll" /TestAdapterPath:. /Logger:trx
-    
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.com" ast-visual-studio-extension.sln /RunTests
+
         
        
