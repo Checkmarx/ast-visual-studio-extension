@@ -43,6 +43,9 @@ jobs:
       # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
       
       # Step 2: Set up .NET and Visual Studio
       - name: Set up .NET
