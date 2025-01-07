@@ -44,7 +44,9 @@ namespace UITests
                         break;
                     }
                 }
+                
                 Assert.IsTrue(foundOtherWindows, "Other Windows menu item not found");
             }
         }
     }
+}
