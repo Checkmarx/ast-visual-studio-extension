@@ -40,30 +40,29 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Fetch Sources
-        uses: actions/checkout@v4
-
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
-        with:
-          vs-version: '17.2'
-
-      - name: Restore NuGet packages
-        run: nuget restore .
-
-      - name: Restore
-        run: dotnet restore . 
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
       
-      - name: Build
-        run: msbuild /p:Configuration=Release /p:DeployExtension=False
-
-      - name: Test
-        env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation .\UITests\bin\Release\UITests.dll
+      # Step 2: Set up .NET and Visual Studio
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4      
+      
+      - name: Set up Visual Studio
+        uses: microsoft/setup-msbuild@v2
+      
+      # Step 3: Restore dependencies
+      - name: Restore NuGet packages
+        run: nuget restore
+      
+      # Step 4: Build the solution
+      - name: Build solution
+        run: msbuild ast-visual-studio-extension.sln /p:Configuration=Release
+      
+      # Step 5: Run UI Tests
+      - name: Run UI Tests
+        run: |
+          vstest.console.exe ".\UITests\bin\Release\UITests.dll" /TestAdapterPath:. /Logger:trx
     
         
        
