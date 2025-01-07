@@ -45,9 +45,10 @@ namespace UITests
                     }
                 }
                 Assert.IsTrue(foundOtherWindows, "Other Windows menu item not found");
-                Assert.IsFalse(foundOtherWindows, "Other Windows menu item not found");
-
-
+            }
+            else
+            {
+                Assert.Fail("View menu not found");
             }
         }
     }
