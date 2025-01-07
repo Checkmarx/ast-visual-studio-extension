@@ -56,8 +56,10 @@ jobs:
   
       # Step 5: Run Tests in GUI
       - name: Run UITests
+        shell: pwsh
         run: |
-          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.com" ast-visual-studio-extension.sln /RunTests
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.com" "ast-visual-studio-extension.sln" /RunTests
+      
 
         
        
