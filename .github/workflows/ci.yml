@@ -53,12 +53,13 @@ jobs:
       # Step 4: Build the solution
       - name: Build solution
         run: msbuild ast-visual-studio-extension.sln /p:Configuration=Release
-        
+      
+        # Step 5: Install Checkmarx Extension  
       - name: Install Checkmarx Extension
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet ast-visual-studio-extension\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
       
-      # Step 5: Run UI Tests
+      # Step 6: Run UI Tests
       - name: Run UI Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
