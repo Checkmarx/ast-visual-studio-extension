@@ -60,8 +60,9 @@ jobs:
       
       # Step 5: Run UI Tests
       - name: Run UI Tests
-        run: |
-          vstest.console.exe ".\UITests\bin\Release\UITests.dll" /TestAdapterPath:. /Logger:trx
+        env:
+          CX_APIKEY: ${{ secrets.CX_APIKEY }}
+          run: vstest.console.exe /InIsolation .\UITests\bin\Release\UITests.dll
     
         
        
