@@ -60,14 +60,11 @@ jobs:
       - name: Install Checkmarx Extension
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "D:\a\ast-visual-studio-extension\ast-visual-studio-extension\ast-visual-studio-extension\bin\Debug\ast-visual-studio-extension.vsix"
-       
-      - name: Wait for Extension to be installed
-        run: Start-Sleep -Seconds 90
+          Start-Sleep -Seconds 40
         
         # Step 8: Run UI Tests
       - name: Run UI Tests
-        run: |
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Debug\UITests.dll
+        run: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Debug\UITests.dll
     
         
        
