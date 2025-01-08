@@ -63,7 +63,7 @@ jobs:
       - name: Run UI Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-          run: vstest.console.exe /InIsolation .\UITests\bin\Release\UITests.dll
+        run: vstest.console.exe /InIsolation .\UITests\bin\Release\UITests.dll
     
         
        
