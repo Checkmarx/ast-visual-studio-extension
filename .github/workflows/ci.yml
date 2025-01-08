@@ -58,8 +58,12 @@ jobs:
       - name: Install Checkmarx Extension
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet ast-visual-studio-extension\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix
-      
-      # Step 6: Run UI Tests
+
+        # Step 6: Setup VSTest
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
+        
+      # Step 7: Run UI Tests
       - name: Run UI Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
