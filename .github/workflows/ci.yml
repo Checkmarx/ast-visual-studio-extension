@@ -55,13 +55,7 @@ jobs:
         # Step 4: Build the solution
       - name: Build solution
         run: msbuild ast-visual-studio-extension.sln /p:Configuration=Debug
-      
-        # Step 5: Install Checkmarx Extension  
-      - name: Install Checkmarx Extension
-        run: |
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "D:\a\ast-visual-studio-extension\ast-visual-studio-extension\ast-visual-studio-extension\bin\Debug\ast-visual-studio-extension.vsix"
-          Start-Sleep -Seconds 40
-          
+
       - name: Close Visual Studio
         shell: pwsh
         run: |
@@ -71,7 +65,13 @@ jobs:
           Stop-Process -Name devenv -Force
           } else {
           Write-Host "No Visual Studio processes found."
-          }  
+          }        
+      
+        # Step 5: Install Checkmarx Extension  
+      - name: Install Checkmarx Extension
+        run: |
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "D:\a\ast-visual-studio-extension\ast-visual-studio-extension\ast-visual-studio-extension\bin\Debug\ast-visual-studio-extension.vsix"
+          Start-Sleep -Seconds 40
             
         # Step 8: Run UI Tests
       - name: Run UI Tests
