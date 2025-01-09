@@ -16,6 +16,7 @@ namespace UITests
         [TestMethod]
         public async Task OpenCheckmarxWindow()
         {
+            Task.Delay(60000).Wait();
             // Find the View menu
             var viewMenu = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
             Assert.IsNotNull(viewMenu, "View menu not found");

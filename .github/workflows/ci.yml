@@ -61,11 +61,18 @@ jobs:
       - name: Install Checkmarx Extension
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "D:\a\ast-visual-studio-extension\ast-visual-studio-extension\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix"
-          Start-Sleep -Seconds 40
+          Start-Sleep -Seconds 20
   
       # Step 8: Run UI Tests
       - name: Run UI Tests
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Release\UITests.dll
+          
+      # Step 9: Upload Screenshots as Artifacts
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
+        with:
+          name: UI-Test-Screenshots
+          path: Screenshots/  
   
          
