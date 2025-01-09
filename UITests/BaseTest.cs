@@ -80,31 +80,11 @@ namespace UITests
            }
            finally
            {
-               if (TestContext.CurrentTestOutcome != UnitTestOutcome.Passed)
-               {
-                   TakeScreenshot(TestContext.TestName);
-               }
                if (_automation != null)
                {
                    _automation.Dispose();
                }
                _mainWindow = null;
-           }
-       }
-
-       public void TakeScreenshot(string testName)
-       {
-           try
-           {
-               var screenshot = ((ITakesScreenshot)WebDriver).GetScreenshot();
-               var filePath   = Path.Combine("Screenshots", $"{testName}_{DateTime.Now:yyyyMMddHHmmss}.png");
-               Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-               screenshot.SaveAsFile(filePath, ScreenshotImageFormat.Png);
-               TestContext.AddResultFile(filePath); // Attach to test context
-           }
-           catch (Exception ex)
-           {
-               Console.WriteLine($"Failed to take screenshot: {ex.Message}");
            }
        }
    }
