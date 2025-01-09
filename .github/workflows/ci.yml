@@ -56,30 +56,32 @@ jobs:
       - name: Build solution
         run: msbuild ast-visual-studio-extension.sln /p:Configuration=Debug
 
-      # Step 5: Install Checkmarx Extension  
+      # Step 5: Install Checkmarx Extension with Logging
       - name: Install Checkmarx Extension
         run: |
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "D:\a\ast-visual-studio-extension\ast-visual-studio-extension\ast-visual-studio-extension\bin\Debug\ast-visual-studio-extension.vsix"
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet /logFile:D:\a\vsix-installation-log.txt "D:\a\ast-visual-studio-extension\ast-visual-studio-extension\ast-visual-studio-extension\bin\Debug\ast-visual-studio-extension.vsix"
           Start-Sleep -Seconds 40
 
-      # Step 6: Print All Installed Extensions
-      - name: List Installed Extensions
-        run: |
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.exe" /Command "Help.About" > installed-extensions.txt
-          Get-Content installed-extensions.txt
-        shell: pwsh
-
-      # Step 7: Verify Checkmarx Extension Installation
+      # Step 6: Verify Checkmarx Extension Installation
       - name: Verify Checkmarx Extension Installation
         run: |
-          $extensions = Get-Content installed-extensions.txt
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /listExtensions /logFile:D:\a\installed-extensions-log.txt
+          $extensions = Get-Content D:\a\installed-extensions-log.txt
           if ($extensions -match "Checkmarx") {
             Write-Host "Checkmarx extension successfully installed"
           } else {
             Write-Error "Checkmarx extension not found"
-            exit 1
           }
         shell: pwsh
+
+      # Step 7: Upload Installation Logs as Artifacts
+      - name: Upload Installation Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Checkmarx-Extension-Logs
+          path: |
+            D:\a\vsix-installation-log.txt
+            D:\a\installed-extensions-log.txt
 
       # Step 8: Run UI Tests
       - name: Run UI Tests
