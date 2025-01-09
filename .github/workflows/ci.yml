@@ -36,15 +36,29 @@ jobs:
         run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
 
   UI-tests:
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+  
+      # Step 2: Set up Visual Studio
+      - name: Set up Visual Studio
+        uses: microsoft/setup-msbuild@v2
+
       - name: Setup VSTest
-        uses: darenm/Setup-VSTest@v1
-      - name: Tests
-        run: vstest.console.exe **\bin\**\*UITests.dll
+        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44
+  
+      # Step 3: Restore dependencies
+      - name: Restore NuGet packages
+        run: nuget restore
+  
+      # Step 4: Build the solution
+      - name: Build solution
+        run: msbuild ast-visual-studio-extension.sln /p:Configuration=Debug /p:DeployExtension=true
+
+      # Step 8: Run UI Tests
+      - name: Run UI Tests
+        run: vstest.console.exe" /InIsolation .\UITests\bin\Debug\UITests.dll
+  
          
