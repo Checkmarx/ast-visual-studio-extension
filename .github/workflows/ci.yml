@@ -55,10 +55,10 @@ jobs:
   
       # Step 4: Build the solution
       - name: Build solution
-        run: msbuild ast-visual-studio-extension.sln /p:Configuration=Debug /p:DeployExtension=true
+        run: msbuild ast-visual-studio-extension.sln /p:Configuration=Release /p:DeployExtension=true
 
       # Step 8: Run UI Tests
       - name: Run UI Tests
-        run: vstest.console.exe" /InIsolation .\UITests\bin\Debug\UITests.dll
+        run: vstest.console.exe /InIsolation .\UITests\bin\Release\UITests.dll
   
          
