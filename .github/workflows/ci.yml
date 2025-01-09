@@ -45,9 +45,8 @@ jobs:
       # Step 2: Set up Visual Studio
       - name: Set up Visual Studio
         uses: microsoft/setup-msbuild@v2
-
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44
+        with:
+          msbuild-architecture: x64
   
       # Step 3: Restore dependencies
       - name: Restore NuGet packages
@@ -55,10 +54,18 @@ jobs:
   
       # Step 4: Build the solution
       - name: Build solution
-        run: msbuild ast-visual-studio-extension.sln /p:Configuration=Release /p:DeployExtension=true
+        run: msbuild ast-visual-studio-extension.sln /p:Configuration=Release
 
+  
+      # Step 7: Install Checkmarx Extension
+      - name: Install Checkmarx Extension
+        run: |
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "D:\a\ast-visual-studio-extension\ast-visual-studio-extension\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix"
+          Start-Sleep -Seconds 40
+  
       # Step 8: Run UI Tests
       - name: Run UI Tests
-        run: vstest.console.exe /InIsolation .\UITests\bin\Release\UITests.dll
+        run: |
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Release\UITests.dll
   
          
