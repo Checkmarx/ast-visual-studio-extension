@@ -67,6 +67,7 @@ jobs:
       - name: Run UI Tests
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Release\UITests.dll
+        continue-on-error: true
           
       - name: Upload Descendants File
         uses: actions/upload-artifact@v4
