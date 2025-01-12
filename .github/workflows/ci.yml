@@ -71,8 +71,10 @@ jobs:
         continue-on-error: true
 
       - name: Output Descendants
+        shell: pwsh
         run: |
-          type ${{ github.workspace }}\descendants.txt
+          Get-Content "${{ github.workspace }}\descendants.txt"
+      
       
   
          
