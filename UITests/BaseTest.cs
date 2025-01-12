@@ -2,6 +2,7 @@
 using FlaUI.UIA3;
 using FlaUI.Core;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using EnvDTE;
 using AutomationWindow = FlaUI.Core.AutomationElements.Window;
@@ -87,6 +88,20 @@ namespace UITests
                    _automation.Dispose();
                }
                _mainWindow = null;
+           }
+       }
+       
+       public void TakeScreenshot(string screenshotName)
+       {
+           try
+           {
+               var screen = Capture.Screen();
+               var screenshotPath = Path.Combine("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\Screenshots\\", $"{screenshotName}.png");
+               screen.ToFile(screenshotPath);
+           }
+           catch (Exception ex)
+           {
+               Console.WriteLine($"Failed to take screenshot: {ex.Message}");
            }
        }
    }

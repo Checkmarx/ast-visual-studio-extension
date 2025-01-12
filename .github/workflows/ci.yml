@@ -73,6 +73,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: screenshot
-          path: ${{ github.workspace }}\screenshot.png
+          path: ${{ github.workspace }}\Screenshots
   
          

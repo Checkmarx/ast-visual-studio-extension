@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FlaUI.Core.AutomationElements;
 using System.Threading.Tasks;
 using System.IO;
-using System.Drawing.Printing;
 
 namespace UITests
 {
@@ -53,22 +52,6 @@ namespace UITests
                 }
             }
             Assert.IsTrue(foundOtherWindows, "Other Windows menu item not found");
-        }
-
-        // Helper method to take a screenshot
-        private void TakeScreenshot(string screenshotName)
-        {
-            try
-            {
-                var screenshot = _mainWindow.Capture();
-                var filePath = Path.Combine("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\", $"{screenshotName}.png");
-                screenshot.ToBitmap().Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
-                Console.WriteLine($"Screenshot saved to: {filePath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to take screenshot: {ex.Message}");
-            }
         }
 
     }
