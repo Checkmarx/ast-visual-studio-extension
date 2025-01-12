@@ -31,6 +31,8 @@ namespace UITests
             {
                 Console.WriteLine("Empty");
             }
+            
+            Console.WriteLine("Writing descendant names to file");
 
             // File path for writing descendant names
             // Find the View menu
