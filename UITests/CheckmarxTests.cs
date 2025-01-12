@@ -28,7 +28,6 @@ namespace UITests
             {
                 Console.WriteLine(descendent.Name);
                 Console.WriteLine(descendent.ControlType);
-                Console.WriteLine(descendent.AutomationId);
                 Console.WriteLine(descendent.ClassName);
                 Console.WriteLine(descendent.IsAvailable);
                 Console.WriteLine(descendent.IsEnabled);
