@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FlaUI.Core.AutomationElements;
 using System.Threading.Tasks;
 using System.IO;
+using System.Drawing.Printing;
 
 namespace UITests
 {
@@ -18,32 +19,12 @@ namespace UITests
         [TestMethod]
         public async Task OpenCheckmarxWindow()
         {
-            // create file if not exists
-            if (!File.Exists("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\descendants.txt"))
-            {
-                File.Create("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\descendants.txt");
-            }
+            // Take a screenshot at the beginning of the test
+            TakeScreenshot("screenshot");
+
             // File path for writing descendant names
-            var filePath = Path.Combine("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\", "descendants.txt");
-            Console.WriteLine($"File path: {filePath}");
-
-
-            using (var writer = new StreamWriter(filePath))
-            {
-                foreach (var descendant in _mainWindow.FindAllDescendants())
-                {
-                    var name = descendant.Name;
-                    if (!string.IsNullOrEmpty(name))
-                    {
-                        writer.WriteLine(name);
-                        Console.WriteLine(name);
-                    }
-                }
-            }
-
-
             // Find the View menu
-            var viewMenu    = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
+            var viewMenu = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
 
             // Assert View menu is not null
             Assert.IsNotNull(viewMenu, "View menu not found");
@@ -73,5 +54,22 @@ namespace UITests
             }
             Assert.IsTrue(foundOtherWindows, "Other Windows menu item not found");
         }
+
+        // Helper method to take a screenshot
+        private void TakeScreenshot(string screenshotName)
+        {
+            try
+            {
+                var screenshot = _mainWindow.Capture();
+                var filePath = Path.Combine("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\", $"{screenshotName}.png");
+                screenshot.ToBitmap().Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+                Console.WriteLine($"Screenshot saved to: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to take screenshot: {ex.Message}");
+            }
+        }
+
     }
 }
