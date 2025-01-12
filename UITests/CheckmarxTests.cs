@@ -21,27 +21,6 @@ namespace UITests
             // Take a screenshot at the beginning of the test
             TakeScreenshot("screenshot");
             
-            var descendents = _mainWindow.FindAllDescendants();
-            Console.WriteLine($"Descendants of main window: {descendents.Length}");
-            Console.WriteLine("Descendant names:");
-            foreach (var descendent in descendents)
-            {
-                Console.WriteLine(descendent.Name);
-                Console.WriteLine(descendent.ControlType);
-                Console.WriteLine(descendent.ClassName);
-                Console.WriteLine(descendent.IsAvailable);
-                Console.WriteLine(descendent.IsEnabled);
-                Console.WriteLine(descendent.IsOffscreen);
-                Console.WriteLine(descendent.HelpText);
-                Console.WriteLine("\n\n\n\n");
-            }
-
-            if (descendents.Length == 0)
-            {
-                Console.WriteLine("Empty");
-            }
-            
-            Console.WriteLine("Writing descendant names to file");
 
             // File path for writing descendant names
             // Find the View menu
