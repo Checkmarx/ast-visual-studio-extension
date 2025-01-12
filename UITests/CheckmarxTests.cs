@@ -20,6 +20,17 @@ namespace UITests
         {
             // Take a screenshot at the beginning of the test
             TakeScreenshot("screenshot");
+            
+            var descendents = _mainWindow.FindAllDescendants();
+            foreach (var descendent in descendents)
+            {
+                Console.WriteLine(descendent.Name);
+            }
+
+            if (descendents.Length == 0)
+            {
+                Console.WriteLine("Empty");
+            }
 
             // File path for writing descendant names
             // Find the View menu
