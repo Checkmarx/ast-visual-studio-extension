@@ -68,11 +68,8 @@ jobs:
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Release\UITests.dll
           
-      # Step 9: Upload Screenshots as Artifacts
-      - name: Upload screenshots
-        uses: actions/upload-artifact@v3
-        with:
-          name: UI-Test-Screenshots
-          path: Screenshots/  
+      - name: Output Descendants
+        run: |
+          type descendants.txt
   
          

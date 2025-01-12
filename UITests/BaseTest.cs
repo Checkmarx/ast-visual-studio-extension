@@ -26,7 +26,7 @@ namespace UITests
            _app = Application.Launch("devenv.exe");
 
             // Wait for launch VS
-            Task.Delay(60000).Wait();
+            Task.Delay(15000).Wait();
             _mainWindow = WaitForMainWindow();
 
            // Handle initial setup

@@ -16,9 +16,27 @@ namespace UITests
         [TestMethod]
         public async Task OpenCheckmarxWindow()
         {
-            Task.Delay(60000).Wait();
+            // File path for writing descendant names
+            var filePath = "descendants.txt";
+
             // Find the View menu
-            var viewMenu = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
+            var viewMenu    = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
+            var descendants = _mainWindow.FindAllDescendants();
+
+            // Write all descendant names to the file
+            using (var writer = new StreamWriter(filePath))
+            {
+                foreach (var descendant in descendants)
+                {
+                    var name = descendant.Name;
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        writer.WriteLine(name);
+                    }
+                }
+            }
+
+            // Assert View menu is not null
             Assert.IsNotNull(viewMenu, "View menu not found");
 
             // Open the "View" menu by clicking it
@@ -26,9 +44,8 @@ namespace UITests
             await Task.Delay(500);
 
             var allMenuItems = _mainWindow.FindAllDescendants(cf =>
-                cf.ByControlType(FlaUI.Core.Definitions.ControlType.MenuItem));
+                                                                  cf.ByControlType(FlaUI.Core.Definitions.ControlType.MenuItem));
             bool foundOtherWindows = false;
-
 
             foreach (var menuItem in allMenuItems)
             {
@@ -38,7 +55,7 @@ namespace UITests
                     menuItem.WaitUntilEnabled().Click();
                     await Task.Delay(1000);
 
-                    // Now select a specific window from the list "Checkmarx"
+                    // Select a specific window from the list "Checkmarx"
                     var checkmarxOption = _mainWindow.FindFirstDescendant(cf => cf.ByName("Checkmarx"));
                     Assert.IsNotNull(checkmarxOption, "Checkmarx option not found in Other Windows menu");
                     checkmarxOption.WaitUntilEnabled().Click();
@@ -46,7 +63,6 @@ namespace UITests
                 }
             }
             Assert.IsTrue(foundOtherWindows, "Other Windows menu item not found");
-
         }
     }
 }
