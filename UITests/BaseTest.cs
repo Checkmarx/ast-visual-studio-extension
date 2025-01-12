@@ -82,30 +82,11 @@ namespace UITests
            }
            finally
            {
-               if (TestContext.CurrentTestOutcome != UnitTestOutcome.Passed)
-               {
-                   TakeScreenshot(TestContext.TestName);
-               }
                if (_automation != null)
                {
                    _automation.Dispose();
                }
                _mainWindow = null;
-           }
-       }
-
-       public static void TakeScreenshot(string testName)
-       {
-           try
-           {
-               var screenshot = Capture.Screen();
-               var fileName   = Path.Combine("Screenshots",$"{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.png");
-               Console.WriteLine($"Saving screenshot to {fileName}");
-               screenshot.ToFile(fileName);
-           }
-           catch (Exception ex)
-           {
-               Console.WriteLine($"Failed to take screenshot: {ex.Message}");
            }
        }
    }
