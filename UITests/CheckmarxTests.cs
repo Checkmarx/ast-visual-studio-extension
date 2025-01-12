@@ -19,6 +19,12 @@ namespace UITests
         {
             // File path for writing descendant names
             var filePath = "descendants.txt";
+            
+            // Ensure the file exists or is created
+            if (!File.Exists(filePath))
+            {
+                File.Create(filePath).Dispose(); // Create the file and release the handle
+            }
 
             // Find the View menu
             var viewMenu    = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
