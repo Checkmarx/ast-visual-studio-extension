@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FlaUI.Core.AutomationElements;
 using System.Threading.Tasks;
 using System.IO;
@@ -18,30 +19,26 @@ namespace UITests
         public async Task OpenCheckmarxWindow()
         {
             // File path for writing descendant names
-            var filePath = "descendants.txt";
-            
-            // Ensure the file exists or is created
-            if (!File.Exists(filePath))
-            {
-                File.Create(filePath).Dispose(); // Create the file and release the handle
-            }
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "descendants.txt");
+            Console.WriteLine($"File path: {filePath}");
 
-            // Find the View menu
-            var viewMenu    = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
-            var descendants = _mainWindow.FindAllDescendants();
 
-            // Write all descendant names to the file
             using (var writer = new StreamWriter(filePath))
             {
-                foreach (var descendant in descendants)
+                foreach (var descendant in _mainWindow.FindAllDescendants())
                 {
                     var name = descendant.Name;
                     if (!string.IsNullOrEmpty(name))
                     {
                         writer.WriteLine(name);
+                        Console.WriteLine(name);
                     }
                 }
             }
+
+
+            // Find the View menu
+            var viewMenu    = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
 
             // Assert View menu is not null
             Assert.IsNotNull(viewMenu, "View menu not found");
