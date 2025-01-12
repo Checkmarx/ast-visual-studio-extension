@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FlaUI.Core.AutomationElements;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace UITests
 {
