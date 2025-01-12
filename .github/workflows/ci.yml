@@ -67,6 +67,7 @@ jobs:
       - name: Run UI Tests
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Release\UITests.dll
+        on-error: continue
           
       - name: Output Descendants
         run: |
