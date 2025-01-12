@@ -22,15 +22,8 @@ namespace UITests
             TakeScreenshot("screenshot");
             
             var descendents = _mainWindow.FindAllDescendants();
-            foreach (var descendent in descendents)
-            {
-                Console.WriteLine(descendent.Name);
-            }
-
-            if (descendents.Length == 0)
-            {
-                Console.WriteLine("Empty");
-            }
+            Console.WriteLine($"Descendants of main window: {descendents.Length}");
+            Console.WriteLine($"Writing descendant name {descendents[0].Name} to file");
             
             Console.WriteLine("Writing descendant names to file");
 
