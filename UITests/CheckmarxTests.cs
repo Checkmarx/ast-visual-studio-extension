@@ -18,8 +18,13 @@ namespace UITests
         [TestMethod]
         public async Task OpenCheckmarxWindow()
         {
+            // create file if not exists
+            if (!File.Exists("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\descendants.txt"))
+            {
+                File.Create("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\descendants.txt");
+            }
             // File path for writing descendant names
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "descendants.txt");
+            var filePath = Path.Combine("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\", "descendants.txt");
             Console.WriteLine($"File path: {filePath}");
 
 
