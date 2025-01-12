@@ -70,10 +70,11 @@ jobs:
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" /InIsolation .\UITests\bin\Release\UITests.dll
         continue-on-error: true
 
-      - name: Output Descendants
-        shell: pwsh
-        run: |
-          Get-Content "${{ github.workspace }}\descendants.txt"
+      - name: Upload Descendants File
+        uses: actions/upload-artifact@v4
+        with:
+            name: descendants-file
+            path: ${{ github.workspace }}\descendants.txt
       
       
   
