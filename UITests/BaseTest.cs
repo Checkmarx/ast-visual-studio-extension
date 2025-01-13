@@ -44,6 +44,10 @@ namespace UITests
                invokePattern.Invoke();
                _mainWindow = WaitForMainWindow();
            }
+           else
+           {
+               Console.WriteLine("Continue without code button not found");
+           }
        }
 
        public static AutomationWindow WaitForMainWindow(int timeoutInSeconds = 30)
