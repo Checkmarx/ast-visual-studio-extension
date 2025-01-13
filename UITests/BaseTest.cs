@@ -49,6 +49,20 @@ namespace UITests
                Console.WriteLine("Continue without code button not found");
                _mainWindow = WaitForMainWindow();
            }
+           var dkipThis = _mainWindow.FindFirstDescendant(cf => cf.ByName("Skip this for now."));
+              if (dkipThis != null)
+              {
+                var invokePattern = dkipThis.Patterns.Invoke.Pattern;
+                Console.WriteLine("Skip this for now button  FOUND");
+                invokePattern.Invoke();
+                _mainWindow = WaitForMainWindow();
+              }
+              else
+              {
+                Console.WriteLine("Skip this for now button not found");
+                _mainWindow = WaitForMainWindow();
+              }
+
        }
 
        public static AutomationWindow WaitForMainWindow(int timeoutInSeconds = 30)
