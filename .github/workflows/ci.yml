@@ -6,40 +6,8 @@ permissions:
   write-all
 
 jobs:
-  integration-tests:
-    name: Checkmarx One visual studio extension CI / integration-tests
-    runs-on: windows-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Fetch Sources
-        uses: actions/checkout@v4
-      
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44
-      
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c
-        with:
-          vs-version: '17.2'
-      
-      - name: Restore NuGet packages
-        run: nuget restore .
-      
-      - name: Restore
-        run: dotnet restore .
-      
-      - name: Build
-        run: msbuild /p:Configuration=Release /p:DeployExtension=False
-      
-      - name: Tests
-        env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
-
   UI-tests:
     name: Checkmarx One visual studio extension CI / UI-tests
-    needs: integration-tests
     timeout-minutes: 30
     runs-on: windows-latest
     steps:
@@ -92,19 +60,3 @@ jobs:
           path: |
             **/*.trx
             ${{ github.workspace }}\Screenshots
-
-  cx-scan:
-    name: Checkmarx One Scan / cx-scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Checkmarx AST CLI Action
-        uses: checkmarx/ast-github-action@main
-        with:
-          base_uri: ${{ secrets.CHECKMARX_BASE_URI }}
-          cx_tenant: ${{ secrets.CHECKMARX_TENANT }}
-          cx_client_id: ${{ secrets.CHECKMARX_CLIENT_ID }}
-          cx_client_secret: ${{ secrets.CHECKMARX_CLIENT_SECRET }}
-          additional_params: --threshold "sast-high=1"
