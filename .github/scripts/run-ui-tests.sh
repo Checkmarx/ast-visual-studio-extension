@@ -18,6 +18,9 @@ fi
 echo "Pulling latest code..."
 git pull
 
+# Navigate to the root directory
+cd ../..
+
 # Step 2: Set up paths for Visual Studio executables
 MSBUILD_PATH="C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
 VSIXINSTALLER_PATH="C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/VSIXInstaller.exe"
