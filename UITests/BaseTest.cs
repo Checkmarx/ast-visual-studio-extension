@@ -23,7 +23,7 @@ namespace UITests
         {
             // Initialize automation and launch VS
             _automation = new UIA3Automation();
-            _app        = Application.Launch("devenv.exe /ResetSettings General");
+            _app        = Application.Launch("devenv.exe","/ResetSettings General");
 
             // Wait for launch VS
             Task.Delay(15000).Wait();
