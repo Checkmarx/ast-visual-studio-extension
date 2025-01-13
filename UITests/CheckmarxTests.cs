@@ -18,11 +18,6 @@ namespace UITests
         [TestMethod]
         public async Task OpenCheckmarxWindow()
         {
-            // Take a screenshot at the beginning of the test
-            TakeScreenshot("screenshot");
-            
-
-            // File path for writing descendant names
             // Find the View menu
             var viewMenu = _mainWindow.FindFirstDescendant(cf => cf.ByName("View"));
 

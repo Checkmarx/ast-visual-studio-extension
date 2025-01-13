@@ -111,21 +111,5 @@ namespace UITests
                 _mainWindow = null;
             }
         }
-
-        public void TakeScreenshot(string screenshotName)
-        {
-            try
-            {
-                var screen = Capture.Screen();
-                var screenshotPath =
-                    Path.Combine("D:\\a\\ast-visual-studio-extension\\ast-visual-studio-extension\\Screenshots\\",
-                                 $"{screenshotName}.png");
-                screen.ToFile(screenshotPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to take screenshot: {ex.Message}");
-            }
-        }
     }
 }
