@@ -47,6 +47,7 @@ namespace UITests
            else
            {
                Console.WriteLine("Continue without code button not found");
+               _mainWindow = WaitForMainWindow();
            }
        }
 
