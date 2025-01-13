@@ -25,14 +25,17 @@ jobs:
         run: nuget restore .
 
       - name: Restore
-        run: dotnet restore . 
+        run: dotnet restore .
       
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
         
-      - name: Tests
+      - name: Tests with Code Coverage
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
-        
-       
+        run: vstest.console.exe /InIsolation /EnableCodeCoverage .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
+
+      - name: Analyze Code Coverage
+        run: |
+          $coverageFile = Get-ChildItem -Path . -Filter *.coverage -Recurse | Select-Object -First 1
+          & "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe" analyze /output:coverage.xml $coverageFile.FullName
