@@ -24,15 +24,7 @@ namespace UITests
        {
            // Initialize automation and launch VS
            _automation = new UIA3Automation();
-           try
-           {
-               _app = Application.Launch(@"C:\Path\To\devenv.exe /Command File.NewSolution");
-           }
-           catch (Exception ex)
-           {
-               Console.WriteLine($"Failed to launch Visual Studio. Ensure devenv.exe is installed and accessible. Details: {ex.Message}", ex);
-           }
-
+           _app = Application.Launch("devenv.exe");
 
             // Wait for launch VS
             Task.Delay(15000).Wait();
