@@ -4,19 +4,23 @@
 set -e
 
 # Step 1: Get the branch name and checkout
-read -p "Enter the branch name: " BRANCH_NAME
+read -p "Enter the branch name (leave blank to use the current branch): " BRANCH_NAME
 
-# Check if branch exists locally
-if git rev-parse --verify "$BRANCH_NAME" >/dev/null 2>&1; then
-  echo "Branch $BRANCH_NAME exists locally. Checking out..."
-  git checkout "$BRANCH_NAME"
+if [[ -n "$BRANCH_NAME" ]]; then
+  # Check if branch exists locally
+  if git rev-parse --verify "$BRANCH_NAME" >/dev/null 2>&1; then
+    echo "Branch $BRANCH_NAME exists locally. Checking out..."
+    git checkout "$BRANCH_NAME"
+  else
+    echo "Branch $BRANCH_NAME does not exist locally. Checking out from remote..."
+    git checkout -t "origin/$BRANCH_NAME"
+  fi
+
+  echo "Pulling latest code..."
+  git pull
 else
-  echo "Branch $BRANCH_NAME does not exist locally. Checking out from remote..."
-  git checkout -t "origin/$BRANCH_NAME"
+  echo "No branch specified. Using the current local branch."
 fi
-
-echo "Pulling latest code..."
-git pull
 
 # Navigate to the root directory
 cd ../..
