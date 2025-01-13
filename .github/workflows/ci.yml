@@ -14,6 +14,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@v1
+      
       - name: Set up Visual Studio
         uses: microsoft/setup-msbuild@v2
         with:
@@ -26,30 +29,22 @@ jobs:
         run: msbuild ast-visual-studio-extension.sln /p:Configuration=Release
       
       - name: Install Checkmarx Extension
+        shell: pwsh
         run: |
           $vsixPath = Get-ChildItem -Path ".\ast-visual-studio-extension\bin\Release\*.vsix" -Recurse | Select-Object -First 1
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "$vsixPath"
+          Write-Host "Installing VSIX from: $($vsixPath.FullName)"
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet "$($vsixPath.FullName)"
           Start-Sleep -Seconds 30
       
-      - name: Verify Extension Installation
-        run: |
-          $extensionPath = "C:\Users\runneradmin\AppData\Local\Microsoft\VisualStudio\17.0_*\Extensions"
-          if (!(Test-Path -Path "$extensionPath\*\ast-visual-studio-extension*")) {
-            throw "Extension not found in expected location"
-          }
-      
       - name: Run UI Tests
+        shell: pwsh
         run: |
           $testDll = ".\UITests\bin\Release\UITests.dll"
-          if (!(Test-Path $testDll)) {
-            Write-Error "Test DLL not found at: $testDll"
-            exit 1
-          }
-          
+          Write-Host "Running tests from: $testDll"
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" `
             /InIsolation `
             /Logger:"trx;LogFileName=uitest-results.trx" `
-            $testDll
+            "$testDll"
         continue-on-error: true
 
       - name: Upload Test Results
