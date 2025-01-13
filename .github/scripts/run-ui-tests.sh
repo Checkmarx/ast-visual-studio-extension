@@ -30,15 +30,15 @@ $VSTEST_PATH = "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\
 
 # Step 4: Build the solution
 Write-Host "Building solution..."
-& "$MSBUILD_PATH" "$(Get-Location)\ast-visual-studio-extension\ast-visual-studio-extension.sln" /p:Configuration=Release /m:1
+Start-Process -FilePath "$MSBUILD_PATH" -ArgumentList "$(Get-Location)\ast-visual-studio-extension\ast-visual-studio-extension.sln", "/p:Configuration=Release", "/m:1" -Wait
 
 # Step 5: Install Checkmarx Extension
 Write-Host "Installing Checkmarx Extension..."
-& "$VSIXINSTALLER_PATH" /quiet "$(Get-Location)\ast-visual-studio-extension\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix"
+Start-Process -FilePath "$VSIXINSTALLER_PATH" -ArgumentList "/quiet", "$(Get-Location)\ast-visual-studio-extension\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix" -Wait
 Start-Sleep -Seconds 20
 
 # Step 6: Run UI Tests
 Write-Host "Running UI Tests..."
-& "$VSTEST_PATH" /InIsolation "./UITests/bin/Release/UITests.dll"
+Start-Process -FilePath "$VSTEST_PATH" -ArgumentList "/InIsolation", "./UITests/bin/Release/UITests.dll" -Wait
 
 Write-Host "Script execution completed successfully."
