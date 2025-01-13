@@ -26,21 +26,28 @@ fi
 cd "$(git rev-parse --show-toplevel)"
 
 # Step 2: Set up paths for Visual Studio executables
-MSBUILD_PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
-VSIXINSTALLER_PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/VSIXInstaller.exe"
-VSTEST_PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/TestWindow/vstest.console.exe"
+MSBUILD_PATH="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe"
+VSIXINSTALLER_PATH="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VSIXInstaller.exe"
+VSTEST_PATH="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe"
 
-# Step 4: Build the solution
-echo "Building solution..."
-"$MSBUILD_PATH" "$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension.sln" /p:Configuration=Release /m:1
+# Step 3: Build the solution using PowerShell
+powershell -Command "& {
+    Write-Host 'Building solution...';
+    & '$MSBUILD_PATH' '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension.sln' /p:Configuration=Release /m:1;
+}"
 
-# Step 5: Install Checkmarx Extension
-echo "Installing Checkmarx Extension..."
-"$VSIXINSTALLER_PATH" /quiet "$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix"
-sleep 20
+# Step 4: Install Checkmarx Extension using PowerShell
+powershell -Command "& {
+    Write-Host 'Installing Checkmarx Extension...';
+    & '$VSIXINSTALLER_PATH' '/quiet' '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix';
+    Start-Sleep -Seconds 20;
+}"
 
-# Step 6: Run UI Tests
-echo "Running UI Tests..."
-"$VSTEST_PATH" /InIsolation "$(pwd)/UITests/bin/Release/UITests.dll"
+# Step 5: Run UI Tests using PowerShell
+powershell -Command "& {
+    Write-Host 'Running UI Tests...';
+    & '$VSTEST_PATH' '/InIsolation' '$(pwd)/UITests/bin/Release/UITests.dll';
+}"
 
+# Final message
 echo "Script execution completed successfully."
