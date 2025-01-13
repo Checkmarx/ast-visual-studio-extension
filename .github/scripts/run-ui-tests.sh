@@ -33,20 +33,20 @@ VSTEST_PATH="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common
 # Step 3: Build the solution using PowerShell
 powershell -Command "& {
     Write-Host 'Building solution...';
-    & '$MSBUILD_PATH' '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension.sln' /p:Configuration=Release /m:1;
+    Start-Process -FilePath '$MSBUILD_PATH' -ArgumentList '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension.sln', '/p:Configuration=Release', '/m:1' -Wait;
 }"
 
 # Step 4: Install Checkmarx Extension using PowerShell
 powershell -Command "& {
     Write-Host 'Installing Checkmarx Extension...';
-    & '$VSIXINSTALLER_PATH' '/quiet' '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix';
+    Start-Process -FilePath '$VSIXINSTALLER_PATH' -ArgumentList '/quiet', '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix' -Wait;
     Start-Sleep -Seconds 20;
 }"
 
 # Step 5: Run UI Tests using PowerShell
 powershell -Command "& {
     Write-Host 'Running UI Tests...';
-    & '$VSTEST_PATH' '/InIsolation' '$(pwd)/UITests/bin/Release/UITests.dll';
+    Start-Process -FilePath '$VSTEST_PATH' -ArgumentList '/InIsolation', '$(pwd)/UITests/bin/Release/UITests.dll' -Wait;
 }"
 
 # Final message
