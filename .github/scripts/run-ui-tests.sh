@@ -1,53 +1,47 @@
-#!/bin/bash
-
 # Exit script on any error
-set -e
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
 # Step 1: Get the branch name and checkout
-read -p "Enter the branch name (leave blank to use the current branch): " BRANCH_NAME
+$branchName = Read-Host "Enter the branch name (leave blank to use the current branch)"
 
-if [[ -n "$BRANCH_NAME" ]]; then
-  # Check if branch exists locally
-  if git rev-parse --verify "$BRANCH_NAME" >/dev/null 2>&1; then
-    echo "Branch $BRANCH_NAME exists locally. Checking out..."
-    git checkout "$BRANCH_NAME"
-  else
-    echo "Branch $BRANCH_NAME does not exist locally. Checking out from remote..."
-    git checkout -t "origin/$BRANCH_NAME"
-  fi
+if ($branchName -ne "") {
+    # Check if branch exists locally
+    $branchExists = git rev-parse --verify $branchName *>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Branch $branchName exists locally. Checking out..."
+        git checkout $branchName
+    } else {
+        Write-Host "Branch $branchName does not exist locally. Checking out from remote..."
+        git checkout -t "origin/$branchName"
+    }
 
-  echo "Pulling latest code..."
-  git pull
-else
-  echo "No branch specified. Using the current local branch."
-fi
+    Write-Host "Pulling latest code..."
+    git pull
+} else {
+    Write-Host "No branch specified. Using the current local branch."
+}
 
 # Navigate to the root directory
-cd "$(git rev-parse --show-toplevel)"
+Set-Location (git rev-parse --show-toplevel)
 
 # Step 2: Set up paths for Visual Studio executables
-MSBUILD_PATH="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe"
-VSIXINSTALLER_PATH="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VSIXInstaller.exe"
-VSTEST_PATH="C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe"
+$msbuildPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe"
+$vsixInstallerPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VSIXInstaller.exe"
+$vsTestPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe"
 
-# Step 3: Build the solution using PowerShell
-powershell -Command "& {
-    Write-Host 'Building solution...';
-    Start-Process -FilePath '$MSBUILD_PATH' -ArgumentList '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension.sln', '/p:Configuration=Release', '/m:1' -Wait;
-}"
+# Step 3: Build the solution
+Write-Host "Building solution..."
+Start-Process -FilePath $msbuildPath -ArgumentList "$(Get-Location)/ast-visual-studio-extension/ast-visual-studio-extension.sln", "/p:Configuration=Release", "/m:1" -Wait
 
-# Step 4: Install Checkmarx Extension using PowerShell
-powershell -Command "& {
-    Write-Host 'Installing Checkmarx Extension...';
-    Start-Process -FilePath '$VSIXINSTALLER_PATH' -ArgumentList '/quiet', '$(pwd)/ast-visual-studio-extension/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix' -Wait;
-    Start-Sleep -Seconds 20;
-}"
+# Step 4: Install Checkmarx Extension
+Write-Host "Installing Checkmarx Extension..."
+Start-Process -FilePath $vsixInstallerPath -ArgumentList "/quiet", "$(Get-Location)/ast-visual-studio-extension/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix" -Wait
+Start-Sleep -Seconds 20
 
-# Step 5: Run UI Tests using PowerShell
-powershell -Command "& {
-    Write-Host 'Running UI Tests...';
-    Start-Process -FilePath '$VSTEST_PATH' -ArgumentList '/InIsolation', '$(pwd)/UITests/bin/Release/UITests.dll' -Wait;
-}"
+# Step 5: Run UI Tests
+Write-Host "Running UI Tests..."
+Start-Process -FilePath $vsTestPath -ArgumentList "/InIsolation", "$(Get-Location)/UITests/bin/Release/UITests.dll" -Wait
 
 # Final message
-echo "Script execution completed successfully."
+Write-Host "Script execution completed successfully."
