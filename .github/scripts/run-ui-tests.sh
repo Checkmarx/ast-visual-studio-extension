@@ -23,12 +23,12 @@ else
 fi
 
 # Navigate to the root directory
-cd ../..
+cd "$(git rev-parse --show-toplevel)"
 
 # Step 2: Set up paths for Visual Studio executables
-MSBUILD_PATH="C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
-VSIXINSTALLER_PATH="C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/VSIXInstaller.exe"
-VSTEST_PATH="C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/TestWindow/vstest.console.exe"
+MSBUILD_PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
+VSIXINSTALLER_PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/VSIXInstaller.exe"
+VSTEST_PATH="/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/TestWindow/vstest.console.exe"
 
 # Step 4: Build the solution
 echo "Building solution..."
@@ -41,6 +41,6 @@ sleep 20
 
 # Step 6: Run UI Tests
 echo "Running UI Tests..."
-"$VSTEST_PATH" /InIsolation ./UITests/bin/Release/UITests.dll
+"$VSTEST_PATH" /InIsolation "$(pwd)/UITests/bin/Release/UITests.dll"
 
 echo "Script execution completed successfully."
