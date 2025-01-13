@@ -32,7 +32,7 @@ VSTEST_PATH="C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE
 
 # Step 4: Build the solution
 echo "Building solution..."
-"$MSBUILD_PATH" "$(pwd)/ast-visual-studio-extension.sln" /p:Configuration=Release
+"poweshell -Command $MSBUILD_PATH" "$(pwd)/ast-visual-studio-extension.sln" /p:Configuration=Release
 
 # Step 5: Install Checkmarx Extension
 echo "Installing Checkmarx Extension..."
