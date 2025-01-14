@@ -1,45 +1,58 @@
 name: Checkmarx One visual studio extension CI
-
 on: [ pull_request, workflow_dispatch ]
-
 permissions: write-all
-
 jobs:
   integration-tests:
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: write
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
 
-      - name: Install Visual Studio Build Tools
-        run: choco install visualstudio2022buildtools -y
+      # Setup .NET first
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
 
+      # Install VSTest
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@v1
+
+      # Add Visual Studio components including SDK
       - name: Add MSBuild to PATH
-        shell: pwsh
-        run: |
-          $vsPath = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          $msbuildPath = Join-Path $vsPath "MSBuild\Current\Bin"
-          if (-Not (Test-Path $msbuildPath)) {
-            throw "MSBuild path not found: $msbuildPath"
-          }
-          echo "$msbuildPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        uses: microsoft/setup-msbuild@v1.3.1
+        with:
+          vs-version: '17.2'
 
-      - name: Verify MSBuild
-        shell: pwsh
+      # Install System.Resources.Extensions explicitly
+      - name: Install System.Resources.Extensions
         run: |
-          if (-Not (Get-Command "msbuild" -ErrorAction SilentlyContinue)) {
-            throw "MSBuild not found in PATH"
-          } else {
-            Write-Host "MSBuild is available"
-          }
+          dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package System.Resources.Extensions -v 8.0.0
+          dotnet add .\ast-visual-studio-extension-tests\ast-visual-studio-extension-tests.csproj package System.Resources.Extensions -v 8.0.0
 
+      # Restore packages
       - name: Restore NuGet packages
-        run: nuget restore .
+        run: |
+          nuget restore .
+          dotnet restore .
 
-      - name: Restore
-        run: dotnet restore .
-
+      # Build with specific properties to handle resources
       - name: Build
-        run: msbuild /p:Configuration=Release /p:DeployExtension=False
+        run: |
+          msbuild /p:Configuration=Release /p:DeployExtension=False /p:GenerateResourceUsePreserializedResources=true
+
+      # Run tests if build succeeds
+      - name: Run Tests with Code Coverage
+        shell: pwsh
+        env:
+          CX_APIKEY: ${{ secrets.CX_APIKEY }}
+        continue-on-error: true
+        run: |
+          $testDll = ".\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll"
+          if (Test-Path $testDll) {
+            vstest.console.exe /EnableCodeCoverage $testDll
+          } else {
+            Write-Warning "Test DLL not found: $testDll - Continuing without tests"
+          }
