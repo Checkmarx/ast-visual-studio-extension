@@ -12,6 +12,10 @@ This script performs the following steps:
 5. Installs the Checkmarx extension (.vsix) into Visual Studio.
 6. Executes UI tests using the VSTest console.
 
+.WARNING
+Ensure that Visual Studio is closed before running this script. Installing the Checkmarx extension will fail if 
+Visual Studio is running.
+
 .PARAMETER branchName
 The name of the Git branch to check out. If not provided, the script assumes the current branch.
 
@@ -42,6 +46,9 @@ function Log {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Write-Host "[$timestamp] $args"
 }
+
+# Warn the user about closing Visual Studio
+Log "WARNING: Ensure that Visual Studio is closed before running this script to avoid installation failures."
 
 # Step 1: Get the branch name and checkout
 if ($branchName -eq "") {
