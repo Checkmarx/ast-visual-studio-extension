@@ -1,69 +1,77 @@
-name: Build and Test Visual Studio Extension
+name: Checkmarx One visual studio extension CI
 
-on: [push, pull_request]
+on: [ pull_request, workflow_dispatch ]
+
+permissions: write-all
 
 jobs:
-  build:
-    runs-on: windows-2022
+  integration-tests:
+    runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout repository
+      - name: Fetch Sources
         uses: actions/checkout@v4
-      
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.3
-        with:
-          vs-version: 'latest'
 
-      - name: Install Visual Studio Extension Development workload
+      - name: Install Visual Studio Workloads
         run: |
-          choco install visualstudio2022-workload-vsbuildtools -y
+          choco install visualstudio2022buildtools -y
+          choco install visualstudio2022-workload-vctools -y
 
-      - name: Set VSToolsPath
+      - name: Add CodeCoverage to PATH
+        shell: pwsh
         run: |
-          $vsPath = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.VSSDK -property installationPath
-          echo "VSToolsPath=$vsPath\Common7\IDE\Extensions\Microsoft\VSSDK" >> $env:GITHUB_ENV
+          $vsPath = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $codeCoveragePath = Join-Path $vsPath "Team Tools\Dynamic Code Coverage Tools"
+          if (-Not (Test-Path $codeCoveragePath)) {
+            throw "Code Coverage Tools path not found: $codeCoveragePath"
+          }
+          echo "$codeCoveragePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Verify CodeCoverage.exe
+        shell: pwsh
+        run: |
+          if (-Not (Get-Command "CodeCoverage.exe" -ErrorAction SilentlyContinue)) {
+            throw "CodeCoverage.exe not found in PATH"
+          } else {
+            Write-Host "CodeCoverage.exe is available"
+          }
 
       - name: Restore NuGet packages
-        run: dotnet restore
-      
-      - name: Build project
-        run: msbuild /p:Configuration=Release
+        run: nuget restore .
 
-      - name: Run tests with code coverage
+      - name: Restore
+        run: dotnet restore .
+
+      - name: Build
+        run: msbuild /p:Configuration=Release /p:DeployExtension=False
+
+      - name: Run Tests with Coverage
         shell: pwsh
-        continue-on-error: true
         run: |
-          $testDll = ".\tests\bin\Release\MyTests.dll"
-          if (Test-Path $testDll) {
-            vstest.console.exe /EnableCodeCoverage $testDll
-          } else {
-            Write-Warning "Test DLL not found - Skipping tests"
-          }
+          $testDll = ".\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll"
+          vstest.console.exe /EnableCodeCoverage $testDll
 
-      - name: Generate coverage report
+      - name: Generate Coverage Report
         shell: pwsh
-        continue-on-error: true
         run: |
           $coverageFile = Get-ChildItem -Path . -Filter *.coverage -Recurse | Select-Object -First 1
-          if ($coverageFile) {
-            CodeCoverage.exe analyze /output:coverage.xml $coverageFile.FullName
-          } else {
-            Write-Warning "Coverage file not found - Skipping coverage analysis"
+          if (-Not $coverageFile) {
+            throw "Coverage file not found."
           }
+          CodeCoverage.exe analyze /output:coverage.xml $coverageFile.FullName
 
-      - name: Print coverage summary
+      - name: Print Coverage Summary
         shell: pwsh
-        continue-on-error: true
         run: |
-          if (Test-Path "coverage.xml") {
-            $xml = [xml](Get-Content coverage.xml)
-            $totalLines = [int]$xml.CoverageSession.Summary.NumLines
-            $coveredLines = [int]$xml.CoverageSession.Summary.NumCoveredLines
-            $percentage = [math]::Round(($coveredLines / $totalLines) * 100, 2)
-            Write-Host "Coverage Summary:"
-            Write-Host "Total Lines: $totalLines"
-            Write-Host "Covered Lines: $coveredLines"
-            Write-Host "Coverage Percentage: $percentage%"
-          } else {
-            Write-Warning "Coverage XML file not found - No coverage data available"
+          if (-Not (Test-Path "coverage.xml")) {
+            throw "Coverage XML file not found."
           }
+          $xml = [xml](Get-Content coverage.xml)
+          $totalLines = [int]$xml.CoverageSession.Summary.NumLines
+          $coveredLines = [int]$xml.CoverageSession.Summary.NumCoveredLines
+          $percentage = [math]::Round(($coveredLines / $totalLines) * 100, 2)
+          Write-Host "Coverage Summary:"
+          Write-Host "Total Lines: $totalLines"
+          Write-Host "Covered Lines: $coveredLines"
+          Write-Host "Coverage Percentage: $percentage%"
