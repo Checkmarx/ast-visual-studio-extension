@@ -1,7 +1,5 @@
 name: Checkmarx One visual studio extension CI
-
 on: [ pull_request, workflow_dispatch ]
-
 permissions: write-all
 
 jobs:
@@ -26,16 +24,26 @@ jobs:
 
       - name: Restore
         run: dotnet restore .
-      
+
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
-        
+
       - name: Tests with Code Coverage
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation /EnableCodeCoverage .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
+        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
 
-      - name: Analyze Code Coverage
+      - name: Generate Coverage Report
         run: |
-          $coverageFile = Get-ChildItem -Path . -Filter *.coverage -Recurse | Select-Object -First 1
-          & "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe" analyze /output:coverage.xml $coverageFile.FullName
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage_report" -reporttypes:TextSummary
+
+      - name: Print Coverage
+        run: |
+          $coverageReport = Get-Content coverage_report/Summary.txt
+          echo "Coverage Summary:"
+          echo $coverageReport
+          $lineRate = Select-String -Path "**/coverage.cobertura.xml" -Pattern 'line-rate="([0-9.]+)"' | ForEach-Object { $_.Matches.Groups[1].Value }
+          $percentage = [math]::Round(($lineRate * 100), 2)
+          echo "Total Coverage: $percentage%"
+          echo "COVERAGE_PERCENTAGE=$percentage" >> $env:GITHUB_ENV
