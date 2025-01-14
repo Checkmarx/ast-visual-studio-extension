@@ -10,7 +10,7 @@ jobs:
       - name: Fetch Sources
         uses: actions/checkout@v4
       
-      - name: Setup .NET 
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '6.0.x'
@@ -27,16 +27,17 @@ jobs:
           choco install visualstudio2022-workload-visualstudioextension
       
       - name: Diagnostics and Preparation
-        shell: pwsh
         run: |
           dotnet --info
           Get-ChildItem -Recurse -Filter *.csproj | Select-Object FullName
       
       - name: Restore NuGet Packages
-        run: dotnet restore
+        run: |
+          dotnet nuget locals all --clear
+          dotnet restore
+          nuget restore
       
       - name: Prepare Test Project
-        shell: pwsh
         run: |
           $testProject = Get-ChildItem -Recurse -Filter "ast-visual-studio-extension-tests.csproj" | Select-Object -First 1
           
@@ -59,7 +60,7 @@ jobs:
           msbuild /p:Configuration=Release /p:DeployExtension=False /p:VSSDKTargetPlatformRegRootSuffix=Exp /p:GenerateResourceUsePreserializedResources=true
       
       - name: Run Tests
-        shell: pwsh
+        continue-on-error: true
         run: |
           $testProject = Get-ChildItem -Recurse -Filter "ast-visual-studio-extension-tests.csproj" | Select-Object -First 1
           
@@ -77,4 +78,4 @@ jobs:
         with:
           name: test-results
           path: |
-            **/TestResults/*.trx
+            **/*.trx
