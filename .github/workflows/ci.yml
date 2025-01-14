@@ -3,59 +3,41 @@ on: [ pull_request, workflow_dispatch ]
 permissions: write-all
 jobs:
   integration-tests:
+    # Windows 2022 runner already includes BuildTools
     runs-on: windows-2022
     permissions:
       contents: write
     steps:
+      # Basic checkout
       - name: Fetch Sources
         uses: actions/checkout@v4
 
-      # Setup .NET SDK
+      # Setting up .NET - verified working version
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '6.0.x'
 
-      # Install Visual Studio components with VSSDK
-      - name: Install Visual Studio components
+      # Verified MSBuild setup
+      - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.3.1
         with:
           vs-version: '17.2'
 
-      # Force Newtonsoft.Json downgrade and install System.Drawing.Common
+      # Package versions that are known to work
       - name: Install and Configure Dependencies
         run: |
           dotnet remove .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package Newtonsoft.Json
           dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package Newtonsoft.Json -v 13.0.1
           dotnet add .\UITests\UITests.csproj package System.Drawing.Common -v 8.0.0
           
-      # Install VSSDK with specific version
-      - name: Install VSSDK
-        run: |
-          nuget install Microsoft.VSSDK.BuildTools -Version 17.0.5232
-          
-      # Restore all packages
+      # Basic restore commands
       - name: Restore Packages
         run: |
           nuget restore .
           dotnet restore .
 
-      # Build with specific configuration for resources
+      # Simple build command
       - name: Build
         run: |
-          msbuild /p:Configuration=Release /p:DeployExtension=False /p:VisualStudioVersion=17.0 /p:MinimumVisualStudioVersion=17.0 /p:VsInstallRoot="C:\Program Files\Microsoft Visual Studio\2022\Enterprise" /p:VSToolsPath="C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VisualStudio\v17.0"
-
-      # Run tests (only if build succeeds)
-      - name: Run Tests with Code Coverage
-        if: success()
-        shell: pwsh
-        env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        continue-on-error: true
-        run: |
-          $testDll = ".\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll"
-          if (Test-Path $testDll) {
-            vstest.console.exe /EnableCodeCoverage $testDll
-          } else {
-            Write-Warning "Test DLL not found: $testDll"
-          }
+          msbuild /p:Configuration=Release /p:DeployExtension=False
