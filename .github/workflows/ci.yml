@@ -1,12 +1,9 @@
 name: Checkmarx One Visual Studio Extension CI
-
 on:
   pull_request:
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   integration-tests:
     runs-on: windows-latest
@@ -31,8 +28,11 @@ jobs:
         with:
           msbuild-architecture: 'x64'
       
-      - name: Install Newtonsoft.Json
-        run: dotnet add package Newtonsoft.Json
+      - name: Install Required Packages
+        run: |
+          dotnet add ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj package Newtonsoft.Json
+          dotnet add ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj package Microsoft.NET.Test.Sdk
+          dotnet add ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj package coverlet.collector
       
       - name: Restore NuGet packages
         run: nuget restore
@@ -46,7 +46,7 @@ jobs:
       - name: Run Tests with Coverage
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: dotnet test ./ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/coverage.xml
+        run: dotnet test ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/coverage.xml
       
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v3
