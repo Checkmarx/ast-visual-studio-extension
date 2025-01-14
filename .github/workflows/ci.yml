@@ -10,34 +10,44 @@ permissions:
 jobs:
   integration-tests:
     runs-on: windows-latest
+    
     permissions:
       contents: write
+    
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
-
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'  
+      
       - name: Setup VSTest
         uses: darenm/Setup-VSTest@v1
-
+      
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
         with:
           msbuild-architecture: 'x64'
-
+      
+      - name: Install Newtonsoft.Json
+        run: dotnet add package Newtonsoft.Json
+      
       - name: Restore NuGet packages
         run: nuget restore
-
+      
       - name: Restore .NET Packages
         run: dotnet restore
-
+      
       - name: Build Solution
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
-
+      
       - name: Run Tests with Coverage
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
         run: dotnet test ./ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/coverage.xml
-          
+      
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v3
         with:
