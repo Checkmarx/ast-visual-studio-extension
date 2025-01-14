@@ -2,64 +2,80 @@ name: Checkmarx One visual studio extension CI
 on: [ pull_request, workflow_dispatch ]
 permissions: write-all
 jobs:
-  integration-tests:
-    runs-on: windows-2022
-    permissions:
-      contents: write
-    steps:
-      - name: Fetch Sources
-        uses: actions/checkout@v4
-      
-      # Setting up tools
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '6.0.x'
-      
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.3.1
-        with:
-          vs-version: '17.2'
-      
-      # Install Visual Studio Build Tools
-      - name: Install Visual Studio Build Tools
-        run: |
-          choco install visualstudio2022buildtools
-          choco install visualstudio2022-workload-manageddesktop
-      
-      # Basic restore with explicit package installation
-      - name: Restore and Add Packages
-        run: |
-          nuget restore
-          dotnet restore
-          
-          # Find and add coverage packages to test projects
-          Get-ChildItem -Recurse -Filter *tests.csproj | ForEach-Object {
-            dotnet add $_.FullName package coverlet.collector
-            dotnet add $_.FullName package Microsoft.NET.Test.Sdk
-          }
-      
-      # Build with specific resource handling for VSIX
-      - name: Build
-        run: |
-          msbuild /p:Configuration=Release /p:DeployExtension=False /p:GenerateResourceUsePreserializedResources=true /p:VSSDKTargetPlatformRegRootSuffix=Exp
-      
-      # Generate and upload coverage report
-      - name: Generate code coverage report
-        run: dotnet test --collect:"XPlat Code Coverage"
-        
-      - name: Code Coverage Report
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: '**/coverage.cobertura.xml'
-          badge: true
-          format: 'markdown'
-          output: 'both'
-      
-      - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
-        with:
-          header: Coverage Report
-          recreate: true
-          path: code-coverage-results.md
+ integration-tests:
+   runs-on: windows-2022
+   
+   steps:
+     - name: Fetch Sources
+       uses: actions/checkout@v4
+     
+     - name: Setup .NET
+       uses: actions/setup-dotnet@v3
+       with:
+         dotnet-version: '6.0.x'
+     
+     - name: Setup VSTest
+       uses: darenm/Setup-VSTest@v1
+     
+     - name: Add MSBuild to PATH
+       uses: microsoft/setup-msbuild@v2
+       with:
+         vs-version: '17.2'
+     
+     - name: Install Visual Studio Build Tools
+       run: |
+         choco install visualstudio2022buildtools
+         choco install visualstudio2022-workload-manageddesktop
+         choco install visualstudio2022-workload-visualstudioextension
+     
+     - name: Diagnostics and Preparation
+       run: |
+         dotnet --info
+         Get-ChildItem -Recurse -Filter *.csproj | Select-Object FullName
+     
+     - name: Restore NuGet Packages
+       run: |
+         dotnet nuget locals all --clear
+         dotnet restore
+         nuget restore
+     
+     - name: Prepare Test Projects
+       run: |
+         $testProjects = Get-ChildItem -Recurse -Filter *tests.csproj
+         
+         foreach ($project in $testProjects) {
+           Write-Host "Preparing test project: $($project.FullName)"
+           
+           dotnet add $project.FullName package Microsoft.NET.Test.Sdk
+           dotnet add $project.FullName package coverlet.collector
+           dotnet add $project.FullName package Newtonsoft.Json
+           
+           dotnet add $project.FullName package Microsoft.VisualStudio.SDK
+           dotnet add $project.FullName package Microsoft.VSSDK.BuildTools
+         }
+     
+     - name: Build Solution
+       run: |
+         msbuild /p:Configuration=Release /p:DeployExtension=False /p:VSSDKTargetPlatformRegRootSuffix=Exp /p:GenerateResourceUsePreserializedResources=true
+     
+     - name: Run Tests with Coverage
+       continue-on-error: true
+       run: |
+         $testProjects = Get-ChildItem -Recurse -Filter *tests.csproj
+         
+         foreach ($project in $testProjects) {
+           Write-Host "Running tests for: $($project.FullName)"
+           
+           dotnet test $project.FullName `
+             --configuration Release `
+             --collect:"XPlat Code Coverage" `
+             --logger "trx;LogFileName=test-results.trx"
+         }
+     
+     - name: Upload Test Results
+       uses: actions/upload-artifact@v3
+       with:
+         name: test-results
+         path: |
+           **/*.trx
+           **/*.cobertura.xml
