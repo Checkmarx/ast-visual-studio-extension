@@ -1,76 +1,69 @@
-name: Checkmarx One visual studio extension CI
-on: [ pull_request, workflow_dispatch ]
-permissions: write-all
+name: Build and Test Visual Studio Extension
+
+on: [push, pull_request]
+
 jobs:
- integration-tests:
-   runs-on: windows-2022
-   permissions:
-     contents: write
-   steps:
-     - name: Fetch Sources
-       uses: actions/checkout@v4
-       
-     - name: Setup VSTest
-       uses: darenm/Setup-VSTest@v1
-           
-     - name: Add MSBuild to PATH
-       uses: microsoft/setup-msbuild@v1.3.1
-       with:
-         vs-version: '17.2'
-         
-     - name: Setup .NET
-       uses: actions/setup-dotnet@v3
-       with:
-         dotnet-version: '6.0.x'
-         
-     - name: Force Install Dependencies
-       run: |
-         dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package Newtonsoft.Json -v 13.0.1 
-         dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package System.Drawing.Common 
-         
-     - name: Restore NuGet packages
-       run: dotnet restore . --force
-       
-     - name: Build
-       run: msbuild /p:Configuration=Release /p:DeployExtension=False /p:TreatWarningsAsErrors=false /p:WarningLevel=0
-       
-     - name: Run Tests with Code Coverage
-       shell: pwsh
-       env:
-         CX_APIKEY: ${{ secrets.CX_APIKEY }}
-       continue-on-error: true  # Will continue even if tests fail
-       run: |
-         $testDll = ".\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll"
-         if (Test-Path $testDll) {
-           vstest.console.exe /EnableCodeCoverage $testDll
-         } else {
-           Write-Warning "Test DLL not found: $testDll - Continuing without tests"
-         }
-       
-     - name: Generate Coverage Report
-       shell: pwsh
-       continue-on-error: true  # Will continue even if report generation fails
-       run: |
-         $coverageFile = Get-ChildItem -Path . -Filter *.coverage -Recurse | Select-Object -First 1
-         if ($coverageFile) {
-           CodeCoverage.exe analyze /output:coverage.xml $coverageFile.FullName
-         } else {
-           Write-Warning "No coverage file found - Skipping coverage analysis"
-         }
-         
-     - name: Print Coverage Summary
-       shell: pwsh
-       continue-on-error: true  # Will continue even if printing fails
-       run: |
-         if (Test-Path "coverage.xml") {
-           $xml = [xml](Get-Content coverage.xml)
-           $totalLines = [int]$xml.CoverageSession.Summary.NumLines
-           $coveredLines = [int]$xml.CoverageSession.Summary.NumCoveredLines
-           $percentage = [math]::Round(($coveredLines / $totalLines) * 100, 2)
-           Write-Host "Coverage Summary:"
-           Write-Host "Total Lines: $totalLines"
-           Write-Host "Covered Lines: $coveredLines"
-           Write-Host "Coverage Percentage: $percentage%"
-         } else {
-           Write-Warning "Coverage XML file not found - No coverage data available"
-         }
+  build:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.3
+        with:
+          vs-version: 'latest'
+
+      - name: Install Visual Studio Extension Development workload
+        run: |
+          choco install visualstudio2022-workload-vsbuildtools -y
+
+      - name: Set VSToolsPath
+        run: |
+          $vsPath = &"${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.Component.VSSDK -property installationPath
+          echo "VSToolsPath=$vsPath\Common7\IDE\Extensions\Microsoft\VSSDK" >> $env:GITHUB_ENV
+
+      - name: Restore NuGet packages
+        run: dotnet restore
+      
+      - name: Build project
+        run: msbuild /p:Configuration=Release
+
+      - name: Run tests with code coverage
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $testDll = ".\tests\bin\Release\MyTests.dll"
+          if (Test-Path $testDll) {
+            vstest.console.exe /EnableCodeCoverage $testDll
+          } else {
+            Write-Warning "Test DLL not found - Skipping tests"
+          }
+
+      - name: Generate coverage report
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $coverageFile = Get-ChildItem -Path . -Filter *.coverage -Recurse | Select-Object -First 1
+          if ($coverageFile) {
+            CodeCoverage.exe analyze /output:coverage.xml $coverageFile.FullName
+          } else {
+            Write-Warning "Coverage file not found - Skipping coverage analysis"
+          }
+
+      - name: Print coverage summary
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          if (Test-Path "coverage.xml") {
+            $xml = [xml](Get-Content coverage.xml)
+            $totalLines = [int]$xml.CoverageSession.Summary.NumLines
+            $coveredLines = [int]$xml.CoverageSession.Summary.NumCoveredLines
+            $percentage = [math]::Round(($coveredLines / $totalLines) * 100, 2)
+            Write-Host "Coverage Summary:"
+            Write-Host "Total Lines: $totalLines"
+            Write-Host "Covered Lines: $coveredLines"
+            Write-Host "Coverage Percentage: $percentage%"
+          } else {
+            Write-Warning "Coverage XML file not found - No coverage data available"
+          }
