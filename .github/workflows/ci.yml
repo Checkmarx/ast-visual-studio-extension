@@ -48,9 +48,3 @@ jobs:
         with:
           name: coverage-report
           path: ./coverage/coverage.xml
-
-      - name: Report Coverage
-        uses: gaboel/nunit-to-html@v1
-        with:
-          input: './coverage/coverage.xml'
-          output: './coverage/coverage.html'
