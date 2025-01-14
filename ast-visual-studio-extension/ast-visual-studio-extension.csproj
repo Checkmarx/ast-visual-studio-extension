@@ -6,7 +6,7 @@
     <InstallRoot>Default</InstallRoot>
     <VSIXSubPath>
     </VSIXSubPath>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>net6.0-windows</TargetFrameworkVersion>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <TargetFrameworkProfile />
