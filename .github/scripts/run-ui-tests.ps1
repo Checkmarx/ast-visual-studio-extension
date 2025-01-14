@@ -1,3 +1,7 @@
+param (
+    [string]$branchName = ""
+)
+
 # Exit script on any error
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -7,11 +11,6 @@ function Log {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Write-Host "[$timestamp] $args"
 }
-
-# Check if branch name is passed as a parameter
-param (
-    [string]$branchName = ""
-)
 
 # Step 1: Get the branch name and checkout
 if ($branchName -eq "") {
