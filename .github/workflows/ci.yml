@@ -1,81 +1,87 @@
 name: Checkmarx One visual studio extension CI
 on: [ pull_request, workflow_dispatch ]
 permissions: write-all
+
 jobs:
- integration-tests:
-   runs-on: windows-2022
-   
-   steps:
-     - name: Fetch Sources
-       uses: actions/checkout@v4
-     
-     - name: Setup .NET
-       uses: actions/setup-dotnet@v3
-       with:
-         dotnet-version: '6.0.x'
-     
-     - name: Setup VSTest
-       uses: darenm/Setup-VSTest@v1
-     
-     - name: Add MSBuild to PATH
-       uses: microsoft/setup-msbuild@v2
-       with:
-         vs-version: '17.2'
-     
-     - name: Install Visual Studio Build Tools
-       run: |
-         choco install visualstudio2022buildtools
-         choco install visualstudio2022-workload-manageddesktop
-         choco install visualstudio2022-workload-visualstudioextension
-     
-     - name: Diagnostics and Preparation
-       run: |
-         dotnet --info
-         Get-ChildItem -Recurse -Filter *.csproj | Select-Object FullName
-     
-     - name: Restore NuGet Packages
-       run: |
-         dotnet nuget locals all --clear
-         dotnet restore
-         nuget restore
-     
-     - name: Prepare Test Projects
-       run: |
-         $testProjects = Get-ChildItem -Recurse -Filter *tests.csproj
-         
-         foreach ($project in $testProjects) {
-           Write-Host "Preparing test project: $($project.FullName)"
-           
-           dotnet add $project.FullName package Microsoft.NET.Test.Sdk
-           dotnet add $project.FullName package coverlet.collector
-           dotnet add $project.FullName package Newtonsoft.Json
-           
-           dotnet add $project.FullName package Microsoft.VisualStudio.SDK
-           dotnet add $project.FullName package Microsoft.VSSDK.BuildTools
-         }
-     
-     - name: Build Solution
-       run: |
-         msbuild /p:Configuration=Release /p:DeployExtension=False /p:VSSDKTargetPlatformRegRootSuffix=Exp /p:GenerateResourceUsePreserializedResources=true
-     
-     - name: Run Tests with Coverage
-       continue-on-error: true
-       run: |
-         $testProjects = Get-ChildItem -Recurse -Filter *tests.csproj
-         
-         foreach ($project in $testProjects) {
-           Write-Host "Running tests for: $($project.FullName)"
-           
-           dotnet test $project.FullName `
-             --configuration Release `
-             --collect:"XPlat Code Coverage" `
-             --logger "trx;LogFileName=test-results.trx"
-         }
-     
-     - name: Upload Test Results
-       uses: actions/upload-artifact@v3
-       with:
-         name: test-results
-         path: |
-           **/*.trx
-           **/*.cobertura.xml
+  integration-tests:
+    runs-on: windows-2022
+    
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+      
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@v1
+      
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '17.2'
+      
+      - name: Install Visual Studio Build Tools
+        run: |
+          choco install visualstudio2022buildtools
+          choco install visualstudio2022-workload-visualstudioextension
+      
+      - name: Diagnostics and Preparation
+        run: |
+          dotnet --info
+          Get-ChildItem -Recurse -Filter *.csproj | Select-Object FullName
+      
+      - name: Restore NuGet Packages
+        run: |
+          dotnet nuget locals all --clear
+          dotnet restore
+          nuget restore
+      
+      - name: Prepare Test Project
+        run: |
+          $testProject = Get-ChildItem -Recurse -Filter "ast-visual-studio-extension-tests.csproj" | Select-Object -First 1
+          
+          if ($testProject) {
+            Write-Host "Preparing test project: $($testProject.FullName)"
+            
+            dotnet add $testProject.FullName package Microsoft.NET.Test.Sdk
+            dotnet add $testProject.FullName package coverlet.collector
+            dotnet add $testProject.FullName package Newtonsoft.Json
+            
+            dotnet add $testProject.FullName package Microsoft.VisualStudio.SDK
+            dotnet add $testProject.FullName package Microsoft.VSSDK.BuildTools
+          } else {
+            Write-Error "Test project not found"
+            exit 1
+          }
+      
+      - name: Build Solution
+        run: |
+          msbuild /p:Configuration=Release /p:DeployExtension=False /p:VSSDKTargetPlatformRegRootSuffix=Exp /p:GenerateResourceUsePreserializedResources=true
+      
+      - name: Run Tests with Coverage
+        continue-on-error: true
+        run: |
+          $testProject = Get-ChildItem -Recurse -Filter "ast-visual-studio-extension-tests.csproj" | Select-Object -First 1
+          
+          if ($testProject) {
+            Write-Host "Running tests for: $($testProject.FullName)"
+            
+            dotnet test $testProject.FullName `
+              --configuration Release `
+              --collect:"XPlat Code Coverage" `
+              --logger "trx;LogFileName=test-results.trx"
+          } else {
+            Write-Error "Test project not found"
+            exit 1
+          }
+      
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            **/*.trx
+            **/*.cobertura.xml
