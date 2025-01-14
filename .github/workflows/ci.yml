@@ -21,27 +21,33 @@ jobs:
         uses: microsoft/setup-msbuild@v1.3.1
         with:
           vs-version: '17.2'
-          vs-prerelease: false
-          include-prerelease: false
 
-      # Install VSSDK
+      # Force Newtonsoft.Json downgrade and install System.Drawing.Common
+      - name: Install and Configure Dependencies
+        run: |
+          dotnet remove .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package Newtonsoft.Json
+          dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package Newtonsoft.Json -v 13.0.1
+          dotnet add .\UITests\UITests.csproj package System.Drawing.Common -v 8.0.0
+          
+      # Install VSSDK with specific version
       - name: Install VSSDK
         run: |
           nuget install Microsoft.VSSDK.BuildTools -Version 17.0.5232
           
-      # Restore packages
-      - name: Restore NuGet packages
+      # Restore all packages
+      - name: Restore Packages
         run: |
           nuget restore .
           dotnet restore .
 
-      # Build with resource generation property
+      # Build with specific configuration for resources
       - name: Build
         run: |
-          msbuild /p:Configuration=Release /p:DeployExtension=False /p:GenerateResourceUsePreserializedResources=true
+          msbuild /p:Configuration=Release /p:DeployExtension=False /p:VisualStudioVersion=17.0 /p:MinimumVisualStudioVersion=17.0 /p:VsInstallRoot="C:\Program Files\Microsoft Visual Studio\2022\Enterprise" /p:VSToolsPath="C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Microsoft\VisualStudio\v17.0"
 
-      # Run tests with coverage
+      # Run tests (only if build succeeds)
       - name: Run Tests with Code Coverage
+        if: success()
         shell: pwsh
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
@@ -51,5 +57,5 @@ jobs:
           if (Test-Path $testDll) {
             vstest.console.exe /EnableCodeCoverage $testDll
           } else {
-            Write-Warning "Test DLL not found: $testDll - Continuing without tests"
+            Write-Warning "Test DLL not found: $testDll"
           }
