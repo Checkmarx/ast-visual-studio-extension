@@ -42,7 +42,7 @@ if (-not (Test-Path $vsTestPath)) { throw "VSTest executable not found at $vsTes
 # Step 3: Build the solution
 Log "Building solution..."
 $solutionPath = "$(Get-Location)/ast-visual-studio-extension.sln"
-Start-Process -FilePath $msbuildPath -ArgumentList "`"$solutionPath`"", "/p:Configuration=Release", "/m:1" -Wait -NoNewWindow
+Start-Process -FilePath $msbuildPath -ArgumentList "`"$solutionPath`"", "/p:Configuration=Release" -Wait -NoNewWindow
 
 # Step 4: Install Checkmarx Extension
 Log "Installing Checkmarx Extension..."
