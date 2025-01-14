@@ -1,3 +1,34 @@
+<#
+.SYNOPSIS
+This PowerShell script automates the process of checking out a Git branch, building a Visual Studio solution, 
+installing a Visual Studio extension, and running UI tests.
+
+.DESCRIPTION
+This script performs the following steps:
+1. Checks out the specified Git branch. If the branch does not exist locally, it attempts to fetch it from the remote.
+2. Navigates to the root directory of the Git repository.
+3. Validates the paths for required Visual Studio executables (MSBuild, VSIXInstaller, and VSTest).
+4. Builds the Visual Studio solution in Release configuration.
+5. Installs the Checkmarx extension (.vsix) into Visual Studio.
+6. Executes UI tests using the VSTest console.
+
+.PARAMETER branchName
+The name of the Git branch to check out. If not provided, the script assumes the current branch.
+
+.EXAMPLE
+.\run-ui-tests.ps1 -branchName "feature/new-ui-tests"
+This checks out the branch `feature/new-ui-tests`, builds the solution, installs the extension, and runs UI tests.
+
+.EXAMPLE
+.\run-ui-tests.ps1
+If no branch name is provided, the script uses the current branch.
+
+.NOTES
+- Ensure that Git, Visual Studio, and required dependencies are installed on the system before running the script.
+- Paths to Visual Studio executables are hardcoded and should be updated if Visual Studio is installed in a non-default location.
+- The script must be run from a PowerShell environment with necessary permissions.
+#>
+
 param (
     [string]$branchName = ""
 )
