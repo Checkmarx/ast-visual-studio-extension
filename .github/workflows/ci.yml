@@ -1,59 +1,56 @@
-name: Checkmarx One visual studio extension CI
-on: [ pull_request, workflow_dispatch ]
-permissions: write-all
+name: Checkmarx One Visual Studio Extension CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   integration-tests:
-    runs-on: windows-2022
+    runs-on: windows-latest
     permissions:
       contents: write
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
 
-      # Setting up tools
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '6.0.x'
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@v1
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.3.1
+        uses: microsoft/setup-msbuild@v2
         with:
-          vs-version: '17.2'
+          msbuild-architecture: 'x64'
 
-      # Install required packages
-      - name: Add Required Packages
+      - name: Restore NuGet packages
+        run: nuget restore
+
+      - name: Restore .NET Packages
+        run: dotnet restore
+
+      - name: Build Solution
+        run: msbuild /p:Configuration=Release /p:DeployExtension=False
+
+      - name: Run Tests with Coverage
+        env:
+          CX_APIKEY: ${{ secrets.CX_APIKEY }}
         run: |
-          dotnet add .\UITests\UITests.csproj package System.Drawing.Common
-          dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package System.Resources.Extensions
+          dotnet test ./ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj \
+            --configuration Release \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:CoverletOutput=./coverage/coverage.xml
 
-      # Basic restore
-      - name: Restore
-        run: |
-          nuget restore
-          dotnet restore
-
-      # Build with specific resource handling for VSIX
-      - name: Build
-        run: |
-          msbuild /p:Configuration=Release /p:DeployExtension=False /p:GenerateResourceUsePreserializedResources=true /p:VSSDKTargetPlatformRegRootSuffix=Exp
-
-      # Generate and upload coverage report
-      - name: Generate code coverage report
-        run: dotnet test --collect:"XPlat Code Coverage"
-        
-      - name: Code Coverage Report
-        uses: irongut/CodeCoverageSummary@v1.3.0
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
         with:
-          filename: '**/coverage.cobertura.xml'
-          badge: true
-          format: 'markdown'
-          output: 'both'
+          name: coverage-report
+          path: ./coverage/coverage.xml
 
-      - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
+      - name: Report Coverage
+        uses: gaboel/nunit-to-html@v1
         with:
-          header: Coverage Report
-          recreate: true
-          path: code-coverage-results.md
+          input: './coverage/coverage.xml'
+          output: './coverage/coverage.html'
