@@ -30,9 +30,9 @@ if ($branchName -ne "") {
 Set-Location (git rev-parse --show-toplevel)
 
 # Step 2: Set up paths for Visual Studio executables
-$msbuildPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe"
-$vsixInstallerPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VSIXInstaller.exe"
-$vsTestPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe"
+$msbuildPath = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
+$vsixInstallerPath = "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/VSIXInstaller.exe"
+$vsTestPath = "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/TestWindow/vstest.console.exe"
 
 # Validate paths
 if (-not (Test-Path $msbuildPath)) { throw "MSBuild executable not found at $msbuildPath" }
