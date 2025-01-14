@@ -21,6 +21,12 @@ jobs:
         with:
           vs-version: '17.2'
 
+      # Install required packages
+      - name: Add Required Packages
+        run: |
+          dotnet add .\UITests\UITests.csproj package System.Drawing.Common
+          dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package System.Resources.Extensions
+
       # Basic restore
       - name: Restore
         run: |
