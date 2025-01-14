@@ -25,8 +25,8 @@ jobs:
          
      - name: Force Install Dependencies
        run: |
-         dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package Newtonsoft.Json -v 13.0.1 --force
-         dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package System.Drawing.Common --force
+         dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package Newtonsoft.Json -v 13.0.1 
+         dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package System.Drawing.Common 
          
      - name: Restore NuGet packages
        run: dotnet restore . --force
