@@ -1,11 +1,8 @@
-name: Checkmarx One Visual Studio Extension CI
+name: Checkmarx One visual studio extension CI
 
-on:
-  pull_request:
-  workflow_dispatch:
+on: [ pull_request, workflow_dispatch ]
 
-permissions:
-  contents: write
+permissions: write-all
 
 jobs:
   integration-tests:
@@ -17,45 +14,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup VSTest
-        uses: darenm/Setup-VSTest@v1
+        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
         with:
-          msbuild-architecture: 'x64'
+          vs-version: '17.2'
 
       - name: Restore NuGet packages
-        run: nuget restore
+        run: nuget restore .
 
-      - name: Restore .NET Packages
-        run: dotnet restore
-
-      - name: Build Solution
+      - name: Restore
+        run: dotnet restore . 
+      
+      - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
-
-      - name: Run Tests with Coverage
+        
+      - name: Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: |
-          dotnet test ./ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj \
-            --configuration Release \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:CoverletOutput=./coverage/coverage.xml
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: ./coverage/coverage.xml
-
-      - name: Generate Coverage Report
-        run: |
-          dotnet tool install --global dotnet-reportgenerator-globaltool
-          reportgenerator -reports:./coverage/coverage.xml -targetdir:./coverage/report -reporttypes:Html
-
-      - name: Upload HTML Coverage Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: html-coverage-report
-          path: ./coverage/report
+        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
+        
+       
