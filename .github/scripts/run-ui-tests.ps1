@@ -1,3 +1,7 @@
+param (
+    [string]$branchName = ""
+)
+
 # Exit script on any error
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -9,25 +13,25 @@ function Log {
 }
 
 # Step 1: Get the branch name and checkout
-$branchName = Read-Host "Enter the branch name (leave blank to use the current branch)"
-
-if ($branchName -ne "") {
+if ($branchName -eq "") {
+    Log "No branch name provided. Using the current local branch."
+} else {
     try {
         # Check if the branch exists locally
-        $localBranchExists = git rev-parse --verify $branchName *>&1
+        $localBranchExists = git branch --list $branchName | ForEach-Object { $_.Trim() }
 
         if ($localBranchExists) {
             Log "Branch $branchName exists locally. Checking out..."
             git checkout $branchName
         } else {
             # Check if the branch exists on the remote
-            $remoteBranchExists = git ls-remote --heads origin $branchName | ForEach-Object { $_.Trim() } | Measure-Object | Select-Object -ExpandProperty Count
+            $remoteBranchExists = git ls-remote --heads origin $branchName | ForEach-Object { $_.Trim() }
 
-            if ($remoteBranchExists -gt 0) {
+            if ($remoteBranchExists -ne "") {
                 Log "Branch $branchName does not exist locally. Checking out from remote..."
                 git checkout -t "origin/$branchName"
             } else {
-                throw "Branch $branchName does not exist locally or on the remote."
+                throw "Branch $branchName does not exist locally or on the remote. Please verify the branch name."
             }
         }
 
@@ -37,8 +41,6 @@ if ($branchName -ne "") {
         Log "Error: $_"
         throw "Failed to switch to branch $branchName. Ensure the branch exists locally or remotely."
     }
-} else {
-    Log "No branch specified. Using the current local branch."
 }
 
 # Navigate to the root directory
