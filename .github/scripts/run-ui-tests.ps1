@@ -9,7 +9,9 @@ function Log {
 }
 
 # Step 1: Get the branch name and checkout
-$branchName = Read-Host "Enter the branch name (leave blank to use the current branch)"
+param(
+    [string]$branchName
+)
 
 if ($branchName -ne "") {
     try {
@@ -40,7 +42,6 @@ if ($branchName -ne "") {
 } else {
     Log "No branch specified. Using the current local branch."
 }
-
 
 # Navigate to the root directory
 try {
