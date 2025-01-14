@@ -12,22 +12,42 @@ function Log {
 $branchName = Read-Host "Enter the branch name (leave blank to use the current branch)"
 
 if ($branchName -ne "") {
-    if (git rev-parse --verify $branchName *>&1) {
-        Log "Branch $branchName exists locally. Checking out..."
-        git checkout $branchName
-    } else {
-        Log "Branch $branchName does not exist locally. Checking out from remote..."
-        git checkout -t "origin/$branchName"
-    }
+    try {
+        # Check if the branch exists locally
+        $localBranchExists = git rev-parse --verify $branchName *>&1
 
-    Log "Pulling latest code..."
-    git pull
+        if ($localBranchExists) {
+            Log "Branch $branchName exists locally. Checking out..."
+            git checkout $branchName
+        } else {
+            # Check if the branch exists on the remote
+            $remoteBranchExists = git ls-remote --heads origin $branchName | ForEach-Object { $_.Trim() } | Measure-Object | Select-Object -ExpandProperty Count
+
+            if ($remoteBranchExists -gt 0) {
+                Log "Branch $branchName does not exist locally. Checking out from remote..."
+                git checkout -t "origin/$branchName"
+            } else {
+                throw "Branch $branchName does not exist locally or on the remote."
+            }
+        }
+
+        Log "Pulling latest code..."
+        git pull
+    } catch {
+        Log "Error: $_"
+        throw "Failed to switch to branch $branchName. Ensure the branch exists locally or remotely."
+    }
 } else {
     Log "No branch specified. Using the current local branch."
 }
 
 # Navigate to the root directory
-Set-Location (git rev-parse --show-toplevel)
+try {
+    Set-Location (git rev-parse --show-toplevel)
+} catch {
+    Log "Error: $_"
+    throw "Failed to navigate to the Git repository root directory."
+}
 
 # Step 2: Set up paths for Visual Studio executables
 $msbuildPath = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
@@ -40,20 +60,35 @@ if (-not (Test-Path $vsixInstallerPath)) { throw "VSIX Installer not found at $v
 if (-not (Test-Path $vsTestPath)) { throw "VSTest executable not found at $vsTestPath" }
 
 # Step 3: Build the solution
-Log "Building solution..."
-$solutionPath = "$(Get-Location)/ast-visual-studio-extension.sln"
-Start-Process -FilePath $msbuildPath -ArgumentList "`"$solutionPath`"", "/p:Configuration=Release" -Wait -NoNewWindow
+try {
+    Log "Building solution..."
+    $solutionPath = "$(Get-Location)/ast-visual-studio-extension.sln"
+    Start-Process -FilePath $msbuildPath -ArgumentList "`"$solutionPath`"", "/p:Configuration=Release" -Wait -NoNewWindow
+} catch {
+    Log "Error: $_"
+    throw "Failed to build the solution."
+}
 
 # Step 4: Install Checkmarx Extension
-Log "Installing Checkmarx Extension..."
-$vsixPath = "$(Get-Location)/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix"
-Start-Process -FilePath $vsixInstallerPath -ArgumentList "/quiet", "`"$vsixPath`"" -Wait -NoNewWindow
-Start-Sleep -Seconds 20
+try {
+    Log "Installing Checkmarx Extension..."
+    $vsixPath = "$(Get-Location)/ast-visual-studio-extension/bin/Release/ast-visual-studio-extension.vsix"
+    Start-Process -FilePath $vsixInstallerPath -ArgumentList "/quiet", "`"$vsixPath`"" -Wait -NoNewWindow
+    Start-Sleep -Seconds 20
+} catch {
+    Log "Error: $_"
+    throw "Failed to install the Checkmarx extension."
+}
 
 # Step 5: Run UI Tests
-Log "Running UI Tests..."
-$testDllPath = "$(Get-Location)/UITests/bin/Release/UITests.dll"
-Start-Process -FilePath $vsTestPath -ArgumentList "/InIsolation", "`"$testDllPath`"" -Wait -NoNewWindow
+try {
+    Log "Running UI Tests..."
+    $testDllPath = "$(Get-Location)/UITests/bin/Release/UITests.dll"
+    Start-Process -FilePath $vsTestPath -ArgumentList "/InIsolation", "`"$testDllPath`"" -Wait -NoNewWindow
+} catch {
+    Log "Error: $_"
+    throw "Failed to run UI tests."
+}
 
 # Final message
 Log "Script execution completed successfully."
