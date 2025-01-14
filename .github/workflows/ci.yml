@@ -1,38 +1,53 @@
 name: Checkmarx One visual studio extension CI
-
 on: [ pull_request, workflow_dispatch ]
-
 permissions: write-all
-
 jobs:
   integration-tests:
-    runs-on: windows-latest
+    runs-on: windows-2022
     permissions:
       contents: write
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
 
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
+      # Setting up tools
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
+        uses: microsoft/setup-msbuild@v1.3.1
         with:
           vs-version: '17.2'
 
-      - name: Restore NuGet packages
-        run: nuget restore .
-
+      # Basic restore
       - name: Restore
-        run: dotnet restore . 
-      
+        run: |
+          nuget restore
+          dotnet restore
+
+      # Build with specific resource handling for VSIX
       - name: Build
-        run: msbuild /p:Configuration=Release /p:DeployExtension=False
+        run: |
+          msbuild /p:Configuration=Release /p:DeployExtension=False /p:GenerateResourceUsePreserializedResources=true /p:VSSDKTargetPlatformRegRootSuffix=Exp
+
+      # Generate and upload coverage report
+      - name: Generate code coverage report
+        run: dotnet test --collect:"XPlat Code Coverage"
         
-      - name: Tests
-        env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
-        
-       
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: '**/coverage.cobertura.xml'
+          badge: true
+          format: 'markdown'
+          output: 'both'
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          header: Coverage Report
+          recreate: true
+          path: code-coverage-results.md
