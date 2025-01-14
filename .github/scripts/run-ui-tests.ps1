@@ -8,12 +8,15 @@ function Log {
     Write-Host "[$timestamp] $args"
 }
 
-# Step 1: Get the branch name and checkout
-param(
-    [string]$branchName
+# Check if branch name is passed as a parameter
+param (
+    [string]$branchName = ""
 )
 
-if ($branchName -ne "") {
+# Step 1: Get the branch name and checkout
+if ($branchName -eq "") {
+    Log "No branch name provided. Using the current local branch."
+} else {
     try {
         # Check if the branch exists locally
         $localBranchExists = git branch --list $branchName | ForEach-Object { $_.Trim() }
@@ -39,8 +42,6 @@ if ($branchName -ne "") {
         Log "Error: $_"
         throw "Failed to switch to branch $branchName. Ensure the branch exists locally or remotely."
     }
-} else {
-    Log "No branch specified. Using the current local branch."
 }
 
 # Navigate to the root directory
