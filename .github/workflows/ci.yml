@@ -10,40 +10,37 @@ jobs:
       - name: Fetch Sources
         uses: actions/checkout@v4
 
-      # Setup .NET first
+      # Setup .NET SDK
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '6.0.x'
 
-      # Install VSTest
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@v1
-
-      # Add Visual Studio components including SDK
-      - name: Add MSBuild to PATH
+      # Install Visual Studio components with VSSDK
+      - name: Install Visual Studio components
         uses: microsoft/setup-msbuild@v1.3.1
         with:
           vs-version: '17.2'
+          vs-prerelease: false
+          include-prerelease: false
 
-      # Install System.Resources.Extensions explicitly
-      - name: Install System.Resources.Extensions
+      # Install VSSDK
+      - name: Install VSSDK
         run: |
-          dotnet add .\ast-visual-studio-extension\ast-visual-studio-extension.csproj package System.Resources.Extensions -v 8.0.0
-          dotnet add .\ast-visual-studio-extension-tests\ast-visual-studio-extension-tests.csproj package System.Resources.Extensions -v 8.0.0
-
+          nuget install Microsoft.VSSDK.BuildTools -Version 17.0.5232
+          
       # Restore packages
       - name: Restore NuGet packages
         run: |
           nuget restore .
           dotnet restore .
 
-      # Build with specific properties to handle resources
+      # Build with resource generation property
       - name: Build
         run: |
           msbuild /p:Configuration=Release /p:DeployExtension=False /p:GenerateResourceUsePreserializedResources=true
 
-      # Run tests if build succeeds
+      # Run tests with coverage
       - name: Run Tests with Code Coverage
         shell: pwsh
         env:
