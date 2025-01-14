@@ -36,13 +36,8 @@ jobs:
       - name: Run Tests with Coverage
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: |
-          dotnet test ./ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj \
-            --configuration Release \
-            /p:CollectCoverage=true \
-            /p:CoverletOutputFormat=cobertura \
-            /p:CoverletOutput=./coverage/coverage.xml
-
+        run: dotnet test ./ast-visual-studio-extension-tests/ast-visual-studio-extension-tests.csproj --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./coverage/coverage.xml
+          
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v3
         with:
