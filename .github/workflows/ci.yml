@@ -1,49 +1,73 @@
 name: Checkmarx One visual studio extension CI
 on: [ pull_request, workflow_dispatch ]
 permissions: write-all
-
 jobs:
-  integration-tests:
-    runs-on: windows-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Fetch Sources
-        uses: actions/checkout@v4
-
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
-
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
-        with:
-          vs-version: '17.2'
-
-      - name: Restore NuGet packages
-        run: nuget restore .
-
-      - name: Restore
-        run: dotnet restore .
-
-      - name: Build
-        run: msbuild /p:Configuration=Release /p:DeployExtension=False
-
-      - name: Tests with Code Coverage
-        env:
-          CX_APIKEY: ${{ secrets.CX_APIKEY }}
-        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
-
-      - name: Generate Coverage Report
-        run: |
-          dotnet tool install --global dotnet-reportgenerator-globaltool
-          reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage_report" -reporttypes:TextSummary
-
-      - name: Print Coverage
-        run: |
-          $coverageReport = Get-Content coverage_report/Summary.txt
-          echo "Coverage Summary:"
-          echo $coverageReport
-          $lineRate = Select-String -Path "**/coverage.cobertura.xml" -Pattern 'line-rate="([0-9.]+)"' | ForEach-Object { $_.Matches.Groups[1].Value }
-          $percentage = [math]::Round(($lineRate * 100), 2)
-          echo "Total Coverage: $percentage%"
-          echo "COVERAGE_PERCENTAGE=$percentage" >> $env:GITHUB_ENV
+ integration-tests:
+   runs-on: windows-latest
+   permissions:
+     contents: write
+   steps:
+     - name: Fetch Sources
+       uses: actions/checkout@v4
+       
+     # Installing Visual Studio Test Platform and test tools
+     - name: Install VSTest Platform
+       uses: microsoft/setup-vstest@v1
+       
+     # Setting up VS Enterprise with required components for code coverage
+     - name: Setup Visual Studio
+       uses: microsoft/vs-setup-configure@v1
+       with:
+         channelId: VisualStudio.17.Release
+         productId: Enterprise
+         components: |
+           Microsoft.VisualStudio.Component.CoreEditor
+           Microsoft.VisualStudio.Workload.CoreEditor
+           Microsoft.VisualStudio.Component.TestTools.Core
+           
+     # Configure build tools
+     - name: Add MSBuild to PATH
+       uses: microsoft/setup-msbuild@v1.3.1
+       with:
+         vs-version: '17.2'
+         
+     # Add code coverage tools to system PATH
+     - name: Add Coverage Tools to PATH
+       shell: pwsh
+       run: |
+         $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+         $codeCoveragePath = Join-Path $vsPath "Team Tools\Dynamic Code Coverage Tools"
+         echo "$codeCoveragePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+         
+     - name: Restore NuGet packages
+       run: nuget restore .
+       
+     - name: Restore
+       run: dotnet restore .
+       
+     - name: Build
+       run: msbuild /p:Configuration=Release /p:DeployExtension=False
+       
+     # Execute tests with coverage analysis enabled
+     - name: Run Tests with Code Coverage
+       env:
+         CX_APIKEY: ${{ secrets.CX_APIKEY }}
+       run: vstest.console.exe /EnableCodeCoverage .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
+       
+     # Process and convert coverage data to XML format
+     - name: Generate Coverage Report
+       run: |
+         $coverageFile = Get-ChildItem -Path . -Filter *.coverage -Recurse | Select-Object -First 1
+         CodeCoverage.exe analyze /output:coverage.xml $coverageFile.FullName
+         
+     # Calculate and display coverage metrics
+     - name: Print Coverage Summary
+       run: |
+         $xml = [xml](Get-Content coverage.xml)
+         $totalLines = [int]$xml.CoverageSession.Summary.NumLines
+         $coveredLines = [int]$xml.CoverageSession.Summary.NumCoveredLines
+         $percentage = [math]::Round(($coveredLines / $totalLines) * 100, 2)
+         Write-Host "Coverage Summary:"
+         Write-Host "Total Lines: $totalLines"
+         Write-Host "Covered Lines: $coveredLines"
+         Write-Host "Coverage Percentage: $percentage%"
