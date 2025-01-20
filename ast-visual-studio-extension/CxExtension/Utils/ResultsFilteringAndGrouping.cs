@@ -8,7 +8,7 @@ using System.Windows.Controls;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
-    internal class ResultsFilteringAndGrouping
+    public class ResultsFilteringAndGrouping
     {
         public static List<TreeViewItem> FilterAndGroupResults(AsyncPackage package, List<TreeViewItem> results)
         {
@@ -39,7 +39,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return treeResults;
         }
 
-        private static List<TreeViewItem> GetInsertLocation(List<GroupBy> enabledGroupBys, List<TreeViewItem> treeResults, Result result)
+        public static List<TreeViewItem> GetInsertLocation(List<GroupBy> enabledGroupBys, List<TreeViewItem> treeResults, Result result)
         {
             var children = treeResults;
             foreach (GroupBy groupBy in enabledGroupBys)
@@ -80,7 +80,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return children;
         }
 
-        private static Func<Result, string> GetGroupByTitleGenerator(GroupBy groupBy)
+        public static Func<Result, string> GetGroupByTitleGenerator(GroupBy groupBy)
         {
             switch (groupBy)
             {

@@ -9,7 +9,7 @@ using System.Windows.Controls;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
-    internal class CxUtils
+    public class CxUtils
     {
         /// <summary>
         /// Get the Icon path from a given severity
