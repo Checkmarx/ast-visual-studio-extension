@@ -74,7 +74,6 @@
     <Compile Include="CxExtension\Enums\GroupBy.cs" />
     <Compile Include="CxExtension\Enums\Severity.cs" />
     <Compile Include="CxExtension\Enums\State.cs" />
-    <Compile Include="CxExtension\Interfaces\ICxPreferencesModule.cs" />
     <Compile Include="CxExtension\Panels\FileNode.cs" />
     <Compile Include="CxExtension\Panels\ResultInfoPanel.cs" />
     <Compile Include="CxExtension\Panels\ResultsTreePanel.cs" />
