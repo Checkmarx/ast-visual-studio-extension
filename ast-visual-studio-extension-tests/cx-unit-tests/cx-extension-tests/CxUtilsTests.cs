@@ -69,22 +69,55 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         //    staThread.Join();
         //}
 
-        [Fact]
-        public void GetItemIndexInCombo_ShouldReturnCorrectIndex()
+        [Theory]
+        [InlineData("Project2", ComboboxType.PROJECTS, new[] { "Project1", "Project2" }, 1)]
+        [InlineData("Scan2", ComboboxType.SCANS, new[] { "Scan1", "Scan2" }, 1)]
+        public void GetItemIndexInCombo_ShouldReturnCorrectIndexForTag(string searchValue, ComboboxType comboType, string[] items, int expectedIndex)
         {
             StaThreadHelper.RunInStaThread(() =>
             {
                 var comboBox = new ComboBox();
-                var item1 = new ComboBoxItem { Content = "Item 1" };
-                var item2 = new ComboBoxItem { Content = "Item 2" };
-                comboBox.Items.Add(item1);
-                comboBox.Items.Add(item2);
 
-                var result = ast_visual_studio_extension.CxExtension.Utils.CxUtils.GetItemIndexInCombo("Item 2", comboBox, ComboboxType.STATE);
+                foreach (var item in items)
+                {
+                    object tag = null;
 
-                Assert.Equal(1, result);
+                    if (comboType == ComboboxType.PROJECTS)
+                        tag = new Project { Id = item };
+                    else if (comboType == ComboboxType.SCANS)
+                        tag = new Scan { ID = item };
+
+                    var comboBoxItem = new ComboBoxItem { Tag = tag };
+                    comboBox.Items.Add(comboBoxItem);
+                }
+
+                var result = ast_visual_studio_extension.CxExtension.Utils.CxUtils.GetItemIndexInCombo(searchValue, comboBox, comboType);
+
+                Assert.Equal(expectedIndex, result);
             });
         }
+
+
+        [Theory]
+        [InlineData("Branch2", ComboboxType.BRANCHES, new[] { "Branch1", "Branch2" }, 1)]
+        [InlineData("HIGH", ComboboxType.SEVERITY, new[] { "LOW", "HIGH" }, 1)]
+        [InlineData("CONFIRMED", ComboboxType.STATE, new[] { "TO_VERIFY", "CONFIRMED" }, 1)]
+        public void GetItemIndexInCombo_ShouldReturnCorrectIndexForContent(string searchValue, ComboboxType comboType, string[] items, int expectedIndex)
+        {
+            StaThreadHelper.RunInStaThread(() =>
+            {
+                var comboBox = new ComboBox();
+                foreach (var item in items)
+                {
+                    comboBox.Items.Add(new ComboBoxItem { Content = item });
+                }
+
+                var result = ast_visual_studio_extension.CxExtension.Utils.CxUtils.GetItemIndexInCombo(searchValue, comboBox, comboType);
+
+                Assert.Equal(expectedIndex, result);
+            });
+        }
+
 
         //[Fact]
         //public void DisplayMessageInInfoBar_ShouldCallShowInfoBarAsync()
