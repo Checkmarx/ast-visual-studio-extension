@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ast_visual_studio_extension.CxWrapper.Models
-{   
+{
+    [ExcludeFromCodeCoverage]
     public class LearnMore {
 
         [JsonProperty("queryId", NullValueHandling = NullValueHandling.Ignore)]

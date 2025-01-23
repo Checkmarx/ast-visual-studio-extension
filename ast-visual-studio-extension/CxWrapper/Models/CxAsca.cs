@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ast_visual_studio_extension.CxWrapper.Models
 {
+    [ExcludeFromCodeCoverage]
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class CxAsca
     {
@@ -46,7 +48,8 @@ namespace ast_visual_studio_extension.CxWrapper.Models
             return JsonConvert.DeserializeObject<CxAsca>(json);
         }
     }
-
+    
+    [ExcludeFromCodeCoverage]
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class CxAscaDetail
     {
@@ -106,6 +109,7 @@ namespace ast_visual_studio_extension.CxWrapper.Models
         }
     }
 
+    [ExcludeFromCodeCoverage]
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class CxAscaError
     {
