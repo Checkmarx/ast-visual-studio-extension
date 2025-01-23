@@ -75,11 +75,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 var dependencyObject = (DependencyObject)element;
                 var args = new DependencyPropertyChangedEventArgs(VsTheme.UseVsThemeProperty, true, false);
 
-                // Act
                 typeof(VsTheme).GetMethod("UseVsThemePropertyChanged", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
                     .Invoke(null, new object[] { dependencyObject, args });
 
-                // Assert
                 var isUsingTheme = VsTheme.GetUseVsTheme(element);
                 Assert.False(isUsingTheme);
             });
