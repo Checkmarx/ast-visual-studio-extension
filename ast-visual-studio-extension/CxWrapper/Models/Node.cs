@@ -1,7 +1,9 @@
 ﻿using Newtonsoft.Json;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ast_visual_studio_extension.CxWrapper.Models
 {
+    [ExcludeFromCodeCoverage]
     public class Node
     {
         [JsonProperty("id")]
