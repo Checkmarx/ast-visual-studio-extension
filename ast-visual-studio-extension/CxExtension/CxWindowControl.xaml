@@ -412,8 +412,8 @@
 
         <GridSplitter Grid.Row="1" Grid.Column ="0" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
         <GridSplitter Grid.Row="1" Grid.Column ="1" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
-        
-        <Grid Grid.ColumnSpan="3" Grid.Row="0">
+
+        <Grid Grid.ColumnSpan="3" Grid.Row="0" theming:ImageThemingUtilities.ImageBackgroundColor="{Binding Background, ElementName=CxWindow, Converter={StaticResource BrushToColorConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"></RowDefinition>
             </Grid.RowDefinitions>
@@ -423,7 +423,7 @@
             </Grid.ColumnDefinitions>
 
             <ScrollViewer  Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
-                <StackPanel VerticalAlignment="Stretch" Orientation="Horizontal" theming:ImageThemingUtilities.ImageBackgroundColor="{Binding Background, ElementName=CxWindow, Converter={StaticResource BrushToColorConverter}}">
+                <StackPanel VerticalAlignment="Stretch" Orientation="Horizontal">
 
                     <TextBlock VerticalAlignment="Center" Text="Project:" Grid.Column="1" Margin="4"/>
                     <ComboBox VerticalAlignment="Center" IsTextSearchEnabled="False" IsEnabled="True" IsEditable="True" IsReadOnly="False" Text="Loading projects..." Name="ProjectsCombobox" Margin="4" MinWidth="100" SelectionChanged="OnChangeProject" KeyUp="OnProjectTextChanged"/>
