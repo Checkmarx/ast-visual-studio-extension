@@ -35,6 +35,8 @@ on:
 jobs:
   release:
     runs-on: windows-latest
+    outputs:
+      CLI_VERSION: ${{ steps.extract_cli_version.outputs.CLI_VERSION }}
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
@@ -57,6 +59,15 @@ jobs:
           chmod +x ./.github/scripts/update_cli.sh
           ./.github/scripts/update_cli.sh ${{ inputs.cliTag }}
 
+      - name: Extract CLI version
+        id: extract_cli_version
+        shell: bash
+        run: |
+          CLI_VERSION=$(./ast-visual-studio-extension/CxWrapper/Resources/cx.exe version | grep -Eo '^[0-9]+\.[0-9]+\.[0-9]+')
+          echo "CLI version being packed is $CLI_VERSION"
+          echo "CLI_VERSION=$CLI_VERSION" >> $GITHUB_ENV
+          echo "::set-output name=CLI_VERSION::$CLI_VERSION"
+          
       - name: Tag
         shell: bash
         run: |
@@ -99,34 +110,14 @@ jobs:
           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
 
   notify:
-    runs-on: ubuntu-latest
-    needs: release
     if: inputs.dev == false
-    steps:
-      - name: Get latest relase notes
-        id: release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          body_release="$(gh api -H "Accept: application/vnd.github.v3+json" /repos/Checkmarx/ast-visual-studio-extension/releases/latest | jq -r '.body' )"
-          body_release="${body_release//$'\n'/'%0A'}"
-          echo "::set-output name=body_release::$body_release"
-      - name: Converts Markdown to HTML
-        id: convert
-        uses: lifepal/markdown-to-html@253bbd85fbdeafe2d1f18c1b9289be24e5cf8f8f #v1.2
-        with:
-          text: "${{ steps.release.outputs.body_release }}"
-
-      - name: Clean html
-        id: clean
-        run: |
-          clean="$(echo "${{ steps.convert.outputs.html }}" | awk '{gsub(/id=.[a-z]+/,"");print}' | tr -d '\n')"
-          echo "$clean"
-          echo "::set-output name=clean::$clean"
-      - name: Send a Notification
-        id: notify
-        uses: thechetantalwar/teams-notify@8a78811f5e8f58cdd204efebd79158006428c46b #v2
-        with:
-          teams_webhook_url: ${{ secrets.TEAMS_WEBHOOK_URI }}
-          message: "<h1>Checkmarx Visual Studio Plugin ${{ env.RELEASE_VERSION }}</h1>${{ steps.clean.outputs.clean }}"
-
+    needs: release
+    uses: Checkmarx/plugins-release-workflow/.github/workflows/release-notify.yml@main
+    with:
+      product_name: Visual Studio
+      release_version: ${{ inputs.tag }}
+      cli_release_version: ${{ needs.release.outputs.CLI_VERSION }}
+      release_author: "Phoenix Team"
+      release_url: https://github.com/Checkmarx/ast-visual-studio-extension/releases/tag/${{ inputs.tag }}
+      jira_product_name: VISUAL_STUDIO
+    secrets: inherit
