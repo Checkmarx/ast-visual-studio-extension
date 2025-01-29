@@ -109,7 +109,7 @@ jobs:
           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
 
   notify:
-    if: inputs.dev == false || inputs.cliTag == 'daniel'
+    if: inputs.dev == false
     needs: release
     uses: Checkmarx/plugins-release-workflow/.github/workflows/release-notify.yml@main
     with:
