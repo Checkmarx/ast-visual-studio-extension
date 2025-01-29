@@ -52,12 +52,13 @@ jobs:
         run: |
           choco install wget --no-progress
 
-#      - name: Download CLI
-#        if: inputs.cliTag
-#        shell: bash 
-#        run: |
-#          chmod +x ./.github/scripts/update_cli.sh
-#          ./.github/scripts/update_cli.sh ${{ inputs.cliTag }}
+      - name: Download CLI
+        if: inputs.cliTag
+        shell: bash 
+        run: |
+          chmod +x ./.github/scripts/update_cli.sh
+          ./.github/scripts/update_cli.sh ${{ inputs.cliTag }}
+
       - name: Extract CLI version
         id: extract_cli_version
         shell: bash
