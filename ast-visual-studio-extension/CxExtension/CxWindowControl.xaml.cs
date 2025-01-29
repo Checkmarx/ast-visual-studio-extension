@@ -15,9 +15,11 @@ using System.Threading.Tasks;
 using System;
 using System.Diagnostics;
 using ast_visual_studio_extension.CxExtension.Services;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ast_visual_studio_extension.CxExtension
 {
+    [ExcludeFromCodeCoverage]
     public partial class CxWindowControl : UserControl
     {
         private readonly CxToolbar cxToolbar;
@@ -26,6 +28,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
         private ASCAService _ascaService; 
+
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();

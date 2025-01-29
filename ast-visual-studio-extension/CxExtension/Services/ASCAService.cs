@@ -50,7 +50,6 @@ namespace ast_visual_studio_extension.CxExtension.Services
             _debounceTimer.Stop();
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             string tempFilePath = null;
-
             try
             {
                 var document = _uiManager.GetActiveDocument();
@@ -60,30 +59,28 @@ namespace ast_visual_studio_extension.CxExtension.Services
                     var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
                     if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
                     {
-                        return; 
+                        return;
                     }
                     var originalFileName = Path.GetFileName(document.FullName);
                     var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                    tempFilePath = Path.Combine(Path.GetTempPath(), $"{originalFileName}_{timestamp}.cs");
+                    var fileNameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
+                    var extension = Path.GetExtension(originalFileName);
+                    tempFilePath = Path.Combine(Path.GetTempPath(), $"{fileNameWithoutExt}_{timestamp}{extension}");
 
                     File.WriteAllText(tempFilePath, content);
                     Debug.WriteLine($"Temporary file created: {tempFilePath}");
-
                     _uiManager.WriteToOutputPane($"Start ASCA scan On File: {document.FullName}");
-
                     CxAsca scanResult = await _cxWrapper.ScanAscaAsync(
                         fileSource: tempFilePath,
                         ascaLatestVersion: false,
                         agent: CxConstants.EXTENSION_AGENT
                     );
-
                     if (scanResult.Error != null)
                     {
                         string errorMessage = $"ASCA Warning: {scanResult.Error.Description ?? scanResult.Error.ToString()}";
                         _uiManager.WriteToOutputPane(errorMessage);
                         return;
                     }
-
                     Debug.WriteLine("ASCA scan completed successfully.");
                     await _uiManager.DisplayDiagnosticsAsync(scanResult.ScanDetails, document.FullName);
                 }
@@ -147,6 +144,15 @@ namespace ast_visual_studio_extension.CxExtension.Services
                 _textEditorEvents = dte.Events.TextEditorEvents;
                 _textEditorEvents.LineChanged += OnTextChanged;
                 _isSubscribed = true;
+
+
+                // Initialize the content of the active document to track changes.
+                var document = _uiManager.GetActiveDocument();
+                if (document == null) return;
+                var textDocument = (TextDocument)document.Object("TextDocument");
+                if (textDocument == null) return;
+                _lastDocumentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+
                 Debug.WriteLine("Successfully registered for text change events.");
             }
             else

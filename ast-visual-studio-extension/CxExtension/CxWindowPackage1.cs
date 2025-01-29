@@ -6,10 +6,12 @@
 namespace ast_visual_studio_extension.CxExtension
 {
     using System;
-    
+    using System.Diagnostics.CodeAnalysis;
+
     /// <summary>
     /// Helper class that exposes all GUIDs used across VS Package.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal sealed partial class PackageGuids
     {
         public const string guidCxWindowPackageString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
@@ -24,6 +26,7 @@ namespace ast_visual_studio_extension.CxExtension
     /// <summary>
     /// Helper class that encapsulates all CommandIDs uses across VS Package.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal sealed partial class PackageIds
     {
         public const int CxWindowCommandId = 0x0100;

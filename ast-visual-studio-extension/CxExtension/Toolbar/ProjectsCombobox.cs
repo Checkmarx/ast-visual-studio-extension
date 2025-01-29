@@ -143,7 +143,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public void OnChangeProject(object sender, SelectionChangedEventArgs e)
         {
             ComboBox projectsCombo = cxToolbar.ProjectsCombo;
-            if (projectsCombo == null || projectsCombo.SelectedItem == null || projectsCombo.SelectedIndex == -1) return;
+            if (projectsCombo == null || projectsCombo.SelectedItem == null || projectsCombo.SelectedIndex == -1)
+            {
+                cxToolbar.CheckScanButtonStateByCombos();
+                return;
+            }
 
 
             ResetFilteringState(projectsCombo.SelectedItem as ComboBoxItem);
@@ -168,7 +172,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             _ = branchesCombobox.LoadBranchesAsync(selectedProject);
 
-            cxToolbar.ScanButtonByCombos();
+            cxToolbar.CheckScanButtonStateByCombos();
         }
 
         protected override void ResetOthersComboBoxesAndResults()
