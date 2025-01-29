@@ -91,6 +91,14 @@ jobs:
       
       - name: Build
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
+        
+      - name: Extract CLI version
+        id: extract_cli_version
+        run: |
+          CLI_VERSION=$(./ast-visual-studio-extension/CxWrapper/Resources/cx.exe version | grep -Eo '^[0-9]+\.[0-9]+\.[0-9]+')
+          echo "CLI version being packed is $CLI_VERSION"
+          echo "CLI_VERSION=$CLI_VERSION" >> $GITHUB_ENV
+          echo "::set-output name=CLI_VERSION::$CLI_VERSION"
 
       - name: Create Release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v0.1.15
