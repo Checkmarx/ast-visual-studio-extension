@@ -58,6 +58,13 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() });
             }
 
+            bool isSastEngine = 
+
+            if (isSastEngine)
+            {
+
+            }
+
             DrawTitle();
             DrawDesrciptionTab();
         }

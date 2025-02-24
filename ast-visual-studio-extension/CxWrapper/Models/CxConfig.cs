@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace ast_visual_studio_extension.CxWrapper.Models
 {
+    [ExcludeFromCodeCoverage]
     public class CxConfig
     {
         public string ApiKey { get; set; }

@@ -44,6 +44,11 @@ namespace ast_visual_studio_extension.CxExtension
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
 
+            // Fetch state filters from API
+            var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
+            var stateManager = new StateManager(cxWrapper);
+            var stateFilters = stateManager.GetStatesAsync().Result;
+
             // Build CxToolbar
             cxToolbar = CxToolbar.Builder()
                 .WithPackage(package)
@@ -67,16 +72,10 @@ namespace ast_visual_studio_extension.CxExtension
                     { Severity.LOW, LowSeverityFilterImage },
                     { Severity.INFO, InfoSeverityFilterImage },
                 })
-                .WithStateFilters(new Dictionary<MenuItem, State>
-                {
-                    { NotIgnoredStateFilter, State.NOT_IGNORED },
-                    { IgnoredStateFilter, State.IGNORED },
-                    { ToVerifyStateFilter, State.TO_VERIFY },
-                    { ConfirmedStateFilter, State.CONFIRMED },
-                    { ProposedNotExploitableStateFilter, State.PROPOSED_NOT_EXPLOITABLE },
-                    { NotExploitableStateFilter, State.NOT_EXPLOITABLE },
-                    { UrgentStateFilter, State.URGENT },
-                })
+                .WithStateFilters(
+                
+               stateFilters
+                )
                 .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
                 {
                     { FileGroupBy, GroupBy.FILE },
