@@ -58,7 +58,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() });
             }
 
-            bool isSastEngine = 
+            bool isSastEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
 
             if (isSastEngine)
             {

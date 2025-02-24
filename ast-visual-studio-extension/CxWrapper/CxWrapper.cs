@@ -429,7 +429,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <param name="scanId"></param>
         /// <param name="reportFormat"></param>
         /// <returns></returns>
-        public Results triageGetStates(bool all)
+        public List<State> TriageGetStates(bool all)
         {
             logger.Info(CxConstants.LOG_RUNNING_TRIAGE_GET_STATES_CMD);
 
@@ -442,12 +442,12 @@ namespace ast_visual_studio_extension.CxCLI
             if (all)
             {
                 triageArguments.Add(CxConstants.FLAG_ALL);
-                triageArguments.Add(comment);
+                //triageArguments.Add(comment);
             }
 
-            string predicates = Execution.ExecuteCommand(WithConfigArguments(triageArguments), Execution.CheckValidJSONString);
+            string states = Execution.ExecuteCommand(WithConfigArguments(triageArguments), Execution.CheckValidJSONString);
 
-            return JsonConvert.DeserializeObject<List<Predicate>>(predicates);
+            return JsonConvert.DeserializeObject<List<State>>(states);
         }
 
         /// <summary>

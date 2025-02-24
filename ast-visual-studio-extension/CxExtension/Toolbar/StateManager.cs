@@ -7,9 +7,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 {
     public class StateManager
     {
-        private readonly CxWrapper _cxWrapper;
+        private readonly CxCLI.CxWrapper _cxWrapper;
 
-        public StateManager(CxWrapper cxWrapper)
+        public StateManager(CxCLI.CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;
         }
