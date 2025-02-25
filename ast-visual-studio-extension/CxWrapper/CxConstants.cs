@@ -20,6 +20,7 @@
         public static string CLI_SCAN_CMD => "scan";
         public static string CLI_ASCA_CMD => "asca";
         public static string CLI_SHOW_CMD => "show";
+        public static string CLI_GET_STATES_CMD => "get-states";
         public static string CLI_TRIAGE_CMD => "triage";
         public static string CLI_UPDATE_CMD => "update";
         public static string CLI_CODEBASHING_CMD => "codebashing";
@@ -45,6 +46,7 @@
         public static string FLAG_SIMILARITY_ID => "--similarity-id";
         public static string FLAG_SCAN_TYPE => "--scan-type";
         public static string FLAG_STATE => "--state";
+        public static string FLAG_ALL => "--all";
         public static string FLAG_COMMENT => "--comment";
         public static string FLAG_SEVERITY => "--severity";
         public static string FLAG_DEBUG => "--debug";
@@ -80,6 +82,8 @@
         public static string LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD => "Updating the similarityId {0} with state {1} and severity {2}...";
         public static string LOG_RUNNING_TRIAGE_SHOW_CMD => "Executing 'triage show' command using the CLI...";
         public static string LOG_RUNNING_TRIAGE_SHOW_INFO_CMD => "Fetching the list of predicates for projectId {0} , similarityId {1} and scan-type {2}...";
+        public static string LOG_RUNNING_TRIAGE_GET_STATES_CMD => "Executing 'triage get states' command using the CLI...";
+        public static string LOG_RUNNING_TRIAGE_GET_STATES_INFO_CMD => "Fetching the list of states...";
         public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link...";
         public static string LOG_RUNNING_SCAN_CREATE_CMD => "Executing 'scan create' command using the CLI...";
         public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Executing 'scan cancel' command using the CLI...";

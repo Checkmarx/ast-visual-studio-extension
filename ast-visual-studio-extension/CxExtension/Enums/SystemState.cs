@@ -1,6 +1,6 @@
 ﻿namespace ast_visual_studio_extension.CxExtension.Enums
 {
-    public enum State
+    public enum SystemState
     {
         CONFIRMED,
         TO_VERIFY,

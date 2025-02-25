@@ -28,13 +28,13 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         };
         public static readonly Dictionary<object, bool> stateDefaultValues = new Dictionary<object, bool>
         {
-            { State.CONFIRMED, true },
-            { State.TO_VERIFY, true },
-            { State.URGENT, true },
-            { State.NOT_EXPLOITABLE, false},
-            { State.PROPOSED_NOT_EXPLOITABLE, false},
-            { State.IGNORED, true },
-            { State.NOT_IGNORED, true },
+            { SystemState.CONFIRMED, true },
+            { SystemState.TO_VERIFY, true },
+            { SystemState.URGENT, true },
+            { SystemState.NOT_EXPLOITABLE, false},
+            { SystemState.PROPOSED_NOT_EXPLOITABLE, false},
+            { SystemState.IGNORED, true },
+            { SystemState.NOT_IGNORED, true },
         };
         public static readonly Dictionary<object, bool> groupByDefaultValues = new Dictionary<object, bool>
         {
@@ -89,11 +89,11 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             return severities;
         }
 
-        public static HashSet<State> EnabledStates(AsyncPackage package)
+        public static HashSet<SystemState> EnabledStates(AsyncPackage package)
         {
-            var states = new HashSet<State>();
+            var states = new HashSet<SystemState>();
             var readOnlyStore = new ShellSettingsManager(package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
-            foreach (State state in Enum.GetValues(typeof(State)))
+            foreach (SystemState state in Enum.GetValues(typeof(SystemState)))
             {
                 if (readOnlyStore.GetBoolean(stateCollection, state.ToString(), stateDefaultValues[state]))
                 {
