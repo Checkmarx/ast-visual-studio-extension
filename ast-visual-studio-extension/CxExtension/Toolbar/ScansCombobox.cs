@@ -99,6 +99,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// <param name="e"></param>
         public void OnChangeScan(object sender, SelectionChangedEventArgs e)
         {
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
+            StateManagerProvider.Initialize(cxWrapper); 
             if (!(sender is ComboBox scansCombo) || scansCombo.SelectedItem == null || scansCombo.SelectedIndex == -1) return;
 
 
