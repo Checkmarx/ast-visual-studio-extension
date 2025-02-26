@@ -24,7 +24,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         public async Task InitializeStatesAsync()
         {
-            Debug.WriteLine("[StateManager] Initializing states...");
+            
             if (_allStates.Count == 0) 
             {
                 _allStates = await GetStatesAsync();
@@ -68,6 +68,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public Dictionary<MenuItem, State> GetAllStates()
         {
             return _allStates;
+
         }
 
     }

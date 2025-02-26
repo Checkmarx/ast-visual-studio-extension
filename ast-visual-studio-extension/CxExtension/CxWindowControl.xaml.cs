@@ -72,10 +72,16 @@ namespace ast_visual_studio_extension.CxExtension
                     { Severity.LOW, LowSeverityFilterImage },
                     { Severity.INFO, InfoSeverityFilterImage },
                 })
-                .WithStateFilters(
-                
-               stateFilters
-                )
+                .WithStateFilters(new Dictionary<MenuItem, SystemState>
+                {
+                    { NotIgnoredStateFilter, SystemState.NOT_IGNORED },
+                    { IgnoredStateFilter, SystemState.IGNORED },
+                    { ToVerifyStateFilter, SystemState.TO_VERIFY },
+                    { ConfirmedStateFilter, SystemState.CONFIRMED },
+                    { ProposedNotExploitableStateFilter, SystemState.PROPOSED_NOT_EXPLOITABLE },
+                    { NotExploitableStateFilter, SystemState.NOT_EXPLOITABLE },
+                    { UrgentStateFilter, SystemState.URGENT },
+                })
                 .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
                 {
                     { FileGroupBy, GroupBy.FILE },

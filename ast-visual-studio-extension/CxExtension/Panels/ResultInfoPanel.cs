@@ -67,7 +67,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 foreach (State state in states.Values)
                 {
-                    Debug.WriteLine($"[ResultInfoPanel] Adding state: {state}");
+               
                     cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.Getname });
                 }
 
@@ -77,9 +77,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             
 
-            foreach (State state in Enum.GetValues(typeof(State)))
+            foreach (SystemState state in Enum.GetValues(typeof(SystemState)))
             {
-                if (isNotScaEngine && (state == State.IGNORED || state == State.NOT_IGNORED)) continue;
+                if (isNotScaEngine && (state == SystemState.IGNORED || state == SystemState.NOT_IGNORED)) continue;
 
                 cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() });
             }
