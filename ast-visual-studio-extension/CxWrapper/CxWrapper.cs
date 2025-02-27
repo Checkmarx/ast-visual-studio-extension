@@ -442,13 +442,13 @@ namespace ast_visual_studio_extension.CxCLI
             if (all)
             {
                 triageArguments.Add(CxConstants.FLAG_ALL);
-                //triageArguments.Add(comment);
+                
             }
 
             string states = Execution.ExecuteCommand(WithConfigArguments(triageArguments), Execution.CheckValidJSONString);
 
-            var results =  JsonConvert.DeserializeObject<List<State>>(states);
-            return results;
+            var statesResults =  JsonConvert.DeserializeObject<List<State>>(states);
+            return statesResults;
         }
 
         /// <summary>

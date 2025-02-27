@@ -47,7 +47,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             // Disable all triage stuff if selected result is sca
             bool isNotScaEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
             StateManager stateManager = StateManagerProvider.GetStateManager();
-            Dictionary<MenuItem, State> states = stateManager.GetAllStates();
+            List<State> states = stateManager.GetAllStates();
 
             cxWindowUI.TriageSeverityCombobox.IsEnabled = isNotScaEngine;
             cxWindowUI.TriageStateCombobox.IsEnabled = isNotScaEngine;
@@ -61,11 +61,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.TriageComment.Foreground = new SolidColorBrush(Colors.Gray);
 
             cxWindowUI.TriageStateCombobox.Items.Clear();
-            bool isSastEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
+            bool isSastEngine = this.result.Type == "sast";
 
             if (isSastEngine)
             {
-                foreach (State state in states.Values)
+                foreach (State state in states)
                 {
                     string formattedState = UIUtils.FormatStateName(state.name);
 
@@ -85,7 +85,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 if (isNotScaEngine && (state == SystemState.IGNORED || state == SystemState.NOT_IGNORED)) continue;
 
-                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() });
+                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() , Tag = state.ToString() });
             }
             }
 

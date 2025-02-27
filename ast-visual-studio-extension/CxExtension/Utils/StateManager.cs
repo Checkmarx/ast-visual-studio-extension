@@ -15,7 +15,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     public class StateManager
     {
         public  CxCLI.CxWrapper _cxWrapper;
-        public Dictionary<MenuItem, State> _allStates = new Dictionary<MenuItem, State>();
+        public List<State> _allStates = new List<State>();
 
         public StateManager(CxCLI.CxWrapper cxWrapper)
         {
@@ -30,7 +30,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 _allStates = await GetStatesAsync();
             }
         }
-        public async Task <Dictionary<MenuItem, State>> GetStatesAsync()
+        public async Task<List<State>> GetStatesAsync()
         {
             string errorMessage = string.Empty;
 
@@ -38,8 +38,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             {
                 try
                 {
-                    var x = _cxWrapper.TriageGetStates(false);
-                    return x;
+                    var statesList = _cxWrapper.TriageGetStates(false);
+                    return statesList;
                 }
                 catch (Exception ex)
                 {
@@ -49,25 +49,16 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             }).ConfigureAwait(false);
 
 
-          
-            
+            return states ?? new List<State>();
 
-            var stateFilters = new Dictionary<MenuItem, State>();
-
-            foreach (var state in states)
-            {
-                var menuItem = new MenuItem { Text = state.name };
-                stateFilters.Add(menuItem, state);
-            }
-
-            return stateFilters;
         }
 
 
-        public Dictionary<MenuItem, State> GetAllStates()
+
+
+        public List<State> GetAllStates()
         {
             return _allStates;
-
         }
 
     }
