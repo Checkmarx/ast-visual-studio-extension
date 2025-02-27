@@ -30,41 +30,26 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 _allStates = await GetStatesAsync();
             }
         }
-        public async Task<Dictionary<MenuItem, State>> GetStatesAsync()
+        public async Task <Dictionary<MenuItem, State>> GetStatesAsync()
         {
             string errorMessage = string.Empty;
 
-
-            // רשימת מוק של states במקום הקריאה ל-wrapper
-    //        List<State> states = new List<State>
-    //{
-    //    new State { id = 1, name = "CONFIRMED", type = "Type1" },
-    //    new State { id = 2, name = "TO_VERIFY", type = "Type2" },
-    //    new State { id = 3, name = "URGENT", type = "Type3" },
-    //    new State { id = 4, name = "Demo1", type = "Type4" },
-    //    new State { id = 5, name = "Demo2", type = "Type5" }
-    //};
-
-            
             List<State> states = await Task.Run(() =>
             {
                 try
                 {
-                    return _cxWrapper.TriageGetStates(false);
+                    var x = _cxWrapper.TriageGetStates(false);
+                    return x;
                 }
                 catch (Exception ex)
                 {
                     errorMessage = ex.Message;
                     return null;
                 }
-            });
+            }).ConfigureAwait(false);
 
 
-            if (!string.IsNullOrEmpty(errorMessage))
-            {
-                //logger.Error(string.Format(errorMessage));
-                //throw errorMessage;
-            }
+          
             
 
             var stateFilters = new Dictionary<MenuItem, State>();
@@ -77,11 +62,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             return stateFilters;
         }
-
-        // מחלקת State (אם היא לא קיימת כבר)
-       
-
-
 
 
         public Dictionary<MenuItem, State> GetAllStates()
