@@ -94,6 +94,7 @@
     <Compile Include="CxExtension\Utils\ResultsFilteringAndGrouping.cs" />
     <Compile Include="CxExtension\Utils\SolutionExplorerUtils.cs" />
     <Compile Include="CxExtension\Utils\StateManager.cs" />
+    <Compile Include="CxExtension\Utils\StateManagerProvider.cs" />
     <Compile Include="CxExtension\Utils\UIUtils.cs" />
     <Compile Include="CxExtension\Utils\XAMLCalculations.cs" />
     <Compile Include="CxWrapper\CxUtils.cs" />

@@ -43,7 +43,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public ScansCombobox ScansCombobox { get; set; }
         public Dictionary<ToggleButton, Severity> SeverityFilters { get; set; }
         public Dictionary<Severity, Image> SeverityFilterImages { get; set; }
-        public Dictionary<MenuItem, State> StateFilters { get; set; }
+        public Dictionary<MenuItem, SystemState> StateFilters { get; set; }
         public Dictionary<MenuItem, GroupBy> GroupByOptions { get; set; }
         public StackPanel ScanningSeparator { get; set; }
         public ToggleButton ScanStartButton { get; set; }
@@ -99,7 +99,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return this;
         }
 
-        public CxToolbar WithStateFilters(Dictionary<MenuItem, State> stateFilters)
+        public CxToolbar WithStateFilters(Dictionary<MenuItem, SystemState> stateFilters)
         {
             StateFilters = stateFilters;
             return this;
@@ -150,7 +150,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 var control = pair.Value;
                 control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true), UriKind.RelativeOrAbsolute));
             }
-            foreach (KeyValuePair<MenuItem, State> pair in StateFilters)
+            foreach (KeyValuePair<MenuItem, SystemState> pair in StateFilters)
             {
                 var control = pair.Key;
                 var state = pair.Value;

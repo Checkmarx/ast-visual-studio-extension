@@ -13,7 +13,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static List<TreeViewItem> FilterAndGroupResults(AsyncPackage package, List<TreeViewItem> results)
         {
 
-            HashSet<State> enabledStates = SettingsUtils.EnabledStates(package);
+            HashSet<SystemState> enabledStates = SettingsUtils.EnabledStates(package);
             HashSet<Severity> enabledSeverities = SettingsUtils.EnabledSeverities(package);
             List<GroupBy> enabledGroupBys = SettingsUtils.EnabledGroupByOptions(package);
 
@@ -23,7 +23,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             foreach (TreeViewItem item in results)
             {
                 var result = item.Tag as Result;
-                Enum.TryParse(result.State, out State itemState);
+                Enum.TryParse(result.State, out SystemState itemState);
                 Enum.TryParse(result.Severity, out Severity itemSeverity);
 
                 if (!enabledStates.Contains(itemState) || !enabledSeverities.Contains(itemSeverity))

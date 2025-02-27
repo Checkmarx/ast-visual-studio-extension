@@ -13,6 +13,12 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Web.UI.WebControls;
+using MenuItem = System.Web.UI.WebControls.MenuItem;
+using Image = System.Windows.Controls.Image;
+using Button = System.Windows.Controls.Button;
+using TextBox = System.Windows.Controls.TextBox;
+using System.Diagnostics;
 
 namespace ast_visual_studio_extension.CxExtension.Panels
 {
@@ -23,20 +29,25 @@ namespace ast_visual_studio_extension.CxExtension.Panels
     {
         private Result result;
         private readonly CxWindowControl cxWindowUI;
+        
 
         public ResultInfoPanel(CxWindowControl cxWindow)
         {
             cxWindowUI = cxWindow;
             UIUtils.CxWindowUI = cxWindowUI;
+
         }
 
         // Draw result information content
         public void Draw(Result result)
         {
+
             this.result = result;
 
             // Disable all triage stuff if selected result is sca
             bool isNotScaEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
+            StateManager stateManager = StateManagerProvider.GetStateManager();
+            Dictionary<MenuItem, State> states = stateManager.GetAllStates();
 
             cxWindowUI.TriageSeverityCombobox.IsEnabled = isNotScaEngine;
             cxWindowUI.TriageStateCombobox.IsEnabled = isNotScaEngine;
@@ -50,20 +61,31 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.TriageComment.Foreground = new SolidColorBrush(Colors.Gray);
 
             cxWindowUI.TriageStateCombobox.Items.Clear();
-
-            foreach(State state in Enum.GetValues(typeof(State)))
-            {
-                if (isNotScaEngine && (state == State.IGNORED || state == State.NOT_IGNORED)) continue;
-
-                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() });
-            }
-
             bool isSastEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
 
             if (isSastEngine)
             {
+                foreach (State state in states.Values)
+                {
+               
+                    cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.Getname });
+                }
 
             }
+            else
+            {
+
+            
+
+            foreach (SystemState state in Enum.GetValues(typeof(SystemState)))
+            {
+                if (isNotScaEngine && (state == SystemState.IGNORED || state == SystemState.NOT_IGNORED)) continue;
+
+                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() });
+            }
+            }
+
+
 
             DrawTitle();
             DrawDesrciptionTab();
