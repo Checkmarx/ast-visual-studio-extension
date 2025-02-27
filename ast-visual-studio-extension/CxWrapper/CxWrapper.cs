@@ -447,7 +447,8 @@ namespace ast_visual_studio_extension.CxCLI
 
             string states = Execution.ExecuteCommand(WithConfigArguments(triageArguments), Execution.CheckValidJSONString);
 
-            return JsonConvert.DeserializeObject<List<State>>(states);
+            var results =  JsonConvert.DeserializeObject<List<State>>(states);
+            return results;
         }
 
         /// <summary>

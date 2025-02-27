@@ -67,11 +67,15 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 foreach (State state in states.Values)
                 {
-               
-                    cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.Getname });
-                }
+                    string formattedState = UIUtils.FormatStateName(state.name);
 
+                    ComboBoxItem item = new ComboBoxItem { Content = formattedState, Tag = state.name };
+
+                    cxWindowUI.TriageStateCombobox.Items.Add(item);
+                }
             }
+
+        
             else
             {
 
@@ -189,7 +193,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
             string similarityId = result.SimilarityId;
             string engineType = result.Type;
-            string state = (stateCombobox.SelectedValue as ComboBoxItem).Content as string;
+            string state = (stateCombobox.SelectedValue as ComboBoxItem).Tag as string;
             string severity = (severityCombobox.SelectedValue as ComboBoxItem).Content as string;
             string comment = triageComment.Text.Equals(CxConstants.TRIAGE_COMMENT_PLACEHOLDER) ? string.Empty : triageComment.Text;
 

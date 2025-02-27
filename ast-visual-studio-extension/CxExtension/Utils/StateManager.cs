@@ -14,7 +14,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 {
     public class StateManager
     {
-        private readonly CxCLI.CxWrapper _cxWrapper;
+        public  CxCLI.CxWrapper _cxWrapper;
         public Dictionary<MenuItem, State> _allStates = new Dictionary<MenuItem, State>();
 
         public StateManager(CxCLI.CxWrapper cxWrapper)
@@ -34,6 +34,18 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             string errorMessage = string.Empty;
 
+
+            // רשימת מוק של states במקום הקריאה ל-wrapper
+    //        List<State> states = new List<State>
+    //{
+    //    new State { id = 1, name = "CONFIRMED", type = "Type1" },
+    //    new State { id = 2, name = "TO_VERIFY", type = "Type2" },
+    //    new State { id = 3, name = "URGENT", type = "Type3" },
+    //    new State { id = 4, name = "Demo1", type = "Type4" },
+    //    new State { id = 5, name = "Demo2", type = "Type5" }
+    //};
+
+            
             List<State> states = await Task.Run(() =>
             {
                 try
@@ -46,24 +58,31 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                     return null;
                 }
             });
+
+
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 //logger.Error(string.Format(errorMessage));
                 //throw errorMessage;
-
             }
+            
 
             var stateFilters = new Dictionary<MenuItem, State>();
 
             foreach (var state in states)
             {
-                var menuItem = new MenuItem { Text = state.Getname };
+                var menuItem = new MenuItem { Text = state.name };
                 stateFilters.Add(menuItem, state);
-                
             }
 
             return stateFilters;
         }
+
+        // מחלקת State (אם היא לא קיימת כבר)
+       
+
+
+
 
         public Dictionary<MenuItem, State> GetAllStates()
         {
