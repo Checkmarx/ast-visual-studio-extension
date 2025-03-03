@@ -10,16 +10,16 @@ using log4net.Repository.Hierarchy;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
-    public  class StateManagerProvider
+    public class StateManagerProvider
     {
         private static StateManager _stateManager;
 
-        public   async static Task Initialize(CxCLI.CxWrapper cxWrapper)
+        public async static Task Initialize(CxCLI.CxWrapper cxWrapper)
         {
             if (_stateManager == null)
             {
                 _stateManager = new StateManager(cxWrapper);
-               await _stateManager.InitializeStatesAsync(); 
+               await _stateManager.InitializeStatesAsync(null); 
             }
         }
 

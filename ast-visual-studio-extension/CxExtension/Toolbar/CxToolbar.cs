@@ -43,10 +43,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public ScansCombobox ScansCombobox { get; set; }
         public Dictionary<ToggleButton, Severity> SeverityFilters { get; set; }
         public Dictionary<Severity, Image> SeverityFilterImages { get; set; }
-        public Dictionary<MenuItem, SystemState> StateFilters { get; set; }
+        public Dictionary<MenuItem, State> StateFilters { get; set; }
         public Dictionary<MenuItem, GroupBy> GroupByOptions { get; set; }
         public StackPanel ScanningSeparator { get; set; }
         public ToggleButton ScanStartButton { get; set; }
+        public Func<List<State>, Dictionary<MenuItem, State>> CreateStateMenuItems { get; set; }
 
         private static bool initPolling = false;
 
@@ -99,9 +100,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return this;
         }
 
-        public CxToolbar WithStateFilters(Dictionary<MenuItem, SystemState> stateFilters)
+        public CxToolbar WithStateFilters(Dictionary<MenuItem, State> statesMenuItems)
         {
-            StateFilters = stateFilters;
+            StateFilters = statesMenuItems;
             return this;
         }
 
@@ -115,6 +116,12 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         {
             ScanStartButton = scanStartButton;
             ScanningSeparator = scanningSeparator;
+            return this;
+        }
+
+        public CxToolbar WithCreateStateMenuItemsFunc(Func<List<State>, Dictionary<MenuItem, State>> createStateMenuItemsFunc)
+        {
+            CreateStateMenuItems = createStateMenuItemsFunc;
             return this;
         }
 
@@ -150,12 +157,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 var control = pair.Value;
                 control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true), UriKind.RelativeOrAbsolute));
             }
-            foreach (KeyValuePair<MenuItem, SystemState> pair in StateFilters)
-            {
-                var control = pair.Key;
-                var state = pair.Value;
-                control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.stateCollection, state.ToString(), SettingsUtils.stateDefaultValues[state]);
-            }
             foreach (KeyValuePair<MenuItem, GroupBy> pair in GroupByOptions)
             {
                 var control = pair.Key;
@@ -171,6 +172,24 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 initPolling = true;
                 _ = PollScanStartedAsync();
+            }
+        }
+
+        private void RetrieveEnabledStates()
+        {
+            var readOnlyStore = new ShellSettingsManager(Package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
+            foreach (KeyValuePair<MenuItem, State> pair in StateFilters)
+            {
+                var control = pair.Key;
+                var state = pair.Value;
+
+                if (Enum.TryParse(state.name, out SystemState stateEnum))
+                {
+                    if (SettingsUtils.stateDefaultValues.TryGetValue(stateEnum, out bool value))
+                    {
+                        control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.stateCollection, state.name, SettingsUtils.stateDefaultValues[stateEnum]);
+                    }
+                }
             }
         }
 
@@ -191,9 +210,34 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             ResultsTreePanel.Redraw(true);
         }
 
+        public void RefreshStates()
+        {
+            StateManager stateManager = StateManagerProvider.GetStateManager();
+            List<State> states = stateManager.GetAllStates();
+            var statesMenuItems = CreateStateMenuItems(states);
+            WithStateFilters(statesMenuItems);
+            RetrieveEnabledStates();
+        }
+
         public void StateFilterClick(MenuItem stateControl)
         {
-            SettingsUtils.Store(Package, SettingsUtils.stateCollection, StateFilters[stateControl], SettingsUtils.stateDefaultValues);
+            string selectedStateName = StateFilters[stateControl].name;
+            if (Enum.TryParse(selectedStateName, out SystemState stateEnum))
+            {
+                if (SettingsUtils.stateDefaultValues.TryGetValue(stateEnum, out bool value))
+                {
+                    SettingsUtils.Store(Package, SettingsUtils.stateCollection, stateEnum, SettingsUtils.stateDefaultValues);
+                }
+            }
+            else
+            {
+                StateManager stateManager = StateManagerProvider.GetStateManager();
+
+                if (!stateManager.enabledCustemStates.Remove(selectedStateName))
+                {
+                    stateManager.enabledCustemStates.Add(selectedStateName);
+                }
+            }
             ResultsTreePanel.Redraw(true);
         }
 
@@ -256,7 +300,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 string workingDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
                 RepositoryInformation repository = RepositoryInformation.GetRepositoryInformation(workingDir);
 
-                if (repository == null) {
+                if (repository == null)
+                {
                     return string.Empty;
                 }
 
@@ -268,11 +313,11 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
 
             return string.Empty;
-        } 
+        }
 
         private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync(EnvDTE.DTE dte)
         {
-            if(ResultsTreePanel.currentResults == null || !ResultsTreePanel.currentResults.results.Any())
+            if (ResultsTreePanel.currentResults == null || !ResultsTreePanel.currentResults.results.Any())
             {
                 return true;
             }
@@ -291,7 +336,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     resultsFileNames.Add(result.Data.FileName);
                 }
             }
-            
+
             foreach (string fileName in resultsFileNames)
             {
                 string partialFileLocation = SolutionExplorerUtils.PrepareFileName(fileName);
@@ -403,7 +448,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return ".";
         }
 
-            private async Task PollScanStartedAsync()
+        private async Task PollScanStartedAsync()
         {
             ScanStartButton.IsEnabled = false;
             var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
