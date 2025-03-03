@@ -1,4 +1,5 @@
 ﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxWrapper.Models;
 
 using System.Windows.Controls;
@@ -80,6 +81,25 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         {
             var result = ast_visual_studio_extension.CxExtension.Utils.CxUtils.CapToLen(fileName);
 
+            Assert.Equal(expected, result);
+        }
+
+
+
+        [Theory]
+        [InlineData("urgent", "Urgent")]
+        [InlineData("To_Verify", "To Verify")]
+        [InlineData("confirmed", "Confirmed")]
+        [InlineData("proposed", "Proposed")]
+        [InlineData("Not_Exploitable", "Not Exploitable")]
+        [InlineData("notIgnored", "Notignored")]
+        [InlineData("Not_Ignored", "Not Ignored")]
+        [InlineData("ignored", "Ignored")]
+        [InlineData("in_review", "In Review")]
+
+        public void FormatStateName_ShouldReturnFormattedName(string input, string expected)
+        {
+            string result = ast_visual_studio_extension.CxExtension.Utils.UIUtils.FormatStateName(input);
             Assert.Equal(expected, result);
         }
     }
