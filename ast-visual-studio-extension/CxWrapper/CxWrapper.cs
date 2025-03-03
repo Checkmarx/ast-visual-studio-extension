@@ -442,9 +442,7 @@ namespace ast_visual_studio_extension.CxCLI
             if (all)
             {
                 triageArguments.Add(CxConstants.FLAG_ALL);
-                
             }
-
             string states = Execution.ExecuteCommand(WithConfigArguments(triageArguments), Execution.CheckValidJSONString);
 
             var statesResults =  JsonConvert.DeserializeObject<List<State>>(states);

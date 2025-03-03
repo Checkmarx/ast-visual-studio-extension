@@ -61,10 +61,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.TriageComment.Foreground = new SolidColorBrush(Colors.Gray);
 
             cxWindowUI.TriageStateCombobox.Items.Clear();
-            bool isSastEngine = this.result.Type == "sast";
 
-            if (isSastEngine)
-            {
+            if (this.result.Type == "sast")
+                {
                 foreach (State state in states)
                 {
                     string formattedState = UIUtils.FormatStateName(state.name);

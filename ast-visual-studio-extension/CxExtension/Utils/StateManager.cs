@@ -44,6 +44,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 catch (Exception ex)
                 {
                     errorMessage = ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"Custom states fetch failed : {ex.Message}");
                     return null;
                 }
             }).ConfigureAwait(false);
