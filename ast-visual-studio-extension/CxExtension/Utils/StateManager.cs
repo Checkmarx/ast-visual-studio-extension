@@ -1,14 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ast_visual_studio_extension.CxCLI;
-using ast_visual_studio_extension.CxExtension.Enums;
-using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxWrapper.Models;
-using log4net.Repository.Hierarchy;
-using System.Web.UI.WebControls;
-using System.Diagnostics;
-
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
@@ -16,8 +9,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     {
         public  CxCLI.CxWrapper _cxWrapper;
         public List<State> _allStates = new List<State>();
-        public Dictionary<String, Boolean> CustomStateFilterStatus = new Dictionary<String, Boolean>();
-        public HashSet<String> enabledCustemStates = new HashSet<String>();
+        public HashSet<string> enabledCustemStates = new HashSet<string>();
         public StateManager(CxCLI.CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;

@@ -10,8 +10,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 {
     internal class ScansCombobox : ComboboxBase
     {
-        
-
         public ScansCombobox(CxToolbar cxToolbar)
             : base(cxToolbar, cxToolbar.ScansCombo)
         {

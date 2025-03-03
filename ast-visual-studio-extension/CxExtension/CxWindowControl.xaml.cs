@@ -30,24 +30,6 @@ namespace ast_visual_studio_extension.CxExtension
         private CancellationTokenSource typingCts;
         private ASCAService _ascaService;
 
-        private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
-        {
-            StateFilterMenuItem.Items.Clear();
-            Dictionary<MenuItem, State> statesMenuItems = new Dictionary<MenuItem, State>();
-            foreach (var item in states)
-            {
-                string formattedState = UIUtils.FormatStateName(item.name);
-                var menuItem = new MenuItem
-                {
-                    Header = formattedState,
-                    Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
-                };
-                menuItem.Click += StateFilter_Click;
-                StateFilterMenuItem.Items.Add(menuItem);
-                statesMenuItems.Add(menuItem, item);
-            }
-            return statesMenuItems;
-        }
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -109,6 +91,26 @@ namespace ast_visual_studio_extension.CxExtension
 
             await RegisterAsca();
         }
+
+        private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
+        {
+            StateFilterMenuItem.Items.Clear();
+            Dictionary<MenuItem, State> statesMenuItems = new Dictionary<MenuItem, State>();
+            foreach (var item in states)
+            {
+                string formattedState = UIUtils.FormatStateName(item.name);
+                var menuItem = new MenuItem
+                {
+                    Header = formattedState,
+                    Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
+                };
+                menuItem.Click += StateFilter_Click;
+                StateFilterMenuItem.Items.Add(menuItem);
+                statesMenuItems.Add(menuItem, item);
+            }
+            return statesMenuItems;
+        }
+
         private async Task RegisterAsca()
         {
             try
