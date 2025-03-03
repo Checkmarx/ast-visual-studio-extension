@@ -4,6 +4,8 @@ using ast_visual_studio_extension.CxWrapper.Models;
 
 using System.Windows.Controls;
 using Xunit;
+using static System.Windows.Forms.AxHost;
+using State = ast_visual_studio_extension.CxWrapper.Models.State;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
 {
@@ -41,7 +43,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                         tag = new Project { Id = item };
                     else if (comboType == ComboboxType.SCANS)
                         tag = new Scan { ID = item };
-
+                    else if (comboType == ComboboxType.STATE)
+                        tag = new State { name = item };
                     var comboBoxItem = new ComboBoxItem { Tag = tag };
                     comboBox.Items.Add(comboBoxItem);
                 }
@@ -65,7 +68,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 var comboBox = new ComboBox();
                 foreach (var item in items)
                 {
-                    comboBox.Items.Add(new ComboBoxItem { Content = item });
+                    comboBox.Items.Add(new ComboBoxItem { Content = item ,Tag= item});
                 }
 
                 var result = ast_visual_studio_extension.CxExtension.Utils.CxUtils.GetItemIndexInCombo(searchValue, comboBox, comboType);
