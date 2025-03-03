@@ -16,6 +16,7 @@ using System;
 using System.Diagnostics;
 using ast_visual_studio_extension.CxExtension.Services;
 using System.Diagnostics.CodeAnalysis;
+using ast_visual_studio_extension.CxWrapper.Models;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -27,8 +28,26 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
-        private ASCAService _ascaService; 
+        private ASCAService _ascaService;
 
+        private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
+        {
+            StateFilterMenuItem.Items.Clear();
+            Dictionary<MenuItem, State> statesMenuItems = new Dictionary<MenuItem, State>();
+            foreach (var item in states)
+            {
+                string formattedState = UIUtils.FormatStateName(item.name);
+                var menuItem = new MenuItem
+                {
+                    Header = formattedState,
+                    Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
+                };
+                menuItem.Click += StateFilter_Click;
+                StateFilterMenuItem.Items.Add(menuItem);
+                statesMenuItems.Add(menuItem, item);
+            }
+            return statesMenuItems;
+        }
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
@@ -43,11 +62,6 @@ namespace ast_visual_studio_extension.CxExtension
 
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
-
-            // Fetch state filters from API
-            var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
-            var stateManager = new StateManager(cxWrapper);
-            var stateFilters = stateManager.GetStatesAsync().Result;
 
             // Build CxToolbar
             cxToolbar = CxToolbar.Builder()
@@ -72,16 +86,6 @@ namespace ast_visual_studio_extension.CxExtension
                     { Severity.LOW, LowSeverityFilterImage },
                     { Severity.INFO, InfoSeverityFilterImage },
                 })
-                .WithStateFilters(new Dictionary<MenuItem, SystemState>
-                {
-                    { NotIgnoredStateFilter, SystemState.NOT_IGNORED },
-                    { IgnoredStateFilter, SystemState.IGNORED },
-                    { ToVerifyStateFilter, SystemState.TO_VERIFY },
-                    { ConfirmedStateFilter, SystemState.CONFIRMED },
-                    { ProposedNotExploitableStateFilter, SystemState.PROPOSED_NOT_EXPLOITABLE },
-                    { NotExploitableStateFilter, SystemState.NOT_EXPLOITABLE },
-                    { UrgentStateFilter, SystemState.URGENT },
-                })
                 .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
                 {
                     { FileGroupBy, GroupBy.FILE },
@@ -89,14 +93,22 @@ namespace ast_visual_studio_extension.CxExtension
                     { StateGroupBy, GroupBy.STATE },
                     { QueryNameGroupBy, GroupBy.QUERY_NAME },
                 })
-                .WithScanButtons(ScanningSeparator, ScanStartBtn);
+                .WithScanButtons(ScanningSeparator, ScanStartBtn)
+                .WithCreateStateMenuItemsFunc(CreateStateMenuItems);
 
-            // Init toolbar elements
+            _ = InitializeAsync();
             cxToolbar.Init();
-            _ = RegisterAsca();
-
         }
+        private async Task InitializeAsync()
+        {
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
 
+            await StateManagerProvider.Initialize(cxWrapper);
+            StateManager stateManager = StateManagerProvider.GetStateManager();
+            cxToolbar.RefreshStates();
+
+            await RegisterAsca();
+        }
         private async Task RegisterAsca()
         {
             try

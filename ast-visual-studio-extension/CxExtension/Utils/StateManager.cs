@@ -16,20 +16,19 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     {
         public  CxCLI.CxWrapper _cxWrapper;
         public List<State> _allStates = new List<State>();
-
+        public Dictionary<String, Boolean> CustomStateFilterStatus = new Dictionary<String, Boolean>();
+        public HashSet<String> enabledCustemStates = new HashSet<String>();
         public StateManager(CxCLI.CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;
         }
 
-        public async Task InitializeStatesAsync()
+        public async Task InitializeStatesAsync(Action callback)
         {
-            
-            if (_allStates.Count == 0) 
-            {
-                _allStates = await GetStatesAsync();
-            }
+            _allStates = await GetStatesAsync();
+            callback?.Invoke();
         }
+
         public async Task<List<State>> GetStatesAsync()
         {
             string errorMessage = string.Empty;
@@ -48,13 +47,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 }
             }).ConfigureAwait(false);
 
-
             return states ?? new List<State>();
 
         }
-
-
-
 
         public List<State> GetAllStates()
         {

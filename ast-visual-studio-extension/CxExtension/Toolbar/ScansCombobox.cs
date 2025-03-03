@@ -97,10 +97,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        public async  void OnChangeScan(object sender, SelectionChangedEventArgs e)
+        public async void OnChangeScan(object sender, SelectionChangedEventArgs e)
         {
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
-            await StateManagerProvider.Initialize(cxWrapper); 
+            await StateManagerProvider.Initialize(cxWrapper);
+            StateManager stateManager = StateManagerProvider.GetStateManager();
+            await stateManager.InitializeStatesAsync(cxToolbar.RefreshStates);
+
             if (!(sender is ComboBox scansCombo) || scansCombo.SelectedItem == null || scansCombo.SelectedIndex == -1) return;
 
 
