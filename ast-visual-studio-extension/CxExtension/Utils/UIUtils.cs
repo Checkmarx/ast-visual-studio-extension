@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -13,23 +14,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         public static string FormatStateName(string stateName)
         {
-           
-
-     
             string formatted = stateName.Replace("_", " ").ToLower();
-
-          
-            string[] words = formatted.Split(' ');
-            for (int i = 0; i < words.Length; i++)
-            {
-                if (!string.IsNullOrEmpty(words[i]))
-                {
-                    words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
-                }
-            }
-
-        
-            return string.Join(" ", words);
+            var textInfo = CultureInfo.CurrentCulture.TextInfo;
+            return textInfo.ToTitleCase(formatted);
         }
 
 
