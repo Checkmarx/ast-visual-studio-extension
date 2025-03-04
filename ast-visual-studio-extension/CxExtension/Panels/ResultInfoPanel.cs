@@ -84,7 +84,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 if (isNotScaEngine && (state == SystemState.IGNORED || state == SystemState.NOT_IGNORED)) continue;
 
-                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = state.ToString() , Tag = state.ToString() });
+                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = UIUtils.FormatStateName(state.ToString()), Tag = state.ToString() });
             }
             }
 
