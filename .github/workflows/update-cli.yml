@@ -43,4 +43,4 @@ jobs:
 
             [1]: https://github.com/Checkmarx/checkmarx-ast-cli
           labels: cxone
-          branch: feature/update_cli
+          branch: feature/update_cli_${{ steps.checkmarx-ast-cli.outputs.release_tag }}
