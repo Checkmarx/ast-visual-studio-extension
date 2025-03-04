@@ -1,8 +1,11 @@
 ﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxWrapper.Models;
 
 using System.Windows.Controls;
 using Xunit;
+using static System.Windows.Forms.AxHost;
+using State = ast_visual_studio_extension.CxWrapper.Models.State;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
 {
@@ -40,7 +43,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                         tag = new Project { Id = item };
                     else if (comboType == ComboboxType.SCANS)
                         tag = new Scan { ID = item };
-
+                    else if (comboType == ComboboxType.STATE)
+                        tag = new State { name = item };
                     var comboBoxItem = new ComboBoxItem { Tag = tag };
                     comboBox.Items.Add(comboBoxItem);
                 }
@@ -64,7 +68,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 var comboBox = new ComboBox();
                 foreach (var item in items)
                 {
-                    comboBox.Items.Add(new ComboBoxItem { Content = item });
+                    comboBox.Items.Add(new ComboBoxItem { Content = item ,Tag= item});
                 }
 
                 var result = ast_visual_studio_extension.CxExtension.Utils.CxUtils.GetItemIndexInCombo(searchValue, comboBox, comboType);
@@ -80,6 +84,25 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         {
             var result = ast_visual_studio_extension.CxExtension.Utils.CxUtils.CapToLen(fileName);
 
+            Assert.Equal(expected, result);
+        }
+
+
+
+        [Theory]
+        [InlineData("urgent", "Urgent")]
+        [InlineData("To_Verify", "To Verify")]
+        [InlineData("confirmed", "Confirmed")]
+        [InlineData("proposed", "Proposed")]
+        [InlineData("Not_Exploitable", "Not Exploitable")]
+        [InlineData("notIgnored", "Notignored")]
+        [InlineData("Not_Ignored", "Not Ignored")]
+        [InlineData("ignored", "Ignored")]
+        [InlineData("in_review", "In Review")]
+
+        public void FormatStateName_ShouldReturnFormattedName(string input, string expected)
+        {
+            string result = ast_visual_studio_extension.CxExtension.Utils.UIUtils.FormatStateName(input);
             Assert.Equal(expected, result);
         }
     }

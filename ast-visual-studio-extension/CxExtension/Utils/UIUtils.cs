@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -10,6 +11,15 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class UIUtils
     {
+
+        public static string FormatStateName(string stateName)
+        {
+            string formatted = stateName.Replace("_", " ").ToLower();
+            var textInfo = CultureInfo.CurrentCulture.TextInfo;
+            return textInfo.ToTitleCase(formatted);
+        }
+
+
         public static CxWindowControl CxWindowUI { get; set; }
 
         /// <summary>

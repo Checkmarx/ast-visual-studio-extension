@@ -105,7 +105,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 case ComboboxType.BRANCHES: return item.Content as string;
                 case ComboboxType.SCANS: return (item.Tag as Scan).ID;
                 case ComboboxType.SEVERITY: return item.Content as string;
-                case ComboboxType.STATE: return item.Content as string;
+                case ComboboxType.STATE: return item.Tag as string;
             }
 
             return null;

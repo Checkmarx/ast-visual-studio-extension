@@ -16,6 +16,7 @@ using System;
 using System.Diagnostics;
 using ast_visual_studio_extension.CxExtension.Services;
 using System.Diagnostics.CodeAnalysis;
+using ast_visual_studio_extension.CxWrapper.Models;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -27,7 +28,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
-        private ASCAService _ascaService; 
+        private ASCAService _ascaService;
 
         public CxWindowControl(AsyncPackage package)
         {
@@ -67,16 +68,6 @@ namespace ast_visual_studio_extension.CxExtension
                     { Severity.LOW, LowSeverityFilterImage },
                     { Severity.INFO, InfoSeverityFilterImage },
                 })
-                .WithStateFilters(new Dictionary<MenuItem, State>
-                {
-                    { NotIgnoredStateFilter, State.NOT_IGNORED },
-                    { IgnoredStateFilter, State.IGNORED },
-                    { ToVerifyStateFilter, State.TO_VERIFY },
-                    { ConfirmedStateFilter, State.CONFIRMED },
-                    { ProposedNotExploitableStateFilter, State.PROPOSED_NOT_EXPLOITABLE },
-                    { NotExploitableStateFilter, State.NOT_EXPLOITABLE },
-                    { UrgentStateFilter, State.URGENT },
-                })
                 .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
                 {
                     { FileGroupBy, GroupBy.FILE },
@@ -84,12 +75,40 @@ namespace ast_visual_studio_extension.CxExtension
                     { StateGroupBy, GroupBy.STATE },
                     { QueryNameGroupBy, GroupBy.QUERY_NAME },
                 })
-                .WithScanButtons(ScanningSeparator, ScanStartBtn);
+                .WithScanButtons(ScanningSeparator, ScanStartBtn)
+                .WithCreateStateMenuItemsFunc(CreateStateMenuItems);
 
-            // Init toolbar elements
+            _ = InitializeAsync();
             cxToolbar.Init();
-            _ = RegisterAsca();
+        }
+        private async Task InitializeAsync()
+        {
+            CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
 
+            await StateManagerProvider.Initialize(cxWrapper);
+            StateManager stateManager = StateManagerProvider.GetStateManager();
+            cxToolbar.RefreshStates();
+
+            await RegisterAsca();
+        }
+
+        private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
+        {
+            StateFilterMenuItem.Items.Clear();
+            Dictionary<MenuItem, State> statesMenuItems = new Dictionary<MenuItem, State>();
+            foreach (var item in states)
+            {
+                string formattedState = UIUtils.FormatStateName(item.name);
+                var menuItem = new MenuItem
+                {
+                    Header = formattedState,
+                    Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
+                };
+                menuItem.Click += StateFilter_Click;
+                StateFilterMenuItem.Items.Add(menuItem);
+                statesMenuItems.Add(menuItem, item);
+            }
+            return statesMenuItems;
         }
 
         private async Task RegisterAsca()

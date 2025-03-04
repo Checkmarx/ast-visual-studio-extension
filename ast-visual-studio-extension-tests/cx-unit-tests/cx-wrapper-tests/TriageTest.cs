@@ -42,5 +42,16 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
                 throw new XunitException("Triage update failed. An exception shouldn't be thrown. Cause: " + e.Message);
             }
         }
+
+        [Fact]
+        public void TestTriageGetStates_ShouldReturnAtLeastFiveStates()
+        {
+            List<State> states = cxWrapper.TriageGetStates(false);
+
+            Assert.NotNull(states);
+            Assert.True(states.Count >= 5, $"Expected at least 5 states, but got {states.Count}");
+        }
     }
+
 }
+

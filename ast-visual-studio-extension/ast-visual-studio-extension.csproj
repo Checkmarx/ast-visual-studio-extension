@@ -73,7 +73,7 @@
     <Compile Include="CxExtension\Enums\ComboboxType.cs" />
     <Compile Include="CxExtension\Enums\GroupBy.cs" />
     <Compile Include="CxExtension\Enums\Severity.cs" />
-    <Compile Include="CxExtension\Enums\State.cs" />
+    <Compile Include="CxExtension\Enums\SystemState.cs" />
     <Compile Include="CxExtension\Panels\FileNode.cs" />
     <Compile Include="CxExtension\Panels\ResultInfoPanel.cs" />
     <Compile Include="CxExtension\Panels\ResultsTreePanel.cs" />
@@ -93,6 +93,8 @@
     <Compile Include="CxExtension\Utils\CxUtils.cs" />
     <Compile Include="CxExtension\Utils\ResultsFilteringAndGrouping.cs" />
     <Compile Include="CxExtension\Utils\SolutionExplorerUtils.cs" />
+    <Compile Include="CxExtension\Utils\StateManager.cs" />
+    <Compile Include="CxExtension\Utils\StateManagerProvider.cs" />
     <Compile Include="CxExtension\Utils\UIUtils.cs" />
     <Compile Include="CxExtension\Utils\XAMLCalculations.cs" />
     <Compile Include="CxWrapper\CxUtils.cs" />
@@ -101,6 +103,7 @@
     <Compile Include="CxWrapper\Execution.cs" />
     <Compile Include="CxWrapper\Models\CxAsca.cs" />
     <Compile Include="CxWrapper\Models\LearnMore.cs" />
+    <Compile Include="CxWrapper\Models\State.cs" />
     <Compile Include="CxWrapper\Models\TenantSetting.cs" />
     <Compile Include="CxWrapper\Models\CodeBashing.cs" />
     <Compile Include="CxWrapper\Models\Comments.cs" />

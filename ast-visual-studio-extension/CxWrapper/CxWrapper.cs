@@ -1,6 +1,7 @@
 ﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
+using Microsoft.TeamFoundation.Work.WebApi;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -420,6 +421,32 @@ namespace ast_visual_studio_extension.CxCLI
             string predicates = Execution.ExecuteCommand(WithConfigArguments(triageArguments), Execution.CheckValidJSONString);
 
             return JsonConvert.DeserializeObject<List<Predicate>>(predicates);
+        }
+
+        /// <summary>
+        /// Get States command
+        /// </summary>
+        /// <param name="scanId"></param>
+        /// <param name="reportFormat"></param>
+        /// <returns></returns>
+        public List<State> TriageGetStates(bool all)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_TRIAGE_GET_STATES_CMD);
+
+            List<string> triageArguments = new List<string>
+            {
+                CxConstants.CLI_TRIAGE_CMD,
+                CxConstants.CLI_GET_STATES_CMD,
+            };
+
+            if (all)
+            {
+                triageArguments.Add(CxConstants.FLAG_ALL);
+            }
+            string states = Execution.ExecuteCommand(WithConfigArguments(triageArguments), Execution.CheckValidJSONString);
+
+            var statesResults =  JsonConvert.DeserializeObject<List<State>>(states);
+            return statesResults;
         }
 
         /// <summary>

@@ -453,25 +453,16 @@
             <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
                 <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
             </ToggleButton>
-            <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
-            </ToggleButton>
-
+                <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
+                    <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
+                </ToggleButton>
                 <Menu Background="Transparent">
-                    <MenuItem ToolTip="Filter by state" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
+                    <MenuItem x:Name="StateFilterMenuItem" ToolTip="Filter by state" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
                         <MenuItem.Icon>
                             <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Filter}"/>
                         </MenuItem.Icon>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ConfirmedStateFilter" Header="Confirmed" Click="StateFilter_Click"/>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ToVerifyStateFilter" Header="To Verify" Click="StateFilter_Click"/>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="UrgentStateFilter" Header="Urgent" Click="StateFilter_Click"/>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotExploitableStateFilter" Header="Not Exploitable" Click="StateFilter_Click"/>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="ProposedNotExploitableStateFilter" Header="Proposed Not Exploitable" Click="StateFilter_Click"/>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="IgnoredStateFilter" Header="Ignored" Click="StateFilter_Click"/>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="NotIgnoredStateFilter" Header="Not Ignored" Click="StateFilter_Click"/>
                     </MenuItem>
                 </Menu>
-
                 <StackPanel Orientation="Horizontal">
                     <Separator Style="{StaticResource SeparatorStyle}" />
                 </StackPanel>
