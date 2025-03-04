@@ -1,8 +1,9 @@
 name: Update checkmarx one cli
+
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
+  repository_dispatch:
+    types: [cli-version-update]
 
 jobs:
   update-checkmarx-cli:
