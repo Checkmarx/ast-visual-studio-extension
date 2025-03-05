@@ -9,6 +9,8 @@ namespace UITests
     public class SettingsTests : BaseTest
     {
         private static AutomationElement _settingsWindow;
+        private const int ShortDelay = 500;
+        private const int LongDelay = 1500;
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
@@ -23,7 +25,7 @@ namespace UITests
                 var settingsButton = TestUtils.GetElementByAutomationIdWithNotNullCheck(_checkmarxWindow, "SettingsBtn", "Settings button not found in Checkmarx window");
 
                 settingsButton.WaitUntilEnabled().Click();
-                await Task.Delay(500);
+                await Task.Delay(ShortDelay);
 
                 _settingsWindow = TestUtils.GetElementByNameWithNotNullCheck(_mainWindow, "Checkmarx settings", "Settings window not found");
             }
@@ -40,10 +42,23 @@ namespace UITests
             if (togglePattern.ToggleState != ToggleState.On)
             {
                 ascaButton.WaitUntilEnabled().Click();
-                await Task.Delay(500);
+                await Task.Delay(ShortDelay);
             }
             
             var ascaIsStarted = TestUtils.GetElementByNameWithNotNullCheck(_mainWindow, "AI Secure Coding Assistant Engine started", "ASCA is not started");
+        }
+        
+        [TestMethod]
+        public async Task CheckValidation()
+        {
+            await OpenSettingsWindowAsync();
+
+            var checkValidationButton = TestUtils.GetElementByAutomationIdWithNotNullCheck(_mainWindow, "button1", "Check Validation button not found in settings window");
+
+            checkValidationButton.WaitUntilEnabled().DoubleClick();
+            await Task.Delay(LongDelay);
+
+            var validateResults = TestUtils.GetElementByAutomationIdWithNotNullCheck(_mainWindow, "lblValidationResult", "Validate failed");
         }
     }
 }
