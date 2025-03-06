@@ -53,7 +53,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // groupBox2
             // 
-            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(this.tbApiKey);
             this.groupBox2.Controls.Add(this.label4);
@@ -68,7 +68,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // tbApiKey
             // 
-            this.tbApiKey.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.tbApiKey.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbApiKey.Location = new System.Drawing.Point(232, 28);
             this.tbApiKey.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -90,7 +90,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // groupBox3
             // 
-            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox3.Controls.Add(this.AdditionalParametersHelPage);
             this.groupBox3.Controls.Add(this.tbAdditionalParameters);
@@ -118,7 +118,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // tbAdditionalParameters
             // 
-            this.tbAdditionalParameters.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.tbAdditionalParameters.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbAdditionalParameters.Location = new System.Drawing.Point(232, 32);
             this.tbAdditionalParameters.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -150,17 +150,15 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // lblValidationResult
             // 
-            this.lblValidationResult.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
+            this.lblValidationResult.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblValidationResult.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.lblValidationResult.Location = new System.Drawing.Point(254, 25);
+            this.lblValidationResult.Location = new System.Drawing.Point(240, 478);
             this.lblValidationResult.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.lblValidationResult.Multiline = true;
             this.lblValidationResult.Name = "lblValidationResult";
             this.lblValidationResult.ReadOnly = true;
-            this.lblValidationResult.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.lblValidationResult.Size = new System.Drawing.Size(298, 33);
+            this.lblValidationResult.Size = new System.Drawing.Size(1046, 19);
             this.lblValidationResult.TabIndex = 11;
             // 
             // helpPage
@@ -169,7 +167,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.helpPage.Location = new System.Drawing.Point(15, 26);
             this.helpPage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.helpPage.Name = "helpPage";
-            this.helpPage.Size = new System.Drawing.Size(387, 20);
+            this.helpPage.Size = new System.Drawing.Size(367, 20);
             this.helpPage.TabIndex = 12;
             this.helpPage.TabStop = true;
             this.helpPage.Text = "Checkmarx One Visual Studio Extension help page";
@@ -177,11 +175,10 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // ascaGroupBox
             // 
-            this.ascaGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.ascaGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ascaGroupBox.Controls.Add(this.label1);
             this.ascaGroupBox.Controls.Add(this.ascaCheckBox);
-            this.ascaGroupBox.Controls.Add(this.lblValidationResult);
             this.ascaGroupBox.Controls.Add(this.ascaLabel);
             this.ascaGroupBox.Location = new System.Drawing.Point(10, 305);
             this.ascaGroupBox.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
@@ -198,7 +195,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.label1.ForeColor = System.Drawing.Color.Green;
             this.label1.Location = new System.Drawing.Point(251, 25);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(316, 20);
+            this.label1.Size = new System.Drawing.Size(312, 20);
             this.label1.TabIndex = 12;
             this.label1.Text = CxConstants.ASCA_ENGINE_STARTED_MESSAGE;
             // 
@@ -229,6 +226,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
             this.Controls.Add(this.helpPage);
+            this.Controls.Add(this.lblValidationResult);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.button1);
