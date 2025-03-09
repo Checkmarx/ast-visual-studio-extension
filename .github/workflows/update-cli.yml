@@ -30,6 +30,7 @@ jobs:
           ./.github/scripts/update_cli.sh ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
 
       - name: Create Pull Request
+        id: cretae_pull_request
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
         uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c #v5
         with:
@@ -44,3 +45,11 @@ jobs:
             [1]: https://github.com/Checkmarx/checkmarx-ast-cli
           labels: cxone
           branch: feature/update_cli_${{ steps.checkmarx-ast-cli.outputs.release_tag }}
+
+      - name: Enable Pull Request Automerge
+        if: ${{ github.event_name == 'repository_dispatch' && steps.cretae_pull_request.outputs.pull-request-operation == 'created' }}
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          pull-request-number: ${{ steps.cretae_pull_request.outputs.pull-request-number }}
+          merge-method: squash
