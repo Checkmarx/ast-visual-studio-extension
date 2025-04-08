@@ -133,5 +133,104 @@ namespace UITests
             var scanStartBtn = TestUtils.GetElementByAutomationIdWithNotNullCheck(_checkmarxWindow, "ScanStartBtn", "ScanStartBtn button not found in Checkmarx window");
             Assert.IsFalse(scanStartBtn.IsEnabled, "ScanStartBtn button is enabled before project and branch selection");
         }
+
+        [TestMethod]
+        public async Task TestSpecificScanWithNoResults()
+        {
+            await ClickRefreshButtonAsync();
+            
+            // 1. Select the specific project
+            var projectsCombobox = TestUtils.GetElementByAutomationIdWithNotNullCheck(_checkmarxWindow, "ProjectsCombobox", "Projects combobox not found in Checkmarx window");
+            
+            // Search for the specific project
+            var projectTextBox = TestUtils.GetElementByAutomationIdWithNotNullCheck(projectsCombobox, "PART_EditableTextBox", "Project text box not found in Projects combobox");
+            projectTextBox.AsTextBox().Enter("ASTCLI/HideDevAndTestsVulnerabilities/Test");
+            await Task.Delay(2000);
+            
+            // Open projects list
+            var projectItems = await ExpandComboboxAndGetItemsAsync(projectsCombobox);
+            
+            // Find and select the specific project
+            bool projectFound = false;
+            foreach (var item in projectItems)
+            {
+                if (item.Name.Contains("ASTCLI/HideDevAndTestsVulnerabilities/Test"))
+                {
+                    item.Patterns.SelectionItem.Pattern.Select();
+                    projectFound = true;
+                    await Task.Delay(2000);
+                    break;
+                }
+            }
+            
+            Assert.IsTrue(projectFound, "Project ASTCLI/HideDevAndTestsVulnerabilities/Test not found");
+            
+            // 2. Select the 'main' branch
+            var branchCombobox = TestUtils.GetElementByAutomationIdWithNotNullCheck(_checkmarxWindow, "BranchesCombobox", "Branches combobox not found in Checkmarx window");
+            await Task.Delay(1000);
+            
+            // Open branches list
+            var branchItems = await ExpandComboboxAndGetItemsAsync(branchCombobox);
+            
+            // Find and select the 'main' branch
+            bool branchFound = false;
+            foreach (var item in branchItems)
+            {
+                if (item.Name.Contains("main"))
+                {
+                    item.Patterns.SelectionItem.Pattern.Select();
+                    branchFound = true;
+                    await Task.Delay(2000);
+                    break;
+                }
+            }
+            
+            Assert.IsTrue(branchFound, "Branch 'main' not found");
+            
+            // 3. Select the specific scan
+            var scanCombobox = TestUtils.GetElementByAutomationIdWithNotNullCheck(_checkmarxWindow, "ScansCombobox", "Scans combobox not found in Checkmarx window");
+            await Task.Delay(1000);
+            
+            // Open scans list
+            var scanItems = await ExpandComboboxAndGetItemsAsync(scanCombobox);
+            
+            // Find and select the specific scan
+            bool scanFound = false;
+            foreach (var item in scanItems)
+            {
+                if (item.Name.Contains("28d29a61-bc5e-4f5a-9fdd-e18c5a10c05b"))
+                {
+                    item.Patterns.SelectionItem.Pattern.Select();
+                    scanFound = true;
+                    await Task.Delay(3000);
+                    break;
+                }
+            }
+            
+            Assert.IsTrue(scanFound, "Scan 28d29a61-bc5e-4f5a-9fdd-e18c5a10c05b not found");
+            
+            // 4. Check that no Object reference error is displayed
+            var treeViewResults = TestUtils.GetElementByAutomationIdWithNotNullCheck(_checkmarxWindow, "TreeViewResults", "Tree view results not found in Checkmarx window");
+            var results = treeViewResults.FindAllDescendants();
+            
+            foreach (var item in results)
+            {
+                Assert.IsFalse(item.Name.Contains("Object reference not set"), "Error message found: Object reference not set");
+            }
+            
+            // 5. Check that a proper 'no results' message is displayed
+            bool hasNoResultsMessage = false;
+            foreach (var item in results)
+            {
+                if (item.Name.Contains("No results") || 
+                    (item.Name.Contains("28d29a61-bc5e-4f5a-9fdd-e18c5a10c05b") && item.Name.Contains("0")))
+                {
+                    hasNoResultsMessage = true;
+                    break;
+                }
+            }
+            
+            Assert.IsTrue(hasNoResultsMessage, "Expected 'No results' message not found");
+        }
     }
 }
