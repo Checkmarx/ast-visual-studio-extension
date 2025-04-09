@@ -103,6 +103,7 @@
     <Compile Include="CxWrapper\Execution.cs" />
     <Compile Include="CxWrapper\Models\CxAsca.cs" />
     <Compile Include="CxWrapper\Models\LearnMore.cs" />
+    <Compile Include="CxWrapper\Models\ScaPackageData.cs" />
     <Compile Include="CxWrapper\Models\State.cs" />
     <Compile Include="CxWrapper\Models\TenantSetting.cs" />
     <Compile Include="CxWrapper\Models\CodeBashing.cs" />

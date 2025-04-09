@@ -20,10 +20,30 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             var treeResults = new List<TreeViewItem>();
 
+            var isTestSelected = stateManager.enabledCustemStates.Contains("IsTestDependency");
+            var isDevSelected = stateManager.enabledCustemStates.Contains("IsDevelopmentDependency");
+
             enabledGroupBys.Insert(0, GroupBy.ENGINE);
             foreach (TreeViewItem item in results)
             {
                 var result = item.Tag as Result;
+                bool isSca = result.Type?.ToLower() == "sca";
+                bool isDev = result.Data?.ScaPackageData?.IsDevelopmentDependency == true;
+                bool isTest = result.Data?.ScaPackageData?.IsTestDependency == true;
+
+                if (isSca && (isDevSelected || isTestSelected))
+                {
+                    if ((isDevSelected && isDev) || (isTestSelected && isTest))
+                    {
+                    
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
+
                 bool isSystemState = Enum.TryParse(result.State, out SystemState itemSystemState);
                 Enum.TryParse(result.Severity, out Severity itemSeverity);
 
