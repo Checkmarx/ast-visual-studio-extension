@@ -35,7 +35,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 {
                     if ((isDevSelected && isDev) || (isTestSelected && isTest))
                     {
-                    
                     }
                     else
                     {
