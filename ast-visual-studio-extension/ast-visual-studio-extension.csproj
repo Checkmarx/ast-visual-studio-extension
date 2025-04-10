@@ -71,6 +71,7 @@
       <DependentUpon>CxInitialPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="CxExtension\Enums\ComboboxType.cs" />
+    <Compile Include="CxExtension\Enums\DependencyFilter.cs" />
     <Compile Include="CxExtension\Enums\GroupBy.cs" />
     <Compile Include="CxExtension\Enums\Severity.cs" />
     <Compile Include="CxExtension\Enums\SystemState.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="CxWrapper\Execution.cs" />
     <Compile Include="CxWrapper\Models\CxAsca.cs" />
     <Compile Include="CxWrapper\Models\LearnMore.cs" />
+    <Compile Include="CxWrapper\Models\ScaPackageData.cs" />
     <Compile Include="CxWrapper\Models\State.cs" />
     <Compile Include="CxWrapper\Models\TenantSetting.cs" />
     <Compile Include="CxWrapper\Models\CodeBashing.cs" />

@@ -190,6 +190,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                         control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.stateCollection, state.name, SettingsUtils.stateDefaultValues[stateEnum]);
                     }
                 }
+                else if (Enum.TryParse<DependencyFilter>(state.name, out var dependencyFilter))
+                {
+                    control.IsChecked = readOnlyStore.GetBoolean(
+                        SettingsUtils.dependencyFiltersCollection,
+                        state.name,
+                        SettingsUtils.dependencyFilterDefaultValues[dependencyFilter]
+                    );
+                }
             }
         }
 
@@ -236,6 +244,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 if (!stateManager.enabledCustemStates.Remove(selectedStateName))
                 {
                     stateManager.enabledCustemStates.Add(selectedStateName);
+                }
+                if (Enum.TryParse<DependencyFilter>(selectedStateName, out var dependencyFilter))
+                {
+                    SettingsUtils.Store(Package, SettingsUtils.dependencyFiltersCollection, dependencyFilter, SettingsUtils.dependencyFilterDefaultValues);
                 }
             }
             ResultsTreePanel.Redraw(true);

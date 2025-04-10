@@ -108,8 +108,32 @@ namespace ast_visual_studio_extension.CxExtension
                 StateFilterMenuItem.Items.Add(menuItem);
                 statesMenuItems.Add(menuItem, item);
             }
+            AddDependencyFilter("IsTestDependency", statesMenuItems);
+            AddDependencyFilter("IsDevelopmentDependency", statesMenuItems);
             return statesMenuItems;
         }
+
+        private void AddDependencyFilter(string filterName, Dictionary<MenuItem, State> statesMenuItems)
+        {
+            var dependencyState = new State
+            {
+                name = filterName,
+                id = -1,
+                type = "Custom"
+            };
+
+            var menuItem = new MenuItem
+            {
+                Header = filterName == "IsTestDependency" ? "Test" : "Dev",
+                Tag = filterName,
+                Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
+            };
+
+            menuItem.Click += StateFilter_Click;
+            StateFilterMenuItem.Items.Add(menuItem);
+            statesMenuItems.Add(menuItem, dependencyState);
+        }
+
 
         private async Task RegisterAsca()
         {
