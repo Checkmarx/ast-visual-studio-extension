@@ -71,6 +71,7 @@
       <DependentUpon>CxInitialPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="CxExtension\Enums\ComboboxType.cs" />
+    <Compile Include="CxExtension\Enums\DependencyFilter.cs" />
     <Compile Include="CxExtension\Enums\GroupBy.cs" />
     <Compile Include="CxExtension\Enums\Severity.cs" />
     <Compile Include="CxExtension\Enums\SystemState.cs" />
