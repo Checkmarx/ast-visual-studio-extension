@@ -10,6 +10,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     public class SettingsUtils
     {
         public static readonly string severityCollection = "Checkmarx/Filter/Severity";
+        public static readonly string dependencyFiltersCollection = "Checkmarx/Filter/DependencyFilters";
         public static readonly string stateCollection = "Checkmarx/Filter/State";
         public static readonly string groupByCollection = "Checkmarx/GroupBy";
         public static readonly string toolbarCollection = "Checkmarx/Toolbar";
@@ -26,6 +27,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             { Severity.LOW, false },
             { Severity.INFO, false },
         };
+
+        public static readonly Dictionary<object, bool> dependencyFilterDefaultValues = new Dictionary<object, bool>
+{
+    { DependencyFilter.IsTestDependency, false },
+    { DependencyFilter.IsDevelopmentDependency, false },
+};
         public static readonly Dictionary<object, bool> stateDefaultValues = new Dictionary<object, bool>
         {
             { SystemState.CONFIRMED, true },
