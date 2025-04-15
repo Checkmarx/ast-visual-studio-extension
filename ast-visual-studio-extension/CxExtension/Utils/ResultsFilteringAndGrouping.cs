@@ -20,8 +20,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             var treeResults = new List<TreeViewItem>();
 
-           
 
+            var isTestSelected = stateManager.enabledCustemStates.Contains("IsTestDependency");
+            var isDevSelected = stateManager.enabledCustemStates.Contains("IsDevelopmentDependency");
             enabledGroupBys.Insert(0, GroupBy.ENGINE);
             foreach (TreeViewItem item in results)
             {
@@ -29,8 +30,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 bool isSca = result.Type?.ToLower() == "sca";
                 bool isDev = result.Data?.ScaPackageData?.IsDevelopmentDependency == true;
                 bool isTest = result.Data?.ScaPackageData?.IsTestDependency == true;
-                var isTestSelected = stateManager.enabledCustemStates.Contains("IsTestDependency");
-                var isDevSelected = stateManager.enabledCustemStates.Contains("IsDevelopmentDependency");
                 bool skipFurtherFiltering = false;
                 if (isSca && (isDevSelected || isTestSelected))
                 {
