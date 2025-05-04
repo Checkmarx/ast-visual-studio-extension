@@ -50,6 +50,8 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public Func<List<State>, Dictionary<MenuItem, State>> CreateStateMenuItems { get; set; }
 
         private static bool initPolling = false;
+        private const string DevOrTestFilterName = "SCA DEV & Test Dependencies";
+
 
         public static CxToolbar Builder()
         {
@@ -190,14 +192,15 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                         control.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.stateCollection, state.name, SettingsUtils.stateDefaultValues[stateEnum]);
                     }
                 }
-                else if (Enum.TryParse<DependencyFilter>(state.name, out var dependencyFilter))
+                else if (state.name == DevOrTestFilterName)
                 {
                     control.IsChecked = readOnlyStore.GetBoolean(
                         SettingsUtils.dependencyFiltersCollection,
-                        state.name,
-                        SettingsUtils.dependencyFilterDefaultValues[dependencyFilter]
+                        DependencyFilter.IsDevOrTestDependency.ToString(),
+                        SettingsUtils.dependencyFilterDefaultValues[DependencyFilter.IsDevOrTestDependency]
                     );
                 }
+             
             }
         }
 
@@ -245,9 +248,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 {
                     stateManager.enabledCustemStates.Add(selectedStateName);
                 }
-                if (Enum.TryParse<DependencyFilter>(selectedStateName, out var dependencyFilter))
+                if (selectedStateName == DevOrTestFilterName)
                 {
-                    SettingsUtils.Store(Package, SettingsUtils.dependencyFiltersCollection, dependencyFilter, SettingsUtils.dependencyFilterDefaultValues);
+                    SettingsUtils.Store(
+                        Package,
+                        SettingsUtils.dependencyFiltersCollection,
+                        DependencyFilter.IsDevOrTestDependency,
+                        SettingsUtils.dependencyFilterDefaultValues
+                    );
                 }
             }
             ResultsTreePanel.Redraw(true);

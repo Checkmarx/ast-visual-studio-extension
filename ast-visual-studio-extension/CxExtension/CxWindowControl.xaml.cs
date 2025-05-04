@@ -108,8 +108,7 @@ namespace ast_visual_studio_extension.CxExtension
                 StateFilterMenuItem.Items.Add(menuItem);
                 statesMenuItems.Add(menuItem, item);
             }
-            AddDependencyFilter("IsTestDependency", statesMenuItems);
-            AddDependencyFilter("IsDevelopmentDependency", statesMenuItems);
+            AddDependencyFilter("SCA DEV & Test Dependencies", statesMenuItems);
             return statesMenuItems;
         }
 
@@ -124,7 +123,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             var menuItem = new MenuItem
             {
-                Header = filterName == "IsTestDependency" ? "Test" : "Dev",
+                Header = filterName,
                 Tag = filterName,
                 Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
             };
