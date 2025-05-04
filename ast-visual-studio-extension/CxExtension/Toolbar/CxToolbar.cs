@@ -199,6 +199,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                         DependencyFilter.IsDevOrTestDependency.ToString(),
                         SettingsUtils.dependencyFilterDefaultValues[DependencyFilter.IsDevOrTestDependency]
                     );
+                    if (control.IsChecked)
+                    {
+                        StateManagerProvider.GetStateManager().enabledCustemStates.Add(state.name);
+                    }
                 }
              
             }
