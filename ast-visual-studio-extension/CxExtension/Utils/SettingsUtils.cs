@@ -30,8 +30,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         public static readonly Dictionary<object, bool> dependencyFilterDefaultValues = new Dictionary<object, bool>
 {
-    { DependencyFilter.IsTestDependency, false },
-    { DependencyFilter.IsDevelopmentDependency, false },
+    { DependencyFilter.IsDevOrTestDependency, true },
 };
         public static readonly Dictionary<object, bool> stateDefaultValues = new Dictionary<object, bool>
         {
