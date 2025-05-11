@@ -457,7 +457,7 @@
                     <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
                 </ToggleButton>
                 <Menu Background="Transparent">
-                    <MenuItem x:Name="StateFilterMenuItem" ToolTip="Filter by state" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
+                    <MenuItem x:Name="StateFilterMenuItem" ToolTip="Filter results" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
                         <MenuItem.Icon>
                             <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Filter}"/>
                         </MenuItem.Icon>

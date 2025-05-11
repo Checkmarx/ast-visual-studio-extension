@@ -50,7 +50,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public Func<List<State>, Dictionary<MenuItem, State>> CreateStateMenuItems { get; set; }
 
         private static bool initPolling = false;
-        private const string DevOrTestFilterName = "SCA DEV & Test Dependencies";
+        private const string DevOrTestFilterName = "SCA Dev & Test Dependencies";
 
 
         public static CxToolbar Builder()
