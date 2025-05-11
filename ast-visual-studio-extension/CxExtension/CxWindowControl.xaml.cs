@@ -108,7 +108,7 @@ namespace ast_visual_studio_extension.CxExtension
                 StateFilterMenuItem.Items.Add(menuItem);
                 statesMenuItems.Add(menuItem, item);
             }
-            AddDependencyFilter("SCA DEV & Test Dependencies", statesMenuItems);
+            AddDependencyFilter("SCA Dev & Test Dependencies", statesMenuItems);
             return statesMenuItems;
         }
 

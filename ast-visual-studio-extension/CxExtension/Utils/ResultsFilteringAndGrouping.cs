@@ -20,7 +20,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             var treeResults = new List<TreeViewItem>();
 
-            var isDevOrTestSelected = stateManager.enabledCustemStates.Contains("SCA DEV & Test Dependencies");
+            var isDevOrTestSelected = stateManager.enabledCustemStates.Contains("SCA Dev & Test Dependencies");
             enabledGroupBys.Insert(0, GroupBy.ENGINE);
             foreach (TreeViewItem item in results)
             {
