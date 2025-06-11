@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/banner.png">
+<img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/PluginBanner.jpg">
 <br />
 <div align="center">
 
@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/Checkmarx/ast-visual-studio-extension">
-    <img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/logo.png" alt="Logo" width="80" height="80" />
+    <img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/PluginLogo.jpg" alt="Logo" width="80" height="80" />
   </a>
 
 <h3 align="center">CHECKMARX ONE VISUAL STUDIO PLUGIN</h3>
@@ -21,15 +21,14 @@
 <p align="center">
     The CxAST Visual Studio plugin enableds you to import results from a CxAST scan directly into your IDE.
     <br />
-    <a href="https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336643630/CxAST+Visual+Studio+Plugin"><strong>Explore the docs »</strong></a>
+    <a href="https://docs.checkmarx.com/en/34965-68738-checkmarx-one-visual-studio-extension--plugin-.html"><strong>Explore the docs »</strong></a>
     <br />
-    <a href=""><strong>Marketplace »</strong></a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=checkmarx.astVisualStudioExtension"><strong>Marketplace »</strong></a>
     <br />
     <br />
     <a href="https://github.com/Checkmarx/ast-visual-studio-extension/issues/new">Report Bug</a>
     ·
     <a href="https://github.com/Checkmarx/ast-visual-studio-extension/issues/new">Request Feature</a>
-  </p>
 </p>
 
 
@@ -39,18 +38,20 @@
   <summary>Table of Contents</summary>
   <ol>
     <li>
-      <a href="#about-the-project">About The Project</a>
+      <a href="#Overview">Overview</a>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#setting-up">Setting Up</a></li>
+		<li><a href="#key-features">Key Features</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
+    <li><a href="#initial-setup">Initial Setup</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
+	<li><a href="#feedback">Feedback</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -58,29 +59,53 @@
 
 
 <!-- ABOUT THE PROJECT -->
-## About The Project
+## Overview
 
-Once you have run a CxAST scan on the source code of your Visual Studio project, you can import the scan results into your Visual Studio IDE. The results are integrated within the IDE in a manner that makes it easy to identify the vulnerable code triage the results and take the required remediation actions. 
+Checkmarx continues to spearhead the shift-left approach to AppSec by bringing our powerful AppSec tools into your IDE. This empowers developers to identify vulnerabilities and remediate them **as they code**. The Checkmarx Visual Studio extension integrates seamlessly into your IDE, enabling you to access the full functionality of your Checkmarx One account (SAST, SCA, IaC Security) directly from your IDE.
+
+You can run new scans, or import results from scans run in your Checkmarx One account. Checkmarx provides detailed info about each vulnerability, including remediation recommendations and examples of effective remediation. The plugin enables you to navigate from a vulnerability to the relevant source code, so that you can easily zero-in on the problematic code and start working on remediation.
 
 
 <!-- GETTING STARTED -->
 ## Getting Started
 
 
+
 ### Prerequisites
 
-- You have a CxAST account and you have an [API Key](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/5859574017/Generating+an+API+Key).
+-  You are running Visual Studio version 2022.
+
+-  You have an **API key** for your Checkmarx One account. To create an     API key, see
+[Generating an API Key](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/5859574017/Generating+an+API+Key).
+	> The following are the minimum required  [roles](https://docs.checkmarx.com/en/34965-68603-managing-roles.html "Managing Roles")  for running an end-to-end flow of scanning a project and viewing results via the CLI or plugins:
+	> -   CxOne composite role  `ast-scanner`    
+	> -   CxOne role  `view-policy-management`
+	> -   IAM role  `default-roles`
+
 
 ### Setting Up
-
 
 All the procedures to set the visual studio extension up can be found [here](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336708609/Installation+and+Initial+Setup+of+the+CxAST+Visual+Studio+Plugin).
 
 
+### Key Features
 
-## Usage
+-  Access the full power of Checkmarx One (SAST, SCA, and IaC Security) directly from your IDE
+-  Run a new scan from your IDE even before committing the code, or import scan results from your Checkmarx One account
+-  Provides actionable results. Navigate from results panel directly to the highlighted vulnerable code in the editor and get right down to work on the remediation.
+-  Group and filter results
+-  Triage results (by adjusting the severity and state and adding comments) directly from the Visual Studio console (currently supported for SAST and IaC Security)
+-  Links to Codebashing lessons
+-  AI Secure Coding Assistant (ASCA) - A lightweight scan engine that runs in the background while you work, enabling developers to identify and remediate secure coding best practice violations as they code.
 
-To see how you can use our tool, please refer to the [Documentation](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336643130/Viewing+CxAST+Results+in+Visual+Studio)
+
+## Initial Setup
+
+1.  Verify that all prerequisites are in place.
+
+2.  Install the **Checkmarx One** extension from Marketplace.
+
+3.  Configure the extension settings as described [here](https://checkmarx.com/resource/documents/en/34965-68739-installing-and-setting-up-the-checkmarx-one-visual-studio-extension.html).
 
 
 ## Contribution
@@ -94,6 +119,8 @@ We appreciate feedback and contribution to the visual studio extension! Before y
 ## License
 Distributed under the [Apache 2.0](LICENSE). See `LICENSE` for more information.
 
+## Feedback
+We’d love to hear your feedback! If you come across a bug or have a feature request, please let us know by submitting an issue in [GitHub Issues](https://github.com/Checkmarx/ast-visual-studio-extension/issues).
 
 <!-- CONTACT -->
 ## Contact
