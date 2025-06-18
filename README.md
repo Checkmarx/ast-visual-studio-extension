@@ -19,7 +19,6 @@
 <h3 align="center">CHECKMARX ONE VISUAL STUDIO PLUGIN</h3>
 
 <p align="center">
-    The Checkmarx One Visual Studio plugin enables you to import results from a Checkmarx One scan directly into your IDE.
     <br />
     <a href="https://docs.checkmarx.com/en/34965-68738-checkmarx-one-visual-studio-extension--plugin-.html"><strong>Explore the docs »</strong></a>
     <br />
@@ -51,7 +50,7 @@
 
 
 <!-- ABOUT THE PROJECT -->
-# Overview
+## Overview
 
 Checkmarx continues to spearhead the shift-left approach to AppSec by bringing our powerful AppSec tools into your IDE. This empowers developers to identify vulnerabilities and remediate them **as they code**. The Checkmarx Visual Studio extension integrates seamlessly into your IDE, enabling you to access the full functionality of your Checkmarx One account (SAST, SCA, IaC Security) directly from your IDE.
 
