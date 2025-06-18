@@ -19,7 +19,7 @@
 <h3 align="center">CHECKMARX ONE VISUAL STUDIO PLUGIN</h3>
 
 <p align="center">
-    The CxAST Visual Studio plugin enableds you to import results from a CxAST scan directly into your IDE.
+    The Checkmarx One Visual Studio plugin enables you to import results from a Checkmarx One scan directly into your IDE.
     <br />
     <a href="https://docs.checkmarx.com/en/34965-68738-checkmarx-one-visual-studio-extension--plugin-.html"><strong>Explore the docs »</strong></a>
     <br />
@@ -37,21 +37,13 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#Overview">Overview</a>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#setting-up">Setting Up</a></li>
-		<li><a href="#key-features">Key Features</a></li>
-      </ul>
-    </li>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#key-features">Key Features</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
     <li><a href="#initial-setup">Initial Setup</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
-	<li><a href="#feedback">Feedback</a></li>
+	  <li><a href="#feedback">Feedback</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -59,19 +51,25 @@
 
 
 <!-- ABOUT THE PROJECT -->
-## Overview
+# Overview
 
 Checkmarx continues to spearhead the shift-left approach to AppSec by bringing our powerful AppSec tools into your IDE. This empowers developers to identify vulnerabilities and remediate them **as they code**. The Checkmarx Visual Studio extension integrates seamlessly into your IDE, enabling you to access the full functionality of your Checkmarx One account (SAST, SCA, IaC Security) directly from your IDE.
 
 You can run new scans, or import results from scans run in your Checkmarx One account. Checkmarx provides detailed info about each vulnerability, including remediation recommendations and examples of effective remediation. The plugin enables you to navigate from a vulnerability to the relevant source code, so that you can easily zero-in on the problematic code and start working on remediation.
 
 
-<!-- GETTING STARTED -->
-## Getting Started
+## Key Features
+
+-  Access the full power of Checkmarx One (SAST, SCA, and IaC Security) directly from your IDE
+-  Run a new scan from your IDE even before committing the code, or import scan results from your Checkmarx One account
+-  Provides actionable results. Navigate from results panel directly to the highlighted vulnerable code in the editor and get right down to work on the remediation.
+-  Group and filter results
+-  Triage results (by adjusting the severity and state and adding comments) directly from the Visual Studio console (currently supported for SAST and IaC Security)
+-  Links to Codebashing lessons
+-  AI Secure Coding Assistant (ASCA) - A lightweight scan engine that runs in the background while you work, enabling developers to identify and remediate secure coding best practice violations as they code.
 
 
-
-### Prerequisites
+## Prerequisites
 
 -  You are running Visual Studio version 2022.
 
@@ -81,22 +79,6 @@ You can run new scans, or import results from scans run in your Checkmarx One ac
 	> -   CxOne composite role  `ast-scanner`    
 	> -   CxOne role  `view-policy-management`
 	> -   IAM role  `default-roles`
-
-
-### Setting Up
-
-All the procedures to set the visual studio extension up can be found [here](https://checkmarx.atlassian.net/wiki/spaces/AST/pages/6336708609/Installation+and+Initial+Setup+of+the+CxAST+Visual+Studio+Plugin).
-
-
-### Key Features
-
--  Access the full power of Checkmarx One (SAST, SCA, and IaC Security) directly from your IDE
--  Run a new scan from your IDE even before committing the code, or import scan results from your Checkmarx One account
--  Provides actionable results. Navigate from results panel directly to the highlighted vulnerable code in the editor and get right down to work on the remediation.
--  Group and filter results
--  Triage results (by adjusting the severity and state and adding comments) directly from the Visual Studio console (currently supported for SAST and IaC Security)
--  Links to Codebashing lessons
--  AI Secure Coding Assistant (ASCA) - A lightweight scan engine that runs in the background while you work, enabling developers to identify and remediate secure coding best practice violations as they code.
 
 
 ## Initial Setup
