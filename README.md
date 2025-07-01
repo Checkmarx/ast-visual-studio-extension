@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/Checkmarx/ast-visual-studio-extension">
-    <img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/cx-icon-logo.png" alt="Logo" width="80" height="80" />
+    <img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/cx_x_icon.png" alt="Logo" width="80" height="80" />
   </a>
 
 <h3 align="center">CHECKMARX ONE VISUAL STUDIO PLUGIN</h3>
