@@ -119,10 +119,19 @@ namespace ast_visual_studio_extension.CxExtension
                 {
                     throw new FileNotFoundException("log4net.config not found in expected locations.");
                 }
-                var logRepository = LogManager.GetRepository();
-                XmlConfigurator.Configure(logRepository, new FileInfo(log4netConfigPath));
 
-                var appender = ((Hierarchy)logRepository).Root.Appenders[0];
+                var logRepository = LogManager.GetRepository();
+                // Configure with ConfigureAndWatch to enable dynamic configuration changes
+                XmlConfigurator.ConfigureAndWatch(logRepository, new FileInfo(log4netConfigPath));
+
+                // Get the root logger and set its level based on debug flag
+                var hierarchy = (Hierarchy)logRepository;
+                if (Environment.GetCommandLineArgs().Contains("--debug"))
+                {
+                    hierarchy.Root.Level = hierarchy.LevelMap["DEBUG"];
+                }
+
+                var appender = hierarchy.Root.Appenders[0];
                 if (appender is RollingFileAppender fileAppender && fileAppender.File != logFilePath)
                 {
                     fileAppender.File = logFilePath;

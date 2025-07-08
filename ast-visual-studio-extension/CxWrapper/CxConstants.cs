@@ -28,7 +28,7 @@
         public static string CLI_CANCEL_CMD => "cancel";
         public static string CLI_UTILS_CMD = "utils";
         public static string CLI_TENANT_CMD = "tenant";
-        public static string CLI_LEARN_MORE_CMD = "learn-more";
+        public static string CLI_LEARN_MORE_CMD => "learn-more";
 
 
         /** CLI FLAGS **/
@@ -68,30 +68,32 @@
         /** EXCEPTIONS **/
         public static string EXCEPTION_CREDENTIALS_NOT_SET => "Credentials are not set";
 
-        /** LOGGING **/
-        public static string LOG_RUNNING_AUTH_VALIDATE_CMD => "Initialized authentication validation command";
-        public static string LOG_RUNNING_ASCA_SCAN_CMD => "Running ASCA scan on file: {0}";
-        public static string LOG_RUNNING_ASCA_UPDATE_CMD => "Running ASCA update version";
-        public static string LOG_RUNNING_GET_RESULTS_CMD => "Retrieving the scan result for scan id {0}...";
-        public static string LOG_RUNNING_GET_PROJECTS_CMD => "Getting projects...";
-        public static string LOG_RUNNING_GET_BRANCHES_CMD => "Getting branches for project id {0}...";
-        public static string LOG_RUNNING_GET_SCANS_FOR_BRANCH_CMD => "Getting scans for branch {0}...";
-        public static string LOG_RUNNING_GET_SCANS_CMD => "Getting scans...";
-        public static string LOG_RUNNING_GET_SCAN_DETAILS_CMD => "Retrieving details for scan id {0}...";
-        public static string LOG_RUNNING_TRIAGE_UPDATE_CMD => "Executing 'triage update' command using the CLI...";
-        public static string LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD => "Updating the similarityId {0} with state {1} and severity {2}...";
-        public static string LOG_RUNNING_TRIAGE_SHOW_CMD => "Executing 'triage show' command using the CLI...";
-        public static string LOG_RUNNING_TRIAGE_SHOW_INFO_CMD => "Fetching the list of predicates for projectId {0} , similarityId {1} and scan-type {2}...";
-        public static string LOG_RUNNING_TRIAGE_GET_STATES_CMD => "Executing 'triage get states' command using the CLI...";
-        public static string LOG_RUNNING_TRIAGE_GET_STATES_INFO_CMD => "Fetching the list of states...";
-        public static string LOG_RUNNING_CODEBASHING_CMD => "Fetching codebashing link...";
-        public static string LOG_RUNNING_SCAN_CREATE_CMD => "Executing 'scan create' command using the CLI...";
-        public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Executing 'scan cancel' command using the CLI...";
-        public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Retrieving details for project id: {0}...";
-        public static string LOG_RUNNING_TENANT_SETTINGS_CMD => "Getting tenant settings...";
-
         /** FILE EXTENSIONS **/
         public static string EXTENSION_JSON => ".json";
+
+        /** LOGGING MESSAGES **/
+        public static string LOG_CLI_COMMAND_EXECUTING => "Executing CLI command: {0}";
+        public static string LOG_CLI_COMMAND_COMPLETED => "CLI command completed with result length: {0}";
+        public static string LOG_CLI_COMMAND_ERROR => "CLI command failed: {0}";
+        public static string LOG_INITIALIZATION => "Initializing CxWrapper with configuration";
+        public static string LOG_RUNNING_ASCA_SCAN_CMD => "Running ASCA scan command for file: {0}";
+        public static string LOG_RUNNING_AUTH_VALIDATE_CMD => "Running auth validate command";
+        public static string LOG_RUNNING_GET_RESULTS_CMD => "Getting results for scan ID: {0}";
+        public static string LOG_RUNNING_GET_PROJECTS_CMD => "Getting projects list";
+        public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Getting project details for ID: {0}";
+        public static string LOG_RUNNING_GET_BRANCHES_CMD => "Getting branches for project ID: {0}";
+        public static string LOG_RUNNING_GET_SCANS_FOR_BRANCH_CMD => "Getting scans for branch: {0}";
+        public static string LOG_RUNNING_GET_SCANS_CMD => "Getting all scans";
+        public static string LOG_RUNNING_GET_SCAN_DETAILS_CMD => "Getting scan details for ID: {0}";
+        public static string LOG_RUNNING_TRIAGE_UPDATE_CMD => "Running triage update command";
+        public static string LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD => "Updating triage for similarity ID: {0}, state: {1}, severity: {2}";
+        public static string LOG_RUNNING_TRIAGE_SHOW_CMD => "Running triage show command";
+        public static string LOG_RUNNING_TRIAGE_SHOW_INFO_CMD => "Getting triage info for project ID: {0}, similarity ID: {1}, scan type: {2}";
+        public static string LOG_RUNNING_TRIAGE_GET_STATES_CMD => "Getting triage states";
+        public static string LOG_RUNNING_CODEBASHING_CMD => "Getting Codebashing links";
+        public static string LOG_RUNNING_TENANT_SETTINGS_CMD => "Getting tenant settings";
+        public static string LOG_RUNNING_SCAN_CREATE_CMD => "Creating new scan";
+        public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Canceling scan";
 
         /** SCAN STATUS **/
         public static string SCAN_RUNNING => "running";
