@@ -21,11 +21,52 @@ namespace ast_visual_studio_extension.CxCLI
         {
             cxConfiguration.Validate();
             cxConfig = cxConfiguration;
-
-
             logger = LogManager.GetLogger(type);
+
+            // Subscribe to CLI output events
+            Execution.OnProcessCompleted += LogCliOutput;
         }
 
+        private void LogCliOutput(List<string> cliOutput)
+        {
+            foreach (var line in cliOutput)
+            {
+                logger.Info(line);
+            }
+        }
+
+        private string ExecuteCliCommand(List<string> arguments, Func<string, string> resultHandler)
+        {
+            try
+            {
+                string commandLine = $"cx.exe {string.Join(" ", arguments)}";
+                logger.Info($"Executing CLI command: {commandLine}");
+                var result = Execution.ExecuteCommand(WithConfigArguments(arguments), resultHandler);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"CLI command failed: {ex.Message}", ex);
+                throw;
+            }
+        }
+
+        private string ExecuteCliCommand(List<string> arguments, string tempDir, string fileName)
+        {
+            try
+            {
+                string commandLine = $"cx.exe {string.Join(" ", arguments)}";
+                logger.Info(string.Format(CxConstants.LOG_CLI_COMMAND_EXECUTING, commandLine));
+                var result = Execution.ExecuteCommand(WithConfigArguments(arguments), tempDir, fileName);
+                logger.Info(string.Format(CxConstants.LOG_CLI_COMMAND_COMPLETED, result?.Length ?? 0));
+                return result;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(string.Format(CxConstants.LOG_CLI_COMMAND_ERROR, ex.Message), ex);
+                throw;
+            }
+        }
 
         /// <summary>
         /// Scan file with ASCA
@@ -67,7 +108,7 @@ namespace ast_visual_studio_extension.CxCLI
 
             AppendAgentToArguments(agent, arguments);
 
-            string result = Execution.ExecuteCommand(WithConfigArguments(arguments), Execution.CheckValidJSONString);
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
             return JsonConvert.DeserializeObject<CxAsca>(result);
         }
 
@@ -109,7 +150,7 @@ namespace ast_visual_studio_extension.CxCLI
                 CxConstants.CLI_VALIDATE_CMD
             };
 
-            return Execution.ExecuteCommand(WithConfigArguments(authValidateArguments), line => line);
+            return ExecuteCliCommand(authValidateArguments, line => line);
         }
 
         /// <summary>
@@ -184,7 +225,7 @@ namespace ast_visual_studio_extension.CxCLI
                     break;
             }
 
-            return Execution.ExecuteCommand(WithConfigArguments(resultsArguments), tempDir, fileName + extension);
+            return ExecuteCliCommand(resultsArguments, tempDir, fileName + extension);
         }
 
         /// <summary>

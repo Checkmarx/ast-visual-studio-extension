@@ -89,7 +89,9 @@
         public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Executing 'scan cancel' command using the CLI...";
         public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Retrieving details for project id: {0}...";
         public static string LOG_RUNNING_TENANT_SETTINGS_CMD => "Getting tenant settings...";
-
+        public static string LOG_CLI_COMMAND_EXECUTING => "Executing CLI command: {0}";
+        public static string LOG_CLI_COMMAND_COMPLETED => "CLI command completed with result length: {0}";
+        public static string LOG_CLI_COMMAND_ERROR => "CLI command failed: {0}";
         /** FILE EXTENSIONS **/
         public static string EXTENSION_JSON => ".json";
 
