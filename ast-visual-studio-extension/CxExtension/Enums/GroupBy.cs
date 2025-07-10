@@ -6,6 +6,7 @@
         FILE = 4,
         SEVERITY = 2,
         STATE = 3,
-        QUERY_NAME = 5
+        QUERY_NAME = 5,
+        STATUS = 6,
     }
 }

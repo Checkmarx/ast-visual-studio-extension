@@ -74,7 +74,7 @@ namespace ast_visual_studio_extension.CxExtension
                     { SeverityGroupBy, GroupBy.SEVERITY },
                     { StateGroupBy, GroupBy.STATE },
                     { QueryNameGroupBy, GroupBy.QUERY_NAME },
-                    { StatusGroupBy, GroupBy.STATUS},
+                    { StatusGroupBy, GroupBy.STATUS },
                 })
                 .WithScanButtons(ScanningSeparator, ScanStartBtn)
                 .WithCreateStateMenuItemsFunc(CreateStateMenuItems);

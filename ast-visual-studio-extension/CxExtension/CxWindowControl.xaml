@@ -476,6 +476,7 @@
                         <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="SeverityGroupBy" Header="Severity" Click="GroupBy_Click"/>
                         <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StateGroupBy" Header="State" Click="GroupBy_Click"/>
                         <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="QueryNameGroupBy" Header="Query Name" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StatusGroupBy" Header="Status" Click="GroupBy_Click"/>
                     </MenuItem>
                 </Menu>
 
