@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Json;
+using System.Text;
 
 namespace ast_visual_studio_extension.CxCLI
 {
@@ -49,21 +50,32 @@ namespace ast_visual_studio_extension.CxCLI
         {
             string outputData = string.Empty;
             string errorData = string.Empty;
+            var cliOutput = new List<string>();
 
             using (var process = new Process
             {
                 StartInfo = GetProcessStartInfo(arguments)
             })
             {
-                process.ErrorDataReceived += (s, args) => errorData += string.IsNullOrEmpty(errorData) ? args.Data : Environment.NewLine + args.Data;
+                process.ErrorDataReceived += (s, args) =>
+                {
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        errorData += string.IsNullOrEmpty(errorData) ? args.Data : Environment.NewLine + args.Data;
+                        cliOutput.Add(args.Data);
+                    }
+                };
 
                 process.OutputDataReceived += (s, args) =>
                 {
-                    string parsedValue = lineParser.Invoke(args.Data);
-
-                    if (!string.IsNullOrEmpty(parsedValue))
+                    if (!string.IsNullOrEmpty(args.Data))
                     {
-                        outputData += string.IsNullOrEmpty(outputData) ? parsedValue : Environment.NewLine + parsedValue;
+                        string parsedValue = lineParser.Invoke(args.Data);
+                        if (!string.IsNullOrEmpty(parsedValue))
+                        {
+                            outputData += string.IsNullOrEmpty(outputData) ? parsedValue : Environment.NewLine + parsedValue;
+                        }
+                        cliOutput.Add(args.Data);
                     }
                 };
 
@@ -71,6 +83,9 @@ namespace ast_visual_studio_extension.CxCLI
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 process.WaitForExit();
+
+                // Raise event with collected output
+                OnProcessCompleted?.Invoke(cliOutput);
 
                 if (process.ExitCode != 0)
                 {
@@ -80,6 +95,8 @@ namespace ast_visual_studio_extension.CxCLI
                 return !string.IsNullOrEmpty(outputData) ? outputData.Trim() : errorData.Trim();
             }
         }
+
+        public static event Action<List<string>> OnProcessCompleted;
 
         private static ProcessStartInfo GetProcessStartInfo(List<string> arguments)
         {
