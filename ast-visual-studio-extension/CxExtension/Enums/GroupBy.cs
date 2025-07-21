@@ -3,9 +3,12 @@
     public enum GroupBy
     {
         ENGINE = 1,
-        FILE = 4,
         SEVERITY = 2,
-        STATE = 3,
-        QUERY_NAME = 5
+        VULNERABILITY_TYPE = 3,
+        STATE = 4,
+        STATUS = 5,
+        Language = 6,
+        FILE = 7,
+        DIRECT_DEPENDENCY = 8
     }
 }

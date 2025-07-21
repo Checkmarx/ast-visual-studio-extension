@@ -472,10 +472,13 @@
                         <MenuItem.Icon>
                             <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.GroupBy}"/>
                         </MenuItem.Icon>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="FileGroupBy" Header="File" Click="GroupBy_Click"/>
                         <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="SeverityGroupBy" Header="Severity" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="VulnerabiltyTypeGroupBy" Header="Vulnerabilty Type" Click="GroupBy_Click"/>
                         <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StateGroupBy" Header="State" Click="GroupBy_Click"/>
-                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="QueryNameGroupBy" Header="Query Name" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="StatusGroupBy" Header="Status" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="LanguageGroupBy" Header="Language" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="FileGroupBy" Header="File" Click="GroupBy_Click"/>
+                        <MenuItem Style="{DynamicResource DefaultMenuItemStyle}" x:Name="DirectDependencyGroupBy" Header="Direct Dependency" Click="GroupBy_Click"/>
                     </MenuItem>
                 </Menu>
 
