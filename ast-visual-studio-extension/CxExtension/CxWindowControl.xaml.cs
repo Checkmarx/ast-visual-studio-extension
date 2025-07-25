@@ -70,10 +70,13 @@ namespace ast_visual_studio_extension.CxExtension
                 })
                 .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
                 {
-                    { FileGroupBy, GroupBy.FILE },
                     { SeverityGroupBy, GroupBy.SEVERITY },
+                    { VulnerabiltyTypeGroupBy, GroupBy.VULNERABILITY_TYPE },
                     { StateGroupBy, GroupBy.STATE },
-                    { QueryNameGroupBy, GroupBy.QUERY_NAME },
+                    { StatusGroupBy, GroupBy.STATUS },
+                    { LanguageGroupBy, GroupBy.Language },
+                    { FileGroupBy, GroupBy.FILE },
+                    { DirectDependencyGroupBy, GroupBy.DIRECT_DEPENDENCY },
                 })
                 .WithScanButtons(ScanningSeparator, ScanStartBtn)
                 .WithCreateStateMenuItemsFunc(CreateStateMenuItems);

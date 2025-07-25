@@ -45,10 +45,13 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static readonly Dictionary<object, bool> groupByDefaultValues = new Dictionary<object, bool>
         {
             { GroupBy.ENGINE, false },
-            { GroupBy.FILE, false },
             { GroupBy.SEVERITY, true },
+            { GroupBy.VULNERABILITY_TYPE, false },
             { GroupBy.STATE, false },
-            { GroupBy.QUERY_NAME, true },
+            { GroupBy.STATUS, false },
+            { GroupBy.Language, false },
+            { GroupBy.FILE, false },
+            { GroupBy.DIRECT_DEPENDENCY, false },
         };
 
         public static void Store(AsyncPackage package, string collection, object property, Dictionary<object, bool> defaults)
