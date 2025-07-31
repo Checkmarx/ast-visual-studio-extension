@@ -106,6 +106,16 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             {
                 case GroupBy.ENGINE:
                     return (result) => result.Type;
+                case GroupBy.SEVERITY:
+                    return (result) => result.Severity;
+                case GroupBy.VULNERABILITY_TYPE:
+                    return (result) => result.Data?.QueryName ?? result.Data?.PackageIdentifier ?? result.Id;
+                case GroupBy.STATE:
+                    return (result) => result.State;
+                case GroupBy.STATUS:
+                    return (result) => result.Status;
+                case GroupBy.Language:
+                    return (result) => result.Data.LanguageName;
                 case GroupBy.FILE:
                     return (result) =>
                     {
@@ -119,12 +129,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                         }
                         return null;
                     };
-                case GroupBy.SEVERITY:
-                    return (result) => result.Severity;
-                case GroupBy.STATE:
-                    return (result) => result.State;
-                case GroupBy.QUERY_NAME:
-                    return (result) => result.Data.QueryName ?? result.Id;
+                case GroupBy.DIRECT_DEPENDENCY:
+                    return (result) => result.Type == "sca" ? result.Data.ScaPackageData.TypeOfDependency : null;
                 default:
                     return null;
             }
