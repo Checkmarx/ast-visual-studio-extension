@@ -66,11 +66,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 var headerBlock = kvp.Key.Header as TextBlock;
                 if (headerBlock != null)
                 {
-                    string baseLabel = headerBlock.Tag as string;
+                    string baseLabel = (headerBlock.Tag as string).Replace("_", " ");
                     string labelWithCount = $"{baseLabel} ({kvp.Value})";
 
                     // Replace the existing header with a new TextBlock
                     kvp.Key.Header = UIUtils.CreateTreeViewItemHeader(string.Empty, labelWithCount);
+                    kvp.Key.ToolTip = $"{baseLabel}";
                 }
             }
 
@@ -90,7 +91,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 if (childNodeName == null) continue;
 
                 // single underscore is used as mnemonic
-                childNodeName = childNodeName.Replace("_", "__");
+                childNodeName = childNodeName.Replace("_", " ");
 
                 TreeViewItem child = null;
 
