@@ -50,7 +50,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             Label resultDisplayName = new Label
             {
-                Content = displayName
+                Content = displayName.Replace("_", " ")
             };
             stackPanel.Children.Add(resultDisplayName);
 
@@ -60,7 +60,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             resultUIElement.Inlines.Add(uiContainer);
             resultUIElement.Tag = displayName;
             resultUIElement.TextWrapping = TextWrapping.WrapWithOverflow;
-
+            if (!string.IsNullOrEmpty(severity)) resultUIElement.ToolTip = displayName.Replace("_" ," ");
             return resultUIElement;
         }
 
