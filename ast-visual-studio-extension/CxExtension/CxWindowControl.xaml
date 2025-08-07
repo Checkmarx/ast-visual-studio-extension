@@ -557,7 +557,7 @@
             </UniformGrid>
 
             <UniformGrid Rows="1" Columns="1">
-                <TextBox Text="Comment (Optional)" Name="TriageComment" Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow" GotFocus="OnFocusComment" LostFocus="OnLostFocusComment"/>
+                <TextBox Text="Note (Optional or required based on tenant configuration)" Name="TriageComment" Margin="5,5,5,0" Height="50" TextWrapping="WrapWithOverflow" GotFocus="OnFocusComment" LostFocus="OnLostFocusComment"/>
             </UniformGrid>
 
             <!-- Description and Changes tabs -->
