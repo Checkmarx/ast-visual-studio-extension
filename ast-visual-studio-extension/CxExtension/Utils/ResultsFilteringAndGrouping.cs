@@ -22,6 +22,10 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             var isDevOrTestSelected = stateManager.enabledCustemStates.Contains("SCA Dev & Test Dependencies");
             enabledGroupBys.Insert(0, GroupBy.ENGINE);
+
+            // Dictionary to store group headers and counts
+            var groupNodeCounts = new Dictionary<TreeViewItem, int>();
+
             foreach (TreeViewItem item in results)
             {
                 var result = item.Tag as Result;
@@ -51,33 +55,43 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                     continue;
                 }
 
-                List<TreeViewItem> children = GetInsertLocation(enabledGroupBys, treeResults, result);
+                List<TreeViewItem> children = GetInsertLocation(enabledGroupBys, treeResults, result, groupNodeCounts);
 
                 children.Add(item);
             }
 
+            // Update group headers with counts
+            foreach (var kvp in groupNodeCounts)
+            {
+                var headerBlock = kvp.Key.Header as TextBlock;
+                if (headerBlock != null)
+                {
+                    string baseLabel = (headerBlock.Tag as string).Replace("_", " ");
+                    string labelWithCount = $"{baseLabel} ({kvp.Value})";
+
+                    // Replace the existing header with a new TextBlock
+                    kvp.Key.Header = UIUtils.CreateTreeViewItemHeader(string.Empty, labelWithCount);
+                    kvp.Key.ToolTip = $"{baseLabel}";
+                }
+            }
+
+
             return treeResults;
         }
 
-        private static List<TreeViewItem> GetInsertLocation(List<GroupBy> enabledGroupBys, List<TreeViewItem> treeResults, Result result)
+        private static List<TreeViewItem> GetInsertLocation(List<GroupBy> enabledGroupBys, List<TreeViewItem> treeResults, Result result, Dictionary<TreeViewItem, int> groupNodeCounts)
         {
             var children = treeResults;
             foreach (GroupBy groupBy in enabledGroupBys)
             {
                 var generator = GetGroupByTitleGenerator(groupBy);
-                if (generator == null)
-                {
-                    continue;
-                }
+                if (generator == null) continue;
 
                 var childNodeName = GetGroupByTitleGenerator(groupBy).Invoke(result);
-                if (childNodeName == null)
-                {
-                    continue;
-                }
+                if (childNodeName == null) continue;
 
                 // single underscore is used as mnemonic
-                childNodeName = childNodeName.Replace("_", "__");
+                childNodeName = childNodeName.Replace("_", " ");
 
                 TreeViewItem child = null;
 
@@ -93,6 +107,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                     child = UIUtils.CreateTreeViewItemWithItemsSource(childNodeName, new List<TreeViewItem> { new TreeViewItem() });
                     (child.ItemsSource as List<TreeViewItem>).Clear();
                     children.Add(child);
+                    groupNodeCounts[child] = 0; // initialize count
+                }
+                // Increment count for this group node
+                if (groupNodeCounts.ContainsKey(child))
+                {
+                    groupNodeCounts[child]++;
                 }
                 children = child.ItemsSource as List<TreeViewItem>;
             }
