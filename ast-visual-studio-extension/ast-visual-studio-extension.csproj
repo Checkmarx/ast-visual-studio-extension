@@ -6,7 +6,7 @@
     <InstallRoot>Default</InstallRoot>
     <VSIXSubPath>
     </VSIXSubPath>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>net6.0-windows</TargetFrameworkVersion>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <TargetFrameworkProfile />
@@ -175,7 +175,7 @@
   <ItemGroup>
     <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.507" />
     <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6" />
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens">
+	  <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens">
       <Version>7.5.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.TeamFoundationServer.Client">
