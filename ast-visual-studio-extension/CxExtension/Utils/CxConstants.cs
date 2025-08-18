@@ -58,7 +58,7 @@
         public static string TOOLBAR_LOADING_SCANS => "Loading scans...";
 
         /************ TRIAGE ************/
-        public static string TRIAGE_COMMENT_PLACEHOLDER => "Comment (Optional)";
+        public static string TRIAGE_COMMENT_PLACEHOLDER => "Note (Optional or required based on tenant configuration)";
         public static string TRIAGE_UPDATE_FAILED => "Triage Update failed. {0}";
         public static string TRIAGE_SHOW_FAILED => "Triage Show failed. {0}";
         public static string TRIAGE_LOADING_CHANGES => "Loading changes...";

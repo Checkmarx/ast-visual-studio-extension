@@ -3,20 +3,21 @@ using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Threading;
-using System.Threading.Tasks;
 using System;
-using System.Diagnostics;
 using ast_visual_studio_extension.CxExtension.Services;
-using System.Diagnostics.CodeAnalysis;
-using ast_visual_studio_extension.CxWrapper.Models;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -71,7 +72,7 @@ namespace ast_visual_studio_extension.CxExtension
                 .WithGroupByOptions(new Dictionary<MenuItem, GroupBy>
                 {
                     { SeverityGroupBy, GroupBy.SEVERITY },
-                    { VulnerabiltyTypeGroupBy, GroupBy.VULNERABILITY_TYPE },
+                    { VulnerabilityTypeGroupBy, GroupBy.VULNERABILITY_TYPE },
                     { StateGroupBy, GroupBy.STATE },
                     { StatusGroupBy, GroupBy.STATUS },
                     { LanguageGroupBy, GroupBy.Language },
@@ -98,22 +99,54 @@ namespace ast_visual_studio_extension.CxExtension
         private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
         {
             StateFilterMenuItem.Items.Clear();
-            Dictionary<MenuItem, State> statesMenuItems = new Dictionary<MenuItem, State>();
-            foreach (var item in states)
+            var statesMenuItems = new Dictionary<MenuItem, State>();
+
+            // Sort states by formatted name
+            var sortedStates = states.OrderBy(s => UIUtils.FormatStateName(s.name));
+
+            foreach (var state in sortedStates)
             {
-                string formattedState = UIUtils.FormatStateName(item.name);
-                var menuItem = new MenuItem
-                {
-                    Header = formattedState,
-                    Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
-                };
+                string formattedState = UIUtils.FormatStateName(state.name);
+                var menuItem = CreateMenuItem($"Filter: {formattedState}");
                 menuItem.Click += StateFilter_Click;
+
                 StateFilterMenuItem.Items.Add(menuItem);
-                statesMenuItems.Add(menuItem, item);
+                statesMenuItems.Add(menuItem, state);
             }
-            AddDependencyFilter("SCA Dev & Test Dependencies", statesMenuItems);
+
+            // Add dependency filters before final sort
+            AddDependencyFilter("Filter: SCA Dev & Test Dependencies", statesMenuItems);
+
+            // Sort menu items by Header
+            SortStateFilterMenuItems();
+
             return statesMenuItems;
         }
+
+        private MenuItem CreateMenuItem(string header)
+        {
+            return new MenuItem
+            {
+                Header = header,
+                Style = (Style)Application.Current.Resources["DefaultMenuItemStyle"]
+            };
+        }
+
+        private void SortStateFilterMenuItems()
+        {
+            var sortedItems = StateFilterMenuItem.Items
+                .Cast<MenuItem>()
+                .OrderBy(mi => mi.Header.ToString())
+                .ToList();
+
+            StateFilterMenuItem.Items.Clear();
+
+            foreach (var item in sortedItems)
+            {
+                StateFilterMenuItem.Items.Add(item);
+            }
+        }
+
 
         private void AddDependencyFilter(string filterName, Dictionary<MenuItem, State> statesMenuItems)
         {
