@@ -51,7 +51,10 @@ namespace ast_visual_studio_extension.CxWrapper.Models
 
         [JsonProperty("scaPackageData")]
         public ScaPackageData ScaPackageData { get; set; }
-        
+
+        [JsonProperty("RuleName")]
+        public string RuleName { get; set; }
+
 
     }
 }
