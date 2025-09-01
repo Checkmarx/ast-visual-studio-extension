@@ -5,6 +5,7 @@ using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -133,7 +134,14 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             foreach (Result result in allResults)
             {
-                string displayName = result.Data.QueryName ?? result.Id;
+                string formatted = FormatFilenameLine(result.Data?.FileName, result.Data?.Line, result.Data?.RuleName);
+                string displayName = !string.IsNullOrEmpty(result.Data?.QueryName) ? result.Data.QueryName :
+                                    !string.IsNullOrEmpty(formatted) ? formatted :
+                                    !string.IsNullOrEmpty(result.Id) ? result.Id :
+                                    result.VulnerabilityDetails?.CveName;
+
+                displayName = HandleFileNameAndLine(result, displayName);
+
 
                 TreeViewItem item = new TreeViewItem
                 {
@@ -147,6 +155,43 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             }
 
             return transformedResults;
+        }
+
+        private static string HandleFileNameAndLine(Result result,string displayName)
+        {
+            string filename = null;
+            List<Node> sastNodes = null;
+
+            // Case 1: filename and line from Data.Nodes[0] (SAST, SCA, KICS)
+            if (result.Data?.Nodes != null && result.Data.Nodes.Count > 0)
+            {
+                // Relevant for SAST, SCA, KICS
+                sastNodes = result.Data.Nodes;
+                filename = result.Data.Nodes[0].FileName;
+
+                string shortFilename = !string.IsNullOrEmpty(filename) && filename.Contains("/")
+                    ? filename.Substring(filename.LastIndexOf("/"))
+                    : "";
+
+                string displayFile = !string.IsNullOrEmpty(shortFilename) ? shortFilename : filename;
+                string lineInfo = result.Data.Nodes[0].Line > 0 ? $":{result.Data.Nodes[0].Line}" : "";
+
+                displayName += $" ({displayFile}{lineInfo})";
+            }
+            return displayName;
+        }
+
+        private string FormatFilenameLine(string filename, int? line, string ruleName)
+        {
+            if (!string.IsNullOrEmpty(ruleName) &&
+                !string.IsNullOrEmpty(filename) &&
+                line.HasValue)
+            {
+                string file = filename.Split('/').Last(); // gets last part after "/"
+                return $"{ruleName} (/{file}:{line.Value})";
+            }
+
+            return null; // or return string.Empty;
         }
 
         // Handle click event when clicking on a tree view item
