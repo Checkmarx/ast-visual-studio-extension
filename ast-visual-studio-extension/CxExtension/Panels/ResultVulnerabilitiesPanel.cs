@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxWrapper.Models;
@@ -43,9 +44,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             cxWindowUI.VulnerabilitiesList.Items.Clear();
 
-            switch (result.Type)
+            switch (EngineTypeExtensions.FromEngineString(result.Type))
             {
-                case "sast":
+                case EngineType.SAST:
                     cxWindowUI.LearnMorePanelTitle.Children.Clear();
                     cxWindowUI.RemediationPanelTitle.Children.Clear();
                     BuildAttackVectorPanel();
@@ -53,12 +54,17 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                     cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
                     learnMore = null;
                     break;
-                case "sca":
+                case EngineType.SCA:
                     BuildPackageDataPanel();
                     cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Hidden;
                     cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Visible;
                     break;
-                case "kics":
+                case EngineType.KICS:
+                    BuildVulnerabilityLocation();
+                    cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Hidden;
+                    cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Visible;
+                    break;
+                case EngineType.SCS_SECRET_DETECTION:
                     BuildVulnerabilityLocation();
                     cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Hidden;
                     cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Visible;
