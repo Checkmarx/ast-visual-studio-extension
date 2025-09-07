@@ -146,6 +146,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ast_visual_studio_extensionPackage.cs" />
+    <Compile Include="ResourceKeyToColorConverter.cs" />
     <Compile Include="VsTheme.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -196,6 +197,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="CxExtension\Resources\critical.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="CxExtension\Resources\CodeBashing_logoDarkTheme.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="CxExtension\Resources\CodeBashing_logoLightTheme.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="CxExtension\Resources\critical_18x22.png">

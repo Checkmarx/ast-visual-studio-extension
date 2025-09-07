@@ -4,17 +4,21 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:ast_visual_studio_extension"
+             xmlns:converters="clr-namespace:ast_visual_studio_extension"
              xmlns:GenericWPF="clr-namespace:ast_visual_studio_extension.CxExtension.Utils"
              xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
              xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
              xmlns:theming="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Imaging"
-             xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0" xmlns:cxextension="clr-namespace:ast_visual_studio_extension.CxExtension" d:DataContext="{d:DesignInstance Type=cxextension:CxWindowControl}"
+             xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
+             xmlns:vs="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+             xmlns:cxextension="clr-namespace:ast_visual_studio_extension.CxExtension" d:DataContext="{d:DesignInstance Type=cxextension:CxWindowControl}"
              local:VsTheme.UseVsTheme="True"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="1308"
              Name="CxWindow">
 
     <UserControl.Resources>
+        <converters:ResourceKeyToColorConverter x:Key="ResourceKeyToColorConverter"/>
         <Style TargetType="{x:Type TextBlock}">
             <Setter Property="Foreground" Value="{Binding Foreground, ElementName=hiddenLbl}"/>
         </Style>
@@ -535,10 +539,22 @@
                     <TextBlock TextWrapping="WrapWithOverflow" Grid.Column="1" x:Name="ResultTitle" FontSize="15" Margin="7,2,0,0"/>
                 </WrapPanel>
 
-                <TextBlock Visibility="Hidden" x:Name="CodebashingTextBlock" Grid.Column="2" Margin="0,6,0,0">
-		            <Run>Learn more at</Run>
-		            <Run Cursor="Hand" Foreground="Orange" FontWeight="Bold" MouseUp="OnClickCodebashingLink"> >_</Run>
-		            <Run Cursor="Hand" MouseUp="OnClickCodebashingLink">codebashing</Run>
+                <TextBlock Visibility="Visible" x:Name="CodebashingTextBlock" Grid.Column="2" Margin="0,6,0,0">
+                    <Run>Learn more at</Run>
+                    <InlineUIContainer>
+                        <Image Height="16" Cursor="Hand" MouseUp="OnClickCodebashingLink">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="Resources/CodeBashing_logoDarkTheme.png"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Source={x:Static local:ThemeManager.Instance}, Path=IsDarkTheme}" Value="False">
+                                            <Setter Property="Source" Value="Resources/CodeBashing_logoLightTheme.png"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </InlineUIContainer>
                 </TextBlock>
             </Grid>
 
