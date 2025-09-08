@@ -541,7 +541,7 @@
 
                 <TextBlock Visibility="Visible" x:Name="CodebashingTextBlock" Grid.Column="2" Margin="0,6,0,0">
                     <Run>Learn more at</Run>
-                    <InlineUIContainer>
+                    <InlineUIContainer BaselineAlignment="Center">
                         <Image Height="16" Cursor="Hand" MouseUp="OnClickCodebashingLink">
                             <Image.Style>
                                 <Style TargetType="Image">
