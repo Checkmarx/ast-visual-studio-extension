@@ -55,6 +55,11 @@ namespace ast_visual_studio_extension.CxWrapper.Models
         [JsonProperty("RuleName")]
         public string RuleName { get; set; }
 
+        [JsonProperty("RuleDescription")]
+        public string RuleDescription { get; set; }
+
+        [JsonProperty("Remediation")]
+        public string Remediation { get; set; }
 
     }
 }
