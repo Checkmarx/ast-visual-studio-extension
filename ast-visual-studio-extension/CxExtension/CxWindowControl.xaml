@@ -542,7 +542,7 @@
                 <TextBlock Visibility="Visible" x:Name="CodebashingTextBlock" Grid.Column="2" Margin="0,6,0,0">
                     <Run>Learn more at</Run>
                     <InlineUIContainer BaselineAlignment="Center">
-                        <Image Height="16" Cursor="Hand" MouseUp="OnClickCodebashingLink">
+                        <Image Height="35" Cursor="Hand" MouseUp="OnClickCodebashingLink">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Setter Property="Source" Value="Resources/CodeBashing_logoDarkTheme.png"/>
