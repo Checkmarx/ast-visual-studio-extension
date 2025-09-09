@@ -177,15 +177,27 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.ResultInfoStackPanel.Children.Add(expectedValueTextBlock);
             }
 
-            cxWindowUI.TriageSeverityCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.Severity, cxWindowUI.TriageSeverityCombobox, Enums.ComboboxType.SEVERITY);
-            cxWindowUI.TriageStateCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.State.Trim(), cxWindowUI.TriageStateCombobox, Enums.ComboboxType.STATE);
+            UpdateComboBoxAndVisibility(result);
+        }
 
+        public void UpdateComboBoxAndVisibility(Result result)
+        {
+            // Set the selected index for Severity combobox
+            cxWindowUI.TriageSeverityCombobox.SelectedIndex =
+                CxUtils.GetItemIndexInCombo(result.Severity, cxWindowUI.TriageSeverityCombobox, Enums.ComboboxType.SEVERITY);
+
+            // Set the selected index for State combobox
+            cxWindowUI.TriageStateCombobox.SelectedIndex =
+                CxUtils.GetItemIndexInCombo(result.State.Trim(), cxWindowUI.TriageStateCombobox, Enums.ComboboxType.STATE);
+
+            // Make the ResultInfoPanel visible
             cxWindowUI.ResultInfoPanel.Visibility = Visibility.Visible;
         }
 
+
         private void LoadSecretDetectionGeneralTab(Result result)
         {
-            string description = result?.Description ?? "";
+            string description = result?.Description ?? "No Information";
             string filePath = "";
             int start = description.IndexOf('/');
 
@@ -201,7 +213,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             {
                 Text = description.Trim(),
                 TextWrapping = TextWrapping.Wrap,
-                FontWeight = FontWeights.Bold
+                FontWeight = string.IsNullOrWhiteSpace(result.Description) ?  FontWeights.Normal : FontWeights.Bold 
             });
 
             if (!string.IsNullOrEmpty(filePath))
@@ -221,10 +233,8 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             cxWindowUI.ResultInfoStackPanel.Children.Clear();
             cxWindowUI.ResultInfoStackPanel.Children.Add(panel);
-            cxWindowUI.TriageSeverityCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.Severity, cxWindowUI.TriageSeverityCombobox, Enums.ComboboxType.SEVERITY);
-            cxWindowUI.TriageStateCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.State.Trim(), cxWindowUI.TriageStateCombobox, Enums.ComboboxType.STATE);
 
-            cxWindowUI.ResultInfoPanel.Visibility = Visibility.Visible;
+            UpdateComboBoxAndVisibility(result);
         }
 
         /// <summary>

@@ -139,7 +139,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                                     !string.IsNullOrEmpty(result.Id) ? result.Id :
                                     result.VulnerabilityDetails?.CveName;
 
-                displayName = ResultUtils.HandleFileNameAndLine(result, displayName);
+                displayName = ResultUtils.HandleFileNameAndLine(result, displayName).Replace("\n", " ");
 
 
                 TreeViewItem item = new TreeViewItem
