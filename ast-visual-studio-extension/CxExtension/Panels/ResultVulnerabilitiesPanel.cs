@@ -355,7 +355,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             if (string.IsNullOrEmpty(ruleDescription))
             {
                 AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.NO_INFORMATION);
-                AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
                 return;
             }
 
