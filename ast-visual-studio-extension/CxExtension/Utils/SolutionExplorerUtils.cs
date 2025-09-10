@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
@@ -31,7 +32,39 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         }
 
         internal static async void OpenFileAsync(object sender, RoutedEventArgs e) {
-            FileNode node = (((sender as Hyperlink).Parent as TextBlock).Parent as ListViewItem).Tag as FileNode;
+            var hyperlink = sender as Hyperlink;
+            if (hyperlink == null) return;
+
+            // Get parent TextBlock
+            var textBlock = LogicalTreeHelper.GetParent(hyperlink) as TextBlock;
+            if (textBlock == null) return;
+
+            DependencyObject current = textBlock;
+            FileNode node = null;
+
+            // Walk up the visual tree to find ListViewItem or StackPanel that has Tag with FileNode
+            while (current != null)
+            {
+                if (current is ListViewItem listViewItem && listViewItem.Tag is FileNode)
+                {
+                    node = listViewItem.Tag as FileNode;
+                    break;
+                }
+                else if (current is StackPanel stackPanel && stackPanel.Tag is FileNode)
+                {
+                    node = stackPanel.Tag as FileNode;
+                    break;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            if (node == null)
+            {
+                // Could not find a FileNode in parent elements, handle error or return
+                return;
+            }
+
             EnvDTE.DTE dte = GetDTE();
 
             if (dte.Solution == null || dte.Solution.FullName.IsNullOrEmpty())
