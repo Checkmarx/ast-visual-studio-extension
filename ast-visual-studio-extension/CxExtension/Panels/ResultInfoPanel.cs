@@ -207,28 +207,38 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 description = description.Substring(0, start);
             }
 
-            var panel = new StackPanel { Margin = new Thickness(10), Orientation = (System.Windows.Controls.Orientation)Orientation.Vertical };
+            var panel = new StackPanel
+            {
+                Margin = new Thickness(10),
+                Orientation = (System.Windows.Controls.Orientation)Orientation.Vertical
+            };
 
             panel.Children.Add(new TextBlock
             {
                 Text = description.Trim(),
                 TextWrapping = TextWrapping.Wrap,
-                FontWeight = string.IsNullOrWhiteSpace(result.Description) ?  FontWeights.Normal : FontWeights.Bold 
+                FontWeight = string.IsNullOrWhiteSpace(result.Description) ? FontWeights.Normal : FontWeights.Bold
             });
 
-            if (!string.IsNullOrEmpty(filePath))
+            if (!string.IsNullOrEmpty(filePath) && result?.Data?.FileName != null)
             {
-                var link = new Hyperlink(new Run(filePath))
-                {
-                    NavigateUri = new Uri("about:blank")
-                };
-                link.Click += (sender, e) =>
-                {
-                    MessageBox.Show($"Open {result?.Data?.FileName} at line {result?.Data?.Line}");
-                };
+                var tb = new TextBlock();
+                tb.Inlines.Add(CxConstants.LBL_LOCATION_FILE); // optional label text before link
 
+                var link = new Hyperlink();
+                link.Inlines.Add(result.Data.FileName);
+                link.NavigateUri = new Uri("about:blank");
+                link.Click += new RoutedEventHandler(SolutionExplorerUtils.OpenFileAsync);
 
-                panel.Children.Add(new TextBlock { TextWrapping = TextWrapping.Wrap, Inlines = { link } });
+                tb.Inlines.Add(link);
+
+                // Attach FileNode metadata to StackPanel Tag for use in OpenFileAsync
+                panel.Tag = FileNode.Builder()
+                    .WithFileName(result.Data.FileName)
+                    .WithLine(result.Data.Line)
+                    .WithColumn(1);
+
+                panel.Children.Add(tb);
             }
 
             cxWindowUI.ResultInfoStackPanel.Children.Clear();
