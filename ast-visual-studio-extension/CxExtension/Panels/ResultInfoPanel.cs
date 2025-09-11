@@ -223,8 +223,6 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             if (!string.IsNullOrEmpty(filePath) && result?.Data?.FileName != null)
             {
                 var tb = new TextBlock();
-                tb.Inlines.Add(CxConstants.LBL_LOCATION_FILE); // optional label text before link
-
                 var link = new Hyperlink();
                 link.Inlines.Add(result.Data.FileName);
                 link.NavigateUri = new Uri("about:blank");
