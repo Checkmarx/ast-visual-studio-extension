@@ -48,7 +48,7 @@ namespace ast_visual_studio_extension.CxExtension.Enums
                     return EngineType.SECRET_DETECTION;
                 case "sscs-secret-detection":
                     return EngineType.SCS_SECRET_DETECTION;
-                case "IaC Security":
+                case "iac security":
                     return EngineType.IAC_SECURITY;
                 default:
                     throw new ArgumentException($"Unknown engine type: {value}", nameof(value));
