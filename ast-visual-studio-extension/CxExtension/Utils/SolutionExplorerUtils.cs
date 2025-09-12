@@ -194,7 +194,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         internal static string PrepareFileName(string partialFileLocation)
         {
-            if (partialFileLocation[0] == '/')
+            if (!string.IsNullOrEmpty(partialFileLocation) &&partialFileLocation[0] == '/')
             {
                 partialFileLocation = partialFileLocation.Substring(1);
             }
