@@ -53,10 +53,11 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             cxWindowUI.TriageSeverityCombobox.IsEnabled = isNonScaOrScsEngine;
             cxWindowUI.TriageStateCombobox.IsEnabled = isNonScaOrScsEngine;
-            cxWindowUI.TriageComment.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Hidden;
-            cxWindowUI.TriageUpdateBtn.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Hidden;
-            cxWindowUI.ResultTabControl.Margin = isNonScaOrScsEngine ? new Thickness(0, 10, 0, 0) : new Thickness(0, -45, 0, 0);
-
+            cxWindowUI.TriageComment.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.TriageUpdateBtn.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.TriageSeverityCombobox.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.TriageStateCombobox.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.ChangesTabItem.Visibility = !isSca ? Visibility.Visible : Visibility.Collapsed;
             // Set description tab as selected when drawing result info panel
             cxWindowUI.DescriptionTabItem.IsSelected = true;
             cxWindowUI.TriageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
@@ -342,25 +343,26 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             triageChangesTab.Children.Clear();
 
             bool isSca = result.Data.PackageData != null || (result.Data.Nodes == null && string.IsNullOrEmpty(result.Data.FileName));
-
-            if (result != null && isSca)
+           
+            if (isSca)
             {
-                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SCA_NOT_AVAILABLE));
-
-                return;
-            }
-            else if(result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION))
-            {
-                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SCS_NOT_AVAILABLE));
                 return;
             }
 
-             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
+            string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
             string similarityId = result.SimilarityId;
             string engineType = result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION) ? "scs" : result.Type;
 
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
-            if (cxWrapper == null) return;
+            if (cxWrapper == null)
+            {
+                if (result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION))
+                {
+                    triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_NO_CHANGES));
+                    return;
+                }
+            }
+            ;
 
             triageChangesTab.Children.Clear();
 
