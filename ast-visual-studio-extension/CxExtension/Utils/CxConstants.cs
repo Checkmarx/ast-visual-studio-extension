@@ -62,10 +62,8 @@
         public static string TRIAGE_UPDATE_FAILED => "Triage Update failed. {0}";
         public static string TRIAGE_SHOW_FAILED => "Triage Show failed. {0}";
         public static string TRIAGE_LOADING_CHANGES => "Loading changes...";
-        public static string TRIAGE_NO_CHANGES => "No changes.";
+        public static string TRIAGE_NO_CHANGES => "No changes available.";
         public static string TRIAGE_SCA_NOT_AVAILABLE => "Changes not available for sca engine.";
-        public static string TRIAGE_SCS_NOT_AVAILABLE => "Changes not available for secret detection engine.";
-
         /************ DATE FORMATS ************/
         public static string DATE_OUTPUT_FORMAT => "dd/MM/yyyy HH:mm:ss";
 

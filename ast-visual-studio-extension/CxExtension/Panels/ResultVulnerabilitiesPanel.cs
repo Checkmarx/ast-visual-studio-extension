@@ -71,6 +71,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                     cxWindowUI.RemediationPanelTitle.Children.Clear();
                     BuildAttackVectorPanel();
                     cxWindowUI.VulnerabilitiesTabItem.Visibility = Visibility.Collapsed;
+                    cxWindowUI.TriageSeverityCombobox.Visibility= Visibility.Collapsed;
                     cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Visible;
                     learnMore = null;
                     cxWindowUI.LearnMore.IsSelected = true;
