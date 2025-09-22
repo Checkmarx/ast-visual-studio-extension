@@ -15,7 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Button = System.Windows.Controls.Button;
 using Image = System.Windows.Controls.Image;
-using Orientation = System.Web.UI.WebControls.Orientation;
+using Orientation = System.Windows.Controls.Orientation;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace ast_visual_studio_extension.CxExtension.Panels
@@ -211,7 +211,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             var panel = new StackPanel
             {
                 Margin = new Thickness(10),
-                Orientation = (System.Windows.Controls.Orientation)Orientation.Vertical
+                Orientation = Orientation.Vertical
             };
 
             panel.Children.Add(new TextBlock
