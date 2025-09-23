@@ -13,12 +13,10 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Web.UI.WebControls;
-using MenuItem = System.Web.UI.WebControls.MenuItem;
-using Image = System.Windows.Controls.Image;
 using Button = System.Windows.Controls.Button;
+using Image = System.Windows.Controls.Image;
+using Orientation = System.Windows.Controls.Orientation;
 using TextBox = System.Windows.Controls.TextBox;
-using System.Diagnostics;
 
 namespace ast_visual_studio_extension.CxExtension.Panels
 {
@@ -41,20 +39,25 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         // Draw result information content
         public void Draw(Result result)
         {
-
             this.result = result;
 
-            // Disable all triage stuff if selected result is sca
-            bool isNotScaEngine = !(this.result.Data.PackageData != null || (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName)));
+            bool isSca = this.result.Data.PackageData != null ||
+                        (this.result.Data.Nodes == null && string.IsNullOrEmpty(this.result.Data.FileName));
+
+            bool isSecretDetection = result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION);
+
+            bool isNonScaOrScsEngine = !(isSca || isSecretDetection);
+
             StateManager stateManager = StateManagerProvider.GetStateManager();
             List<State> states = stateManager.GetAllStates();
 
-            cxWindowUI.TriageSeverityCombobox.IsEnabled = isNotScaEngine;
-            cxWindowUI.TriageStateCombobox.IsEnabled = isNotScaEngine;
-            cxWindowUI.TriageComment.Visibility = isNotScaEngine ? Visibility.Visible : Visibility.Hidden;
-            cxWindowUI.TriageUpdateBtn.Visibility = isNotScaEngine ? Visibility.Visible : Visibility.Hidden;
-            cxWindowUI.ResultTabControl.Margin = isNotScaEngine ? new Thickness(0, 10, 0, 0) : new Thickness(0, -45, 0, 0);
-
+            cxWindowUI.TriageSeverityCombobox.IsEnabled = isNonScaOrScsEngine;
+            cxWindowUI.TriageStateCombobox.IsEnabled = isNonScaOrScsEngine;
+            cxWindowUI.TriageComment.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.TriageUpdateBtn.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.TriageSeverityCombobox.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.TriageStateCombobox.Visibility = isNonScaOrScsEngine ? Visibility.Visible : Visibility.Collapsed;
+            cxWindowUI.ChangesTabItem.Visibility = !isSca ? Visibility.Visible : Visibility.Collapsed;
             // Set description tab as selected when drawing result info panel
             cxWindowUI.DescriptionTabItem.IsSelected = true;
             cxWindowUI.TriageComment.Text = CxConstants.TRIAGE_COMMENT_PLACEHOLDER;
@@ -62,33 +65,32 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             cxWindowUI.TriageStateCombobox.Items.Clear();
 
-            if (this.result.Type == "sast")
-                {
+            if (this.result.Type == EngineTypeExtensions.ToEngineString(EngineType.SAST))
+            {
                 foreach (State state in states)
                 {
-                    string formattedState = UIUtils.FormatStateName(state.name);
-
-                    ComboBoxItem item = new ComboBoxItem { Content = formattedState, Tag = state.name };
-
-                    cxWindowUI.TriageStateCombobox.Items.Add(item);
+                    cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem
+                    {
+                        Content = UIUtils.FormatStateName(state.name),
+                        Tag = state.name
+                    });
                 }
             }
-
-        
             else
             {
+                foreach (SystemState state in Enum.GetValues(typeof(SystemState)))
+                {
+                    if (isNonScaOrScsEngine && (state == SystemState.IGNORED || state == SystemState.NOT_IGNORED))
+                        continue;
 
-            
-
-            foreach (SystemState state in Enum.GetValues(typeof(SystemState)))
-            {
-                if (isNotScaEngine && (state == SystemState.IGNORED || state == SystemState.NOT_IGNORED)) continue;
-
-                cxWindowUI.TriageStateCombobox.Items.Add(new ComboBoxItem { Content = UIUtils.FormatStateName(state.ToString()), Tag = state.ToString() });
+                    cxWindowUI.TriageStateCombobox.Items.Add(
+                        new ComboBoxItem
+                        {
+                            Content = UIUtils.FormatStateName(state.ToString()),
+                            Tag = state.ToString()
+                        });
+                }
             }
-            }
-
-
 
             DrawTitle();
             DrawDesrciptionTab();
@@ -102,8 +104,15 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             severityIcon.Source = bitmapImage;
 
             cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
-            cxWindowUI.ResultTitle.Text = result.Data.QueryName ?? result.Id;
-            cxWindowUI.CodebashingTextBlock.Visibility = result.Type.Equals("sast") ? Visibility.Visible : Visibility.Hidden;
+            string formatted = ResultUtils.FormatFilenameLine(result.Data?.FileName, result.Data?.Line, result.Data?.RuleName);
+            string displayName = !string.IsNullOrEmpty(result.Data?.QueryName) ? result.Data.QueryName :
+                                !string.IsNullOrEmpty(formatted) ? formatted :
+                                !string.IsNullOrEmpty(result.Id) ? result.Id :
+                                result.VulnerabilityDetails?.CveName;
+
+
+            cxWindowUI.ResultTitle.Text = ResultUtils.HandleFileNameAndLine(result, displayName);
+            cxWindowUI.CodebashingTextBlock.Visibility = result.Type == EngineTypeExtensions.ToEngineString(EngineType.SAST) ? Visibility.Visible : Visibility.Hidden;
 
             if(cxWindowUI.CodebashingTextBlock.Visibility == Visibility.Visible)
             {
@@ -116,6 +125,12 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         {
             cxWindowUI.ResultInfoStackPanel.Children.Clear();
 
+            if (result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION))
+            {
+                LoadSecretDetectionGeneralTab(result);
+                return;
+            }
+            
             if (result.Description != null)
             {
                 TextBlock descriptionTextBlock = new TextBlock
@@ -163,10 +178,72 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                 cxWindowUI.ResultInfoStackPanel.Children.Add(expectedValueTextBlock);
             }
 
-            cxWindowUI.TriageSeverityCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.Severity, cxWindowUI.TriageSeverityCombobox, Enums.ComboboxType.SEVERITY);
-            cxWindowUI.TriageStateCombobox.SelectedIndex = CxUtils.GetItemIndexInCombo(result.State.Trim(), cxWindowUI.TriageStateCombobox, Enums.ComboboxType.STATE);
+            UpdateComboBoxAndVisibility(result);
+        }
 
+        public void UpdateComboBoxAndVisibility(Result result)
+        {
+            // Set the selected index for Severity combobox
+            cxWindowUI.TriageSeverityCombobox.SelectedIndex =
+                CxUtils.GetItemIndexInCombo(result.Severity, cxWindowUI.TriageSeverityCombobox, Enums.ComboboxType.SEVERITY);
+
+            // Set the selected index for State combobox
+            cxWindowUI.TriageStateCombobox.SelectedIndex =
+                CxUtils.GetItemIndexInCombo(result.State.Trim(), cxWindowUI.TriageStateCombobox, Enums.ComboboxType.STATE);
+
+            // Make the ResultInfoPanel visible
             cxWindowUI.ResultInfoPanel.Visibility = Visibility.Visible;
+        }
+
+
+        private void LoadSecretDetectionGeneralTab(Result result)
+        {
+            string description = result?.Description ?? "No Information";
+            string filePath = "";
+            int start = description.IndexOf('/');
+
+            if (start >= 0)
+            {
+                filePath = description.Substring(start);
+                description = description.Substring(0, start);
+            }
+
+            var panel = new StackPanel
+            {
+                Margin = new Thickness(10),
+                Orientation = Orientation.Vertical
+            };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = description.Trim(),
+                TextWrapping = TextWrapping.Wrap,
+                FontWeight = string.IsNullOrWhiteSpace(result.Description) ? FontWeights.Normal : FontWeights.Bold
+            });
+
+            if (!string.IsNullOrEmpty(filePath) && result?.Data?.FileName != null)
+            {
+                var tb = new TextBlock();
+                var link = new Hyperlink();
+                link.Inlines.Add(result.Data.FileName);
+                link.NavigateUri = new Uri("about:blank");
+                link.Click += new RoutedEventHandler(SolutionExplorerUtils.OpenFileAsync);
+
+                tb.Inlines.Add(link);
+
+                // Attach FileNode metadata to StackPanel Tag for use in OpenFileAsync
+                panel.Tag = FileNode.Builder()
+                    .WithFileName(result.Data.FileName)
+                    .WithLine(result.Data.Line)
+                    .WithColumn(1);
+
+                panel.Children.Add(tb);
+            }
+
+            cxWindowUI.ResultInfoStackPanel.Children.Clear();
+            cxWindowUI.ResultInfoStackPanel.Children.Add(panel);
+
+            UpdateComboBoxAndVisibility(result);
         }
 
         /// <summary>
@@ -191,7 +268,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
             string similarityId = result.SimilarityId;
-            string engineType = result.Type;
+            string engineType = result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION) ? "scs" : result.Type;
             string state = (stateCombobox.SelectedValue as ComboBoxItem).Tag as string;
             string severity = (severityCombobox.SelectedValue as ComboBoxItem).Content as string;
             string comment = triageComment.Text.Equals(CxConstants.TRIAGE_COMMENT_PLACEHOLDER) ? string.Empty : triageComment.Text;
@@ -266,20 +343,26 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             triageChangesTab.Children.Clear();
 
             bool isSca = result.Data.PackageData != null || (result.Data.Nodes == null && string.IsNullOrEmpty(result.Data.FileName));
-
-            if (result != null && isSca)
+           
+            if (isSca)
             {
-                triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_SCA_NOT_AVAILABLE));
-
                 return;
             }
 
             string projectId = ((cxToolbar.ProjectsCombo.SelectedItem as ComboBoxItem).Tag as Project).Id;
             string similarityId = result.SimilarityId;
-            string engineType = result.Type;
+            string engineType = result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION) ? "scs" : result.Type;
 
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
-            if (cxWrapper == null) return;
+            if (cxWrapper == null)
+            {
+                if (result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION))
+                {
+                    triageChangesTab.Children.Add(UIUtils.CreateTextBlock(CxConstants.TRIAGE_NO_CHANGES));
+                    return;
+                }
+            }
+            ;
 
             triageChangesTab.Children.Clear();
 

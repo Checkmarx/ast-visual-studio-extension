@@ -67,6 +67,11 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 if (headerBlock != null)
                 {
                     string baseLabel = (headerBlock.Tag as string).Replace("_", " ");
+                    if(baseLabel == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION))
+                        baseLabel = EngineTypeExtensions.ToEngineString(EngineType.SECRET_DETECTION);
+                    else if(baseLabel == EngineTypeExtensions.ToEngineString(EngineType.KICS))
+                        baseLabel = EngineTypeExtensions.ToEngineString(EngineType.IAC_SECURITY);
+
                     string labelWithCount = $"{baseLabel} ({kvp.Value})";
 
                     // Replace the existing header with a new TextBlock
@@ -140,13 +145,9 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                     return (result) =>
                     {
                         if (result.Data.FileName != null)
-                        {
-                            return Path.GetFileName(result.Data.FileName);
-                        }
+                            return result.Data.FileName;
                         if (result.Data.Nodes != null && result.Data.Nodes.Count > 0)
-                        {
-                            return Path.GetFileName(result.Data.Nodes[0].FileName);
-                        }
+                            return result.Data.Nodes[0].FileName;
                         return null;
                     };
                 case GroupBy.DIRECT_DEPENDENCY:
