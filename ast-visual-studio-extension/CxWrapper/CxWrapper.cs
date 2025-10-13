@@ -572,7 +572,9 @@ namespace ast_visual_studio_extension.CxCLI
         {
             List<TenantSetting> tenantSettings = TenantSettings();
 
-            return bool.Parse(tenantSettings.Find(s => s.Key.Equals(CxConstants.IDE_SCANS_KEY)).Value);
+            string value = tenantSettings.Find(s => s.Key.Equals(CxConstants.IDE_SCANS_KEY))?.Value;
+
+            return bool.TryParse(value, out bool result) && result;
         }
 
 
