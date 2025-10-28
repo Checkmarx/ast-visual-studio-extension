@@ -50,6 +50,35 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public Func<List<State>, Dictionary<MenuItem, State>> CreateStateMenuItems { get; set; }
 
         private static bool initPolling = false;
+
+        public static bool IsValidSourceProject(string sourcePath)
+        {
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                return false;
+            }
+
+            try
+            {
+                string directoryPath = System.IO.Path.GetDirectoryName(sourcePath);
+                if (string.IsNullOrEmpty(directoryPath))
+                {
+                    return false;
+                }
+
+                bool hasProjectFiles = false;
+
+                hasProjectFiles |= System.IO.Directory.GetFiles(directoryPath, "*.sln", System.IO.SearchOption.TopDirectoryOnly).Any();
+                hasProjectFiles |= System.IO.Directory.GetFiles(directoryPath, "*.csproj", System.IO.SearchOption.TopDirectoryOnly).Any();
+
+                return hasProjectFiles;
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusBar("Checkmarx: Error validating project directory" + ex.Message);
+                return false;
+            }
+        }
         private const string DevOrTestFilterName = "SCA Dev & Test Dependencies";
 
 
@@ -282,6 +311,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             if (string.IsNullOrEmpty(dte.Solution.FullName))
             {
                 CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.PROJECT_AND_BRANCH_DO_NOT_MATCH, KnownMonikers.StatusWarning, CxConstants.RUN_SCAN, CxConstants.RUN_SCAN_ACTION, false);
+                ScanStartButton.IsEnabled = true;
+                return;
+            }
+
+            if (!IsValidSourceProject(dte.Solution.FullName))
+            {
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, "No valid project found in directory", KnownMonikers.StatusError, "Project Error", "", false);
                 ScanStartButton.IsEnabled = true;
                 return;
             }
