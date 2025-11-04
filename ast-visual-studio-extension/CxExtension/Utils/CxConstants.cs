@@ -93,6 +93,8 @@
         public static string PROJECT_AND_BRANCH_DO_NOT_MATCH => "The Git branch and files open in your workspace don't match the branch and project that were previously scanned in this Checkmarx project. Do you want to scan anyway?";
         public static string RUN_SCAN => "Run scan";
         public static string RUN_SCAN_ACTION => "RUN_SCAN_ACTION";
+        public static string NOT_A_VALID_PROJECT => "No .NET project files were found in the source directory.";
+
 
         /** LEARN MORE AND REMEDIATION **/
         public static string CODE_SAMPLE_TITLE => "{0} using {1}";

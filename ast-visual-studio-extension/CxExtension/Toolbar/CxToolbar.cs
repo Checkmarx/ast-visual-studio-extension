@@ -50,6 +50,61 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public Func<List<State>, Dictionary<MenuItem, State>> CreateStateMenuItems { get; set; }
 
         private static bool initPolling = false;
+
+        public static bool IsValidSourceProject(string sourcePath)
+        {
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                return false;
+            }
+
+            try
+            {
+                string searchPath;
+                if (System.IO.File.Exists(sourcePath))
+                {
+                    searchPath = System.IO.Path.GetDirectoryName(sourcePath);
+                }
+                else if (System.IO.Directory.Exists(sourcePath))
+                {
+                    searchPath = sourcePath;
+                }
+                else
+                {
+                    return false;
+                }
+
+                string[] projectExtensions = { "*.sln", "*.csproj" };
+
+                foreach (string extension in projectExtensions)
+                {
+                    var files = System.IO.Directory.GetFiles(searchPath, extension, System.IO.SearchOption.AllDirectories);
+                    if (files.Any(file => IsValidProjectFile(file)))
+                        return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusBar("Checkmarx: Error validating project directory" + ex.Message);
+                return false;
+            }
+        }
+
+
+        private static bool IsValidProjectFile(string filePath)
+        {
+            try
+            {
+                var fileInfo = new System.IO.FileInfo(filePath);
+                return fileInfo.Exists && fileInfo.Length > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         private const string DevOrTestFilterName = "SCA Dev & Test Dependencies";
 
 
@@ -286,6 +341,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 return;
             }
 
+            if (!IsValidSourceProject(dte.Solution.FullName))
+            {
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.NOT_A_VALID_PROJECT, KnownMonikers.StatusError, "Project Error", "", false);
+                ScanStartButton.IsEnabled = true;
+                return;
+            }
+
             var currentGitBranch = await GetCurrentGitBranchAsync(dte);
             var checkmarxBranch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
             var matchProject = await ASTProjectMatchesWorkspaceProjectAsync(dte);
@@ -322,6 +384,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             try
             {
                 string workingDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                if (string.IsNullOrEmpty(workingDir) || !System.IO.Directory.Exists(workingDir))
+                    return null;
+
                 RepositoryInformation repository = RepositoryInformation.GetRepositoryInformation(workingDir);
 
                 if (repository == null)
