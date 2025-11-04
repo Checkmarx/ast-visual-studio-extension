@@ -60,22 +60,48 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             try
             {
-                string directoryPath = System.IO.Path.GetDirectoryName(sourcePath);
-                if (string.IsNullOrEmpty(directoryPath))
+                string searchPath;
+                if (System.IO.File.Exists(sourcePath))
+                {
+                    searchPath = System.IO.Path.GetDirectoryName(sourcePath);
+                }
+                else if (System.IO.Directory.Exists(sourcePath))
+                {
+                    searchPath = sourcePath;
+                }
+                else
                 {
                     return false;
                 }
 
-                bool hasProjectFiles = false;
+                string[] projectExtensions = { "*.sln", "*.csproj", "*.vbproj", "*.fsproj", "*.vcxproj" };
 
-                hasProjectFiles |= System.IO.Directory.GetFiles(directoryPath, "*.sln", System.IO.SearchOption.TopDirectoryOnly).Any();
-                hasProjectFiles |= System.IO.Directory.GetFiles(directoryPath, "*.csproj", System.IO.SearchOption.TopDirectoryOnly).Any();
+                foreach (string extension in projectExtensions)
+                {
+                    var files = System.IO.Directory.GetFiles(searchPath, extension, System.IO.SearchOption.AllDirectories);
+                    if (files.Any(file => IsValidProjectFile(file)))
+                        return true;
+                }
 
-                return hasProjectFiles;
+                return false;
             }
             catch (Exception ex)
             {
                 UpdateStatusBar("Checkmarx: Error validating project directory" + ex.Message);
+                return false;
+            }
+        }
+
+
+        private static bool IsValidProjectFile(string filePath)
+        {
+            try
+            {
+                var fileInfo = new System.IO.FileInfo(filePath);
+                return fileInfo.Exists && fileInfo.Length > 0;
+            }
+            catch
+            {
                 return false;
             }
         }
@@ -317,7 +343,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             if (!IsValidSourceProject(dte.Solution.FullName))
             {
-                CxUtils.DisplayMessageInInfoWithLinkBar(Package, "No valid project found in directory", KnownMonikers.StatusError, "Project Error", "", false);
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.NOT_A_VALID_PROJECT, KnownMonikers.StatusError, "Project Error", "", false);
                 ScanStartButton.IsEnabled = true;
                 return;
             }
@@ -358,6 +384,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             try
             {
                 string workingDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                if (string.IsNullOrEmpty(workingDir) || !System.IO.Directory.Exists(workingDir))
+                    return null;
+                    
                 RepositoryInformation repository = RepositoryInformation.GetRepositoryInformation(workingDir);
 
                 if (repository == null)
