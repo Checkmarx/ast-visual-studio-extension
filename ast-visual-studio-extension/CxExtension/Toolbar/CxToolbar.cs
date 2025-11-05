@@ -406,9 +406,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync(EnvDTE.DTE dte)
         {
-            if (ResultsTreePanel.currentResults == null || !ResultsTreePanel.currentResults.results.Any())
+            if (ResultsTreePanel.currentResults == null | ResultsTreePanel.currentResults.results == null || ResultsTreePanel.currentResults.results.Any())
             {
-                return true;
+                return false;
             }
 
             List<Result> astResults = ResultsTreePanel.currentResults.results;
