@@ -100,20 +100,22 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
                 List<string> allFiles = new List<string>();
 
-                allFiles.AddRange(await
-                    GetAllProjectFilesAsync(Path.GetDirectoryName(dte.Solution.FullName), partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" }));
+                if (!string.IsNullOrEmpty(dte.Solution.FullName))
+                {
+                    allFiles.AddRange(await
+                        GetAllProjectFilesAsync(dte.Solution.FullName, partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" }));
+                }
 
                 if (allFiles.Count == 0) { 
                     foreach (EnvDTE.Project project in dte.Solution.Projects)
                     {
                         if (!await IsProjectLoadedAsync(project)) continue;
 
-                        FileInfo projectFileInfo = new FileInfo(project.FullName);
-                        string projectPath = Directory.GetParent(projectFileInfo.Directory.FullName).FullName;
-
-                        string[] files = await GetAllProjectFilesAsync(projectPath, partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" });
-
-                        allFiles.AddRange(files);
+                        if (!string.IsNullOrEmpty(dte.Solution.FullName))
+                        {
+                            string[] files = await GetAllProjectFilesAsync(dte.Solution.FullName, partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" });
+                            allFiles.AddRange(files);
+                        }
                     }
                 }
 
@@ -151,6 +153,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             List<string> files = new List<string>();
 
+            // Validate the input path
+            if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+            {
+                return Array.Empty<string>();
+            }
+
             string[] topLevelFiles = await Task.Run(() => Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly));
             files.AddRange(topLevelFiles.Where(file => file.EndsWith(pathString)));
 
@@ -158,8 +166,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             {
                 if (!excludedDirectories.Contains(Path.GetFileName(directory)))
                 {
-                    string[] subdirectoryFiles = await GetAllProjectFilesAsync(directory, pathString, excludedDirectories);
-                    files.AddRange(subdirectoryFiles);
+                    // Validate subdirectory exists before recursive call
+                    if (Directory.Exists(directory))
+                    {
+                        string[] subdirectoryFiles = await GetAllProjectFilesAsync(directory, pathString, excludedDirectories);
+                        files.AddRange(subdirectoryFiles);
+                    }
                 }
             }
 
