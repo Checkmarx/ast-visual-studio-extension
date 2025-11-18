@@ -50,6 +50,61 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public Func<List<State>, Dictionary<MenuItem, State>> CreateStateMenuItems { get; set; }
 
         private static bool initPolling = false;
+
+        public static bool IsValidSourceProject(string sourcePath)
+        {
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                return false;
+            }
+
+            try
+            {
+                string searchPath;
+                if (System.IO.File.Exists(sourcePath))
+                {
+                    searchPath = System.IO.Path.GetDirectoryName(sourcePath);
+                }
+                else if (System.IO.Directory.Exists(sourcePath))
+                {
+                    searchPath = sourcePath;
+                }
+                else
+                {
+                    return false;
+                }
+
+                string[] projectExtensions = { "*.sln", "*.csproj" };
+
+                foreach (string extension in projectExtensions)
+                {
+                    var files = System.IO.Directory.GetFiles(searchPath, extension, System.IO.SearchOption.AllDirectories);
+                    if (files.Any(file => IsValidProjectFile(file)))
+                        return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                UpdateStatusBar("Checkmarx: Error validating project directory" + ex.Message);
+                return false;
+            }
+        }
+
+
+        private static bool IsValidProjectFile(string filePath)
+        {
+            try
+            {
+                var fileInfo = new System.IO.FileInfo(filePath);
+                return fileInfo.Exists && fileInfo.Length > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         private const string DevOrTestFilterName = "SCA Dev & Test Dependencies";
 
 
@@ -286,6 +341,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                 return;
             }
 
+            if (!IsValidSourceProject(dte.Solution.FullName))
+            {
+                CxUtils.DisplayMessageInInfoWithLinkBar(Package, CxConstants.NOT_A_VALID_PROJECT, KnownMonikers.StatusError, "Project Error", "", false);
+                ScanStartButton.IsEnabled = true;
+                return;
+            }
+
             var currentGitBranch = await GetCurrentGitBranchAsync(dte);
             var checkmarxBranch = SettingsUtils.GetToolbarValue(Package, SettingsUtils.branchProperty);
             var matchProject = await ASTProjectMatchesWorkspaceProjectAsync(dte);
@@ -322,6 +384,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             try
             {
                 string workingDir = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                if (string.IsNullOrEmpty(workingDir) || !System.IO.Directory.Exists(workingDir))
+                    return null;
+
                 RepositoryInformation repository = RepositoryInformation.GetRepositoryInformation(workingDir);
 
                 if (repository == null)
@@ -341,9 +406,9 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync(EnvDTE.DTE dte)
         {
-            if (ResultsTreePanel.currentResults == null || !ResultsTreePanel.currentResults.results.Any())
+            if (ResultsTreePanel.currentResults == null | ResultsTreePanel.currentResults.results == null || ResultsTreePanel.currentResults.results.Any())
             {
-                return true;
+                return false;
             }
 
             List<Result> astResults = ResultsTreePanel.currentResults.results;
@@ -434,6 +499,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             string currentPath = await GetCurrentWorkingDirAsync();
 
+            // Check if a valid project/solution was found
+            if (string.IsNullOrEmpty(currentPath))
+            {
+                UpdateStatusBar(CxConstants.NOT_A_VALID_PROJECT);
+                return;
+            }
+
             Dictionary<string, string> parameters = new Dictionary<string, string>
             {
                 { CxCLI.CxConstants.FLAG_SOURCE, currentPath },
@@ -462,14 +534,91 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             DTE2 dte = (DTE2)ServiceProvider.GlobalProvider.GetService(typeof(DTE));
+            var solutionExplorer = dte?.ToolWindows?.SolutionExplorer;
 
-            var solutionExplorer = dte.ToolWindows.SolutionExplorer;
-
-            if ((solutionExplorer.DTE.ActiveSolutionProjects as Array)?.Length > 0)
+            // Try to get directory from solution or active projects
+            string directory = null;
+            
+            if (!string.IsNullOrEmpty(dte?.Solution?.FullName))
             {
-                return System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                // Solution is loaded - get its directory or use the path itself if it's a directory
+                if (System.IO.File.Exists(dte.Solution.FullName))
+                {
+                    directory = System.IO.Path.GetDirectoryName(dte.Solution.FullName);
+                }
+                else if (System.IO.Directory.Exists(dte.Solution.FullName))
+                {
+                    directory = dte.Solution.FullName;
+                }
             }
-            return ".";
+            else if (solutionExplorer?.DTE?.ActiveSolutionProjects is Array projects && projects.Length > 0)
+            {
+                // Try to get directory from first active project
+                var firstProject = projects.GetValue(0) as EnvDTE.Project;
+                if (firstProject != null && !string.IsNullOrEmpty(firstProject.FullName))
+                {
+                    directory = System.IO.Path.GetDirectoryName(firstProject.FullName);
+                }
+            }
+
+            // If we still don't have a directory, try current directory
+            if (string.IsNullOrEmpty(directory))
+            {
+                try
+                {
+                    directory = System.IO.Directory.GetCurrentDirectory();
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            // Now search for .sln or .csproj in the directory
+            if (!string.IsNullOrEmpty(directory) && System.IO.Directory.Exists(directory))
+            {
+                 return FindSolutionFileOrDirectory(directory);
+            }
+
+            return null;
+        }
+
+        private static string FindSolutionFileOrDirectory(string directory)
+        {
+            if (string.IsNullOrEmpty(directory) || !System.IO.Directory.Exists(directory))
+            {
+                return null;
+            }
+
+            // Look for .sln file in the directory
+            var slnFiles = System.IO.Directory.GetFiles(directory, "*.sln", System.IO.SearchOption.TopDirectoryOnly);
+            if (slnFiles.Length > 0)
+            {
+                // Return the first valid .sln file
+                foreach (var slnFile in slnFiles)
+                {
+                    if (IsValidProjectFile(slnFile))
+                    {
+                        return directory;
+                    }
+                }
+            }
+
+            // If no .sln found, look for .csproj files
+            var csprojFiles = System.IO.Directory.GetFiles(directory, "*.csproj", System.IO.SearchOption.TopDirectoryOnly);
+            if (csprojFiles.Length > 0)
+            {
+                foreach (var csprojFile in csprojFiles)
+                {
+                    if (IsValidProjectFile(csprojFile))
+                    {
+                        return directory;
+                    }
+                }
+            }
+
+            // No valid .sln or .csproj found - return null to trigger error
+            return null;
         }
 
         private async Task PollScanStartedAsync()
