@@ -30,6 +30,12 @@
         public static string CLI_TENANT_CMD = "tenant";
         public static string CLI_LEARN_MORE_CMD = "learn-more";
 
+        /** REALTIME SCANNER CLI SUBCOMMANDS **/
+        public static string CLI_OSS_REALTIME_CMD => "oss-realtime";
+        public static string CLI_IAC_REALTIME_CMD => "iac-realtime";
+        public static string CLI_SECRETS_REALTIME_CMD => "secrets-realtime";
+        public static string CLI_CONTAINERS_REALTIME_CMD => "containers-realtime";
+
 
         /** CLI FLAGS **/
         public static string FLAG_API_KEY => "--apikey";
@@ -64,6 +70,10 @@
         public static string FLAG_RESUBMIT => "--resubmit";
         public static string FLAG_QUERY_ID => "--query-id";
 
+        /** REALTIME SCANNER FLAGS **/
+        public static string FLAG_IGNORED_FILE_PATH => "--ignored-file-path";
+        public static string FLAG_ENGINE => "--engine";
+
 
         /** EXCEPTIONS **/
         public static string EXCEPTION_CREDENTIALS_NOT_SET => "Credentials are not set";
@@ -92,6 +102,13 @@
         public static string LOG_CLI_COMMAND_EXECUTING => "Executing CLI command: {0}";
         public static string LOG_CLI_COMMAND_COMPLETED => "CLI command completed with result length: {0}";
         public static string LOG_CLI_COMMAND_ERROR => "CLI command failed: {0}";
+
+        /** REALTIME SCANNER LOGGING **/
+        public static string LOG_RUNNING_OSS_REALTIME_SCAN_CMD => "Executing 'scan oss-realtime' command using the CLI...";
+        public static string LOG_RUNNING_IAC_REALTIME_SCAN_CMD => "Executing 'scan iac-realtime' command using the CLI...";
+        public static string LOG_RUNNING_SECRETS_REALTIME_SCAN_CMD => "Executing 'scan secrets-realtime' command using the CLI...";
+        public static string LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD => "Executing 'scan containers-realtime' command using the CLI...";
+
         /** FILE EXTENSIONS **/
         public static string EXTENSION_JSON => ".json";
 

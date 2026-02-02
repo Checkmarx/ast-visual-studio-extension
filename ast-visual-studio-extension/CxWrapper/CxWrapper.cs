@@ -120,6 +120,188 @@ namespace ast_visual_studio_extension.CxCLI
             return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion, agent));
         }
 
+        /// <summary>
+        /// Perform OSS realtime scan on a source file or directory
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>OSS realtime scan results</returns>
+        public OssRealtimeResults OssRealtimeScan(string sourcePath, string ignoredFilePath = null)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_OSS_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_OSS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+            return JsonConvert.DeserializeObject<OssRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform OSS realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>OSS realtime scan results</returns>
+        public async Task<OssRealtimeResults> OssRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
+        {
+            return await Task.Run(() => OssRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Perform Secrets realtime scan to detect exposed secrets in source code.
+        /// Executes 'cx scan secrets-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Secrets realtime scan results containing detected secrets</returns>
+        public SecretsRealtimeResults SecretsRealtimeScan(string sourcePath, string ignoredFilePath = null)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_SECRETS_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_SECRETS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            return JsonConvert.DeserializeObject<SecretsRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform Secrets realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Secrets realtime scan results containing detected secrets</returns>
+        public async Task<SecretsRealtimeResults> SecretsRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
+        {
+            return await Task.Run(() => SecretsRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Perform IAC (Infrastructure as Code) realtime scan to detect security issues in configuration files.
+        /// Executes 'cx scan iac-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>IAC realtime scan results containing detected issues</returns>
+        public IacRealtimeResults IacRealtimeScan(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_IAC_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}, Engine: {engine ?? "default"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_IAC_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            if (!string.IsNullOrEmpty(engine))
+            {
+                arguments.Add(CxConstants.FLAG_ENGINE);
+                arguments.Add(engine);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            return JsonConvert.DeserializeObject<IacRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform IAC realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>IAC realtime scan results containing detected issues</returns>
+        public async Task<IacRealtimeResults> IacRealtimeScanAsync(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            return await Task.Run(() => IacRealtimeScan(sourcePath, ignoredFilePath, engine));
+        }
+
+        /// <summary>
+        /// Perform Containers realtime scan to detect vulnerabilities in container images.
+        /// Executes 'cx scan containers-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
+        public ContainersRealtimeResults ContainersRealtimeScan(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}, Engine: {engine ?? "default"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_CONTAINERS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            if (!string.IsNullOrEmpty(engine))
+            {
+                arguments.Add(CxConstants.FLAG_ENGINE);
+                arguments.Add(engine);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            return JsonConvert.DeserializeObject<ContainersRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform Containers realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
+        public async Task<ContainersRealtimeResults> ContainersRealtimeScanAsync(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            return await Task.Run(() => ContainersRealtimeScan(sourcePath, ignoredFilePath, engine));
+        }
+
         private void AppendAgentToArguments(string agent, List<string> arguments)
         {
             arguments.Add(CxConstants.FLAG_AGENT);
