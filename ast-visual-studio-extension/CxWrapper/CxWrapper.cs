@@ -39,6 +39,10 @@ namespace ast_visual_studio_extension.CxCLI
         {
             try
             {
+                // Add agent flag to all commands
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
                 string commandLine = $"cx.exe {string.Join(" ", arguments)}";
                 logger.Info($"Executing CLI command: {commandLine}");
                 var result = Execution.ExecuteCommand(WithConfigArguments(arguments), resultHandler);
@@ -55,6 +59,10 @@ namespace ast_visual_studio_extension.CxCLI
         {
             try
             {
+                // Add agent flag to all commands
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
                 string commandLine = $"cx.exe {string.Join(" ", arguments)}";
                 logger.Info(string.Format(CxConstants.LOG_CLI_COMMAND_EXECUTING, commandLine));
                 var result = Execution.ExecuteCommand(WithConfigArguments(arguments), tempDir, fileName);
@@ -73,9 +81,8 @@ namespace ast_visual_studio_extension.CxCLI
         /// </summary>
         /// <param name="fileSource">Source file path</param>
         /// <param name="ascaLatestVersion">If true, adds latest version flag</param>
-        /// <param name="agent">Agent identifier</param>
         /// <returns>CxAsca result</returns>
-        public CxAsca ScanAsca(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        public CxAsca ScanAsca(string fileSource, bool ascaLatestVersion = false)
         {
             logger.Info(string.Format(CxConstants.LOG_RUNNING_ASCA_SCAN_CMD, fileSource));
 
@@ -106,7 +113,7 @@ namespace ast_visual_studio_extension.CxCLI
                 }
             }
 
-            AppendAgentToArguments(agent, arguments);
+            // Note: --agent flag is automatically added by ExecuteCliCommand
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
             return JsonConvert.DeserializeObject<CxAsca>(result);
@@ -115,9 +122,9 @@ namespace ast_visual_studio_extension.CxCLI
         /// <summary>
         /// Scan file with ASCA asynchronously
         /// </summary>
-        public async Task<CxAsca> ScanAscaAsync(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        public async Task<CxAsca> ScanAscaAsync(string fileSource, bool ascaLatestVersion = false)
         {
-            return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion, agent));
+            return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion));
         }
 
         /// <summary>
@@ -302,22 +309,6 @@ namespace ast_visual_studio_extension.CxCLI
             return await Task.Run(() => ContainersRealtimeScan(sourcePath, ignoredFilePath, engine));
         }
 
-        private void AppendAgentToArguments(string agent, List<string> arguments)
-        {
-            arguments.Add(CxConstants.FLAG_AGENT);
-
-            if (!string.IsNullOrEmpty(agent))
-            {
-                arguments.Add(agent);
-            }
-            else
-            {
-                arguments.Add(CxConstants.EXTENSION_AGENT);
-            }
-        }
-
-
-
         /// <summary>
         /// Auth Validate command
         /// </summary>
@@ -389,7 +380,7 @@ namespace ast_visual_studio_extension.CxCLI
                 CxConstants.FLAG_REPORT_FORMAT, reportFormat.ToString(),
                 CxConstants.FLAG_OUTPUT_NAME, fileName,
                 CxConstants.FLAG_OUTPUT_PATH, tempDir,
-                CxConstants.FLAG_AGENT, CxCLI.CxConstants.EXTENSION_AGENT,
+                // Note: --agent flag is automatically added by ExecuteCliCommand
             };
 
             string extension = string.Empty;
@@ -767,6 +758,170 @@ namespace ast_visual_studio_extension.CxCLI
         public async Task<bool> IdeScansEnabledAsync()
         {
             return await Task.Run(() => IdeScansEnabled());
+        }
+
+        /// <summary>
+        /// Core telemetry AI event method - matches JavaWrapper signature exactly.
+        /// Executes telemetry AI command to collect telemetry data for user interactions related to AI features.
+        /// </summary>
+        /// <param name="aiProvider">AI provider name (e.g., "Copilot")</param>
+        /// <param name="eventType">Event type (e.g., "click")</param>
+        /// <param name="subType">Event subtype (e.g., "ast-results.viewPackageDetails")</param>
+        /// <param name="engine">Engine type (e.g., "secrets")</param>
+        /// <param name="problemSeverity">Severity level (e.g., "high")</param>
+        /// <param name="scanType">Type of scan (e.g., "Oss", "Secrets", "IaC")</param>
+        /// <param name="status">Status/severity for detection logs (e.g., "High", "Critical")</param>
+        /// <param name="totalCount">Number of issues detected for the given severity</param>
+        public void TelemetryAIEvent(
+            string aiProvider,
+            string eventType,
+            string subType,
+            string engine,
+            string problemSeverity,
+            string scanType,
+            string status,
+            int totalCount)
+        {
+            logger.Info(string.Format(CxConstants.LOG_RUNNING_TELEMETRY_AI_CMD, aiProvider, eventType, subType));
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_TELEMETRY_CMD,
+                CxConstants.CLI_TELEMETRY_AI_CMD,
+                CxConstants.FLAG_AI_PROVIDER,
+                aiProvider ?? string.Empty,
+                CxConstants.FLAG_TYPE,
+                eventType ?? string.Empty,
+                CxConstants.FLAG_SUB_TYPE,
+                subType ?? string.Empty,
+                CxConstants.FLAG_ENGINE,
+                engine ?? string.Empty,
+                CxConstants.FLAG_PROBLEM_SEVERITY,
+                problemSeverity ?? string.Empty,
+                CxConstants.FLAG_SCAN_TYPE,
+                scanType ?? string.Empty,
+                CxConstants.FLAG_STATUS,
+                status ?? string.Empty,
+                CxConstants.FLAG_TOTAL_COUNT,
+                totalCount.ToString()
+            };
+
+            // Note: --agent flag is automatically added by ExecuteCliCommand
+            ExecuteCliCommand(arguments, line => line);
+        }
+
+        /// <summary>
+        /// Logs user interaction telemetry (e.g., clicks on "Fix with AI", "View Details").
+        /// This is a convenience wrapper for user event logging.
+        /// </summary>
+        /// <param name="eventType">Event type (e.g., "click")</param>
+        /// <param name="subType">Event subtype (e.g., "fixWithAIChat", "viewDetails")</param>
+        /// <param name="engine">Engine type (e.g., "Oss", "Secrets", "IaC", "Asca", "Containers")</param>
+        /// <param name="problemSeverity">Severity level (e.g., "High", "Critical", "Medium", "Low")</param>
+        public void LogUserEventTelemetry(string eventType, string subType, string engine, string problemSeverity)
+        {
+            TelemetryAIEvent(
+                aiProvider: "Copilot",
+                eventType: eventType,
+                subType: subType,
+                engine: engine,
+                problemSeverity: problemSeverity,
+                scanType: string.Empty,
+                status: string.Empty,
+                totalCount: 0
+            );
+        }
+
+        /// <summary>
+        /// Logs scan detection telemetry (issue counts by severity).
+        /// This is a convenience wrapper for detection result logging.
+        /// </summary>
+        /// <param name="scanType">Type of scan (e.g., "Oss", "Secrets", "IaC", "Asca", "Containers")</param>
+        /// <param name="status">Severity level (e.g., "Critical", "High", "Medium", "Low")</param>
+        /// <param name="totalCount">Number of issues detected for the given severity</param>
+        public void LogDetectionTelemetry(string scanType, string status, int totalCount)
+        {
+            if (totalCount <= 0)
+            {
+                logger.Debug($"Telemetry: No issues to log for scan type: {scanType}, status: {status}");
+                return;
+            }
+
+            TelemetryAIEvent(
+                aiProvider: string.Empty,
+                eventType: string.Empty,
+                subType: string.Empty,
+                engine: string.Empty,
+                problemSeverity: string.Empty,
+                scanType: scanType,
+                status: status,
+                totalCount: totalCount
+            );
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for non-blocking telemetry logging.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void TelemetryAIEventFireAndForget(
+            string aiProvider,
+            string eventType,
+            string subType, 
+            string engine,
+            string problemSeverity,
+            string scanType,
+            string status,
+            int totalCount)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    TelemetryAIEvent(aiProvider, eventType, subType, engine, problemSeverity, scanType, status, totalCount);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn($"Telemetry: Failed to log telemetry event: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for user event telemetry.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void LogUserEventTelemetryFireAndForget(string eventType, string subType, string engine, string problemSeverity)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    LogUserEventTelemetry(eventType, subType, engine, problemSeverity);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn($"Telemetry: Failed to log user event telemetry: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for detection telemetry.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void LogDetectionTelemetryFireAndForget(string scanType, string status, int totalCount)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    LogDetectionTelemetry(scanType, status, totalCount);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn($"Telemetry: Failed to log detection telemetry: {ex.Message}");
+                }
+            });
         }
 
         /// <summary>
