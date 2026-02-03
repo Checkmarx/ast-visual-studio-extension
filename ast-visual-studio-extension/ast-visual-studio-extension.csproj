@@ -124,6 +124,11 @@
     <Compile Include="CxWrapper\Models\Scan.cs" />
     <Compile Include="CxWrapper\Models\VulnerabilityCVSS.cs" />
     <Compile Include="CxWrapper\Models\VulnerabilityDetails.cs" />
+    <Compile Include="CxWrapper\Models\RealtimeLocation.cs" />
+    <Compile Include="CxWrapper\Models\OssRealtimeResults.cs" />
+    <Compile Include="CxWrapper\Models\SecretsRealtimeResults.cs" />
+    <Compile Include="CxWrapper\Models\IacRealtimeResults.cs" />
+    <Compile Include="CxWrapper\Models\ContainersRealtimeResults.cs" />
     <Compile Include="CxWrapper\ReportFormat.cs" />
     <Compile Include="CxExtension\CxWindow.cs" />
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />

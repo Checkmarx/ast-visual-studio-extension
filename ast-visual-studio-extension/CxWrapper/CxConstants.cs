@@ -30,6 +30,16 @@
         public static string CLI_TENANT_CMD = "tenant";
         public static string CLI_LEARN_MORE_CMD = "learn-more";
 
+        /** REALTIME SCANNER CLI SUBCOMMANDS **/
+        public static string CLI_OSS_REALTIME_CMD => "oss-realtime";
+        public static string CLI_IAC_REALTIME_CMD => "iac-realtime";
+        public static string CLI_SECRETS_REALTIME_CMD => "secrets-realtime";
+        public static string CLI_CONTAINERS_REALTIME_CMD => "containers-realtime";
+
+        /** TELEMETRY CLI COMMANDS **/
+        public static string CLI_TELEMETRY_CMD => "telemetry";
+        public static string CLI_TELEMETRY_AI_CMD => "ai";
+
 
         /** CLI FLAGS **/
         public static string FLAG_API_KEY => "--apikey";
@@ -64,6 +74,18 @@
         public static string FLAG_RESUBMIT => "--resubmit";
         public static string FLAG_QUERY_ID => "--query-id";
 
+        /** REALTIME SCANNER FLAGS **/
+        public static string FLAG_IGNORED_FILE_PATH => "--ignored-file-path";
+        public static string FLAG_ENGINE => "--engine";
+
+        /** TELEMETRY FLAGS **/
+        public static string FLAG_AI_PROVIDER => "--ai-provider";
+        public static string FLAG_TYPE => "--type";
+        public static string FLAG_SUB_TYPE => "--sub-type";
+        public static string FLAG_PROBLEM_SEVERITY => "--problem-severity";
+        public static string FLAG_STATUS => "--status";
+        public static string FLAG_TOTAL_COUNT => "--total-count";
+
 
         /** EXCEPTIONS **/
         public static string EXCEPTION_CREDENTIALS_NOT_SET => "Credentials are not set";
@@ -92,6 +114,16 @@
         public static string LOG_CLI_COMMAND_EXECUTING => "Executing CLI command: {0}";
         public static string LOG_CLI_COMMAND_COMPLETED => "CLI command completed with result length: {0}";
         public static string LOG_CLI_COMMAND_ERROR => "CLI command failed: {0}";
+
+        /** REALTIME SCANNER LOGGING **/
+        public static string LOG_RUNNING_OSS_REALTIME_SCAN_CMD => "Executing 'scan oss-realtime' command using the CLI...";
+        public static string LOG_RUNNING_IAC_REALTIME_SCAN_CMD => "Executing 'scan iac-realtime' command using the CLI...";
+        public static string LOG_RUNNING_SECRETS_REALTIME_SCAN_CMD => "Executing 'scan secrets-realtime' command using the CLI...";
+        public static string LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD => "Executing 'scan containers-realtime' command using the CLI...";
+
+        /** TELEMETRY LOGGING **/
+        public static string LOG_RUNNING_TELEMETRY_AI_CMD => "Executing telemetry AI event with provider: {0}, type: {1}, subType: {2}";
+
         /** FILE EXTENSIONS **/
         public static string EXTENSION_JSON => ".json";
 
