@@ -127,6 +127,7 @@
     <Compile Include="CxWrapper\ReportFormat.cs" />
     <Compile Include="CxExtension\CxWindow.cs" />
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />
+    <Compile Include="CxExtension\Commands\TestGutterIconsDirectCommand.cs" />
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>
     </Compile>
@@ -136,6 +137,13 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>CxWindowPackage.vsct</DependentUpon>
     </Compile>
+    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphFactory.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTagger.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTaggerProvider.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistTextViewCreationListener.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Models\SeverityLevel.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Models\ScannerType.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Models\Vulnerability.cs" />
     <Compile Include="CxPreferences\CxPreferencesModule.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -196,6 +204,7 @@
       <Version>7.5.1</Version>
     </PackageReference>
     <PackageReference Include="System.Json" Version="4.7.1" />
+    <PackageReference Include="SharpVectors" Version="1.8.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="CxExtension\Resources\critical.png">
@@ -287,6 +296,24 @@
     <Resource Include="CxExtension\Resources\medium.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <!-- DevAssist Icons - Light Theme (SVG) - JetBrains icons -->
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\critical.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\high.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\medium.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\low.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\malicious.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\ignored.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\ok.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\unknown.svg" />
+    <!-- DevAssist Icons - Dark Theme (SVG) - JetBrains icons -->
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\critical.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\high.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\medium.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\low.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\malicious.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\ignored.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\ok.svg" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\unknown.svg" />
     <Content Include="CxPreferences\Resources\CxPreferencesPackage.ico" />
   </ItemGroup>
   <ItemGroup>

@@ -34,6 +34,8 @@
 					<ButtonText>Checkmarx</ButtonText>
 				</Strings>
 			</Button>
+			<!-- TestGutterIconsCommand removed - no longer needed -->
+			<!-- TestGutterIconsDirectCommand - tool command only, not visible in menu -->
 		</Buttons>
 
 		<Bitmaps>
@@ -54,6 +56,12 @@
 
 		<GuidSymbol name="CxImages" value="{cca5f138-eee9-4fc7-8f65-fce867b52e22}">
 			<IDSymbol name="cxlogo" value="1" />
+		</GuidSymbol>
+
+		<!-- TestGutterIconsCommand removed - no longer needed -->
+		<!-- TestGutterIconsDirectCommand - tool command only, GUID kept for programmatic access -->
+		<GuidSymbol name="guidTestGutterIconsDirectCommandSet" value="{a6e70b7d-e3e1-4a3b-9b3e-3e3e3e3e3e3e}">
+			<IDSymbol name="TestGutterIconsDirectCommandId" value="0x0105" />
 		</GuidSymbol>
 	</Symbols>
 </CommandTable>
