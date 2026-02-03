@@ -69,10 +69,13 @@ namespace ast_visual_studio_extension.CxExtension
 
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
+
+                // Test Gutter Icons Direct Command (tool command only, not visible in menu)
+                await TestGutterIconsDirectCommand.InitializeAsync(this);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                //Console.WriteLine(ex.ToString());
             }
         }
         private string GetLogFilePath()
