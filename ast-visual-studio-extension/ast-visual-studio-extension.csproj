@@ -128,6 +128,13 @@
     <Compile Include="CxExtension\CxWindow.cs" />
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />
     <Compile Include="CxExtension\Commands\TestGutterIconsDirectCommand.cs" />
+    <Compile Include="CxExtension\Commands\TestErrorListCustomizationCommand.cs" />
+    <Compile Include="CxExtension\Commands\ShowFindingsWindowCommand.cs" />
+    <Compile Include="CxExtension\DevAssist\UI\FindingsWindow\FindingsTreeNode.cs" />
+    <Compile Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsWindow.cs" />
+    <Compile Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsControl.xaml.cs">
+      <DependentUpon>DevAssistFindingsControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>
     </Compile>
@@ -301,7 +308,7 @@
     <Resource Include="CxExtension\Resources\medium.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <!-- DevAssist Icons - Light Theme (SVG) - JetBrains icons -->
+    <!-- DevAssist Icons - SVG Light Theme (16x16 gutter icons from JetBrains) -->
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\critical.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\high.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\medium.svg" />
@@ -310,7 +317,7 @@
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\ignored.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\ok.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\unknown.svg" />
-    <!-- DevAssist Icons - Dark Theme (SVG) - JetBrains icons -->
+    <!-- DevAssist Icons - SVG Dark Theme (16x16 gutter icons from JetBrains) -->
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\critical.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\high.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\medium.svg" />
@@ -319,6 +326,24 @@
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\ignored.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\ok.svg" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\unknown.svg" />
+    <!-- DevAssist Icons - PNG Light Theme (JetBrains tooltip icons for tree view) -->
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\critical.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\high.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\medium.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\low.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\malicious.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\container.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\package.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\cxone_assist.png" />
+    <!-- DevAssist Icons - PNG Dark Theme (JetBrains tooltip icons for tree view) -->
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\critical.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\high.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\medium.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\low.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\malicious.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\container.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\package.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\cxone_assist.png" />
     <Content Include="CxPreferences\Resources\CxPreferencesPackage.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -337,6 +362,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CxExtension\CxWindowControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

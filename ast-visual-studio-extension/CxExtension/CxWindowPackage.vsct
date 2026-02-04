@@ -34,6 +34,16 @@
 					<ButtonText>Checkmarx</ButtonText>
 				</Strings>
 			</Button>
+			<!-- ShowFindingsWindowCommand - DISABLED: Command still works programmatically but not visible in menu -->
+			<!--
+			<Button guid="guidShowFindingsWindowCommandSet" id="ShowFindingsWindowCommandId" priority="0x0101" type="Button">
+				<Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+				<Icon guid="CxImages" id="cxlogo" />
+				<Strings>
+					<ButtonText>Checkmarx Findings</ButtonText>
+				</Strings>
+			</Button>
+			-->
 			<!-- TestGutterIconsCommand removed - no longer needed -->
 			<!-- TestGutterIconsDirectCommand - tool command only, not visible in menu -->
 		</Buttons>
@@ -62,6 +72,16 @@
 		<!-- TestGutterIconsDirectCommand - tool command only, GUID kept for programmatic access -->
 		<GuidSymbol name="guidTestGutterIconsDirectCommandSet" value="{a6e70b7d-e3e1-4a3b-9b3e-3e3e3e3e3e3e}">
 			<IDSymbol name="TestGutterIconsDirectCommandId" value="0x0105" />
+		</GuidSymbol>
+
+		<!-- TestErrorListCustomizationCommand - POC for AST-133228, tool command only -->
+		<GuidSymbol name="guidTestErrorListCustomizationCommandSet" value="{a6e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e3e}">
+			<IDSymbol name="TestErrorListCustomizationCommandId" value="0x0109" />
+		</GuidSymbol>
+
+		<!-- ShowFindingsWindowCommand - POC for AST-133228, tool command only -->
+		<GuidSymbol name="guidShowFindingsWindowCommandSet" value="{a6e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e3f}">
+			<IDSymbol name="ShowFindingsWindowCommandId" value="0x0110" />
 		</GuidSymbol>
 	</Symbols>
 </CommandTable>

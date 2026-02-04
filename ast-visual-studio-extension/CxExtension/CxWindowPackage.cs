@@ -40,6 +40,7 @@ namespace ast_visual_studio_extension.CxExtension
     [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideToolWindow(typeof(CxWindow),Style = VsDockStyle.Tabbed,Orientation = ToolWindowOrientation.Right,Window = EnvDTE.Constants.vsWindowKindOutput,Transient = false)]
+    [ProvideToolWindow(typeof(DevAssist.UI.FindingsWindow.DevAssistFindingsWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Bottom, Window = EnvDTE.Constants.vsWindowKindOutput, Transient = false)]
     [Guid(PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
     {
@@ -72,6 +73,13 @@ namespace ast_visual_studio_extension.CxExtension
 
                 // Test Gutter Icons Direct Command (tool command only, not visible in menu)
                 await TestGutterIconsDirectCommand.InitializeAsync(this);
+
+                // Test Error List Customization Command (POC for AST-133228)
+                await TestErrorListCustomizationCommand.InitializeAsync(this);
+
+                // Show Findings Window Command (POC for AST-133228 - Custom Tool Window)
+                // Command still works programmatically but not visible in menu
+                await ShowFindingsWindowCommand.InitializeAsync(this);
             }
             catch (Exception ex)
             {
