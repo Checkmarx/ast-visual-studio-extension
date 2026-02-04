@@ -12,6 +12,7 @@
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
              xmlns:vs="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
              xmlns:cxextension="clr-namespace:ast_visual_studio_extension.CxExtension" d:DataContext="{d:DesignInstance Type=cxextension:CxWindowControl}"
+             xmlns:devassist="clr-namespace:ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow"
              local:VsTheme.UseVsTheme="True"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="1308"
@@ -385,20 +386,74 @@
 
     </UserControl.Resources>
 
-    <Grid Name="ParentGrid">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"></RowDefinition>
-            <RowDefinition Height="*"></RowDefinition>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+    <!-- Top-level TabControl for Scan Results and DevAssist Findings -->
+    <TabControl x:Name="MainTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent" BorderBrush="Transparent">
+        <!-- Custom ItemsPanel with Checkmarx title + tabs in one line -->
+        <TabControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <DockPanel LastChildFill="False">
+                    <!-- Checkmarx Title -->
+                    <TextBlock DockPanel.Dock="Left" Text="Checkmarx" FontWeight="Bold" FontSize="14"
+                               VerticalAlignment="Center" Margin="10,5,20,5"
+                               Foreground="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}"/>
+                </DockPanel>
+            </ItemsPanelTemplate>
+        </TabControl.ItemsPanel>
 
-        <Grid.Resources>
-            <GenericWPF:XAMLCalculations x:Key="CalculateScrollViewerHeight"/>
-        </Grid.Resources>
+        <TabControl.Resources>
+            <Style TargetType="TabItem">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical">
+                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="10,2"/>
+                                <TextBlock Name="BottomBar" Background="Transparent" Height="3" />
+                                <StackPanel.Style>
+                                    <Style TargetType="{x:Type StackPanel}">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="BottomBar" Property="Background" Value="LightBlue" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </TabControl.Resources>
+
+        <!-- Tab 1: Scan Results (existing content) -->
+        <TabItem x:Name="ScanResultsTab">
+            <TabItem.HeaderTemplate>
+                <DataTemplate>
+                    <DataTemplate.Resources>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                    </DataTemplate.Resources>
+                    <TextBlock Text="Scan Results" VerticalAlignment="Center"/>
+                </DataTemplate>
+            </TabItem.HeaderTemplate>
+            <TabItem.Content>
+                <Grid Name="ParentGrid">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.Resources>
+                        <GenericWPF:XAMLCalculations x:Key="CalculateScrollViewerHeight"/>
+                    </Grid.Resources>
 
         <Border Grid.Row="0" Grid.Column ="0" BorderBrush="#000000" BorderThickness="0 1 0 0" />
         <Border Grid.Row="0" Grid.Column ="1" BorderBrush="#000000" BorderThickness="0 1 0 0" />
@@ -806,7 +861,51 @@
                 </TabItem>
             </TabControl>
         </ScrollViewer>
-    </Grid>
+                </Grid>
+            </TabItem.Content>
+        </TabItem>
 
+        <!-- Tab 2: Checkmarx One Assist Findings (new DevAssist findings) -->
+        <TabItem x:Name="DevAssistFindingsTab">
+            <TabItem.HeaderTemplate>
+                <DataTemplate>
+                    <DataTemplate.Resources>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                    </DataTemplate.Resources>
+                    <TextBlock Text="Findings" VerticalAlignment="Center"/>
+                </DataTemplate>
+            </TabItem.HeaderTemplate>
+            <TabItem.Content>
+                <devassist:DevAssistFindingsControl x:Name="DevAssistFindingsControl"/>
+            </TabItem.Content>
+        </TabItem>
+
+        <!-- Tab 3: Ignored Findings -->
+        <TabItem x:Name="IgnoredFindingsTab">
+            <TabItem.HeaderTemplate>
+                <DataTemplate>
+                    <DataTemplate.Resources>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+                    </DataTemplate.Resources>
+                    <TextBlock Text="Ignored Findings" VerticalAlignment="Center"/>
+                </DataTemplate>
+            </TabItem.HeaderTemplate>
+            <TabItem.Content>
+                <Grid Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBackgroundKey}}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="🚫" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,20"
+                                   Opacity="0.3"/>
+                        <TextBlock Text="No ignored findings" FontSize="16" FontWeight="Bold"
+                                   HorizontalAlignment="Center" Margin="0,0,0,10"
+                                   Foreground="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}"/>
+                        <TextBlock Text="Ignored findings will appear here" FontSize="12"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}"
+                                   Opacity="0.7"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem.Content>
+        </TabItem>
+    </TabControl>
 
 </UserControl>
