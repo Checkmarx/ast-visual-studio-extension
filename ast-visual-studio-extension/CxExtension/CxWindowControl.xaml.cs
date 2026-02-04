@@ -31,11 +31,16 @@ namespace ast_visual_studio_extension.CxExtension
         private CancellationTokenSource typingCts;
         private ASCAService _ascaService;
 
+        private bool _devAssistDataLoaded = false;
+
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
 
             this.package = package;
+
+            // Subscribe to tab selection changed event to populate DevAssist data when tab is first shown
+            MainTabControl.SelectionChanged += MainTabControl_SelectionChanged;
 
             resultInfoPanel = new ResultInfoPanel(this);
 
@@ -85,6 +90,66 @@ namespace ast_visual_studio_extension.CxExtension
             _ = InitializeAsync();
             cxToolbar.Init();
         }
+
+        /// <summary>
+        /// Gets the DevAssist Findings Control from the DevAssist tab
+        /// </summary>
+        public DevAssist.UI.FindingsWindow.DevAssistFindingsControl GetDevAssistFindingsControl()
+        {
+            return DevAssistFindingsControl;
+        }
+
+        /// <summary>
+        /// Switches to the DevAssist Findings tab
+        /// </summary>
+        public void SwitchToDevAssistTab()
+        {
+            MainTabControl.SelectedItem = DevAssistFindingsTab;
+        }
+
+        /// <summary>
+        /// Switches to the Scan Results tab
+        /// </summary>
+        public void SwitchToScanResultsTab()
+        {
+            MainTabControl.SelectedItem = ScanResultsTab;
+        }
+
+        /// <summary>
+        /// Event handler for tab selection changed - populates DevAssist data when tab is first shown
+        /// </summary>
+        private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MainTabControl.SelectedItem == DevAssistFindingsTab && !_devAssistDataLoaded)
+            {
+                _devAssistDataLoaded = true;
+                PopulateDevAssistTestData();
+            }
+        }
+
+        /// <summary>
+        /// Populates the DevAssist Findings tab with test data
+        /// </summary>
+        private void PopulateDevAssistTestData()
+        {
+            try
+            {
+                // Trigger the ShowFindingsWindowCommand to populate test data
+                var command = Commands.ShowFindingsWindowCommand.Instance;
+                if (command != null)
+                {
+                    // Call the command's Execute method programmatically
+                    var executeMethod = command.GetType().GetMethod("Execute",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    executeMethod?.Invoke(command, new object[] { this, EventArgs.Empty });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error populating DevAssist test data: {ex.Message}");
+            }
+        }
+
         private async Task InitializeAsync()
         {
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
