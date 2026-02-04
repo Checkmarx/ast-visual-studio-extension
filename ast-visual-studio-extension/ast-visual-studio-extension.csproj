@@ -141,6 +141,11 @@
     <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTagger.cs" />
     <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTaggerProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistTextViewCreationListener.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTag.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTagger.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTaggerProvider.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSquigglyAdornment.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSquigglyAdornmentProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\SeverityLevel.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\ScannerType.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\Vulnerability.cs" />

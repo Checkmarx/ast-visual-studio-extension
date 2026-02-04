@@ -4,12 +4,13 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers;
 
 namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
 {
     /// <summary>
-    /// Listens for text view creation and automatically adds test gutter icons
-    /// This is a temporary POC to test gutter icon functionality
+    /// Listens for text view creation and automatically adds test gutter icons and colored markers
+    /// This is a temporary POC to test gutter icon and marker functionality
     /// </summary>
     [Export(typeof(IWpfTextViewCreationListener))]
     [ContentType("CSharp")]
@@ -20,8 +21,8 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
         {
             System.Diagnostics.Debug.WriteLine("DevAssist: TextViewCreated - C# file opened");
 
-            // Wait for MEF to create the tagger, then add test vulnerabilities
-            // We need to wait because the tagger is created asynchronously by MEF
+            // Wait for MEF to create the taggers, then add test vulnerabilities
+            // We need to wait because the taggers are created asynchronously by MEF
             System.Threading.Tasks.Task.Delay(1000).ContinueWith(_ =>
             {
                 try
@@ -34,25 +35,28 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
 
                         var buffer = textView.TextBuffer;
 
-                        // Try to get the tagger - it should have been created by MEF by now
-                        DevAssistGlyphTagger tagger = null;
+                        // Try to get the glyph tagger - it should have been created by MEF by now
+                        DevAssistGlyphTagger glyphTagger = null;
+                        DevAssistErrorTagger errorTagger = null;
 
                         // Try multiple times with delays in case MEF is still loading
                         for (int i = 0; i < 8; i++)
                         {
-                            tagger = DevAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer);
-                            if (tagger != null)
+                            glyphTagger = DevAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer);
+                            errorTagger = DevAssistErrorTaggerProvider.GetTaggerForBuffer(buffer);
+
+                            if (glyphTagger != null && errorTagger != null)
                             {
-                                System.Diagnostics.Debug.WriteLine($"DevAssist: Tagger found on attempt {i + 1}");
+                                System.Diagnostics.Debug.WriteLine($"DevAssist: Both taggers found on attempt {i + 1}");
                                 break;
                             }
-                            System.Diagnostics.Debug.WriteLine($"DevAssist: Tagger not found, attempt {i + 1}/5, waiting...");
+                            System.Diagnostics.Debug.WriteLine($"DevAssist: Taggers not found, attempt {i + 1}/8, waiting...");
                             await System.Threading.Tasks.Task.Delay(200);
                         }
 
-                        if (tagger != null)
+                        if (glyphTagger != null && errorTagger != null)
                         {
-                            System.Diagnostics.Debug.WriteLine("DevAssist: Tagger found, adding test vulnerabilities");
+                            System.Diagnostics.Debug.WriteLine("DevAssist: Both taggers found, adding test vulnerabilities");
 
                             // Create test vulnerabilities
                             var vulnerabilities = new List<Vulnerability>
@@ -115,12 +119,14 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
                                 }
                             };
 
-                            tagger.UpdateVulnerabilities(vulnerabilities);
-                            System.Diagnostics.Debug.WriteLine("DevAssist: Test vulnerabilities added successfully");
+                            // Update both taggers with the same vulnerabilities
+                            glyphTagger.UpdateVulnerabilities(vulnerabilities);
+                            errorTagger.UpdateVulnerabilities(vulnerabilities);
+                            System.Diagnostics.Debug.WriteLine("DevAssist: Test vulnerabilities added to both taggers successfully");
                         }
                         else
                         {
-                            System.Diagnostics.Debug.WriteLine("DevAssist: Tagger is NULL - MEF hasn't created it yet");
+                            System.Diagnostics.Debug.WriteLine("DevAssist: Taggers are NULL - MEF hasn't created them yet");
                         }
                     });
                 }

@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.ComponentModelHost;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core.Models;
 using Task = System.Threading.Tasks.Task;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -68,38 +69,58 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
                 var buffer = textView.TextBuffer;
 
-                // Create tagger DIRECTLY without MEF
-                System.Diagnostics.Debug.WriteLine("DevAssist: Creating tagger DIRECTLY (bypassing MEF)");
-                var tagger = new DevAssistGlyphTagger(buffer);
+                // Create glyph tagger DIRECTLY without MEF
+                System.Diagnostics.Debug.WriteLine("DevAssist: Creating glyph tagger DIRECTLY (bypassing MEF)");
+                var glyphTagger = new DevAssistGlyphTagger(buffer);
 
                 // Store it in buffer properties so the glyph factory can find it
                 try
                 {
-                    buffer.Properties.AddProperty(typeof(DevAssistGlyphTagger), tagger);
-                    System.Diagnostics.Debug.WriteLine("DevAssist: Tagger stored in buffer properties");
+                    buffer.Properties.AddProperty(typeof(DevAssistGlyphTagger), glyphTagger);
+                    System.Diagnostics.Debug.WriteLine("DevAssist: Glyph tagger stored in buffer properties");
                 }
                 catch
                 {
                     buffer.Properties.RemoveProperty(typeof(DevAssistGlyphTagger));
-                    buffer.Properties.AddProperty(typeof(DevAssistGlyphTagger), tagger);
-                    System.Diagnostics.Debug.WriteLine("DevAssist: Tagger replaced in buffer properties");
+                    buffer.Properties.AddProperty(typeof(DevAssistGlyphTagger), glyphTagger);
+                    System.Diagnostics.Debug.WriteLine("DevAssist: Glyph tagger replaced in buffer properties");
+                }
+
+                // Create error tagger DIRECTLY without MEF (for colored squiggly underlines)
+                System.Diagnostics.Debug.WriteLine("DevAssist: Creating error tagger DIRECTLY (bypassing MEF)");
+                var errorTagger = new DevAssistErrorTagger(buffer);
+
+                // Store it in buffer properties
+                try
+                {
+                    buffer.Properties.AddProperty(typeof(DevAssistErrorTagger), errorTagger);
+                    System.Diagnostics.Debug.WriteLine("DevAssist: Error tagger stored in buffer properties");
+                }
+                catch
+                {
+                    buffer.Properties.RemoveProperty(typeof(DevAssistErrorTagger));
+                    buffer.Properties.AddProperty(typeof(DevAssistErrorTagger), errorTagger);
+                    System.Diagnostics.Debug.WriteLine("DevAssist: Error tagger replaced in buffer properties");
                 }
 
                 // Create test vulnerabilities - including Ok, Unknown, and Ignored severity levels
                 var vulnerabilities = new List<Vulnerability>
                 {
-                    new Vulnerability { Id = "TEST-001", Severity = SeverityLevel.Malicious, LineNumber = 1, Description = "Test Malicious" },
-                    new Vulnerability { Id = "TEST-002", Severity = SeverityLevel.Critical, LineNumber = 3, Description = "Test Critical" },
-                    new Vulnerability { Id = "TEST-003", Severity = SeverityLevel.High, LineNumber = 5, Description = "Test High" },
-                    new Vulnerability { Id = "TEST-004", Severity = SeverityLevel.Medium, LineNumber = 7, Description = "Test Medium" },
-                    new Vulnerability { Id = "TEST-005", Severity = SeverityLevel.Low, LineNumber = 9, Description = "Test Low" },
-                    new Vulnerability { Id = "TEST-006", Severity = SeverityLevel.Unknown, LineNumber = 11, Description = "Test Unknown" },
-                    new Vulnerability { Id = "TEST-007", Severity = SeverityLevel.Ok, LineNumber = 13, Description = "Test Ok" },
-                    new Vulnerability { Id = "TEST-008", Severity = SeverityLevel.Ignored, LineNumber = 15, Description = "Test Ignored" }
+                    new Vulnerability { Id = "TEST-001", Severity = SeverityLevel.Malicious, LineNumber = 1, Description = "Test Malicious vulnerability" },
+                    new Vulnerability { Id = "TEST-002", Severity = SeverityLevel.Critical, LineNumber = 3, Description = "Test Critical vulnerability" },
+                    new Vulnerability { Id = "TEST-003", Severity = SeverityLevel.High, LineNumber = 5, Description = "Test High vulnerability" },
+                    new Vulnerability { Id = "TEST-004", Severity = SeverityLevel.Medium, LineNumber = 7, Description = "Test Medium vulnerability" },
+                    new Vulnerability { Id = "TEST-005", Severity = SeverityLevel.Low, LineNumber = 9, Description = "Test Low vulnerability" },
+                    new Vulnerability { Id = "TEST-006", Severity = SeverityLevel.Unknown, LineNumber = 11, Description = "Test Unknown vulnerability" },
+                    new Vulnerability { Id = "TEST-007", Severity = SeverityLevel.Ok, LineNumber = 13, Description = "Test Ok vulnerability" },
+                    new Vulnerability { Id = "TEST-008", Severity = SeverityLevel.Ignored, LineNumber = 15, Description = "Test Ignored vulnerability" }
                 };
 
-                System.Diagnostics.Debug.WriteLine($"DevAssist: Adding {vulnerabilities.Count} test vulnerabilities");
-                tagger.UpdateVulnerabilities(vulnerabilities);
+                System.Diagnostics.Debug.WriteLine($"DevAssist: Adding {vulnerabilities.Count} test vulnerabilities to both taggers");
+
+                // Update both taggers with the same vulnerabilities
+                glyphTagger.UpdateVulnerabilities(vulnerabilities);
+                errorTagger.UpdateVulnerabilities(vulnerabilities);
 
                 // Force the text view to refresh
                 System.Diagnostics.Debug.WriteLine("DevAssist: Forcing text view refresh");
@@ -108,18 +129,25 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 VsShellUtilities.ShowMessageBox(
                     this.package,
                     $"✅ Direct test completed!\n\n" +
-                    $"Added {vulnerabilities.Count} test vulnerabilities with gutter icons:\n\n" +
-                    $"🔴 Line 1: Malicious\n" +
-                    $"🔴 Line 3: Critical\n" +
-                    $"🟠 Line 5: High\n" +
-                    $"🟡 Line 7: Medium\n" +
-                    $"🟢 Line 9: Low\n" +
-                    $"⚪ Line 11: Unknown\n" +
-                    $"✅ Line 13: Ok\n" +
-                    $"🚫 Line 15: Ignored\n\n" +
-                    $"Check the LEFT MARGIN (gutter) for severity icons.\n" +
-                    $"Hover over icons to see tooltips.",
-                    "Test Gutter Icons - Direct",
+                    $"Added {vulnerabilities.Count} test vulnerabilities with:\n" +
+                    $"• Gutter icons (left margin) - ALL 8 severities\n" +
+                    $"• Custom colored squiggly underlines - ONLY 5 main severities\n\n" +
+                    $"CUSTOM COLORED UNDERLINES:\n" +
+                    $"🔴 Line 1: Malicious (CRIMSON squiggly)\n" +
+                    $"🔴 Line 3: Critical (RED squiggly)\n" +
+                    $"🟠 Line 5: High (ORANGE squiggly)\n" +
+                    $"🟡 Line 7: Medium (GOLD squiggly)\n" +
+                    $"🟢 Line 9: Low (GREEN squiggly)\n\n" +
+                    $"GUTTER ICONS ONLY (No underlines):\n" +
+                    $"⚪ Line 11: Unknown (icon only)\n" +
+                    $"✅ Line 13: Ok (icon only)\n" +
+                    $"🚫 Line 15: Ignored (icon only)\n\n" +
+                    $"Features:\n" +
+                    $"✅ Custom colored squiggly underlines (adornment layer)\n" +
+                    $"✅ Tooltips on hover\n" +
+                    $"✅ Gutter icons for all severities\n" +
+                    $"✅ Similar to JetBrains plugin",
+                    "Test DevAssist Gutter Icons & Custom Colored Markers",
                     OLEMSGICON.OLEMSGICON_INFO,
                     OLEMSGBUTTON.OLEMSGBUTTON_OK,
                     OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
