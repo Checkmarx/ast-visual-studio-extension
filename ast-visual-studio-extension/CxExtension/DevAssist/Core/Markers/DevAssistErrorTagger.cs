@@ -8,12 +8,10 @@ using System.Linq;
 namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
 {
     /// <summary>
-    /// Tagger that provides error tags for DevAssist vulnerabilities
-    /// Based on JetBrains MarkupModel.addRangeHighlighter pattern
-    /// Creates severity-based colored squiggly underlines in the text editor
-    /// Similar to JetBrains EffectType.WAVE_UNDERSCORE implementation
+    /// Tagger that provides IErrorTag for DevAssist vulnerabilities.
+    /// Uses VS built-in ErrorTag only; no custom tag. VS draws squiggles and shows tooltip.
     /// </summary>
-    internal class DevAssistErrorTagger : ITagger<DevAssistErrorTag>
+    internal class DevAssistErrorTagger : ITagger<IErrorTag>
     {
         private readonly ITextBuffer _buffer;
         private readonly Dictionary<int, List<Vulnerability>> _vulnerabilitiesByLine;
@@ -26,7 +24,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
             _vulnerabilitiesByLine = new Dictionary<int, List<Vulnerability>>();
         }
 
-        public IEnumerable<ITagSpan<DevAssistErrorTag>> GetTags(NormalizedSnapshotSpanCollection spans)
+        public IEnumerable<ITagSpan<IErrorTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             System.Diagnostics.Debug.WriteLine($"DevAssist Markers: GetTags called - spans count: {spans.Count}, vulnerabilities count: {_vulnerabilitiesByLine.Count}");
 
@@ -48,13 +46,8 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                 {
                     if (_vulnerabilitiesByLine.TryGetValue(lineNumber, out var vulnerabilities))
                     {
-                        // Create error tags ONLY for actual severity vulnerabilities (not Unknown, Ok, Ignored)
-                        // Similar to JetBrains plugin which shows underlines only for real issues
-                        // Each vulnerability gets its own squiggly underline
                         foreach (var vulnerability in vulnerabilities)
                         {
-                            // Filter: Show underlines ONLY for Malicious, Critical, High, Medium, Low
-                            // Do NOT show underlines for Unknown, Ok, Ignored (they only get gutter icons)
                             if (!ShouldShowUnderline(vulnerability.Severity))
                             {
                                 System.Diagnostics.Debug.WriteLine($"DevAssist Markers: Skipping underline for {vulnerability.Severity} on line {lineNumber}");
@@ -62,21 +55,14 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                             }
 
                             var line = snapshot.GetLineFromLineNumber(lineNumber);
-
-                            // Create span for the entire line (similar to JetBrains TextRange)
-                            // In the future, this could be refined to highlight specific code ranges
                             var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
 
                             var tooltipText = BuildTooltipText(vulnerability);
-                            var tag = new DevAssistErrorTag(
-                                vulnerability.Severity.ToString(),
-                                tooltipText,
-                                vulnerability.Id
-                            );
+                            IErrorTag tag = new ErrorTag("Error", tooltipText);
 
                             tagCount++;
                             System.Diagnostics.Debug.WriteLine($"DevAssist Markers: Creating error tag #{tagCount} for line {lineNumber}, severity: {vulnerability.Severity}");
-                            yield return new TagSpan<DevAssistErrorTag>(lineSpan, tag);
+                            yield return new TagSpan<IErrorTag>(lineSpan, tag);
                         }
                     }
                 }
@@ -113,12 +99,12 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         }
 
         /// <summary>
-        /// Builds tooltip text for a vulnerability
-        /// Similar to JetBrains GutterIconRenderer.getTooltipText()
+        /// Builds plain string tooltip for a vulnerability (VS default tooltip).
         /// </summary>
-        private string BuildTooltipText(Vulnerability vulnerability)
+        private static string BuildTooltipText(Vulnerability vulnerability)
         {
-            return $"[{vulnerability.Severity}] {vulnerability.Description}\nID: {vulnerability.Id}";
+            if (vulnerability == null) return string.Empty;
+            return $"[{vulnerability.Severity}] {vulnerability.Title}\n{vulnerability.Description}\nID: {vulnerability.Id}";
         }
 
         /// <summary>

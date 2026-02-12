@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
@@ -140,6 +140,9 @@
     <Compile Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsControl.xaml.cs">
       <DependentUpon>DevAssistFindingsControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.xaml.cs">
+      <DependentUpon>DevAssistHoverPopup.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>
     </Compile>
@@ -153,11 +156,9 @@
     <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTagger.cs" />
     <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTaggerProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistTextViewCreationListener.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTag.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTagger.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTaggerProvider.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSquigglyAdornment.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSquigglyAdornmentProvider.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistTestHelper.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\SeverityLevel.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\ScannerType.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\Vulnerability.cs" />
@@ -371,6 +372,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
