@@ -103,17 +103,21 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                     System.Diagnostics.Debug.WriteLine("DevAssist: Error tagger replaced in buffer properties");
                 }
 
-                // Create test vulnerabilities - including Ok, Unknown, and Ignored severity levels
+                // Create test vulnerabilities: Critical, High, Medium, Low for colored marker verification (AST-133227)
                 var vulnerabilities = new List<Vulnerability>
                 {
-                    new Vulnerability { Id = "TEST-001", Severity = SeverityLevel.Malicious, LineNumber = 1, Description = "Test Malicious vulnerability" },
-                    new Vulnerability { Id = "TEST-002", Severity = SeverityLevel.Critical, LineNumber = 3, Description = "Test Critical vulnerability" },
-                    new Vulnerability { Id = "TEST-003", Severity = SeverityLevel.High, LineNumber = 5, Description = "Test High vulnerability" },
-                    new Vulnerability { Id = "TEST-004", Severity = SeverityLevel.Medium, LineNumber = 7, Description = "Test Medium vulnerability" },
-                    new Vulnerability { Id = "TEST-005", Severity = SeverityLevel.Low, LineNumber = 9, Description = "Test Low vulnerability" },
-                    new Vulnerability { Id = "TEST-006", Severity = SeverityLevel.Unknown, LineNumber = 11, Description = "Test Unknown vulnerability" },
-                    new Vulnerability { Id = "TEST-007", Severity = SeverityLevel.Ok, LineNumber = 13, Description = "Test Ok vulnerability" },
-                    new Vulnerability { Id = "TEST-008", Severity = SeverityLevel.Ignored, LineNumber = 15, Description = "Test Ignored vulnerability" }
+                    // Scanner-specific vulnerabilities (cover Critical, High, Medium)
+                    DevAssistTestHelper.CreateOssVulnerability(),         // Line 5:  High (red)
+                    DevAssistTestHelper.CreateLowSeverityVulnerability(), // Line 7:  Low (green) - visual distinction
+                    DevAssistTestHelper.CreateAscaVulnerability(),       // Line 42: Critical (dark red)
+                    DevAssistTestHelper.CreateIacVulnerability(),         // Line 28: High (red)
+                    DevAssistTestHelper.CreateSecretsVulnerability(),     // Line 12: Critical (dark red)
+                    DevAssistTestHelper.CreateContainersVulnerability(),  // Line 1:  Medium (orange)
+
+                    // Additional test vulnerabilities for other severity levels (gutter only, no underline)
+                    new Vulnerability { Id = "TEST-006", Severity = SeverityLevel.Unknown, LineNumber = 11, Description = "Test Unknown vulnerability", Scanner = ScannerType.ASCA },
+                    new Vulnerability { Id = "TEST-007", Severity = SeverityLevel.Ok, LineNumber = 13, Description = "Test Ok vulnerability", Scanner = ScannerType.OSS },
+                    new Vulnerability { Id = "TEST-008", Severity = SeverityLevel.Ignored, LineNumber = 15, Description = "Test Ignored vulnerability", Scanner = ScannerType.IaC }
                 };
 
                 System.Diagnostics.Debug.WriteLine($"DevAssist: Adding {vulnerabilities.Count} test vulnerabilities to both taggers");
@@ -128,26 +132,28 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
                 VsShellUtilities.ShowMessageBox(
                     this.package,
-                    $"✅ Direct test completed!\n\n" +
-                    $"Added {vulnerabilities.Count} test vulnerabilities with:\n" +
-                    $"• Gutter icons (left margin) - ALL 8 severities\n" +
-                    $"• Custom colored squiggly underlines - ONLY 5 main severities\n\n" +
-                    $"CUSTOM COLORED UNDERLINES:\n" +
-                    $"🔴 Line 1: Malicious (CRIMSON squiggly)\n" +
-                    $"🔴 Line 3: Critical (RED squiggly)\n" +
-                    $"🟠 Line 5: High (ORANGE squiggly)\n" +
-                    $"🟡 Line 7: Medium (GOLD squiggly)\n" +
-                    $"🟢 Line 9: Low (GREEN squiggly)\n\n" +
-                    $"GUTTER ICONS ONLY (No underlines):\n" +
-                    $"⚪ Line 11: Unknown (icon only)\n" +
-                    $"✅ Line 13: Ok (icon only)\n" +
-                    $"🚫 Line 15: Ignored (icon only)\n\n" +
-                    $"Features:\n" +
-                    $"✅ Custom colored squiggly underlines (adornment layer)\n" +
-                    $"✅ Tooltips on hover\n" +
-                    $"✅ Gutter icons for all severities\n" +
-                    $"✅ Similar to JetBrains plugin",
-                    "Test DevAssist Gutter Icons & Custom Colored Markers",
+                    $"✅ DevAssist Hover Popup Test - Scanner-Specific Data!\n\n" +
+                    $"Added {vulnerabilities.Count} test vulnerabilities with rich scanner-specific data:\n\n" +
+                    $"SCANNER-SPECIFIC VULNERABILITIES:\n" +
+                    $"🟢 Line 5: OSS - Package vulnerability\n" +
+                    $"   • Package: lodash@4.17.15\n" +
+                    $"   • CVE: CVE-2020-8203, CVSS: 7.4\n" +
+                    $"   • Recommended: 4.17.21\n\n" +
+                    $"🔴 Line 42: ASCA - SQL Injection\n" +
+                    $"   • Remediation advice included\n\n" +
+                    $"🟣 Line 28: IaC - S3 Bucket Public\n" +
+                    $"   • Expected vs Actual values\n\n" +
+                    $"🔴 Line 12: Secrets - Hardcoded API Key\n" +
+                    $"   • Secret type: API Key\n\n" +
+                    $"🟠 Line 1: Containers - Vulnerable Image\n" +
+                    $"   • CVE: CVE-2021-3711, CVSS: 9.8\n\n" +
+                    $"HOVER OVER ANY LINE TO SEE:\n" +
+                    $"✅ Rich hover popup with scanner badge\n" +
+                    $"✅ Scanner-specific content (CVE, CVSS, remediation, etc.)\n" +
+                    $"✅ Action links (View Details, Navigate, Learn More, Apply Fix)\n" +
+                    $"✅ Theme-aware styling\n" +
+                    $"✅ Similar to JetBrains implementation",
+                    "Test DevAssist Hover Popup - Scanner-Specific Content",
                     OLEMSGICON.OLEMSGICON_INFO,
                     OLEMSGBUTTON.OLEMSGBUTTON_OK,
                     OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);

@@ -10,14 +10,13 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
     /// <summary>
     /// MEF provider for DevAssist error tagger
     /// Based on JetBrains EditorFactoryListener pattern adapted for Visual Studio
-    /// Creates and manages error tagger instances per buffer (not per view)
-    /// Provides severity-based colored squiggly underlines similar to JetBrains WAVE_UNDERSCORE
-    /// IMPORTANT: Uses ITaggerProvider (not IViewTaggerProvider) for error tags
+    /// Creates and manages error tagger instances per buffer (not per view).
+    /// Exports IErrorTag so VS built-in error layer draws squiggles using IErrorType (CompilerError / syntax error colour).
     /// </summary>
     [Export(typeof(ITaggerProvider))]
     [ContentType("code")]
     [ContentType("text")]
-    [TagType(typeof(DevAssistErrorTag))]
+    [TagType(typeof(IErrorTag))]
     [TextViewRole(PredefinedTextViewRoles.Document)]
     [TextViewRole(PredefinedTextViewRoles.Editable)]
     internal class DevAssistErrorTaggerProvider : ITaggerProvider

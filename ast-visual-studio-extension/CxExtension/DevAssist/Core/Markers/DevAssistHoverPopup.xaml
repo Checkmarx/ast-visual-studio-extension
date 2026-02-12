@@ -1,0 +1,204 @@
+<UserControl x:Class="ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers.DevAssistHoverPopup"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+             MaxWidth="500">
+    <Border Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipBrushKey}}"
+            BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipBorderBrushKey}}"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="12">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="8" ShadowDepth="2"/>
+        </Border.Effect>
+        
+        <StackPanel>
+            <!-- Header with Severity Icon and Title -->
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Severity Icon -->
+                <Image x:Name="SeverityIcon" 
+                       Grid.Column="0"
+                       Width="20" 
+                       Height="20" 
+                       Margin="0,0,8,0"
+                       VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                
+                <!-- Vulnerability Title -->
+                <TextBlock x:Name="TitleText" 
+                           Grid.Column="1"
+                           FontWeight="SemiBold"
+                           FontSize="13"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"/>
+                
+                <!-- Scanner Badge -->
+                <Border x:Name="ScannerBadge"
+                        Grid.Column="2"
+                        CornerRadius="3"
+                        Padding="6,2"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center">
+                    <TextBlock x:Name="ScannerText"
+                               FontSize="10"
+                               FontWeight="SemiBold"
+                               Foreground="White"/>
+                </Border>
+            </Grid>
+            
+            <!-- Separator -->
+            <Border Height="1" 
+                    Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipBorderBrushKey}}"
+                    Margin="0,0,0,8"/>
+            
+            <!-- Description -->
+            <TextBlock x:Name="DescriptionText"
+                       TextWrapping="Wrap"
+                       FontSize="12"
+                       Margin="0,0,0,8"
+                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"/>
+            
+            <!-- Package Information (for SCA/OSS) -->
+            <StackPanel x:Name="PackageInfoPanel" Visibility="Collapsed" Margin="0,0,0,8">
+                <TextBlock FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"
+                           Margin="0,0,0,4">
+                    Package:
+                </TextBlock>
+                <TextBlock x:Name="PackageNameText"
+                           FontSize="11"
+                           FontFamily="Consolas"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"
+                           Margin="0,0,0,2"/>
+
+                <!-- CVE Information -->
+                <TextBlock x:Name="CveText"
+                           FontSize="11"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"
+                           Margin="0,4,0,2"
+                           Visibility="Collapsed"/>
+
+                <!-- CVSS Score -->
+                <TextBlock x:Name="CvssScoreText"
+                           FontSize="11"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"
+                           Margin="0,2,0,2"
+                           Visibility="Collapsed"/>
+
+                <!-- Recommended Version -->
+                <StackPanel x:Name="RecommendedVersionPanel" Orientation="Horizontal" Margin="0,4,0,0" Visibility="Collapsed">
+                    <TextBlock FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}">
+                        Recommended:
+                    </TextBlock>
+                    <TextBlock x:Name="RecommendedVersionText"
+                               FontSize="11"
+                               FontFamily="Consolas"
+                               Foreground="#107C10"
+                               Margin="4,0,0,0"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- SAST/ASCA Remediation Advice -->
+            <StackPanel x:Name="RemediationPanel" Visibility="Collapsed" Margin="0,0,0,8">
+                <TextBlock FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"
+                           Margin="0,0,0,4">
+                    Remediation:
+                </TextBlock>
+                <TextBlock x:Name="RemediationText"
+                           FontSize="11"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"/>
+            </StackPanel>
+
+            <!-- KICS/IaC Expected vs Actual Values -->
+            <StackPanel x:Name="IacValuesPanel" Visibility="Collapsed" Margin="0,0,0,8">
+                <TextBlock FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"
+                           Margin="0,0,0,4">
+                    Expected Value:
+                </TextBlock>
+                <TextBlock x:Name="ExpectedValueText"
+                           FontSize="11"
+                           FontFamily="Consolas"
+                           Foreground="#107C10"
+                           Margin="0,0,0,8"/>
+
+                <TextBlock FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}"
+                           Margin="0,0,0,4">
+                    Actual Value:
+                </TextBlock>
+                <TextBlock x:Name="ActualValueText"
+                           FontSize="11"
+                           FontFamily="Consolas"
+                           Foreground="#D32F2F"/>
+            </StackPanel>
+            
+            <!-- Location Information -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock FontSize="11"
+                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipTextBrushKey}}">
+                    <Run Text="Location: "/>
+                    <Run x:Name="LocationText" FontFamily="Consolas"/>
+                </TextBlock>
+            </StackPanel>
+            
+            <!-- Separator -->
+            <Border Height="1" 
+                    Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolTipBorderBrushKey}}"
+                    Margin="0,0,0,8"/>
+            
+            <!-- Action Links -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock>
+                    <Hyperlink x:Name="ViewDetailsLink"
+                               TextDecorations="None"
+                               Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ControlLinkTextBrushKey}}">
+                        <Run Text="View Details"/>
+                    </Hyperlink>
+                </TextBlock>
+
+                <TextBlock Margin="12,0,0,0">
+                    <Hyperlink x:Name="NavigateToCodeLink"
+                               TextDecorations="None"
+                               Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ControlLinkTextBrushKey}}">
+                        <Run Text="Navigate to Code"/>
+                    </Hyperlink>
+                </TextBlock>
+
+                <!-- Learn More Link (for vulnerabilities with external documentation) -->
+                <TextBlock x:Name="LearnMoreLinkBlock" Margin="12,0,0,0" Visibility="Collapsed">
+                    <Hyperlink x:Name="LearnMoreLink"
+                               TextDecorations="None"
+                               Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ControlLinkTextBrushKey}}">
+                        <Run Text="Learn More"/>
+                    </Hyperlink>
+                </TextBlock>
+
+                <!-- Fix/Remediate Link (for SCA with recommended version) -->
+                <TextBlock x:Name="ApplyFixLinkBlock" Margin="12,0,0,0" Visibility="Collapsed">
+                    <Hyperlink x:Name="ApplyFixLink"
+                               TextDecorations="None"
+                               Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ControlLinkTextBrushKey}}">
+                        <Run Text="Apply Fix"/>
+                    </Hyperlink>
+                </TextBlock>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>
+
