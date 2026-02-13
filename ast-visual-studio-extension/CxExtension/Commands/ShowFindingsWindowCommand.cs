@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core;
 using ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow;
 
 namespace ast_visual_studio_extension.CxExtension.Commands
@@ -84,81 +85,13 @@ namespace ast_visual_studio_extension.CxExtension.Commands
         {
             if (control == null) return;
 
-            var fileNodes = new ObservableCollection<FileNode>();
+            // Same common mock data as gutter, underline, and popup hover (one source of truth)
+            var vulnerabilities = DevAssistMockData.GetCommonVulnerabilities(DevAssistMockData.DefaultFilePath);
+            var fileNodes = DevAssistMockData.BuildFileNodesFromVulnerabilities(
+                vulnerabilities,
+                loadSeverityIcon: LoadSeverityIcon,
+                loadFileIcon: () => LoadIcon("document.png"));
 
-            // File 1: go.mod with High and Medium vulnerabilities
-            var file1 = new FileNode
-            {
-                FileName = "go.mod",
-                FilePath = "C:\\Projects\\TestProject\\go.mod",
-                FileIcon = LoadIcon("document.png")
-            };
-
-            file1.Vulnerabilities.Add(new VulnerabilityNode
-            {
-                Severity = "High",
-                SeverityIcon = LoadSeverityIcon("High"),
-                PackageName = "helm.sh/helm/v3",
-                PackageVersion = "v3.18.2",
-                Line = 38,
-                Column = 1,
-                FilePath = file1.FilePath
-            });
-
-            file1.Vulnerabilities.Add(new VulnerabilityNode
-            {
-                Severity = "Medium",
-                SeverityIcon = LoadSeverityIcon("Medium"),
-                PackageName = "github.com/docker/docker",
-                PackageVersion = "v20.10.7",
-                Line = 42,
-                Column = 1,
-                FilePath = file1.FilePath
-            });
-
-            // Add severity counts
-            file1.SeverityCounts.Add(new SeverityCount { Severity = "High", Count = 1, Icon = LoadSeverityIcon("High") });
-            file1.SeverityCounts.Add(new SeverityCount { Severity = "Medium", Count = 1, Icon = LoadSeverityIcon("Medium") });
-
-            fileNodes.Add(file1);
-
-            // File 2: package.json with Malicious and Low vulnerabilities
-            var file2 = new FileNode
-            {
-                FileName = "package.json",
-                FilePath = "C:\\Projects\\TestProject\\package.json",
-                FileIcon = LoadIcon("document.png")
-            };
-
-            file2.Vulnerabilities.Add(new VulnerabilityNode
-            {
-                Severity = "Malicious",
-                SeverityIcon = LoadSeverityIcon("Malicious"),
-                PackageName = "evil-package",
-                PackageVersion = "1.0.0",
-                Line = 15,
-                Column = 4,
-                FilePath = file2.FilePath
-            });
-
-            file2.Vulnerabilities.Add(new VulnerabilityNode
-            {
-                Severity = "Low",
-                SeverityIcon = LoadSeverityIcon("Low"),
-                PackageName = "old-library",
-                PackageVersion = "2.3.1",
-                Line = 23,
-                Column = 4,
-                FilePath = file2.FilePath
-            });
-
-            // Add severity counts
-            file2.SeverityCounts.Add(new SeverityCount { Severity = "Malicious", Count = 1, Icon = LoadSeverityIcon("Malicious") });
-            file2.SeverityCounts.Add(new SeverityCount { Severity = "Low", Count = 1, Icon = LoadSeverityIcon("Low") });
-
-            fileNodes.Add(file2);
-
-            // Use SetAllFileNodes to enable filtering
             control.SetAllFileNodes(fileNodes);
         }
 

@@ -277,12 +277,17 @@
                   Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}">
 
-            <!-- Context Menu -->
+            <!-- Context Menu (right-click on vulnerability) -->
             <TreeView.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Copy" Click="CopyMenuItem_Click">
+                    <MenuItem Header="Fix with CxOne Assist" Click="FixWithCxOneAssist_Click">
                         <MenuItem.Icon>
-                            <TextBlock Text="📋" FontSize="14"/>
+                            <TextBlock Text="🔧" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="View Details" Click="ViewDetails_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="ℹ" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Navigate to Code" Click="NavigateMenuItem_Click">
@@ -291,9 +296,20 @@
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Ignore Finding" Click="IgnoreMenuItem_Click">
+                    <MenuItem Header="Ignore vuln" Click="Ignore_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="🚫" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Ignore all" Click="IgnoreAll_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="🚫" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Copy" Click="CopyMenuItem_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="📋" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>

@@ -166,6 +166,7 @@
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSource.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSourceProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistTestHelper.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\DevAssistMockData.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\SeverityLevel.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\ScannerType.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\Vulnerability.cs" />
