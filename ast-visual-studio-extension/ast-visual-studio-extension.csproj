@@ -138,6 +138,9 @@
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.xaml.cs">
       <DependentUpon>DevAssistHoverPopup.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.Designer.cs">
+      <DependentUpon>DevAssistHoverPopup.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>
     </Compile>
@@ -153,6 +156,10 @@
     <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistTextViewCreationListener.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTagger.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTaggerProvider.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoController.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoControllerProvider.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSource.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSourceProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistTestHelper.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\SeverityLevel.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Models\ScannerType.cs" />
@@ -205,6 +212,8 @@
     <PackageReference Include="Microsoft.TeamFoundationServer.Client">
       <Version>19.225.1</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense" Version="17.9.187" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.12.2069">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -345,6 +354,15 @@
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\container.png" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\package.png" />
     <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\cxone_assist.png" />
+    <!-- DevAssist severity_count (hover popup when multiple findings on same line) -->
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\critical.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\high.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\medium.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\low.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\critical.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\high.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\medium.png" />
+    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\low.png" />
     <Content Include="CxPreferences\Resources\CxPreferencesPackage.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -370,10 +388,9 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    <EmbeddedResource Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.xaml">
+      <LogicalName>ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers.DevAssistHoverPopup.xaml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

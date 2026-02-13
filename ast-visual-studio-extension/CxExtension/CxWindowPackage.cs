@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.Commands;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
@@ -36,7 +36,6 @@ namespace ast_visual_studio_extension.CxExtension
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
-    [ProvideMenuResource("Menus1.ctmenu", 1)]
     [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideToolWindow(typeof(CxWindow),Style = VsDockStyle.Tabbed,Orientation = ToolWindowOrientation.Right,Window = EnvDTE.Constants.vsWindowKindOutput,Transient = false)]
@@ -71,8 +70,7 @@ namespace ast_visual_studio_extension.CxExtension
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
 
-                // Test Gutter Icons Direct Command (tool command only, not visible in menu)
-                await TestGutterIconsDirectCommand.InitializeAsync(this);
+                // Test DevAssist Hover Popup is registered in ast_visual_studio_extensionPackage so it appears under Tools.
 
                 // Test Error List Customization Command (POC for AST-133228)
                 await TestErrorListCustomizationCommand.InitializeAsync(this);
