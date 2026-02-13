@@ -12,7 +12,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
     /// <summary>
     /// POC Command to test Visual Studio Error List customization capabilities
     /// Tests: Custom icons, severity-based styling, context menus, grouping
-    /// Part of AST-133228 - POC - Problem Window Customization Validation
+    /// Part     of AST-133228 - POC - Problem Window Customization Validation
     /// </summary>
     internal sealed class TestErrorListCustomizationCommand
     {

@@ -14,8 +14,8 @@ using Microsoft.VisualStudio.Shell.Interop;
 namespace ast_visual_studio_extension.CxExtension.Commands
 {
     /// <summary>
-    /// Direct test command that manually creates tagger without MEF
-    /// This bypasses MEF to test if the glyph rendering works at all
+    /// Test command that injects sample vulnerabilities into the provider-managed taggers
+    /// so that squiggles, gutter icons, and the rich Quick Info hover (badge, links, etc.) all see the same data.
     /// </summary>
     internal sealed class TestGutterIconsDirectCommand
     {
@@ -69,39 +69,25 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
                 var buffer = textView.TextBuffer;
 
-                // Create glyph tagger DIRECTLY without MEF
-                System.Diagnostics.Debug.WriteLine("DevAssist: Creating glyph tagger DIRECTLY (bypassing MEF)");
-                var glyphTagger = new DevAssistGlyphTagger(buffer);
+                // Use the same taggers the editor and Quick Info use (from MEF providers).
+                // Creating new taggers and storing in buffer.Properties would not be used by
+                // the error layer or Quick Info source, so the rich hover would never see data.
+                var glyphTagger = DevAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer);
+                var errorTagger = DevAssistErrorTaggerProvider.GetTaggerForBuffer(buffer);
 
-                // Store it in buffer properties so the glyph factory can find it
-                try
+                if (glyphTagger == null || errorTagger == null)
                 {
-                    buffer.Properties.AddProperty(typeof(DevAssistGlyphTagger), glyphTagger);
-                    System.Diagnostics.Debug.WriteLine("DevAssist: Glyph tagger stored in buffer properties");
-                }
-                catch
-                {
-                    buffer.Properties.RemoveProperty(typeof(DevAssistGlyphTagger));
-                    buffer.Properties.AddProperty(typeof(DevAssistGlyphTagger), glyphTagger);
-                    System.Diagnostics.Debug.WriteLine("DevAssist: Glyph tagger replaced in buffer properties");
+                    VsShellUtilities.ShowMessageBox(
+                        this.package,
+                        "DevAssist taggers not ready for this buffer. Ensure the code file is open and focused, then run this command again.",
+                        "Test DevAssist Hover Popup",
+                        OLEMSGICON.OLEMSGICON_WARNING,
+                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                    return;
                 }
 
-                // Create error tagger DIRECTLY without MEF (for colored squiggly underlines)
-                System.Diagnostics.Debug.WriteLine("DevAssist: Creating error tagger DIRECTLY (bypassing MEF)");
-                var errorTagger = new DevAssistErrorTagger(buffer);
-
-                // Store it in buffer properties
-                try
-                {
-                    buffer.Properties.AddProperty(typeof(DevAssistErrorTagger), errorTagger);
-                    System.Diagnostics.Debug.WriteLine("DevAssist: Error tagger stored in buffer properties");
-                }
-                catch
-                {
-                    buffer.Properties.RemoveProperty(typeof(DevAssistErrorTagger));
-                    buffer.Properties.AddProperty(typeof(DevAssistErrorTagger), errorTagger);
-                    System.Diagnostics.Debug.WriteLine("DevAssist: Error tagger replaced in buffer properties");
-                }
+                System.Diagnostics.Debug.WriteLine("DevAssist: Using provider taggers for glyph and error (same as editor and Quick Info)");
 
                 // Create test vulnerabilities: Critical, High, Medium, Low for colored marker verification (AST-133227)
                 var vulnerabilities = new List<Vulnerability>
@@ -113,6 +99,9 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                     DevAssistTestHelper.CreateIacVulnerability(),         // Line 28: High (red)
                     DevAssistTestHelper.CreateSecretsVulnerability(),     // Line 12: Critical (dark red)
                     DevAssistTestHelper.CreateContainersVulnerability(),  // Line 1:  Medium (orange)
+
+                    // Line 5: second finding on same line -> popup shows severity count row (Critical + High)
+                    new Vulnerability { Id = "TEST-005B", Title = "Second finding on line 5", Severity = SeverityLevel.Critical, LineNumber = 5, Scanner = ScannerType.ASCA, Description = "Multiple findings on one line test." },
 
                     // Additional test vulnerabilities for other severity levels (gutter only, no underline)
                     new Vulnerability { Id = "TEST-006", Severity = SeverityLevel.Unknown, LineNumber = 11, Description = "Test Unknown vulnerability", Scanner = ScannerType.ASCA },
