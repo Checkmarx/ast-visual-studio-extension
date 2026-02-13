@@ -58,10 +58,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             List<Scan> completedScans = scanList.Where(scan => scan.Status.Equals("completed", StringComparison.OrdinalIgnoreCase)).ToList();
 
             Dictionary<Scan, Results> scansWithResults = GetFirstScanWithResults(completedScans);
-            if (!scansWithResults.Any())
-            {
-                throw new SkipException("No completed scan with SAST results found. Ensure test project has at least one completed scan with findings.");
-            }
             Results results = scansWithResults.First().Value;
 
             Assert.Equal(results.totalCount, results.results.Count);

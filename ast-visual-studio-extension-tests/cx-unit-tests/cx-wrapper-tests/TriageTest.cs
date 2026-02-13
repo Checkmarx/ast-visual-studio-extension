@@ -17,10 +17,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.True(scanList.Any());
 
             Dictionary<Scan, Results> scansWithResults = GetFirstScanWithResults(scanList);
-            if (!scansWithResults.Any())
-            {
-                throw new SkipException("No completed scan with SAST results found. Ensure test project has at least one completed scan with findings.");
-            }
             KeyValuePair<Scan, Results> first = scansWithResults.First();
             Scan scan = first.Key;
             Result result = first.Value.results.Where(r => r.Type.Equals("sast")).First();
@@ -37,10 +33,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.True(scanList.Count > 0);
 
             Dictionary<Scan, Results> scansWithResults = GetFirstScanWithResults(scanList);
-            if (!scansWithResults.Any())
-            {
-                throw new SkipException("No completed scan with SAST results found. Ensure test project has at least one completed scan with findings.");
-            }
             KeyValuePair<Scan, Results> first = scansWithResults.First();
             Scan scan = first.Key;
             Result result = first.Value.results.Where(r => r.Type.Equals("sast")).First();
