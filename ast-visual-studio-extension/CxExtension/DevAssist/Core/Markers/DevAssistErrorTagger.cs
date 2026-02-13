@@ -99,12 +99,12 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         }
 
         /// <summary>
-        /// Builds plain string tooltip for a vulnerability (VS default tooltip).
+        /// Builds tooltip text for ErrorTag. Minimal so the rich Quick Info popup (inserted first) is the main hover content.
         /// </summary>
         private static string BuildTooltipText(Vulnerability vulnerability)
         {
             if (vulnerability == null) return string.Empty;
-            return $"[{vulnerability.Severity}] {vulnerability.Title}\n{vulnerability.Description}\nID: {vulnerability.Id}";
+            return "Hover for details";
         }
 
         /// <summary>
@@ -153,6 +153,16 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         {
             System.Diagnostics.Debug.WriteLine("DevAssist Markers: ClearVulnerabilities called");
             UpdateVulnerabilities(null);
+        }
+
+        /// <summary>
+        /// Gets vulnerabilities on the given line (0-based) for rich Quick Info hover.
+        /// </summary>
+        public IReadOnlyList<Vulnerability> GetVulnerabilitiesForLine(int zeroBasedLineNumber)
+        {
+            if (_vulnerabilitiesByLine.TryGetValue(zeroBasedLineNumber, out var list))
+                return list;
+            return Array.Empty<Vulnerability>();
         }
     }
 }
