@@ -16,8 +16,14 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Any());
 
-            Scan scan = GetFirstScanWithResults(scanList).First().Key;
-            Result result = GetFirstScanWithResults(scanList).First().Value.results.Where(r => r.Type.Equals("sast")).First();
+            Dictionary<Scan, Results> scansWithResults = GetFirstScanWithResults(scanList);
+            if (!scansWithResults.Any())
+            {
+                throw new SkipException("No completed scan with SAST results found. Ensure test project has at least one completed scan with findings.");
+            }
+            KeyValuePair<Scan, Results> first = scansWithResults.First();
+            Scan scan = first.Key;
+            Result result = first.Value.results.Where(r => r.Type.Equals("sast")).First();
 
             List<Predicate> predicates = cxWrapper.TriageShow(scan.ProjectId, result.SimilarityId, result.Type);
 
@@ -30,8 +36,14 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
             Assert.True(scanList.Count > 0);
 
-            Scan scan = GetFirstScanWithResults(scanList).First().Key;
-            Result result = GetFirstScanWithResults(scanList).First().Value.results.Where(r => r.Type.Equals("sast")).First();
+            Dictionary<Scan, Results> scansWithResults = GetFirstScanWithResults(scanList);
+            if (!scansWithResults.Any())
+            {
+                throw new SkipException("No completed scan with SAST results found. Ensure test project has at least one completed scan with findings.");
+            }
+            KeyValuePair<Scan, Results> first = scansWithResults.First();
+            Scan scan = first.Key;
+            Result result = first.Value.results.Where(r => r.Type.Equals("sast")).First();
 
             try
             {
