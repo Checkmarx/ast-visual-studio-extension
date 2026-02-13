@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
-using ast_visual_studio_extension.CxExtension.DevAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers;
 
 namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
@@ -56,73 +56,14 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
 
                         if (glyphTagger != null && errorTagger != null)
                         {
-                            System.Diagnostics.Debug.WriteLine("DevAssist: Both taggers found, adding test vulnerabilities");
+                            System.Diagnostics.Debug.WriteLine("DevAssist: Both taggers found, adding common mock data (underline, gutter, hover, problem window)");
 
-                            // Create test vulnerabilities
-                            var vulnerabilities = new List<Vulnerability>
-                            {
-                                new Vulnerability
-                                {
-                                    Id = "TEST-001",
-                                    Severity = SeverityLevel.Malicious,
-                                    LineNumber = 1,
-                                    Description = "Test Malicious vulnerability"
-                                },
-                                new Vulnerability
-                                {
-                                    Id = "TEST-002",
-                                    Severity = SeverityLevel.Critical,
-                                    LineNumber = 3,
-                                    Description = "Test Critical vulnerability"
-                                },
-                                new Vulnerability
-                                {
-                                    Id = "TEST-003",
-                                    Severity = SeverityLevel.High,
-                                    LineNumber = 5,
-                                    Description = "Test High vulnerability"
-                                },
-                                new Vulnerability
-                                {
-                                    Id = "TEST-004",
-                                    Severity = SeverityLevel.Medium,
-                                    LineNumber = 7,
-                                    Description = "Test Medium vulnerability"
-                                },
-                                new Vulnerability
-                                {
-                                    Id = "TEST-005",
-                                    Severity = SeverityLevel.Low,
-                                    LineNumber = 9,
-                                    Description = "Test Low vulnerability"
-                                },
-                                new Vulnerability
-                                {
-                                    Id = "TEST-006",
-                                    Severity = SeverityLevel.Ok,
-                                    LineNumber = 11,
-                                    Description = "Test OK"
-                                },
-                                new Vulnerability
-                                {
-                                    Id = "TEST-007",
-                                    Severity = SeverityLevel.Unknown,
-                                    LineNumber = 13,
-                                    Description = "Test UnKnown"
-                                },
-                                new Vulnerability
-                                {
-                                    Id = "TEST-008",
-                                    Severity = SeverityLevel.Ignored,
-                                    LineNumber = 15,
-                                    Description = "Test Ignored"
-                                }
-                            };
+                            // One common mock data for all POC features: underline, gutter icon, popup hover, and problem window
+                            var vulnerabilities = DevAssistMockData.GetCommonVulnerabilities(filePath: null);
 
-                            // Update both taggers with the same vulnerabilities
                             glyphTagger.UpdateVulnerabilities(vulnerabilities);
                             errorTagger.UpdateVulnerabilities(vulnerabilities);
-                            System.Diagnostics.Debug.WriteLine("DevAssist: Test vulnerabilities added to both taggers successfully");
+                            System.Diagnostics.Debug.WriteLine("DevAssist: Common mock vulnerabilities added to both taggers successfully");
                         }
                         else
                         {
