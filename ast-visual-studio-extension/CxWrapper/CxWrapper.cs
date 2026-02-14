@@ -1,10 +1,11 @@
-﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -257,6 +258,105 @@ namespace ast_visual_studio_extension.CxCLI
         public async Task<IacRealtimeResults> IacRealtimeScanAsync(string sourcePath, string ignoredFilePath = null, string engine = null)
         {
             return await Task.Run(() => IacRealtimeScan(sourcePath, ignoredFilePath, engine));
+        }
+
+        /// <summary>
+        /// Check if a container engine (e.g., Docker, Podman) is installed and accessible on the system.
+        /// Runs '&lt;engineName&gt; --version' to verify the engine is available.
+        /// </summary>
+        /// <param name="engineName">The name of the container engine to check (e.g., "docker", "podman")</param>
+        /// <returns>The engine name if it is installed and accessible</returns>
+        /// <exception cref="CxException">Thrown when the engine is not installed or not accessible from the system PATH</exception>
+        public string CheckEngineExist(string engineName)
+        {
+            if (string.IsNullOrEmpty(engineName))
+            {
+                throw new ArgumentNullException(nameof(engineName), "Engine name must not be null or empty.");
+            }
+
+            // Restrict to known container engine names to prevent arbitrary command execution
+            string normalizedName = engineName.Trim().ToLowerInvariant();
+            if (normalizedName != CxConstants.DOCKER && normalizedName != CxConstants.PODMAN)
+            {
+                throw new ArgumentException($"Unsupported container engine: {engineName}. Supported engines are '{CxConstants.DOCKER}' and '{CxConstants.PODMAN}'.", nameof(engineName));
+            }
+
+            logger.Info(string.Format(CxConstants.LOG_CHECKING_ENGINE_EXIST, normalizedName));
+
+            return CheckEngine(normalizedName);
+        }
+
+        /// <summary>
+        /// Check if a container engine is installed asynchronously
+        /// </summary>
+        /// <param name="engineName">The name of the container engine to check (e.g., "docker", "podman")</param>
+        /// <returns>The engine name if it is installed and accessible</returns>
+        /// <exception cref="CxException">Thrown when the engine is not installed or not accessible from the system PATH</exception>
+        public async Task<string> CheckEngineExistAsync(string engineName)
+        {
+            return await Task.Run(() => CheckEngineExist(engineName));
+        }
+
+        /// <summary>
+        /// Verify that the specified container engine is installed by running '&lt;engineName&gt; --version'.
+        /// </summary>
+        /// <param name="engineName">The name of the container engine executable</param>
+        /// <returns>The engine name if verification succeeds</returns>
+        /// <exception cref="CxException">Thrown when the engine is not found or the version check fails</exception>
+        private string CheckEngine(string engineName)
+        {
+            // Map validated engine name to a hardcoded executable to prevent OS command injection.
+            // The caller (CheckEngineExist) already validates engineName against known constants,
+            // but we resolve to hardcoded strings here so no dynamic value reaches ProcessStartInfo.FileName.
+            string hardcodedFileName;
+            if (engineName == CxConstants.DOCKER)
+            {
+                hardcodedFileName = "docker";
+            }
+            else if (engineName == CxConstants.PODMAN)
+            {
+                hardcodedFileName = "podman";
+            }
+            else
+            {
+                throw new ArgumentException($"Unsupported container engine: {engineName}.", nameof(engineName));
+            }
+
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = hardcodedFileName,
+                        Arguments = "--version",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                process.WaitForExit(5000); // 5 second timeout
+
+                if (process.ExitCode == 0)
+                {
+                    logger.Info($"Container engine '{hardcodedFileName}' is installed and accessible.");
+                    return hardcodedFileName;
+                }
+
+                throw new CxException(1, $"{hardcodedFileName} is not installed or is not accessible from the system PATH.");
+            }
+            catch (CxException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"Failed to verify container engine '{hardcodedFileName}': {ex.Message}", ex);
+                throw new CxException(1, $"{hardcodedFileName} is not installed or is not accessible from the system PATH.");
+            }
         }
 
         /// <summary>

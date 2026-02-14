@@ -1,4 +1,4 @@
-﻿namespace ast_visual_studio_extension.CxCLI
+namespace ast_visual_studio_extension.CxCLI
 {
     public static class CxConstants
     {
@@ -78,6 +78,10 @@
         public static string FLAG_IGNORED_FILE_PATH => "--ignored-file-path";
         public static string FLAG_ENGINE => "--engine";
 
+        /** CONTAINER ENGINE NAMES **/
+        public static string DOCKER => "docker";
+        public static string PODMAN => "podman";
+
         /** TELEMETRY FLAGS **/
         public static string FLAG_AI_PROVIDER => "--ai-provider";
         public static string FLAG_TYPE => "--type";
@@ -120,6 +124,7 @@
         public static string LOG_RUNNING_IAC_REALTIME_SCAN_CMD => "Executing 'scan iac-realtime' command using the CLI...";
         public static string LOG_RUNNING_SECRETS_REALTIME_SCAN_CMD => "Executing 'scan secrets-realtime' command using the CLI...";
         public static string LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD => "Executing 'scan containers-realtime' command using the CLI...";
+        public static string LOG_CHECKING_ENGINE_EXIST => "Checking if container engine '{0}' is installed...";
 
         /** TELEMETRY LOGGING **/
         public static string LOG_RUNNING_TELEMETRY_AI_CMD => "Executing telemetry AI event with provider: {0}, type: {1}, subType: {2}";
