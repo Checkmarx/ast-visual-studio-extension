@@ -1,0 +1,9 @@
+{
+  "name": "oss-realtime-test",
+  "version": "1.0.0",
+  "description": "Test project for OSS realtime scan integration tests",
+  "dependencies": {
+    "lodash": "4.17.0",
+    "express": "4.16.0"
+  }
+}
