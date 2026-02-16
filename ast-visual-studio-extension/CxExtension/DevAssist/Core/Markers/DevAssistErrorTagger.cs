@@ -26,49 +26,68 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
 
         public IEnumerable<ITagSpan<IErrorTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
-            System.Diagnostics.Debug.WriteLine($"DevAssist Markers: GetTags called - spans count: {spans.Count}, vulnerabilities count: {_vulnerabilitiesByLine.Count}");
+            var result = new List<ITagSpan<IErrorTag>>();
+            System.Diagnostics.Debug.WriteLine($"DevAssist Markers: GetTags called - spans count: {spans?.Count ?? 0}, vulnerabilities count: {_vulnerabilitiesByLine.Count}");
 
-            if (spans.Count == 0 || _vulnerabilitiesByLine.Count == 0)
+            if (spans == null || spans.Count == 0 || _vulnerabilitiesByLine.Count == 0)
             {
                 System.Diagnostics.Debug.WriteLine($"DevAssist Markers: GetTags returning early - no spans or vulnerabilities");
-                yield break;
+                return result;
             }
 
-            var snapshot = spans[0].Snapshot;
+            ITextSnapshot snapshot = null;
+            try
+            {
+                snapshot = spans[0].Snapshot;
+            }
+            catch (Exception ex)
+            {
+                DevAssistErrorHandler.LogAndSwallow(ex, "ErrorTagger.GetTags (snapshot)");
+            }
+
+            if (snapshot == null) return result;
             int tagCount = 0;
 
             foreach (var span in spans)
             {
-                var startLine = snapshot.GetLineNumberFromPosition(span.Start);
-                var endLine = snapshot.GetLineNumberFromPosition(span.End);
-
-                for (int lineNumber = startLine; lineNumber <= endLine; lineNumber++)
+                try
                 {
-                    if (_vulnerabilitiesByLine.TryGetValue(lineNumber, out var vulnerabilities))
+                    var startLine = snapshot.GetLineNumberFromPosition(span.Start);
+                    var endLine = snapshot.GetLineNumberFromPosition(span.End);
+
+                    for (int lineNumber = startLine; lineNumber <= endLine; lineNumber++)
                     {
-                        foreach (var vulnerability in vulnerabilities)
+                        if (_vulnerabilitiesByLine.TryGetValue(lineNumber, out var vulnerabilities))
                         {
-                            if (!ShouldShowUnderline(vulnerability.Severity))
+                            foreach (var vulnerability in vulnerabilities)
                             {
-                                System.Diagnostics.Debug.WriteLine($"DevAssist Markers: Skipping underline for {vulnerability.Severity} on line {lineNumber}");
-                                continue;
+                                if (!ShouldShowUnderline(vulnerability.Severity))
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"DevAssist Markers: Skipping underline for {vulnerability.Severity} on line {lineNumber}");
+                                    continue;
+                                }
+
+                                var line = snapshot.GetLineFromLineNumber(lineNumber);
+                                var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
+
+                                var tooltipText = BuildTooltipText(vulnerability);
+                                IErrorTag tag = new ErrorTag("Error", tooltipText);
+
+                                tagCount++;
+                                System.Diagnostics.Debug.WriteLine($"DevAssist Markers: Creating error tag #{tagCount} for line {lineNumber}, severity: {vulnerability.Severity}");
+                                result.Add(new TagSpan<IErrorTag>(lineSpan, tag));
                             }
-
-                            var line = snapshot.GetLineFromLineNumber(lineNumber);
-                            var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
-
-                            var tooltipText = BuildTooltipText(vulnerability);
-                            IErrorTag tag = new ErrorTag("Error", tooltipText);
-
-                            tagCount++;
-                            System.Diagnostics.Debug.WriteLine($"DevAssist Markers: Creating error tag #{tagCount} for line {lineNumber}, severity: {vulnerability.Severity}");
-                            yield return new TagSpan<IErrorTag>(lineSpan, tag);
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    DevAssistErrorHandler.LogAndSwallow(ex, "ErrorTagger.GetTags (span)");
                 }
             }
 
             System.Diagnostics.Debug.WriteLine($"DevAssist Markers: GetTags completed - returned {tagCount} error tags");
+            return result;
         }
 
         /// <summary>
@@ -113,6 +132,11 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         /// </summary>
         public void UpdateVulnerabilities(List<Vulnerability> vulnerabilities)
         {
+            DevAssistErrorHandler.TryRun(() => UpdateVulnerabilitiesCore(vulnerabilities), "ErrorTagger.UpdateVulnerabilities");
+        }
+
+        private void UpdateVulnerabilitiesCore(List<Vulnerability> vulnerabilities)
+        {
             System.Diagnostics.Debug.WriteLine($"DevAssist Markers: UpdateVulnerabilities called with {vulnerabilities?.Count ?? 0} vulnerabilities");
 
             _vulnerabilitiesByLine.Clear();
@@ -121,7 +145,6 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
             {
                 foreach (var vulnerability in vulnerabilities)
                 {
-                    // Convert 1-based line number to 0-based for Visual Studio
                     int lineNumber = vulnerability.LineNumber - 1;
 
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
@@ -136,7 +159,6 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
 
             System.Diagnostics.Debug.WriteLine($"DevAssist Markers: Vulnerabilities stored in {_vulnerabilitiesByLine.Count} lines");
 
-            // Notify that tags have changed
             var snapshot = _buffer.CurrentSnapshot;
             var entireSpan = new SnapshotSpan(snapshot, 0, snapshot.Length);
 
@@ -160,9 +182,10 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         /// </summary>
         public IReadOnlyList<Vulnerability> GetVulnerabilitiesForLine(int zeroBasedLineNumber)
         {
-            if (_vulnerabilitiesByLine.TryGetValue(zeroBasedLineNumber, out var list))
-                return list;
-            return Array.Empty<Vulnerability>();
+            return DevAssistErrorHandler.TryGet(
+                () => _vulnerabilitiesByLine.TryGetValue(zeroBasedLineNumber, out var list) ? list : (IReadOnlyList<Vulnerability>)Array.Empty<Vulnerability>(),
+                "ErrorTagger.GetVulnerabilitiesForLine",
+                Array.Empty<Vulnerability>());
         }
     }
 }

@@ -30,49 +30,67 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
 
         public IEnumerable<ITagSpan<DevAssistGlyphTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
-            System.Diagnostics.Debug.WriteLine($"DevAssist: GetTags called - spans count: {spans.Count}, vulnerabilities count: {_vulnerabilitiesByLine.Count}");
+            var result = new List<ITagSpan<DevAssistGlyphTag>>();
+            System.Diagnostics.Debug.WriteLine($"DevAssist: GetTags called - spans count: {spans?.Count ?? 0}, vulnerabilities count: {_vulnerabilitiesByLine.Count}");
 
-            if (spans.Count == 0 || _vulnerabilitiesByLine.Count == 0)
+            if (spans == null || spans.Count == 0 || _vulnerabilitiesByLine.Count == 0)
             {
                 System.Diagnostics.Debug.WriteLine($"DevAssist: GetTags returning early - no spans or vulnerabilities");
-                yield break;
+                return result;
             }
 
-            var snapshot = spans[0].Snapshot;
+            ITextSnapshot snapshot = null;
+            try
+            {
+                snapshot = spans[0].Snapshot;
+            }
+            catch (Exception ex)
+            {
+                DevAssistErrorHandler.LogAndSwallow(ex, "GlyphTagger.GetTags (snapshot)");
+            }
+
+            if (snapshot == null) return result;
             int tagCount = 0;
 
             foreach (var span in spans)
             {
-                var startLine = snapshot.GetLineNumberFromPosition(span.Start);
-                var endLine = snapshot.GetLineNumberFromPosition(span.End);
-
-                for (int lineNumber = startLine; lineNumber <= endLine; lineNumber++)
+                try
                 {
-                    if (_vulnerabilitiesByLine.TryGetValue(lineNumber, out var vulnerabilities))
+                    var startLine = snapshot.GetLineNumberFromPosition(span.Start);
+                    var endLine = snapshot.GetLineNumberFromPosition(span.End);
+
+                    for (int lineNumber = startLine; lineNumber <= endLine; lineNumber++)
                     {
-                        // Get the most severe vulnerability for this line (for gutter icon)
-                        var mostSevere = GetMostSevereVulnerability(vulnerabilities);
-                        if (mostSevere != null)
+                        if (_vulnerabilitiesByLine.TryGetValue(lineNumber, out var vulnerabilities))
                         {
-                            var line = snapshot.GetLineFromLineNumber(lineNumber);
-                            var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
+                            var mostSevere = GetMostSevereVulnerability(vulnerabilities);
+                            if (mostSevere != null)
+                            {
+                                var line = snapshot.GetLineFromLineNumber(lineNumber);
+                                var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
 
-                            var tooltipText = BuildTooltipText(vulnerabilities);
-                            var tag = new DevAssistGlyphTag(
-                                mostSevere.Severity.ToString(),
-                                tooltipText,
-                                mostSevere.Id
-                            );
+                                var tooltipText = BuildTooltipText(vulnerabilities);
+                                var tag = new DevAssistGlyphTag(
+                                    mostSevere.Severity.ToString(),
+                                    tooltipText,
+                                    mostSevere.Id
+                                );
 
-                            tagCount++;
-                            System.Diagnostics.Debug.WriteLine($"DevAssist: Creating tag #{tagCount} for line {lineNumber}, severity: {mostSevere.Severity}");
-                            yield return new TagSpan<DevAssistGlyphTag>(lineSpan, tag);
+                                tagCount++;
+                                System.Diagnostics.Debug.WriteLine($"DevAssist: Creating tag #{tagCount} for line {lineNumber}, severity: {mostSevere.Severity}");
+                                result.Add(new TagSpan<DevAssistGlyphTag>(lineSpan, tag));
+                            }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    DevAssistErrorHandler.LogAndSwallow(ex, "GlyphTagger.GetTags (span)");
                 }
             }
 
             System.Diagnostics.Debug.WriteLine($"DevAssist: GetTags completed - returned {tagCount} tags");
+            return result;
         }
 
         /// <summary>
@@ -80,6 +98,11 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
         /// Based on JetBrains ProblemDecorator.decorateUI pattern
         /// </summary>
         public void UpdateVulnerabilities(List<Vulnerability> vulnerabilities)
+        {
+            DevAssistErrorHandler.TryRun(() => UpdateVulnerabilitiesCore(vulnerabilities), "GlyphTagger.UpdateVulnerabilities");
+        }
+
+        private void UpdateVulnerabilitiesCore(List<Vulnerability> vulnerabilities)
         {
             System.Diagnostics.Debug.WriteLine($"DevAssist: UpdateVulnerabilities called with {vulnerabilities?.Count ?? 0} vulnerabilities");
 
@@ -103,7 +126,6 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
             System.Diagnostics.Debug.WriteLine($"DevAssist: Vulnerabilities stored in {_vulnerabilitiesByLine.Count} lines");
             System.Diagnostics.Debug.WriteLine($"DevAssist: TagsChanged event has {(TagsChanged != null ? TagsChanged.GetInvocationList().Length : 0)} subscribers");
 
-            // Notify that tags have changed
             var snapshot = _buffer.CurrentSnapshot;
             var entireSpan = new SnapshotSpan(snapshot, 0, snapshot.Length);
 

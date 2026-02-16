@@ -85,13 +85,20 @@ namespace ast_visual_studio_extension.CxExtension.Commands
         {
             if (control == null) return;
 
-            // Same common mock data as gutter, underline, and popup hover (one source of truth)
+            // Use coordinator's current findings (from last UpdateFindings) so problem window matches gutter/underline
+            var current = DevAssistDisplayCoordinator.GetCurrentFindings();
+            if (current != null && current.Count > 0)
+            {
+                DevAssistDisplayCoordinator.RefreshProblemWindow(control, LoadSeverityIcon, () => LoadIcon("document.png"));
+                return;
+            }
+
+            // No current findings (no file opened yet), show mock data so the window is not empty
             var vulnerabilities = DevAssistMockData.GetCommonVulnerabilities(DevAssistMockData.DefaultFilePath);
             var fileNodes = DevAssistMockData.BuildFileNodesFromVulnerabilities(
                 vulnerabilities,
                 loadSeverityIcon: LoadSeverityIcon,
                 loadFileIcon: () => LoadIcon("document.png"));
-
             control.SetAllFileNodes(fileNodes);
         }
 
