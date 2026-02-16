@@ -64,7 +64,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"DevAssist: Icon loading failed: {ex.Message}");
+                DevAssistErrorHandler.LogAndSwallow(ex, "GlyphFactory.GenerateGlyph");
                 return null;
             }
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Threading;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core;
@@ -17,6 +18,8 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
     [TextViewRole(PredefinedTextViewRoles.Document)]
     internal class DevAssistTextViewCreationListener : IWpfTextViewCreationListener
     {
+        private static int _fallbackDocumentCounter;
+
         public void TextViewCreated(IWpfTextView textView)
         {
             System.Diagnostics.Debug.WriteLine("DevAssist: TextViewCreated - C# file opened");
@@ -56,14 +59,21 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
 
                         if (glyphTagger != null && errorTagger != null)
                         {
-                            System.Diagnostics.Debug.WriteLine("DevAssist: Both taggers found, adding common mock data (underline, gutter, hover, problem window)");
+                            System.Diagnostics.Debug.WriteLine("DevAssist: Both taggers found, updating via coordinator (gutter, underline, problem window)");
 
-                            // One common mock data for all POC features: underline, gutter icon, popup hover, and problem window
-                            var vulnerabilities = DevAssistMockData.GetCommonVulnerabilities(filePath: null);
+                            // Single coordinator call: updates gutter, underline, and current findings for problem window (Option B)
+                            var filePath = DevAssistDisplayCoordinator.GetFilePathForBuffer(buffer);
+                            // When path is unknown (e.g. ITextDocument not available), use a unique key per buffer so multi-file doesn't overwrite with "Program.cs"
+                            if (string.IsNullOrEmpty(filePath))
+                            {
+                                var fallback = Interlocked.Increment(ref _fallbackDocumentCounter);
+                                filePath = $"Document {fallback}";
+                                System.Diagnostics.Debug.WriteLine($"DevAssist: GetFilePathForBuffer returned null, using fallback: {filePath}");
+                            }
+                            var vulnerabilities = DevAssistMockData.GetCommonVulnerabilities(filePath);
+                            DevAssistDisplayCoordinator.UpdateFindings(buffer, vulnerabilities, filePath);
 
-                            glyphTagger.UpdateVulnerabilities(vulnerabilities);
-                            errorTagger.UpdateVulnerabilities(vulnerabilities);
-                            System.Diagnostics.Debug.WriteLine("DevAssist: Common mock vulnerabilities added to both taggers successfully");
+                            System.Diagnostics.Debug.WriteLine("DevAssist: Coordinator updated gutter, underline, and findings successfully");
                         }
                         else
                         {
