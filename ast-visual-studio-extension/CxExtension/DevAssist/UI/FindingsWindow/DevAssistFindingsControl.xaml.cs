@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Shell;
 using EnvDTE;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core;
 
 namespace ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow
 {
@@ -22,6 +24,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow
         private ObservableCollection<FileNode> _allFileNodes; // Store unfiltered data
         private string _statusBarText;
         private bool _isLoading;
+        private Action<IReadOnlyDictionary<string, List<Core.Models.Vulnerability>>> _onIssuesUpdated;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -66,8 +69,58 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow
             _allFileNodes = new ObservableCollection<FileNode>();
             DataContext = this;
 
-            // Load filter icons after InitializeComponent so named controls are available
-            Loaded += (s, e) => LoadFilterIcons();
+            // Load filter icons and subscribe to coordinator (JetBrains ISSUE_TOPIC-like: window stays in sync when issues change)
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            LoadFilterIcons();
+            _onIssuesUpdated = OnIssuesUpdated;
+            DevAssistDisplayCoordinator.IssuesUpdated += _onIssuesUpdated;
+            // Initial refresh from current data
+            RefreshFromCoordinator();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            if (_onIssuesUpdated != null)
+            {
+                DevAssistDisplayCoordinator.IssuesUpdated -= _onIssuesUpdated;
+                _onIssuesUpdated = null;
+            }
+        }
+
+        private void OnIssuesUpdated(IReadOnlyDictionary<string, List<Core.Models.Vulnerability>> issuesByFile)
+        {
+            Dispatcher.BeginInvoke(new Action(() => RefreshFromCoordinator()));
+        }
+
+        /// <summary>
+        /// Refreshes the tree from coordinator's current issues (used when IssuesUpdated fires or on load).
+        /// </summary>
+        private void RefreshFromCoordinator()
+        {
+            var current = DevAssistDisplayCoordinator.GetCurrentFindings();
+            var fileNodes = current != null && current.Count > 0
+                ? DevAssistMockData.BuildFileNodesFromVulnerabilities(current, LoadSeverityIconForTree, null)
+                : new ObservableCollection<FileNode>();
+            SetAllFileNodes(fileNodes);
+        }
+
+        /// <summary>
+        /// Load severity icon for tree items (same theme logic as filter icons).
+        /// </summary>
+        private System.Windows.Media.ImageSource LoadSeverityIconForTree(string severity)
+        {
+            try
+            {
+                string themeFolder = IsDarkTheme() ? "Dark" : "Light";
+                string iconName = (severity ?? "unknown").ToLower() + ".png";
+                return LoadIcon(themeFolder, iconName);
+            }
+            catch { return null; }
         }
 
         /// <summary>
