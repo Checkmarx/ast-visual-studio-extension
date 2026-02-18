@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using EnvDTE;
 using EnvDTE80;
@@ -15,6 +16,9 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core
     /// </summary>
     internal sealed class DevAssistErrorListSync
     {
+        /// <summary>Prefix stored in ErrorTask.HelpKeyword so we can identify DevAssist tasks and recover vulnerability Id.</summary>
+        public const string HelpKeywordPrefix = "DevAssist:";
+
         private ErrorListProvider _errorListProvider;
         private bool _subscribed;
 
@@ -100,20 +104,40 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core
                 foreach (var v in list)
                 {
                     string severityLabel = v.Severity.ToString();
+                    string docPath = GetDocumentPath(v.FilePath, filePath);
+                    string helpKeyword = HelpKeywordPrefix + v.Id;
                     var task = new ErrorTask
                     {
                         Category = TaskCategory.CodeSense,
                         ErrorCategory = GetErrorCategory(v.Severity),
                         Text = $"[DevAssist] [{severityLabel}] {v.Title}",
-                        Document = filePath,
+                        Document = docPath,
                         Line = Math.Max(0, v.LineNumber - 1),
                         Column = Math.Max(0, v.ColumnNumber),
-                        HierarchyItem = document != null ? GetHierarchyItem(document) : null
+                        HierarchyItem = document != null ? GetHierarchyItem(document) : null,
+                        HelpKeyword = helpKeyword
                     };
 
                     task.Navigate += (s, e) => NavigateToVulnerability(v);
                     _errorListProvider.Tasks.Add(task);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Returns a normalized full path for the Error List so VS shows the actual file name instead of "Document 1".
+        /// </summary>
+        private static string GetDocumentPath(string vulnerabilityFilePath, string fallbackFilePath)
+        {
+            string path = !string.IsNullOrEmpty(vulnerabilityFilePath) ? vulnerabilityFilePath : fallbackFilePath;
+            if (string.IsNullOrEmpty(path)) return null;
+            try
+            {
+                return Path.GetFullPath(path);
+            }
+            catch
+            {
+                return path;
             }
         }
 
