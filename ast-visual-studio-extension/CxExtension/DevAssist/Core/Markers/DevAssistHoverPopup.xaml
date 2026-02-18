@@ -1,15 +1,15 @@
+<!-- Custom popup styled like VS Quick Info (theme-driven, light shadow) but with full custom content: logo, severity, cards, links -->
 <Border x:Name="RootBorder"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         MaxWidth="500"
-        Background="#2D2D30"
-        BorderBrush="#3F3F46"
         BorderThickness="1"
-        CornerRadius="4"
-        Padding="12">
+        CornerRadius="3"
+        Padding="10,8">
+    <!-- Subtle shadow like VS Quick Info (theme colors applied in ApplyVsTheme) -->
     <Border.Effect>
-            <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="8" ShadowDepth="2"/>
-        </Border.Effect>
+        <DropShadowEffect Color="Black" Opacity="0.15" BlurRadius="4" ShadowDepth="1"/>
+    </Border.Effect>
         
         <StackPanel>
             <!-- JetBrains-style header: Checkmarx One Assist logo (image, not text) + ellipsis -->
@@ -32,6 +32,17 @@
                         Cursor="Hand"/>
             </Grid>
 
+            <!-- Multiple issues on same line (JetBrains-style: "N issues detected on this line" + one card per vulnerability) -->
+            <StackPanel x:Name="MultipleIssuesPanel" Visibility="Collapsed" Margin="0,0,0,8">
+                <TextBlock x:Name="MultipleIssuesHeader"
+                           FontSize="13" FontWeight="SemiBold"
+                           TextWrapping="Wrap" Foreground="#DCDCDC"
+                           Margin="0,0,0,10"/>
+                <StackPanel x:Name="MultipleIssuesCards"/>
+            </StackPanel>
+
+            <!-- Single-issue content (visible when only one vulnerability on line) -->
+            <StackPanel x:Name="SingleIssuePanel">
             <!-- Main vulnerability line: large severity icon + "Package@Version - Title" (JetBrains-style) -->
             <Grid Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
@@ -222,6 +233,15 @@
                         <Run Text="Apply Fix"/>
                     </Hyperlink>
                 </TextBlock>
+            </StackPanel>
+            </StackPanel>
+
+            <!-- Also on this line: Compiler / VS errors (combined with DevAssist in one popup) -->
+            <StackPanel x:Name="CompilerErrorsPanel" Visibility="Collapsed" Margin="0,8,0,8">
+                <TextBlock x:Name="CompilerErrorsTitle" FontSize="11" FontWeight="SemiBold"
+                           Foreground="#DCDCDC" Margin="0,0,0,4"
+                           Text="Also on this line (Compiler / VS):"/>
+                <StackPanel x:Name="CompilerErrorsList"/>
             </StackPanel>
         </StackPanel>
 </Border>
