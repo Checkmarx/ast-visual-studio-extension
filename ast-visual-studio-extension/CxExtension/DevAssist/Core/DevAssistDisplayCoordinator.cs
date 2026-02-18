@@ -8,6 +8,7 @@ using ast_visual_studio_extension.CxExtension.DevAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers;
 using ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow;
+using System.Linq;
 
 namespace ast_visual_studio_extension.CxExtension.DevAssist.Core
 {
@@ -97,6 +98,42 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core
                 foreach (var list in _fileToIssues.Values)
                     flat.AddRange(list);
                 return flat;
+            }
+        }
+
+        /// <summary>
+        /// Finds a vulnerability by Id in the current findings (e.g. from Error List task HelpKeyword).
+        /// </summary>
+        public static Vulnerability FindVulnerabilityById(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            lock (_lock)
+            {
+                foreach (var list in _fileToIssues.Values)
+                {
+                    var v = list?.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
+                    if (v != null) return v;
+                }
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Finds the first vulnerability at the given location (for Error List selection by document + line).
+        /// </summary>
+        /// <param name="documentPath">Full path of the file (normalized for comparison).</param>
+        /// <param name="zeroBasedLine">0-based line number (Error List uses 0-based).</param>
+        public static Vulnerability FindVulnerabilityByLocation(string documentPath, int zeroBasedLine)
+        {
+            if (string.IsNullOrEmpty(documentPath)) return null;
+            string key;
+            try { key = Path.GetFullPath(documentPath); }
+            catch { key = documentPath; }
+            int line1Based = zeroBasedLine + 1;
+            lock (_lock)
+            {
+                if (!_fileToIssues.TryGetValue(key, out var list) || list == null) return null;
+                return list.FirstOrDefault(v => v.LineNumber == line1Based);
             }
         }
 
