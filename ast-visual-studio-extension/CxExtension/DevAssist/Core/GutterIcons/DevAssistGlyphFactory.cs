@@ -21,7 +21,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
     /// </summary>
     internal class DevAssistGlyphFactory : IGlyphFactory
     {
-        private const double GlyphSize = 16.0;
+        private const double GlyphSize = 14.0;
 
         public UIElement GenerateGlyph(IWpfTextViewLine line, IGlyphTag tag)
         {

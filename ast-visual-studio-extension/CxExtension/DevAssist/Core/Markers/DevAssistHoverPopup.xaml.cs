@@ -21,17 +21,24 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
     {
         private readonly Vulnerability _vulnerability;
         private readonly IReadOnlyList<Vulnerability> _allForLine;
+        private readonly IReadOnlyList<string> _compilerErrorsOnLine;
 
         public DevAssistHoverPopup(Vulnerability vulnerability)
-            : this(vulnerability, new[] { vulnerability })
+            : this(vulnerability, new[] { vulnerability }, null)
         {
         }
 
         public DevAssistHoverPopup(Vulnerability first, IReadOnlyList<Vulnerability> allForLine)
+            : this(first, allForLine, null)
+        {
+        }
+
+        public DevAssistHoverPopup(Vulnerability first, IReadOnlyList<Vulnerability> allForLine, IReadOnlyList<string> compilerErrorsOnLine)
         {
             InitializeComponent();
             _vulnerability = first ?? throw new ArgumentNullException(nameof(first));
             _allForLine = allForLine ?? new[] { first };
+            _compilerErrorsOnLine = compilerErrorsOnLine ?? Array.Empty<string>();
             PopulateContent();
         }
 
@@ -39,6 +46,19 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         {
             if (TitleText == null)
                 return; // XAML failed to load from embedded resource
+
+            // JetBrains-style: when multiple vulnerabilities on same line, show "N issues detected" + one card per vulnerability
+            if (_allForLine != null && _allForLine.Count > 1 && MultipleIssuesPanel != null && MultipleIssuesCards != null)
+            {
+                BuildMultipleIssuesContent();
+                return;
+            }
+
+            if (SingleIssuePanel != null)
+                SingleIssuePanel.Visibility = Visibility.Visible;
+            if (MultipleIssuesPanel != null)
+                MultipleIssuesPanel.Visibility = Visibility.Collapsed;
+
             // DevAssist logo (JetBrains-style at top of tooltip)
             SetDevAssistIcon();
 
@@ -102,6 +122,9 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
             if (MoreOptionsButton != null)
                 MoreOptionsButton.Click += MoreOptionsButton_Click;
 
+            // Combined: show compiler/VS errors on this line in the same popup
+            BuildCompilerErrorsSection();
+
             // Apply VS theme so popup respects light/dark (was always dark due to hardcoded XAML colors)
             ApplyVsTheme();
         }
@@ -135,6 +158,8 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                 SetResourceRef(NavigateToCodeLink, TextElement.ForegroundProperty, EnvironmentColors.ControlLinkTextBrushKey);
                 SetResourceRef(LearnMoreLink, TextElement.ForegroundProperty, EnvironmentColors.ControlLinkTextBrushKey);
                 SetResourceRef(ApplyFixLink, TextElement.ForegroundProperty, EnvironmentColors.ControlLinkTextBrushKey);
+                if (MultipleIssuesHeader != null) SetResourceRef(MultipleIssuesHeader, TextElement.ForegroundProperty, EnvironmentColors.ToolTipTextBrushKey);
+                if (ScannerText != null) SetResourceRef(ScannerText, TextElement.ForegroundProperty, EnvironmentColors.ToolTipTextBrushKey);
                 if (SeparatorLine1 != null) SeparatorLine1.SetResourceReference(Border.BackgroundProperty, EnvironmentColors.ToolTipBorderBrushKey);
                 if (SeparatorLine2 != null) SeparatorLine2.SetResourceReference(Border.BackgroundProperty, EnvironmentColors.ToolTipBorderBrushKey);
             }
@@ -508,6 +533,168 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                 SeverityCountPanel.Visibility = Visibility.Visible;
         }
 
+        /// <summary>
+        /// JetBrains-style: "N issues detected on this line Checkmarx One Assist" plus one card per vulnerability
+        /// (each card: severity icon, title, description, Fix / View details / Ignore this).
+        /// </summary>
+        private void BuildMultipleIssuesContent()
+        {
+            SetDevAssistIcon();
+            SingleIssuePanel.Visibility = Visibility.Collapsed;
+            MultipleIssuesPanel.Visibility = Visibility.Visible;
+
+            int n = _allForLine.Count;
+            MultipleIssuesHeader.Text = $"{n} issue{(n == 1 ? "" : "s")} detected on this line Checkmarx One Assist";
+            try
+            {
+                MultipleIssuesHeader.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolTipTextBrushKey);
+            }
+            catch { /* theme not available */ }
+
+            MultipleIssuesCards.Children.Clear();
+            foreach (var v in _allForLine)
+                AddVulnerabilityCard(v);
+
+            if (MoreOptionsButton != null)
+                MoreOptionsButton.Click += MoreOptionsButton_Click;
+            BuildCompilerErrorsSection();
+            ApplyVsTheme();
+        }
+
+        /// <summary>
+        /// Shows "Also on this line (Compiler / VS):" with Error List messages when there are compiler errors on the same line.
+        /// </summary>
+        private void BuildCompilerErrorsSection()
+        {
+            try
+            {
+                if (_compilerErrorsOnLine == null || _compilerErrorsOnLine.Count == 0 ||
+                    CompilerErrorsPanel == null || CompilerErrorsList == null)
+                    return;
+
+                CompilerErrorsList.Children.Clear();
+                foreach (string message in _compilerErrorsOnLine)
+                {
+                    var tb = new TextBlock
+                    {
+                        Text = message,
+                        TextWrapping = TextWrapping.Wrap,
+                        FontSize = 11,
+                        Margin = new Thickness(0, 2, 0, 2)
+                    };
+                    try { tb.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolTipTextBrushKey); }
+                    catch { tb.Foreground = new SolidColorBrush(Color.FromRgb(0xDC, 0xDC, 0xDC)); }
+                    CompilerErrorsList.Children.Add(tb);
+                }
+                if (CompilerErrorsTitle != null)
+                {
+                    try { CompilerErrorsTitle.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolTipTextBrushKey); }
+                    catch { }
+                }
+                CompilerErrorsPanel.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DevAssist Hover: BuildCompilerErrorsSection failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Adds one vulnerability card (severity icon, title, description, action links) to MultipleIssuesCards.
+        /// </summary>
+        private void AddVulnerabilityCard(Vulnerability v)
+        {
+            // Separator between cards (skip before first card)
+            if (MultipleIssuesCards.Children.Count > 0)
+            {
+                var sep = new Border { Height = 1, Margin = new Thickness(0, 0, 0, 8) };
+                try { sep.SetResourceReference(Border.BackgroundProperty, EnvironmentColors.ToolTipBorderBrushKey); }
+                catch { sep.Background = new SolidColorBrush(Color.FromRgb(0x3F, 0x3F, 0x46)); }
+                MultipleIssuesCards.Children.Add(sep);
+            }
+
+            var theme = GetCurrentTheme();
+            string iconFileName = GetSeverityIconFileName(v.Severity);
+            var iconSource = !string.IsNullOrEmpty(iconFileName) ? LoadIconFromAssembly(theme, iconFileName) : null;
+
+            var card = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
+
+            // Row: severity icon + title (bold)
+            var titleRow = new Grid();
+            titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+            titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            if (iconSource != null)
+            {
+                var img = new Image
+                {
+                    Source = iconSource,
+                    Width = 20,
+                    Height = 20,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+                Grid.SetColumn(img, 0);
+                titleRow.Children.Add(img);
+            }
+            string titlePart = !string.IsNullOrEmpty(v.Title) ? v.Title : (!string.IsNullOrEmpty(v.RuleName) ? v.RuleName : v.Description);
+            var titleBlock = new TextBlock
+            {
+                Text = titlePart ?? "",
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 13,
+                TextWrapping = TextWrapping.Wrap
+            };
+            try { titleBlock.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolTipTextBrushKey); }
+            catch { titleBlock.Foreground = new SolidColorBrush(Color.FromRgb(0xDC, 0xDC, 0xDC)); }
+            Grid.SetColumn(titleBlock, 1);
+            titleRow.Children.Add(titleBlock);
+            card.Children.Add(titleRow);
+
+            // Description
+            var descText = !string.IsNullOrEmpty(v.Description) ? v.Description : "Vulnerability detected by " + v.Scanner + ".";
+            if (v.Scanner == ScannerType.IaC)
+                descText += " IaC vulnerability";
+            else if (v.Scanner == ScannerType.ASCA)
+                descText += " SAST vulnerability";
+            var descBlock = new TextBlock
+            {
+                Text = descText,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12,
+                Margin = new Thickness(0, 4, 0, 6)
+            };
+            try { descBlock.SetResourceReference(TextBlock.ForegroundProperty, EnvironmentColors.ToolTipTextBrushKey); }
+            catch { descBlock.Foreground = new SolidColorBrush(Color.FromRgb(0xDC, 0xDC, 0xDC)); }
+            card.Children.Add(descBlock);
+
+            // Action links: Fix with Checkmarx One Assist | View details | Ignore this vulnerability
+            var linksBlock = new TextBlock { Margin = new Thickness(0, 0, 0, 0) };
+            var fixLink = new System.Windows.Documents.Hyperlink(new Run("Fix with Checkmarx One Assist")) { Foreground = new SolidColorBrush(Color.FromRgb(0x37, 0x94, 0xFF)) };
+            fixLink.Click += (s, e) => DoFixWithCxOneAssist(v);
+            fixLink.PreviewMouseDown += (s, e) => DoFixWithCxOneAssist(v);
+            var viewLink = new System.Windows.Documents.Hyperlink(new Run("View details")) { Foreground = new SolidColorBrush(Color.FromRgb(0x37, 0x94, 0xFF)) };
+            viewLink.Click += (s, e) => DoViewDetails(v);
+            viewLink.PreviewMouseDown += (s, e) => DoViewDetails(v);
+            var ignoreLink = new System.Windows.Documents.Hyperlink(new Run("Ignore this vulnerability")) { Foreground = new SolidColorBrush(Color.FromRgb(0x37, 0x94, 0xFF)) };
+            ignoreLink.Click += (s, e) => DoIgnoreThis(v);
+            ignoreLink.PreviewMouseDown += (s, e) => DoIgnoreThis(v);
+            try
+            {
+                fixLink.SetResourceReference(TextElement.ForegroundProperty, EnvironmentColors.ControlLinkTextBrushKey);
+                viewLink.SetResourceReference(TextElement.ForegroundProperty, EnvironmentColors.ControlLinkTextBrushKey);
+                ignoreLink.SetResourceReference(TextElement.ForegroundProperty, EnvironmentColors.ControlLinkTextBrushKey);
+            }
+            catch { }
+            linksBlock.Inlines.Add(fixLink);
+            linksBlock.Inlines.Add(new Run("  "));
+            linksBlock.Inlines.Add(viewLink);
+            linksBlock.Inlines.Add(new Run("  "));
+            linksBlock.Inlines.Add(ignoreLink);
+            card.Children.Add(linksBlock);
+
+            MultipleIssuesCards.Children.Add(card);
+        }
+
         private void SetScannerBadge()
         {
             // Set scanner text
@@ -586,35 +773,52 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
             return "Dark"; // Default to Dark for now
         }
 
-        private void FixWithCxOneAssistLink_Click(object sender, RoutedEventArgs e)
+        private void DoFixWithCxOneAssist(Vulnerability v)
         {
-            // Static implementation for now: copy prompt / open AI assist
-            System.Diagnostics.Debug.WriteLine($"Fix with Checkmarx One Assist for: {_vulnerability.Id}");
+            if (v == null) return;
+            System.Diagnostics.Debug.WriteLine($"Fix with Checkmarx One Assist for: {v.Id}");
             MessageBox.Show(
-                $"Fix with Checkmarx One Assist\nVulnerability: {_vulnerability.Title}\nID: {_vulnerability.Id}",
+                $"Fix with Checkmarx One Assist\nVulnerability: {v.Title}\nID: {v.Id}",
                 "DevAssist",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
 
-        private void ViewDetailsLink_Click(object sender, RoutedEventArgs e)
+        private void DoViewDetails(Vulnerability v)
         {
-            System.Diagnostics.Debug.WriteLine($"View details clicked for vulnerability: {_vulnerability.Id}");
+            if (v == null) return;
+            System.Diagnostics.Debug.WriteLine($"View details clicked for vulnerability: {v.Id}");
             MessageBox.Show(
-                $"{_vulnerability.Title}\n\n{_vulnerability.Description}\n\nScanner: {_vulnerability.Scanner} | Severity: {_vulnerability.Severity}",
+                $"{v.Title}\n\n{v.Description}\n\nScanner: {v.Scanner} | Severity: {v.Severity}",
                 "View details",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
 
-        private void IgnoreThisLink_Click(object sender, RoutedEventArgs e)
+        private void DoIgnoreThis(Vulnerability v)
         {
-            System.Diagnostics.Debug.WriteLine($"Ignore this vulnerability: {_vulnerability.Id}");
+            if (v == null) return;
+            System.Diagnostics.Debug.WriteLine($"Ignore this vulnerability: {v.Id}");
             MessageBox.Show(
-                $"Ignore this vulnerability: {_vulnerability.Title}\n(Static demo – ignore not persisted yet)",
+                $"Ignore this vulnerability: {v.Title}\n(Static demo – ignore not persisted yet)",
                 "DevAssist",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+        }
+
+        private void FixWithCxOneAssistLink_Click(object sender, RoutedEventArgs e)
+        {
+            DoFixWithCxOneAssist(_vulnerability);
+        }
+
+        private void ViewDetailsLink_Click(object sender, RoutedEventArgs e)
+        {
+            DoViewDetails(_vulnerability);
+        }
+
+        private void IgnoreThisLink_Click(object sender, RoutedEventArgs e)
+        {
+            DoIgnoreThis(_vulnerability);
         }
 
         private void IgnoreAllOfThisTypeLink_Click(object sender, RoutedEventArgs e)

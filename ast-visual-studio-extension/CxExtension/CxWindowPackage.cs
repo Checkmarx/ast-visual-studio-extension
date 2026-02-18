@@ -1,4 +1,5 @@
 using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
@@ -48,6 +49,8 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
+        private DevAssistErrorListSync _devAssistErrorListSync;
+
         #region Package Members
 
         /// <summary>
@@ -78,6 +81,10 @@ namespace ast_visual_studio_extension.CxExtension
                 // Show Findings Window Command (POC for AST-133228 - Custom Tool Window)
                 // Command still works programmatically but not visible in menu
                 await ShowFindingsWindowCommand.InitializeAsync(this);
+
+                // Sync DevAssist findings to the built-in Error List (findings appear in both our window and Error List)
+                _devAssistErrorListSync = new DevAssistErrorListSync();
+                _devAssistErrorListSync.Start();
             }
             catch (Exception ex)
             {

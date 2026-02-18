@@ -16,6 +16,10 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         // Header: Checkmarx One Assist logo image (not text/label)
         internal Image HeaderLogoImage;
         internal Button MoreOptionsButton;
+        internal StackPanel MultipleIssuesPanel;
+        internal TextBlock MultipleIssuesHeader;
+        internal StackPanel MultipleIssuesCards;
+        internal StackPanel SingleIssuePanel;
         // Main line
         internal Image SeverityIcon;
         internal TextBlock TitleText;
@@ -51,6 +55,9 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         internal System.Windows.Documents.Hyperlink LearnMoreLink;
         internal TextBlock ApplyFixLinkBlock;
         internal System.Windows.Documents.Hyperlink ApplyFixLink;
+        internal StackPanel CompilerErrorsPanel;
+        internal TextBlock CompilerErrorsTitle;
+        internal StackPanel CompilerErrorsList;
 
         private void InitializeComponent()
         {
@@ -67,6 +74,10 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                 Content = root;
                 HeaderLogoImage = (Image)root.FindName("HeaderLogoImage");
                 MoreOptionsButton = (Button)root.FindName("MoreOptionsButton");
+                MultipleIssuesPanel = (StackPanel)root.FindName("MultipleIssuesPanel");
+                MultipleIssuesHeader = (TextBlock)root.FindName("MultipleIssuesHeader");
+                MultipleIssuesCards = (StackPanel)root.FindName("MultipleIssuesCards");
+                SingleIssuePanel = (StackPanel)root.FindName("SingleIssuePanel");
                 SeverityIcon = (Image)root.FindName("SeverityIcon");
                 TitleText = (TextBlock)root.FindName("TitleText");
                 ScannerBadge = (Border)root.FindName("ScannerBadge");
@@ -99,6 +110,9 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                 LearnMoreLink = (System.Windows.Documents.Hyperlink)root.FindName("LearnMoreLink");
                 ApplyFixLinkBlock = (TextBlock)root.FindName("ApplyFixLinkBlock");
                 ApplyFixLink = (System.Windows.Documents.Hyperlink)root.FindName("ApplyFixLink");
+                CompilerErrorsPanel = (StackPanel)root.FindName("CompilerErrorsPanel");
+                CompilerErrorsTitle = (TextBlock)root.FindName("CompilerErrorsTitle");
+                CompilerErrorsList = (StackPanel)root.FindName("CompilerErrorsList");
             }
         }
     }
