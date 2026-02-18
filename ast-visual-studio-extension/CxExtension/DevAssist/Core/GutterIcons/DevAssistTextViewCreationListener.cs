@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Threading;
+using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core;
@@ -63,12 +66,22 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons
 
                             // Single coordinator call: updates gutter, underline, and current findings for problem window (Option B)
                             var filePath = DevAssistDisplayCoordinator.GetFilePathForBuffer(buffer);
-                            // When path is unknown (e.g. ITextDocument not available), use a unique key per buffer so multi-file doesn't overwrite with "Program.cs"
+                            // When path is unknown (e.g. ITextDocument not available), try active document so problem window shows real file name
                             if (string.IsNullOrEmpty(filePath))
                             {
-                                var fallback = Interlocked.Increment(ref _fallbackDocumentCounter);
-                                filePath = $"Document {fallback}";
-                                System.Diagnostics.Debug.WriteLine($"DevAssist: GetFilePathForBuffer returned null, using fallback: {filePath}");
+                                try
+                                {
+                                    var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+                                    if (!string.IsNullOrEmpty(dte?.ActiveDocument?.FullName))
+                                        filePath = dte.ActiveDocument.FullName;
+                                }
+                                catch { }
+                                if (string.IsNullOrEmpty(filePath))
+                                {
+                                    var fallback = Interlocked.Increment(ref _fallbackDocumentCounter);
+                                    filePath = $"Document {fallback}";
+                                    System.Diagnostics.Debug.WriteLine($"DevAssist: GetFilePathForBuffer returned null, using fallback: {filePath}");
+                                }
                             }
                             var vulnerabilities = DevAssistMockData.GetCommonVulnerabilities(filePath);
                             DevAssistDisplayCoordinator.UpdateFindings(buffer, vulnerabilities, filePath);

@@ -255,38 +255,39 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow
         /// </summary>
         private void TreeViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
             var item = sender as TreeViewItem;
             if (item?.DataContext is VulnerabilityNode vulnerability)
             {
-                NavigateToVulnerability(vulnerability);
                 e.Handled = true;
+                Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    NavigateToVulnerability(vulnerability);
+                });
             }
         }
 
         /// <summary>
-        /// Navigate to vulnerability location in code
+        /// Navigate to vulnerability location in code (same approach as Error List navigation).
         /// </summary>
         private void NavigateToVulnerability(VulnerabilityNode vulnerability)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            if (string.IsNullOrEmpty(vulnerability?.FilePath)) return;
 
             try
             {
                 var dte = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(DTE)) as DTE;
-                if (dte != null && !string.IsNullOrEmpty(vulnerability.FilePath))
+                if (dte == null) return;
+
+                var window = dte.ItemOperations.OpenFile(vulnerability.FilePath, EnvDTE.Constants.vsViewKindCode);
+                Document doc = window?.Document;
+                if (doc?.Object("TextDocument") is TextDocument textDoc)
                 {
-                    // Open the file
-                    var window = dte.ItemOperations.OpenFile(vulnerability.FilePath);
-                    
-                    // Navigate to line and column
-                    if (dte.ActiveDocument != null)
-                    {
-                        var textDocument = (TextDocument)dte.ActiveDocument.Object("TextDocument");
-                        textDocument.Selection.MoveToLineAndOffset(vulnerability.Line, vulnerability.Column);
-                        textDocument.Selection.SelectLine();
-                    }
+                    int line = Math.Max(1, vulnerability.Line);
+                    int column = Math.Max(1, vulnerability.Column);
+                    textDoc.Selection.MoveToLineAndOffset(line, column);
+                    textDoc.Selection.SelectLine();
                 }
             }
             catch (Exception ex)
@@ -516,27 +517,31 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow
         /// </summary>
         private void NavigateMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
             var selectedItem = FindingsTreeView.SelectedItem;
             if (selectedItem is VulnerabilityNode vulnNode)
             {
-                NavigateToVulnerability(vulnNode);
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    NavigateToVulnerability(vulnNode);
+                });
             }
             else if (selectedItem is FileNode fileNode && !string.IsNullOrEmpty(fileNode.FilePath))
             {
-                try
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    var dte = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(DTE)) as DTE;
-                    if (dte != null)
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    try
                     {
-                        dte.ItemOperations.OpenFile(fileNode.FilePath);
+                        var dte = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(DTE)) as DTE;
+                        if (dte != null)
+                            dte.ItemOperations.OpenFile(fileNode.FilePath, EnvDTE.Constants.vsViewKindCode);
                     }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error navigating to file: {ex.Message}");
-                }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error navigating to file: {ex.Message}");
+                    }
+                });
             }
         }
 
