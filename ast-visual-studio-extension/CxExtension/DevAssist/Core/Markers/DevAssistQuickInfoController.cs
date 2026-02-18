@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core;
 
 namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
 {
@@ -69,7 +70,10 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                 {
                     var element = wpfView.VisualElement;
                     var vulnList = vulnerabilities;
-                    Dispatcher.CurrentDispatcher.Invoke(() => ShowHoverPopup(element, vulnList));
+                    Dispatcher.CurrentDispatcher.Invoke(() =>
+                    {
+                        ShowHoverPopup(element, vulnList, compilerErrorsOnLine: null);
+                    });
                 }
             }
             catch (Exception ex)
@@ -79,7 +83,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
             }
         }
 
-        private void ShowHoverPopup(FrameworkElement placementTarget, IReadOnlyList<DevAssist.Core.Models.Vulnerability> vulnerabilities)
+        private void ShowHoverPopup(FrameworkElement placementTarget, IReadOnlyList<DevAssist.Core.Models.Vulnerability> vulnerabilities, IReadOnlyList<string> compilerErrorsOnLine = null)
         {
             try
             {
@@ -87,7 +91,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                 if (vulnerabilities == null || vulnerabilities.Count == 0) return;
 
                 var first = vulnerabilities[0];
-                var content = new DevAssistHoverPopup(first, vulnerabilities);
+                var content = new DevAssistHoverPopup(first, vulnerabilities, compilerErrorsOnLine);
 
                 _hoverPopup = new Popup
                 {
