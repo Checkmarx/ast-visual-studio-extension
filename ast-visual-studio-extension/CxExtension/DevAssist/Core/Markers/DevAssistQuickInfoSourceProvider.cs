@@ -5,9 +5,10 @@ using System.ComponentModel.Composition;
 
 namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
 {
-    [Export(typeof(IQuickInfoSourceProvider))]
-    [Name("DevAssist QuickInfo Source")]
-    [Order(Before = "Default Quick Info Presenter")]
+    // Legacy sync provider disabled: built-in presenter ignores per-ClassifiedTextRun navigation callbacks.
+    // Quick Info is now provided by DevAssistAsyncQuickInfoSourceProvider (IAsyncQuickInfoSource).
+    // [Export(typeof(IQuickInfoSourceProvider))]
+    [Name("DevAssist QuickInfo Source (legacy, disabled)")]
     [ContentType("code")]
     [ContentType("text")]
     internal class DevAssistQuickInfoSourceProvider : IQuickInfoSourceProvider

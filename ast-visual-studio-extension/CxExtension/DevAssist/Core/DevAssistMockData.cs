@@ -16,7 +16,10 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core
     public static class DevAssistMockData
     {
         /// <summary>Default file path used for mock vulnerabilities (editor and findings window).</summary>
-        public const string DefaultFilePath = "Program.cs";
+        public const string DefaultFilePath = "Program.cs"
+
+        /// <summary>Vulnerability Id that uses standard Quick Info popup only (no custom hover popup).</summary>
+        public const string QuickInfoOnlyVulnerabilityId = "POC-007";
 
         /// <summary>
         /// Returns the common list of mock vulnerabilities used for:
@@ -123,6 +126,77 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core
                     FilePath = path,
                     PackageName = "debug",
                     PackageVersion = "2.6.9"
+                },
+                // Line 11 – Quick Info only (no custom hover popup): shows standard VS Quick Info with rich text and links
+                new Vulnerability
+                {
+                    Id = QuickInfoOnlyVulnerabilityId,
+                    Title = "High Severity Finding",
+                    Description = "This finding uses the standard Quick Info popup: Checkmarx One Assist badge, rich severity name, description, and action links (Fix with Checkmarx Assist, View Details, Ignore vulnerability).",
+                    Severity = SeverityLevel.High,
+                    Scanner = ScannerType.ASCA,
+                    LineNumber = 11,
+                    ColumnNumber = 0,
+                    FilePath = path,
+                    RuleName = "QUICK_INFO_DEMO",
+                    RemediationAdvice = "Use the Quick Info links to fix, view details, or ignore."
+                },
+                // Line 13 – Quick Info only: 2 vulnerabilities on same line (no custom popup; hover shows Quick Info for first)
+                new Vulnerability
+                {
+                    Id = QuickInfoOnlyVulnerabilityId,
+                    Title = "First finding on line (Critical)",
+                    Description = "First of two Quick-Info-only findings on this line. Critical severity – sensitive data exposure risk.",
+                    Severity = SeverityLevel.Critical,
+                    Scanner = ScannerType.ASCA,
+                    LineNumber = 13,
+                    ColumnNumber = 0,
+                    FilePath = path,
+                    RuleName = "SENSITIVE_DATA",
+                    RemediationAdvice = "Avoid logging or exposing sensitive data."
+                },
+                new Vulnerability
+                {
+                    Id = QuickInfoOnlyVulnerabilityId,
+                    Title = "Second finding on line (Medium)",
+                    Description = "Second of two Quick-Info-only findings on this line. Medium severity – weak cryptographic usage.",
+                    Severity = SeverityLevel.Medium,
+                    Scanner = ScannerType.ASCA,
+                    LineNumber = 13,
+                    ColumnNumber = 0,
+                    FilePath = path,
+                    RuleName = "WEAK_CRYPTO",
+                    RemediationAdvice = "Use a stronger algorithm."
+                },
+                // Line 15 – Quick Info only (single finding)
+                new Vulnerability
+                {
+                    Id = QuickInfoOnlyVulnerabilityId,
+                    Title = "Quick Info – Outdated dependency",
+                    Description = "Quick-Info-only demo: outdated package with known CVE. Use standard Quick Info links to fix or view details.",
+                    Severity = SeverityLevel.Medium,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 15,
+                    ColumnNumber = 0,
+                    FilePath = path,
+                    PackageName = "minimist",
+                    PackageVersion = "1.2.0",
+                    RecommendedVersion = "1.2.6",
+                    CveName = "CVE-2022-21803"
+                },
+                // Line 17 – Quick Info only (single finding)
+                new Vulnerability
+                {
+                    Id = QuickInfoOnlyVulnerabilityId,
+                    Title = "Quick Info – Low severity",
+                    Description = "Quick-Info-only demo: low-severity finding. Only the standard Quick Info popup is shown here.",
+                    Severity = SeverityLevel.Low,
+                    Scanner = ScannerType.ASCA,
+                    LineNumber = 17,
+                    ColumnNumber = 0,
+                    FilePath = path,
+                    RuleName = "LOW_SEVERITY_DEMO",
+                    RemediationAdvice = "Consider addressing in next sprint."
                 }
             };
         }

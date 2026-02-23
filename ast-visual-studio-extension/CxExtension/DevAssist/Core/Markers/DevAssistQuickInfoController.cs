@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core;
+using ast_visual_studio_extension.CxExtension.DevAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
 {
@@ -59,11 +62,16 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
                     return;
                 }
 
-                if (!_provider.QuickInfoBroker.IsQuickInfoActive(_textView))
+                if (!_provider.AsyncQuickInfoBroker.IsQuickInfoActive(_textView))
                 {
                     var triggerPoint = point.Value.Snapshot.CreateTrackingPoint(point.Value.Position, PointTrackingMode.Positive);
-                    _provider.QuickInfoBroker.TriggerQuickInfo(_textView, triggerPoint, trackMouse: true);
+                    _ = _provider.AsyncQuickInfoBroker.TriggerQuickInfoAsync(_textView, triggerPoint, QuickInfoSessionOptions.None, CancellationToken.None);
                 }
+
+                // POC-007: standard Quick Info only (no custom popup)
+                bool useQuickInfoOnly = vulnerabilities.All(v => v.Id == DevAssistMockData.QuickInfoOnlyVulnerabilityId);
+                if (useQuickInfoOnly)
+                    return;
 
                 var wpfView = _textView as IWpfTextView;
                 if (wpfView?.VisualElement != null)

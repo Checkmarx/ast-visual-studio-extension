@@ -158,8 +158,11 @@
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTaggerProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoController.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoControllerProvider.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistAsyncQuickInfoSource.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistAsyncQuickInfoSourceProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSource.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSourceProvider.cs" />
+    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoClassifications.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSuggestedActionsSourceProvider.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSuggestedActionsSource.cs" />
     <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickFixActions.cs" />
@@ -222,6 +225,7 @@
       <Version>19.225.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense" Version="17.9.187" />
+    <PackageReference Include="Microsoft.VisualStudio.Language.StandardClassification" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.12.2069">
