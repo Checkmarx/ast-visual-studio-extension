@@ -18,7 +18,8 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
 
         public FixWithCxOneAssistSuggestedAction(Vulnerability vulnerability)
         {
-            _vulnerability = vulnerability ?? throw new ArgumentNullException(nameof(vulnerability));
+            _vulnerability = vulnerability ?? throw new ArgumentNullException(nameof(vulnerability))
+
         }
 
         public string DisplayText => "Fix with Checkmarx One Assist";

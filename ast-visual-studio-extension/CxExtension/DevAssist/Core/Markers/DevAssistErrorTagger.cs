@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.DevAssist.Core;
 using ast_visual_studio_extension.CxExtension.DevAssist.Core.Models;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Tagging;
@@ -118,12 +119,12 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
         }
 
         /// <summary>
-        /// Builds tooltip text for ErrorTag. Minimal so the rich Quick Info popup (inserted first) is the main hover content.
+        /// Builds tooltip text for ErrorTag. Use minimal text so the rich Quick Info (async source) is the single place
+        /// for full content; avoids duplicate "Checkmarx One Assist" block from ErrorTag tooltip in the same popup.
         /// </summary>
         private static string BuildTooltipText(Vulnerability vulnerability)
         {
-            if (vulnerability == null) return string.Empty;
-            return "Hover for details";
+            return string.Empty;
         }
 
         /// <summary>
