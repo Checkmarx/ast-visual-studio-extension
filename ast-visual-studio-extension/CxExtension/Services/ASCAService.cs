@@ -72,8 +72,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
                     _uiManager.WriteToOutputPane($"Start ASCA scan On File: {document.FullName}");
                     CxAsca scanResult = await _cxWrapper.ScanAscaAsync(
                         fileSource: tempFilePath,
-                        ascaLatestVersion: false,
-                        agent: CxConstants.EXTENSION_AGENT
+                        ascaLatestVersion: false
                     );
                     if (scanResult.Error != null)
                     {
@@ -214,8 +213,7 @@ namespace ast_visual_studio_extension.CxExtension.Services
         {
             await _cxWrapper.ScanAscaAsync(
                 fileSource: "",
-                ascaLatestVersion: true,
-                agent: CxConstants.EXTENSION_AGENT
+                ascaLatestVersion: true
             );
         }
     }

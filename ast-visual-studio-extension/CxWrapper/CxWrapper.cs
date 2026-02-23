@@ -1,10 +1,11 @@
-﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -39,6 +40,10 @@ namespace ast_visual_studio_extension.CxCLI
         {
             try
             {
+                // Add agent flag to all commands
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
                 string commandLine = $"cx.exe {string.Join(" ", arguments)}";
                 logger.Info($"Executing CLI command: {commandLine}");
                 var result = Execution.ExecuteCommand(WithConfigArguments(arguments), resultHandler);
@@ -55,6 +60,10 @@ namespace ast_visual_studio_extension.CxCLI
         {
             try
             {
+                // Add agent flag to all commands
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
                 string commandLine = $"cx.exe {string.Join(" ", arguments)}";
                 logger.Info(string.Format(CxConstants.LOG_CLI_COMMAND_EXECUTING, commandLine));
                 var result = Execution.ExecuteCommand(WithConfigArguments(arguments), tempDir, fileName);
@@ -73,9 +82,8 @@ namespace ast_visual_studio_extension.CxCLI
         /// </summary>
         /// <param name="fileSource">Source file path</param>
         /// <param name="ascaLatestVersion">If true, adds latest version flag</param>
-        /// <param name="agent">Agent identifier</param>
         /// <returns>CxAsca result</returns>
-        public CxAsca ScanAsca(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        public CxAsca ScanAsca(string fileSource, bool ascaLatestVersion = false)
         {
             logger.Info(string.Format(CxConstants.LOG_RUNNING_ASCA_SCAN_CMD, fileSource));
 
@@ -106,7 +114,7 @@ namespace ast_visual_studio_extension.CxCLI
                 }
             }
 
-            AppendAgentToArguments(agent, arguments);
+            // Note: --agent flag is automatically added by ExecuteCliCommand
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
             return JsonConvert.DeserializeObject<CxAsca>(result);
@@ -115,26 +123,291 @@ namespace ast_visual_studio_extension.CxCLI
         /// <summary>
         /// Scan file with ASCA asynchronously
         /// </summary>
-        public async Task<CxAsca> ScanAscaAsync(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        public async Task<CxAsca> ScanAscaAsync(string fileSource, bool ascaLatestVersion = false)
         {
-            return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion, agent));
+            return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion));
         }
 
-        private void AppendAgentToArguments(string agent, List<string> arguments)
+        /// <summary>
+        /// Perform OSS realtime scan on a source file or directory
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>OSS realtime scan results</returns>
+        public OssRealtimeResults OssRealtimeScan(string sourcePath, string ignoredFilePath = null)
         {
-            arguments.Add(CxConstants.FLAG_AGENT);
+            logger.Info(CxConstants.LOG_RUNNING_OSS_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
 
-            if (!string.IsNullOrEmpty(agent))
+            List<string> arguments = new List<string>
             {
-                arguments.Add(agent);
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_OSS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+            return JsonConvert.DeserializeObject<OssRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform OSS realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>OSS realtime scan results</returns>
+        public async Task<OssRealtimeResults> OssRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
+        {
+            return await Task.Run(() => OssRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Perform Secrets realtime scan to detect exposed secrets in source code.
+        /// Executes 'cx scan secrets-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Secrets realtime scan results containing detected secrets</returns>
+        public SecretsRealtimeResults SecretsRealtimeScan(string sourcePath, string ignoredFilePath = null)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_SECRETS_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_SECRETS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            return JsonConvert.DeserializeObject<SecretsRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform Secrets realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Secrets realtime scan results containing detected secrets</returns>
+        public async Task<SecretsRealtimeResults> SecretsRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
+        {
+            return await Task.Run(() => SecretsRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Perform IAC (Infrastructure as Code) realtime scan to detect security issues in configuration files.
+        /// Executes 'cx scan iac-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>IAC realtime scan results containing detected issues</returns>
+        public IacRealtimeResults IacRealtimeScan(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_IAC_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}, Engine: {engine ?? "default"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_IAC_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            if (!string.IsNullOrEmpty(engine))
+            {
+                arguments.Add(CxConstants.FLAG_ENGINE);
+                arguments.Add(engine);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            return JsonConvert.DeserializeObject<IacRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform IAC realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>IAC realtime scan results containing detected issues</returns>
+        public async Task<IacRealtimeResults> IacRealtimeScanAsync(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            return await Task.Run(() => IacRealtimeScan(sourcePath, ignoredFilePath, engine));
+        }
+
+        /// <summary>
+        /// Check if a container engine (e.g., Docker, Podman) is installed and accessible on the system.
+        /// Runs '&lt;engineName&gt; --version' to verify the engine is available.
+        /// </summary>
+        /// <param name="engineName">The name of the container engine to check (e.g., "docker", "podman")</param>
+        /// <returns>The engine name if it is installed and accessible</returns>
+        /// <exception cref="CxException">Thrown when the engine is not installed or not accessible from the system PATH</exception>
+        public string CheckEngineExist(string engineName)
+        {
+            if (string.IsNullOrEmpty(engineName))
+            {
+                throw new ArgumentNullException(nameof(engineName), "Engine name must not be null or empty.");
+            }
+
+            // Restrict to known container engine names to prevent arbitrary command execution
+            string normalizedName = engineName.Trim().ToLowerInvariant();
+            if (normalizedName != CxConstants.DOCKER && normalizedName != CxConstants.PODMAN)
+            {
+                throw new ArgumentException($"Unsupported container engine: {engineName}. Supported engines are '{CxConstants.DOCKER}' and '{CxConstants.PODMAN}'.", nameof(engineName));
+            }
+
+            logger.Info(string.Format(CxConstants.LOG_CHECKING_ENGINE_EXIST, normalizedName));
+
+            return CheckEngine(normalizedName);
+        }
+
+        /// <summary>
+        /// Check if a container engine is installed asynchronously
+        /// </summary>
+        /// <param name="engineName">The name of the container engine to check (e.g., "docker", "podman")</param>
+        /// <returns>The engine name if it is installed and accessible</returns>
+        /// <exception cref="CxException">Thrown when the engine is not installed or not accessible from the system PATH</exception>
+        public async Task<string> CheckEngineExistAsync(string engineName)
+        {
+            return await Task.Run(() => CheckEngineExist(engineName));
+        }
+
+        /// <summary>
+        /// Verify that the specified container engine is installed by running '&lt;engineName&gt; --version'.
+        /// </summary>
+        /// <param name="engineName">The name of the container engine executable</param>
+        /// <returns>The engine name if verification succeeds</returns>
+        /// <exception cref="CxException">Thrown when the engine is not found or the version check fails</exception>
+        private string CheckEngine(string engineName)
+        {
+            // Map validated engine name to a hardcoded executable to prevent OS command injection.
+            // The caller (CheckEngineExist) already validates engineName against known constants,
+            // but we resolve to hardcoded strings here so no dynamic value reaches ProcessStartInfo.FileName.
+            string hardcodedFileName;
+            if (engineName == CxConstants.DOCKER)
+            {
+                hardcodedFileName = "docker";
+            }
+            else if (engineName == CxConstants.PODMAN)
+            {
+                hardcodedFileName = "podman";
             }
             else
             {
-                arguments.Add(CxConstants.EXTENSION_AGENT);
+                throw new ArgumentException($"Unsupported container engine: {engineName}.", nameof(engineName));
+            }
+
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = hardcodedFileName,
+                        Arguments = "--version",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                process.WaitForExit(5000); // 5 second timeout
+
+                if (process.ExitCode == 0)
+                {
+                    logger.Info($"Container engine '{hardcodedFileName}' is installed and accessible.");
+                    return hardcodedFileName;
+                }
+
+                throw new CxException(1, $"{hardcodedFileName} is not installed or is not accessible from the system PATH.");
+            }
+            catch (CxException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"Failed to verify container engine '{hardcodedFileName}': {ex.Message}", ex);
+                throw new CxException(1, $"{hardcodedFileName} is not installed or is not accessible from the system PATH.");
             }
         }
 
+        /// <summary>
+        /// Perform Containers realtime scan to detect vulnerabilities in container images.
+        /// Executes 'cx scan containers-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
+        public ContainersRealtimeResults ContainersRealtimeScan(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            logger.Info(CxConstants.LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD);
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}, Engine: {engine ?? "default"}");
 
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_CONTAINERS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            if (!string.IsNullOrEmpty(engine))
+            {
+                arguments.Add(CxConstants.FLAG_ENGINE);
+                arguments.Add(engine);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            return JsonConvert.DeserializeObject<ContainersRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform Containers realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
+        public async Task<ContainersRealtimeResults> ContainersRealtimeScanAsync(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            return await Task.Run(() => ContainersRealtimeScan(sourcePath, ignoredFilePath, engine));
+        }
 
         /// <summary>
         /// Auth Validate command
@@ -207,7 +480,7 @@ namespace ast_visual_studio_extension.CxCLI
                 CxConstants.FLAG_REPORT_FORMAT, reportFormat.ToString(),
                 CxConstants.FLAG_OUTPUT_NAME, fileName,
                 CxConstants.FLAG_OUTPUT_PATH, tempDir,
-                CxConstants.FLAG_AGENT, CxCLI.CxConstants.EXTENSION_AGENT,
+                // Note: --agent flag is automatically added by ExecuteCliCommand
             };
 
             string extension = string.Empty;
@@ -585,6 +858,170 @@ namespace ast_visual_studio_extension.CxCLI
         public async Task<bool> IdeScansEnabledAsync()
         {
             return await Task.Run(() => IdeScansEnabled());
+        }
+
+        /// <summary>
+        /// Core telemetry AI event method - matches JavaWrapper signature exactly.
+        /// Executes telemetry AI command to collect telemetry data for user interactions related to AI features.
+        /// </summary>
+        /// <param name="aiProvider">AI provider name (e.g., "Copilot")</param>
+        /// <param name="eventType">Event type (e.g., "click")</param>
+        /// <param name="subType">Event subtype (e.g., "ast-results.viewPackageDetails")</param>
+        /// <param name="engine">Engine type (e.g., "secrets")</param>
+        /// <param name="problemSeverity">Severity level (e.g., "high")</param>
+        /// <param name="scanType">Type of scan (e.g., "Oss", "Secrets", "IaC")</param>
+        /// <param name="status">Status/severity for detection logs (e.g., "High", "Critical")</param>
+        /// <param name="totalCount">Number of issues detected for the given severity</param>
+        public void TelemetryAIEvent(
+            string aiProvider,
+            string eventType,
+            string subType,
+            string engine,
+            string problemSeverity,
+            string scanType,
+            string status,
+            int totalCount)
+        {
+            logger.Info(string.Format(CxConstants.LOG_RUNNING_TELEMETRY_AI_CMD, aiProvider, eventType, subType));
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_TELEMETRY_CMD,
+                CxConstants.CLI_TELEMETRY_AI_CMD,
+                CxConstants.FLAG_AI_PROVIDER,
+                aiProvider ?? string.Empty,
+                CxConstants.FLAG_TYPE,
+                eventType ?? string.Empty,
+                CxConstants.FLAG_SUB_TYPE,
+                subType ?? string.Empty,
+                CxConstants.FLAG_ENGINE,
+                engine ?? string.Empty,
+                CxConstants.FLAG_PROBLEM_SEVERITY,
+                problemSeverity ?? string.Empty,
+                CxConstants.FLAG_SCAN_TYPE,
+                scanType ?? string.Empty,
+                CxConstants.FLAG_STATUS,
+                status ?? string.Empty,
+                CxConstants.FLAG_TOTAL_COUNT,
+                totalCount.ToString()
+            };
+
+            // Note: --agent flag is automatically added by ExecuteCliCommand
+            ExecuteCliCommand(arguments, line => line);
+        }
+
+        /// <summary>
+        /// Logs user interaction telemetry (e.g., clicks on "Fix with AI", "View Details").
+        /// This is a convenience wrapper for user event logging.
+        /// </summary>
+        /// <param name="eventType">Event type (e.g., "click")</param>
+        /// <param name="subType">Event subtype (e.g., "fixWithAIChat", "viewDetails")</param>
+        /// <param name="engine">Engine type (e.g., "Oss", "Secrets", "IaC", "Asca", "Containers")</param>
+        /// <param name="problemSeverity">Severity level (e.g., "High", "Critical", "Medium", "Low")</param>
+        public void LogUserEventTelemetry(string eventType, string subType, string engine, string problemSeverity)
+        {
+            TelemetryAIEvent(
+                aiProvider: "Copilot",
+                eventType: eventType,
+                subType: subType,
+                engine: engine,
+                problemSeverity: problemSeverity,
+                scanType: string.Empty,
+                status: string.Empty,
+                totalCount: 0
+            );
+        }
+
+        /// <summary>
+        /// Logs scan detection telemetry (issue counts by severity).
+        /// This is a convenience wrapper for detection result logging.
+        /// </summary>
+        /// <param name="scanType">Type of scan (e.g., "Oss", "Secrets", "IaC", "Asca", "Containers")</param>
+        /// <param name="status">Severity level (e.g., "Critical", "High", "Medium", "Low")</param>
+        /// <param name="totalCount">Number of issues detected for the given severity</param>
+        public void LogDetectionTelemetry(string scanType, string status, int totalCount)
+        {
+            if (totalCount <= 0)
+            {
+                logger.Debug($"Telemetry: No issues to log for scan type: {scanType}, status: {status}");
+                return;
+            }
+
+            TelemetryAIEvent(
+                aiProvider: string.Empty,
+                eventType: string.Empty,
+                subType: string.Empty,
+                engine: string.Empty,
+                problemSeverity: string.Empty,
+                scanType: scanType,
+                status: status,
+                totalCount: totalCount
+            );
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for non-blocking telemetry logging.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void TelemetryAIEventFireAndForget(
+            string aiProvider,
+            string eventType,
+            string subType, 
+            string engine,
+            string problemSeverity,
+            string scanType,
+            string status,
+            int totalCount)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    TelemetryAIEvent(aiProvider, eventType, subType, engine, problemSeverity, scanType, status, totalCount);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn($"Telemetry: Failed to log telemetry event: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for user event telemetry.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void LogUserEventTelemetryFireAndForget(string eventType, string subType, string engine, string problemSeverity)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    LogUserEventTelemetry(eventType, subType, engine, problemSeverity);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn($"Telemetry: Failed to log user event telemetry: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for detection telemetry.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void LogDetectionTelemetryFireAndForget(string scanType, string status, int totalCount)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    LogDetectionTelemetry(scanType, status, totalCount);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warn($"Telemetry: Failed to log detection telemetry: {ex.Message}");
+                }
+            });
         }
 
         /// <summary>
