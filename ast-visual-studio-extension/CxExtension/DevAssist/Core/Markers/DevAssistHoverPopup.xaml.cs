@@ -59,10 +59,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
             if (MultipleIssuesPanel != null)
                 MultipleIssuesPanel.Visibility = Visibility.Collapsed;
 
-            // DevAssist logo (JetBrains-style at top of tooltip)
             SetDevAssistIcon();
-
-            // Set severity icon
             SetSeverityIcon();
 
             // Severity count row when multiple findings on same line (JetBrains buildVulnerabilitySection)

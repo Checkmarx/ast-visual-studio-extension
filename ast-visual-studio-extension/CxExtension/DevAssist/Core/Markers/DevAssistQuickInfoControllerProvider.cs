@@ -14,7 +14,7 @@ namespace ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers
     internal class DevAssistQuickInfoControllerProvider : IIntellisenseControllerProvider
     {
         [Import]
-        internal IQuickInfoBroker QuickInfoBroker { get; set; }
+        internal IAsyncQuickInfoBroker AsyncQuickInfoBroker { get; set; }
 
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers)
         {
