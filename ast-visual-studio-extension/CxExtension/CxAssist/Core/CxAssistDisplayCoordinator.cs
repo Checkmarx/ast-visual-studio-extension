@@ -32,8 +32,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 return Path.GetFullPath(path);
             }
-            catch
+            catch (Exception ex)
             {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.NormalizePath");
                 return path;
             }
         }
@@ -148,7 +149,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         {
             if (buffer == null)
             {
-                System.Diagnostics.Debug.WriteLine("CxAssistDisplayCoordinator: buffer is null");
+                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: buffer is null");
                 return;
             }
 
@@ -159,14 +160,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             if (glyphTagger != null)
                 CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
             else
-                System.Diagnostics.Debug.WriteLine("CxAssistDisplayCoordinator: glyph tagger not found for buffer");
+                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: glyph tagger not found for buffer");
 
             // 2. Update underline
             var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
             if (errorTagger != null)
                 CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
             else
-                System.Diagnostics.Debug.WriteLine("CxAssistDisplayCoordinator: error tagger not found for buffer");
+                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: error tagger not found for buffer");
 
             // 3. Store per file and notify (JetBrains ProblemHolderService + ISSUE_TOPIC-like)
             CxAssistErrorHandler.TryRun(() =>
@@ -191,7 +192,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 IssuesUpdated?.Invoke(snapshot);
             }, "Coordinator.StoreCurrentFindings");
 
-            System.Diagnostics.Debug.WriteLine($"CxAssistDisplayCoordinator: updated gutter, underline, and per-file findings ({list.Count} for file)");
+            System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: updated gutter, underline, and per-file findings ({list.Count} for file)");
         }
 
         /// <summary>

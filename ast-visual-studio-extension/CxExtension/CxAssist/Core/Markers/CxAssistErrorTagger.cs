@@ -28,13 +28,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         public IEnumerable<ITagSpan<IErrorTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             var result = new List<ITagSpan<IErrorTag>>();
-            System.Diagnostics.Debug.WriteLine($"CxAssist Markers: GetTags called - spans count: {spans?.Count ?? 0}, vulnerabilities count: {_vulnerabilitiesByLine.Count}");
 
             if (spans == null || spans.Count == 0 || _vulnerabilitiesByLine.Count == 0)
-            {
-                System.Diagnostics.Debug.WriteLine($"CxAssist Markers: GetTags returning early - no spans or vulnerabilities");
                 return result;
-            }
 
             ITextSnapshot snapshot = null;
             try
@@ -47,8 +43,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
 
             if (snapshot == null) return result;
-            int tagCount = 0;
-
             foreach (var span in spans)
             {
                 try
@@ -63,19 +57,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                             foreach (var vulnerability in vulnerabilities)
                             {
                                 if (!ShouldShowUnderline(vulnerability.Severity))
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"CxAssist Markers: Skipping underline for {vulnerability.Severity} on line {lineNumber}");
                                     continue;
-                                }
 
                                 var line = snapshot.GetLineFromLineNumber(lineNumber);
                                 var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
 
                                 var tooltipText = BuildTooltipText(vulnerability);
                                 IErrorTag tag = new ErrorTag("Error", tooltipText);
-
-                                tagCount++;
-                                System.Diagnostics.Debug.WriteLine($"CxAssist Markers: Creating error tag #{tagCount} for line {lineNumber}, severity: {vulnerability.Severity}");
                                 result.Add(new TagSpan<IErrorTag>(lineSpan, tag));
                             }
                         }
@@ -87,7 +75,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine($"CxAssist Markers: GetTags completed - returned {tagCount} error tags");
             return result;
         }
 
@@ -138,8 +125,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         private void UpdateVulnerabilitiesCore(List<Vulnerability> vulnerabilities)
         {
-            System.Diagnostics.Debug.WriteLine($"CxAssist Markers: UpdateVulnerabilities called with {vulnerabilities?.Count ?? 0} vulnerabilities");
-
             _vulnerabilitiesByLine.Clear();
 
             if (vulnerabilities != null)
@@ -147,25 +132,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 foreach (var vulnerability in vulnerabilities)
                 {
                     int lineNumber = vulnerability.LineNumber - 1;
-
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
-                    {
                         _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
-                    }
-
                     _vulnerabilitiesByLine[lineNumber].Add(vulnerability);
-                    System.Diagnostics.Debug.WriteLine($"CxAssist Markers: Added vulnerability {vulnerability.Id} to line {lineNumber}");
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine($"CxAssist Markers: Vulnerabilities stored in {_vulnerabilitiesByLine.Count} lines");
-
             var snapshot = _buffer.CurrentSnapshot;
             var entireSpan = new SnapshotSpan(snapshot, 0, snapshot.Length);
-
-            System.Diagnostics.Debug.WriteLine($"CxAssist Markers: Raising TagsChanged event for span: {entireSpan.Start} to {entireSpan.End}");
             TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(entireSpan));
-            System.Diagnostics.Debug.WriteLine($"CxAssist Markers: TagsChanged event raised");
         }
 
         /// <summary>
@@ -174,7 +149,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         /// </summary>
         public void ClearVulnerabilities()
         {
-            System.Diagnostics.Debug.WriteLine("CxAssist Markers: ClearVulnerabilities called");
             UpdateVulnerabilities(null);
         }
 

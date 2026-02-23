@@ -36,11 +36,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 _fileNodes = value;
                 OnPropertyChanged(nameof(FileNodes));
                 OnPropertyChanged(nameof(HasFindings));
+                OnPropertyChanged(nameof(ShowEmptyState));
                 UpdateStatusBar();
             }
         }
 
-        public bool HasFindings => FileNodes == null || FileNodes.Count == 0;
+        /// <summary>True when there is at least one finding in the tree.</summary>
+        public bool HasFindings => FileNodes != null && FileNodes.Count > 0;
+
+        /// <summary>True when the list is empty (used to show "No vulnerabilities found" message).</summary>
+        public bool ShowEmptyState => !HasFindings;
 
         public string StatusBarText
         {

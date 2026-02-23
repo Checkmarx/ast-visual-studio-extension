@@ -170,6 +170,7 @@
     <Compile Include="CxExtension\CxAssist\Core\CxAssistMockData.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistDisplayCoordinator.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorListSync.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistConstants.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\SeverityLevel.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\ScannerType.cs" />

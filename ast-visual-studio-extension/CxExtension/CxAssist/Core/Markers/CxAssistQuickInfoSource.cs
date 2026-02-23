@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
@@ -106,7 +107,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 elements.Add(headerRow);
             else
                 elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, "Checkmarx One Assist", ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.DisplayName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
                 ));
 
             for (int i = 0; i < vulnerabilities.Count; i++)
@@ -127,7 +128,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         elements.Add(headerForFinding);
                     else
                         elements.Add(new ClassifiedTextElement(
-                            new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, "Checkmarx One Assist", ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
+                            new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.DisplayName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
                         ));
                 }
 
@@ -194,7 +195,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 elements.Add(headerRow);
             else
                 elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, "Checkmarx One Assist", ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.DisplayName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
                 ));
 
             // Row 2 – Severity icon + title on one line – custom-popup style
@@ -246,7 +247,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         internal static void RunFixWithAssist(Vulnerability v)
         {
-            RunOnUiThread(() => MessageBox.Show($"Fix with Checkmarx One Assist:\n{v?.Title ?? v?.Description ?? "—"}", "Checkmarx One Assist"));
+            RunOnUiThread(() => MessageBox.Show($"Fix with {CxAssistConstants.DisplayName}:\n{v?.Title ?? v?.Description ?? "—"}", CxAssistConstants.DisplayName));
         }
 
         internal static void RunViewDetails(Vulnerability v)
@@ -263,19 +264,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"CxAssist QuickInfo View Details: {ex.Message}");
-                        MessageBox.Show($"Could not open link: {url}", "Checkmarx One Assist");
+                        MessageBox.Show($"Could not open link: {url}", CxAssistConstants.DisplayName);
                     }
                 });
             }
             else
             {
-                RunOnUiThread(() => MessageBox.Show($"View Details:\n{v?.Title ?? ""}\n{v?.Description ?? ""}\nSeverity: {v?.Severity}", "Checkmarx One Assist"));
+                RunOnUiThread(() => MessageBox.Show($"View Details:\n{v?.Title ?? ""}\n{v?.Description ?? ""}\nSeverity: {v?.Severity}", CxAssistConstants.DisplayName));
             }
         }
 
         internal static void RunIgnoreVulnerability(Vulnerability v)
         {
-            RunOnUiThread(() => MessageBox.Show($"Ignore vulnerability:\n{v?.Title ?? v?.Description ?? "—"}", "Checkmarx One Assist"));
+            RunOnUiThread(() => MessageBox.Show($"Ignore vulnerability:\n{v?.Title ?? v?.Description ?? "—"}", CxAssistConstants.DisplayName));
         }
 
         internal static void RunOnUiThread(Action action)
@@ -287,7 +288,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"CxAssist QuickInfo link: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.RunOnUiThread");
             }
         }
 
@@ -316,7 +317,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo CreateDescriptionBlock: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.CreateDescriptionBlock");
                 return null;
             }
         }
@@ -359,7 +360,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo CreateActionLinksRow: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.CreateActionLinksRow");
                 return null;
             }
         }
@@ -384,7 +385,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo CreateHorizontalSeparator: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.CreateHorizontalSeparator");
                 return null;
             }
         }
@@ -399,11 +400,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 var backgroundColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
                 double brightness = (0.299 * backgroundColor.R + 0.587 * backgroundColor.G + 0.114 * backgroundColor.B) / 255.0;
-                return brightness < 0.5 ? "Dark" : "Light";
+                return brightness < 0.5 ? CxAssistConstants.ThemeDark : CxAssistConstants.ThemeLight;
             }
             catch
             {
-                return "Dark";
+                return CxAssistConstants.ThemeDark;
             }
         }
 
@@ -413,9 +414,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         private static System.Windows.UIElement CreateHeaderRow()
         {
             string theme = GetCurrentTheme();
-            var source = LoadIconFromAssembly(theme, "cxone_assist.png");
-            if (source == null && theme != "Dark")
-                source = LoadIconFromAssembly("Dark", "cxone_assist.png");
+            var source = LoadIconFromAssembly(theme, CxAssistConstants.BadgeIconFileName);
+            if (source == null && theme != CxAssistConstants.ThemeDark)
+                source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, CxAssistConstants.BadgeIconFileName);
             if (source == null)
                 return null;
             try
@@ -443,7 +444,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo CreateHeaderRow: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.CreateHeaderRow");
                 return null;
             }
         }
@@ -459,8 +460,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             if (!string.IsNullOrEmpty(fileName))
             {
                 severitySource = LoadIconFromAssembly(theme, fileName);
-                if (severitySource == null && theme != "Dark")
-                    severitySource = LoadIconFromAssembly("Dark", fileName);
+                if (severitySource == null && theme != CxAssistConstants.ThemeDark)
+                    severitySource = LoadIconFromAssembly(CxAssistConstants.ThemeDark, fileName);
             }
             try
             {
@@ -496,7 +497,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo CreateSeverityTitleRow: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.CreateSeverityTitleRow");
                 return null;
             }
         }
@@ -507,10 +508,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         private static System.Windows.UIElement CreateCxAssistBadgeImage()
         {
             string theme = GetCurrentTheme();
-            string fileName = "cxone_assist.png";
-            var source = LoadIconFromAssembly(theme, fileName);
-            if (source == null && theme != "Dark")
-                source = LoadIconFromAssembly("Dark", fileName);
+            var source = LoadIconFromAssembly(theme, CxAssistConstants.BadgeIconFileName);
+            if (source == null && theme != CxAssistConstants.ThemeDark)
+                source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, CxAssistConstants.BadgeIconFileName);
             if (source == null)
                 return null;
             try
@@ -531,7 +531,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo badge: create Image on main thread: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.CreateCxAssistBadgeImage");
                 return null;
             }
         }
@@ -546,8 +546,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             if (string.IsNullOrEmpty(fileName))
                 return null;
             var source = LoadIconFromAssembly(theme, fileName);
-            if (source == null && theme != "Dark")
-                source = LoadIconFromAssembly("Dark", fileName);
+            if (source == null && theme != CxAssistConstants.ThemeDark)
+                source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, fileName);
             if (source == null)
                 return null;
             try
@@ -568,7 +568,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo severity icon: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.CreateSeverityImage");
                 return null;
             }
         }
@@ -614,7 +614,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo icon: pack load failed for {fileName}: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, $"QuickInfo.LoadIconFromAssembly (pack): {fileName}");
             }
 
             try
@@ -642,7 +642,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CxAssist QuickInfo icon: manifest load failed for {fileName}: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, $"QuickInfo.LoadIconFromAssembly (manifest): {fileName}");
             }
 
             return null;

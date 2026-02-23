@@ -3,6 +3,7 @@ using ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows.Media;
 
@@ -226,7 +227,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             foreach (var group in grouped)
             {
                 var filePath = group.Key;
-                var fileName = System.IO.Path.GetFileName(filePath);
+                var fileName = Path.GetFileName(filePath);
                 if (string.IsNullOrEmpty(fileName)) fileName = filePath;
 
                 var fileNode = new FileNode
