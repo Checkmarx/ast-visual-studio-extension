@@ -50,14 +50,14 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
             try
             {
-                System.Diagnostics.Debug.WriteLine("DevAssist: Testing Error List customization...");
+                System.Diagnostics.Debug.WriteLine("CxAssist: Testing Error List customization...");
 
                 // Initialize ErrorListProvider
                 if (_errorListProvider == null)
                 {
                     _errorListProvider = new ErrorListProvider(Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider)
                     {
-                        ProviderName = "Checkmarx DevAssist",
+                        ProviderName = "Checkmarx CxAssist",
                         ProviderGuid = new Guid("12345678-1234-1234-1234-123456789ABC")
                     };
                 }
@@ -102,7 +102,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"DevAssist: Error in Error List test: {ex.Message}\n{ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"CxAssist: Error in Error List test: {ex.Message}\n{ex.StackTrace}");
                 VsShellUtilities.ShowMessageBox(
                     this.package,
                     $"Error: {ex.Message}",
@@ -121,7 +121,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             {
                 Category = TaskCategory.CodeSense,
                 ErrorCategory = category,
-                Text = $"[{severity}] {description} (DevAssist)",
+                Text = $"[{severity}] {description} (CxAssist)",
                 Document = file,
                 Line = line - 1,
                 Column = column,

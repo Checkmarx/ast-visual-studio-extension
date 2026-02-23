@@ -5,9 +5,9 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.ComponentModelHost;
-using ast_visual_studio_extension.CxExtension.DevAssist.Core.GutterIcons;
-using ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers;
-using ast_visual_studio_extension.CxExtension.DevAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using Task = System.Threading.Tasks.Task;
 using Microsoft.VisualStudio.Shell.Interop;
 
@@ -52,7 +52,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
             try
             {
-                System.Diagnostics.Debug.WriteLine("DevAssist: TestGutterIconsDirectCommand - Starting DIRECT test (no MEF)");
+                System.Diagnostics.Debug.WriteLine("CxAssist: TestGutterIconsDirectCommand - Starting DIRECT test (no MEF)");
 
                 var textView = GetActiveTextView();
                 if (textView == null)
@@ -72,33 +72,33 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 // Use the same taggers the editor and Quick Info use (from MEF providers).
                 // Creating new taggers and storing in buffer.Properties would not be used by
                 // the error layer or Quick Info source, so the rich hover would never see data.
-                var glyphTagger = DevAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer);
-                var errorTagger = DevAssistErrorTaggerProvider.GetTaggerForBuffer(buffer);
+                var glyphTagger = CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer);
+                var errorTagger = CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer);
 
                 if (glyphTagger == null || errorTagger == null)
                 {
                     VsShellUtilities.ShowMessageBox(
                         this.package,
-                        "DevAssist taggers not ready for this buffer. Ensure the code file is open and focused, then run this command again.",
-                        "Test DevAssist Hover Popup",
+                        "CxAssist taggers not ready for this buffer. Ensure the code file is open and focused, then run this command again.",
+                        "Test CxAssist Hover Popup",
                         OLEMSGICON.OLEMSGICON_WARNING,
                         OLEMSGBUTTON.OLEMSGBUTTON_OK,
                         OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
                     return;
                 }
 
-                System.Diagnostics.Debug.WriteLine("DevAssist: Using provider taggers for glyph and error (same as editor and Quick Info)");
+                System.Diagnostics.Debug.WriteLine("CxAssist: Using provider taggers for glyph and error (same as editor and Quick Info)");
 
                 // Create test vulnerabilities: Critical, High, Medium, Low for colored marker verification (AST-133227)
                 var vulnerabilities = new List<Vulnerability>
                 {
                     // Scanner-specific vulnerabilities (cover Critical, High, Medium)
-                    DevAssistTestHelper.CreateOssVulnerability(),         // Line 5:  High (red)
-                    DevAssistTestHelper.CreateLowSeverityVulnerability(), // Line 7:  Low (green) - visual distinction
-                    DevAssistTestHelper.CreateAscaVulnerability(),       // Line 42: Critical (dark red)
-                    DevAssistTestHelper.CreateIacVulnerability(),         // Line 28: High (red)
-                    DevAssistTestHelper.CreateSecretsVulnerability(),     // Line 12: Critical (dark red)
-                    DevAssistTestHelper.CreateContainersVulnerability(),  // Line 1:  Medium (orange)
+                    CxAssistTestHelper.CreateOssVulnerability(),         // Line 5:  High (red)
+                    CxAssistTestHelper.CreateLowSeverityVulnerability(), // Line 7:  Low (green) - visual distinction
+                    CxAssistTestHelper.CreateAscaVulnerability(),       // Line 42: Critical (dark red)
+                    CxAssistTestHelper.CreateIacVulnerability(),         // Line 28: High (red)
+                    CxAssistTestHelper.CreateSecretsVulnerability(),     // Line 12: Critical (dark red)
+                    CxAssistTestHelper.CreateContainersVulnerability(),  // Line 1:  Medium (orange)
 
                     // Line 5: second finding on same line -> popup shows severity count row (Critical + High)
                     new Vulnerability { Id = "TEST-005B", Title = "Second finding on line 5", Severity = SeverityLevel.Critical, LineNumber = 5, Scanner = ScannerType.ASCA, Description = "Multiple findings on one line test." },
@@ -109,19 +109,19 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                     new Vulnerability { Id = "TEST-008", Severity = SeverityLevel.Ignored, LineNumber = 15, Description = "Test Ignored vulnerability", Scanner = ScannerType.IaC }
                 };
 
-                System.Diagnostics.Debug.WriteLine($"DevAssist: Adding {vulnerabilities.Count} test vulnerabilities to both taggers");
+                System.Diagnostics.Debug.WriteLine($"CxAssist: Adding {vulnerabilities.Count} test vulnerabilities to both taggers");
 
                 // Update both taggers with the same vulnerabilities
                 glyphTagger.UpdateVulnerabilities(vulnerabilities);
                 errorTagger.UpdateVulnerabilities(vulnerabilities);
 
                 // Force the text view to refresh
-                System.Diagnostics.Debug.WriteLine("DevAssist: Forcing text view refresh");
+                System.Diagnostics.Debug.WriteLine("CxAssist: Forcing text view refresh");
                 textView.VisualElement.InvalidateVisual();
 
                 VsShellUtilities.ShowMessageBox(
                     this.package,
-                    $"✅ DevAssist Hover Popup Test - Scanner-Specific Data!\n\n" +
+                    $"✅ CxAssist Hover Popup Test - Scanner-Specific Data!\n\n" +
                     $"Added {vulnerabilities.Count} test vulnerabilities with rich scanner-specific data:\n\n" +
                     $"SCANNER-SPECIFIC VULNERABILITIES:\n" +
                     $"🟢 Line 5: OSS - Package vulnerability\n" +
@@ -142,14 +142,14 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                     $"✅ Action links (View Details, Navigate, Learn More, Apply Fix)\n" +
                     $"✅ Theme-aware styling\n" +
                     $"✅ Similar to JetBrains implementation",
-                    "Test DevAssist Hover Popup - Scanner-Specific Content",
+                    "Test CxAssist Hover Popup - Scanner-Specific Content",
                     OLEMSGICON.OLEMSGICON_INFO,
                     OLEMSGBUTTON.OLEMSGBUTTON_OK,
                     OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"DevAssist: Error in direct test: {ex.Message}\n{ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine($"CxAssist: Error in direct test: {ex.Message}\n{ex.StackTrace}");
                 VsShellUtilities.ShowMessageBox(
                     this.package,
                     $"Error: {ex.Message}",

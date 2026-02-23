@@ -15,11 +15,11 @@
 					<CommandName>Checkmarx extension toolbar</CommandName>
 				</Strings>
 			</Menu>
-			<Menu guid="guidCxWindowPackageCmdSet" id="DevAssistToolsMenu" type="Menu" priority="0x0600">
+			<Menu guid="guidCxWindowPackageCmdSet" id="CxAssistToolsMenu" type="Menu" priority="0x0600">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
 				<Strings>
-					<ButtonText>DevAssist</ButtonText>
-					<CommandName>DevAssist</CommandName>
+					<ButtonText>CxAssist</ButtonText>
+					<CommandName>CxAssist</CommandName>
 				</Strings>
 			</Menu>
 		</Menus>
@@ -28,10 +28,10 @@
 			<Group guid="guidCxWindowPackageCmdSet" id="MyMenuGroup" priority="0x0600">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
 			</Group>
-			<Group guid="guidCxWindowPackageCmdSet" id="DevAssistToolsGroup" priority="0x0100">
-				<Parent guid="guidCxWindowPackageCmdSet" id="DevAssistToolsMenu"/>
+			<Group guid="guidCxWindowPackageCmdSet" id="CxAssistToolsGroup" priority="0x0100">
+				<Parent guid="guidCxWindowPackageCmdSet" id="CxAssistToolsMenu"/>
 				<Strings>
-					<CommandName>DevAssist</CommandName>
+					<CommandName>CxAssist</CommandName>
 				</Strings>
 			</Group>
 			<Group guid="guidCxWindowPackageCmdSet" id="TWToolbarGroup" priority="0x0000">
@@ -57,12 +57,12 @@
 				</Strings>
 			</Button>
 			-->
-			<!-- Test DevAssist Hover Popup: directly under Tools so it is always visible -->
+			<!-- Test CxAssist Hover Popup: directly under Tools so it is always visible -->
 			<Button guid="guidTestGutterIconsDirectCommandSet" id="TestGutterIconsDirectCommandId" priority="0x0050" type="Button">
 				<Parent guid="guidCxWindowPackageCmdSet" id="MyMenuGroup"/>
 				<Strings>
-					<ButtonText>Test DevAssist Hover Popup</ButtonText>
-					<CommandName>TestDevAssistHoverPopup</CommandName>
+					<ButtonText>Test CxAssist Hover Popup</ButtonText>
+					<CommandName>TestCxAssistHoverPopup</CommandName>
 				</Strings>
 			</Button>
 		</Buttons>
@@ -78,8 +78,8 @@
 		<GuidSymbol name="guidCxWindowPackageCmdSet" value="{e46cd6d8-268d-4e77-9074-071e72a25f39}">
 			<IDSymbol name="CxWindowCommandId" value="0x0100" />
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
-			<IDSymbol name="DevAssistToolsMenu" value="0x1060" />
-			<IDSymbol name="DevAssistToolsGroup" value="0x1061" />
+			<IDSymbol name="CxAssistToolsMenu" value="0x1060" />
+			<IDSymbol name="CxAssistToolsGroup" value="0x1061" />
 			<IDSymbol name="CxWindowCmdId" value="0x0101" />
 			<IDSymbol name="TWToolbar" value="0x1000" />
 			<IDSymbol name="TWToolbarGroup" value="0x1050" />
