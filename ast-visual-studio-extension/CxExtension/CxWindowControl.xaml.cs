@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
@@ -31,7 +31,7 @@ namespace ast_visual_studio_extension.CxExtension
         private CancellationTokenSource typingCts;
         private ASCAService _ascaService;
 
-        private bool _devAssistDataLoaded = false;
+        private bool _CxAssistDataLoaded = false;
 
         public CxWindowControl(AsyncPackage package)
         {
@@ -39,7 +39,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             this.package = package;
 
-            // Subscribe to tab selection changed event to populate DevAssist data when tab is first shown
+            // Subscribe to tab selection changed event to populate CxAssist data when tab is first shown
             MainTabControl.SelectionChanged += MainTabControl_SelectionChanged;
 
             resultInfoPanel = new ResultInfoPanel(this);
@@ -92,19 +92,19 @@ namespace ast_visual_studio_extension.CxExtension
         }
 
         /// <summary>
-        /// Gets the DevAssist Findings Control from the DevAssist tab
+        /// Gets the CxAssist Findings Control from the CxAssist tab
         /// </summary>
-        public DevAssist.UI.FindingsWindow.DevAssistFindingsControl GetDevAssistFindingsControl()
+        public CxAssist.UI.FindingsWindow.CxAssistFindingsControl GetCxAssistFindingsControl()
         {
-            return DevAssistFindingsControl;
+            return CxAssistFindingsControl;
         }
 
         /// <summary>
-        /// Switches to the DevAssist Findings tab
+        /// Switches to the CxAssist Findings tab
         /// </summary>
-        public void SwitchToDevAssistTab()
+        public void SwitchToCxAssistTab()
         {
-            MainTabControl.SelectedItem = DevAssistFindingsTab;
+            MainTabControl.SelectedItem = CxAssistFindingsTab;
         }
 
         /// <summary>
@@ -116,21 +116,21 @@ namespace ast_visual_studio_extension.CxExtension
         }
 
         /// <summary>
-        /// Event handler for tab selection changed - populates DevAssist data when tab is first shown
+        /// Event handler for tab selection changed - populates CxAssist data when tab is first shown
         /// </summary>
         private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (MainTabControl.SelectedItem == DevAssistFindingsTab && !_devAssistDataLoaded)
+            if (MainTabControl.SelectedItem == CxAssistFindingsTab && !_CxAssistDataLoaded)
             {
-                _devAssistDataLoaded = true;
-                PopulateDevAssistTestData();
+                _CxAssistDataLoaded = true;
+                PopulateCxAssistTestData();
             }
         }
 
         /// <summary>
-        /// Populates the DevAssist Findings tab with test data
+        /// Populates the CxAssist Findings tab with test data
         /// </summary>
-        private void PopulateDevAssistTestData()
+        private void PopulateCxAssistTestData()
         {
             try
             {
@@ -146,7 +146,7 @@ namespace ast_visual_studio_extension.CxExtension
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error populating DevAssist test data: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error populating CxAssist test data: {ex.Message}");
             }
         }
 

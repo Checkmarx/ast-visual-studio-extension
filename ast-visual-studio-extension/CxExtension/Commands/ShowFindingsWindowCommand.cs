@@ -7,13 +7,13 @@ using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
-using ast_visual_studio_extension.CxExtension.DevAssist.Core;
-using ast_visual_studio_extension.CxExtension.DevAssist.UI.FindingsWindow;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow;
 
 namespace ast_visual_studio_extension.CxExtension.Commands
 {
     /// <summary>
-    /// Command handler to show and populate the DevAssist Findings window
+    /// Command handler to show and populate the CxAssist Findings window
     /// </summary>
     internal sealed class ShowFindingsWindowCommand
     {
@@ -50,7 +50,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
             try
             {
-                // Show the existing Checkmarx window (not the standalone DevAssistFindingsWindow)
+                // Show the existing Checkmarx window (not the standalone CxAssistFindingsWindow)
                 ToolWindowPane window = this.package.FindToolWindow(typeof(CxWindow), 0, true);
                 if ((null == window) || (null == window.Frame))
                 {
@@ -60,15 +60,15 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
                 Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
 
-                // Get the CxWindowControl and switch to DevAssist tab
+                // Get the CxWindowControl and switch to CxAssist tab
                 var cxWindow = window as CxWindow;
                 if (cxWindow != null && cxWindow.Content is CxWindowControl cxWindowControl)
                 {
-                    // Switch to the DevAssist Findings tab
-                    cxWindowControl.SwitchToDevAssistTab();
+                    // Switch to the CxAssist Findings tab
+                    cxWindowControl.SwitchToCxAssistTab();
 
-                    // Get the DevAssist Findings Control and populate with test data
-                    var findingsControl = cxWindowControl.GetDevAssistFindingsControl();
+                    // Get the CxAssist Findings Control and populate with test data
+                    var findingsControl = cxWindowControl.GetCxAssistFindingsControl();
                     if (findingsControl != null)
                     {
                         PopulateTestData(findingsControl);
@@ -77,25 +77,25 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error showing DevAssist findings: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error showing CxAssist findings: {ex.Message}");
             }
         }
 
-        private void PopulateTestData(DevAssistFindingsControl control)
+        private void PopulateTestData(CxAssistFindingsControl control)
         {
             if (control == null) return;
 
             // Use coordinator's current findings (from last UpdateFindings) so problem window matches gutter/underline
-            var current = DevAssistDisplayCoordinator.GetCurrentFindings();
+            var current = CxAssistDisplayCoordinator.GetCurrentFindings();
             if (current != null && current.Count > 0)
             {
-                DevAssistDisplayCoordinator.RefreshProblemWindow(control, LoadSeverityIcon, () => LoadIcon("document.png"));
+                CxAssistDisplayCoordinator.RefreshProblemWindow(control, LoadSeverityIcon, () => LoadIcon("document.png"));
                 return;
             }
 
             // No current findings (no file opened yet), show mock data so the window is not empty
-            var vulnerabilities = DevAssistMockData.GetCommonVulnerabilities(DevAssistMockData.DefaultFilePath);
-            var fileNodes = DevAssistMockData.BuildFileNodesFromVulnerabilities(
+            var vulnerabilities = CxAssistMockData.GetCommonVulnerabilities(CxAssistMockData.DefaultFilePath);
+            var fileNodes = CxAssistMockData.BuildFileNodesFromVulnerabilities(
                 vulnerabilities,
                 loadSeverityIcon: LoadSeverityIcon,
                 loadFileIcon: () => LoadIcon("document.png"));
@@ -140,7 +140,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
                 // Build the icon path
                 string iconName = severity.ToLower();
-                string iconPath = $"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/DevAssist/Icons/{themeFolder}/{iconName}.png";
+                string iconPath = $"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconName}.png";
 
                 // Load the PNG image
                 var bitmap = new BitmapImage();

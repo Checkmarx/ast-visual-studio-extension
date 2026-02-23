@@ -135,16 +135,10 @@
     <Compile Include="CxExtension\Commands\TestGutterIconsDirectCommand.cs" />
     <Compile Include="CxExtension\Commands\TestErrorListCustomizationCommand.cs" />
     <Compile Include="CxExtension\Commands\ShowFindingsWindowCommand.cs" />
-    <Compile Include="CxExtension\DevAssist\UI\FindingsWindow\FindingsTreeNode.cs" />
-    <Compile Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsWindow.cs" />
-    <Compile Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsControl.xaml.cs">
-      <DependentUpon>DevAssistFindingsControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.xaml.cs">
-      <DependentUpon>DevAssistHoverPopup.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.Designer.cs">
-      <DependentUpon>DevAssistHoverPopup.xaml</DependentUpon>
+    <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\FindingsTreeNode.cs" />
+    <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsWindow.cs" />
+    <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsControl.xaml.cs">
+      <DependentUpon>CxAssistFindingsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>
@@ -155,31 +149,31 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>CxWindowPackage.vsct</DependentUpon>
     </Compile>
-    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphFactory.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTagger.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistGlyphTaggerProvider.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\GutterIcons\DevAssistTextViewCreationListener.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTagger.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistErrorTaggerProvider.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoController.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoControllerProvider.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistAsyncQuickInfoSource.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistAsyncQuickInfoSourceProvider.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSource.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoSourceProvider.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickInfoClassifications.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSuggestedActionsSourceProvider.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistSuggestedActionsSource.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistQuickFixActions.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistCompilerErrorsForLine.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Markers\DevAssistTestHelper.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\DevAssistMockData.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\DevAssistDisplayCoordinator.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\DevAssistErrorListSync.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\DevAssistErrorHandler.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Models\SeverityLevel.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Models\ScannerType.cs" />
-    <Compile Include="CxExtension\DevAssist\Core\Models\Vulnerability.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphFactory.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTagger.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTaggerProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistTextViewCreationListener.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTagger.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTaggerProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoController.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoControllerProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSource.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSourceProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoSource.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoSourceProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoClassifications.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSourceProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSource.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickFixActions.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistCompilerErrorsForLine.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistTestHelper.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistMockData.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistDisplayCoordinator.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorListSync.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Models\SeverityLevel.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Models\ScannerType.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Models\Vulnerability.cs" />
     <Compile Include="CxPreferences\CxPreferencesModule.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -336,51 +330,51 @@
     <Resource Include="CxExtension\Resources\medium.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <!-- DevAssist Icons - SVG Light Theme (16x16 gutter icons from JetBrains) -->
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\critical.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\high.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\medium.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\low.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\malicious.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\ignored.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\ok.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\unknown.svg" />
-    <!-- DevAssist Icons - SVG Dark Theme (16x16 gutter icons from JetBrains) -->
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\critical.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\high.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\medium.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\low.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\malicious.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\ignored.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\ok.svg" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\unknown.svg" />
-    <!-- DevAssist Icons - PNG Light Theme (JetBrains tooltip icons for tree view) -->
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\critical.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\high.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\medium.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\low.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\malicious.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\container.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\package.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\cxone_assist.png" />
-    <!-- DevAssist Icons - PNG Dark Theme (JetBrains tooltip icons for tree view) -->
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\critical.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\high.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\medium.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\low.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\malicious.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\container.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\package.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\cxone_assist.png" />
-    <!-- DevAssist severity_count (hover popup when multiple findings on same line) -->
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\critical.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\high.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\medium.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Dark\severity_count\low.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\critical.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\high.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\medium.png" />
-    <Resource Include="CxExtension\Resources\DevAssist\Icons\Light\severity_count\low.png" />
+    <!-- CxAssist Icons - SVG Light Theme (16x16 gutter icons from JetBrains) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\ignored.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\ok.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\unknown.svg" />
+    <!-- CxAssist Icons - SVG Dark Theme (16x16 gutter icons from JetBrains) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ignored.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ok.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\unknown.svg" />
+    <!-- CxAssist Icons - PNG Light Theme (JetBrains tooltip icons for tree view) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\low.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\malicious.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\container.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\package.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\cxone_assist.png" />
+    <!-- CxAssist Icons - PNG Dark Theme (JetBrains tooltip icons for tree view) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\low.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\malicious.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\container.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\package.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\cxone_assist.png" />
+    <!-- CxAssist severity_count (hover popup when multiple findings on same line) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\low.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\low.png" />
     <Content Include="CxPreferences\Resources\CxPreferencesPackage.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -402,13 +396,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="CxExtension\DevAssist\UI\FindingsWindow\DevAssistFindingsControl.xaml">
+    <Page Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <EmbeddedResource Include="CxExtension\DevAssist\Core\Markers\DevAssistHoverPopup.xaml">
-      <LogicalName>ast_visual_studio_extension.CxExtension.DevAssist.Core.Markers.DevAssistHoverPopup.xaml</LogicalName>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

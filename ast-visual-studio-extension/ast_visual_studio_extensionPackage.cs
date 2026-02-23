@@ -30,7 +30,7 @@ namespace ast_visual_studio_extension
         {
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            // Register "Test DevAssist Hover Popup" so it appears under Tools (menu from Menus1.ctmenu).
+            // Register "Test CxAssist Hover Popup" so it appears under Tools (menu from Menus1.ctmenu).
             await TestGutterIconsDirectCommand.InitializeAsync(this);
         }
 

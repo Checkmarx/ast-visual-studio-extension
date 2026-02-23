@@ -1,5 +1,5 @@
 using ast_visual_studio_extension.CxExtension.Commands;
-using ast_visual_studio_extension.CxExtension.DevAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
@@ -40,7 +40,7 @@ namespace ast_visual_studio_extension.CxExtension
     [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideToolWindow(typeof(CxWindow),Style = VsDockStyle.Tabbed,Orientation = ToolWindowOrientation.Right,Window = EnvDTE.Constants.vsWindowKindOutput,Transient = false)]
-    [ProvideToolWindow(typeof(DevAssist.UI.FindingsWindow.DevAssistFindingsWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Bottom, Window = EnvDTE.Constants.vsWindowKindOutput, Transient = false)]
+    [ProvideToolWindow(typeof(CxAssist.UI.FindingsWindow.CxAssistFindingsWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Bottom, Window = EnvDTE.Constants.vsWindowKindOutput, Transient = false)]
     [Guid(PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
     {
@@ -49,7 +49,7 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
-        private DevAssistErrorListSync _devAssistErrorListSync;
+        private CxAssistErrorListSync _CxAssistErrorListSync;
 
         #region Package Members
 
@@ -73,7 +73,7 @@ namespace ast_visual_studio_extension.CxExtension
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
 
-                // Test DevAssist Hover Popup is registered in ast_visual_studio_extensionPackage so it appears under Tools.
+                // Test CxAssist Hover Popup is registered in ast_visual_studio_extensionPackage so it appears under Tools.
 
                 // Test Error List Customization Command (POC for AST-133228)
                 await TestErrorListCustomizationCommand.InitializeAsync(this);
@@ -82,9 +82,9 @@ namespace ast_visual_studio_extension.CxExtension
                 // Command still works programmatically but not visible in menu
                 await ShowFindingsWindowCommand.InitializeAsync(this);
 
-                // Sync DevAssist findings to the built-in Error List (findings appear in both our window and Error List)
-                _devAssistErrorListSync = new DevAssistErrorListSync();
-                _devAssistErrorListSync.Start();
+                // Sync CxAssist findings to the built-in Error List (findings appear in both our window and Error List)
+                _CxAssistErrorListSync = new CxAssistErrorListSync();
+                _CxAssistErrorListSync.Start();
             }
             catch (Exception ex)
             {
