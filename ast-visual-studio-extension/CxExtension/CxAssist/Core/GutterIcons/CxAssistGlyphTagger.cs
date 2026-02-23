@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
@@ -31,13 +32,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         public IEnumerable<ITagSpan<CxAssistGlyphTag>> GetTags(NormalizedSnapshotSpanCollection spans)
         {
             var result = new List<ITagSpan<CxAssistGlyphTag>>();
-            System.Diagnostics.Debug.WriteLine($"CxAssist: GetTags called - spans count: {spans?.Count ?? 0}, vulnerabilities count: {_vulnerabilitiesByLine.Count}");
 
             if (spans == null || spans.Count == 0 || _vulnerabilitiesByLine.Count == 0)
-            {
-                System.Diagnostics.Debug.WriteLine($"CxAssist: GetTags returning early - no spans or vulnerabilities");
                 return result;
-            }
 
             ITextSnapshot snapshot = null;
             try
@@ -50,7 +47,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             }
 
             if (snapshot == null) return result;
-            int tagCount = 0;
 
             foreach (var span in spans)
             {
@@ -75,9 +71,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                                     tooltipText,
                                     mostSevere.Id
                                 );
-
-                                tagCount++;
-                                System.Diagnostics.Debug.WriteLine($"CxAssist: Creating tag #{tagCount} for line {lineNumber}, severity: {mostSevere.Severity}");
                                 result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
                             }
                         }
@@ -89,7 +82,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine($"CxAssist: GetTags completed - returned {tagCount} tags");
             return result;
         }
 
@@ -104,34 +96,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
         private void UpdateVulnerabilitiesCore(List<Vulnerability> vulnerabilities)
         {
-            System.Diagnostics.Debug.WriteLine($"CxAssist: UpdateVulnerabilities called with {vulnerabilities?.Count ?? 0} vulnerabilities");
-
             _vulnerabilitiesByLine.Clear();
 
             if (vulnerabilities != null)
             {
                 foreach (var vuln in vulnerabilities)
                 {
-                    int lineNumber = vuln.LineNumber - 1; // Convert to 0-based
-
+                    int lineNumber = vuln.LineNumber - 1; // 0-based line for snapshot
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
-                    {
                         _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
-                    }
-
                     _vulnerabilitiesByLine[lineNumber].Add(vuln);
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine($"CxAssist: Vulnerabilities stored in {_vulnerabilitiesByLine.Count} lines");
-            System.Diagnostics.Debug.WriteLine($"CxAssist: TagsChanged event has {(TagsChanged != null ? TagsChanged.GetInvocationList().Length : 0)} subscribers");
-
             var snapshot = _buffer.CurrentSnapshot;
             var entireSpan = new SnapshotSpan(snapshot, 0, snapshot.Length);
-
-            System.Diagnostics.Debug.WriteLine($"CxAssist: Raising TagsChanged event for span: {entireSpan.Start} to {entireSpan.End}");
             TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(entireSpan));
-            System.Diagnostics.Debug.WriteLine($"CxAssist: TagsChanged event raised");
         }
 
         /// <summary>
@@ -192,7 +172,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             if (vulnerabilities.Count == 1)
             {
                 var vuln = vulnerabilities[0];
-                return $"{vuln.Severity} - {vuln.Title}\n{vuln.Description}\n(CxAssist - {vuln.Scanner})";
+                return $"{vuln.Severity} - {vuln.Title}\n{vuln.Description}\n({CxAssistConstants.LogCategory} - {vuln.Scanner})";
             }
             else
             {

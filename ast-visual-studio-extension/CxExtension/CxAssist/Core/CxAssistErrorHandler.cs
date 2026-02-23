@@ -10,8 +10,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistErrorHandler
     {
-        private const string Category = "CxAssist";
-
         /// <summary>
         /// Logs the exception and returns without rethrowing.
         /// Use at VS/extension callback boundaries (GetTags, GenerateGlyph, event handlers)
@@ -24,8 +22,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             if (ex == null) return;
             try
             {
-                Debug.WriteLine($"[{Category}] {context}: {ex.Message}");
-                Debug.WriteLine($"[{Category}] {ex.StackTrace}");
+                Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {context}: {ex.Message}");
+                Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {ex.StackTrace}");
             }
             catch
             {

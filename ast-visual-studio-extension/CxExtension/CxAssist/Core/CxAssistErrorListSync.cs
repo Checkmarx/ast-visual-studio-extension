@@ -67,7 +67,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             _errorListProvider = new ErrorListProvider(ServiceProvider.GlobalProvider)
             {
-                ProviderName = "CxAssist"
+                ProviderName = CxAssistConstants.LogCategory
             };
         }
 
@@ -110,7 +110,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     {
                         Category = TaskCategory.CodeSense,
                         ErrorCategory = GetErrorCategory(v.Severity),
-                        Text = $"[CxAssist] [{severityLabel}] {v.Title}",
+                        Text = $"[{CxAssistConstants.LogCategory}] [{severityLabel}] {v.Title}",
                         Document = docPath,
                         Line = Math.Max(0, v.LineNumber - 1),
                         Column = Math.Max(0, v.ColumnNumber),
@@ -196,7 +196,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"CxAssistErrorListSync: Navigate failed: {ex.Message}");
+                CxAssistErrorHandler.LogAndSwallow(ex, "ErrorListSync.NavigateToVulnerability");
             }
         }
     }
