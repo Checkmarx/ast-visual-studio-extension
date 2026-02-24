@@ -1,4 +1,5 @@
 ﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.DevAssist.Commands;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
@@ -69,6 +70,12 @@ namespace ast_visual_studio_extension.CxExtension
 
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
+
+                // Initialize AI Chat Command (Fix with Checkmarx One Assist)
+                await AIChatCommand.InitializeAsync(this);
+
+                // Set package on CopilotIntegration so ASCA "Fix with AI" can run extension-manager checks
+                DevAssist.Services.CopilotIntegration.Package = this;
             }
             catch (Exception ex)
             {
