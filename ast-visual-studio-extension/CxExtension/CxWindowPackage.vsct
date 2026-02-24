@@ -34,6 +34,14 @@
 					<ButtonText>Checkmarx</ButtonText>
 				</Strings>
 			</Button>
+			<Button guid="guidCxWindowPackageCmdSet" id="AIChatCommandId" priority="0x0102" type="Button">
+				<Parent guid="guidCxWindowPackageCmdSet" id="TWToolbarGroup"/>
+				<Icon guid="CxImages" id="cxlogo" />
+				<Strings>
+					<ButtonText>Fix with AI</ButtonText>
+					<CommandName>Fix with Checkmarx One Assist</CommandName>
+				</Strings>
+			</Button>
 		</Buttons>
 
 		<Bitmaps>
@@ -46,6 +54,7 @@
 
 		<GuidSymbol name="guidCxWindowPackageCmdSet" value="{e46cd6d8-268d-4e77-9074-071e72a25f39}">
 			<IDSymbol name="CxWindowCommandId" value="0x0100" />
+			<IDSymbol name="AIChatCommandId" value="0x0300" />
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
 			<IDSymbol name="CxWindowCmdId" value="0x0101" />
 			<IDSymbol name="TWToolbar" value="0x1000" />

@@ -1,4 +1,5 @@
 ﻿using ast_visual_studio_extension.CxWrapper.Models;
+using ast_visual_studio_extension.CxExtension.DevAssist.Services;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
@@ -315,16 +316,55 @@ namespace ast_visual_studio_extension.CxExtension.Services
 
             public int GetMarkerCommandInfo(IVsTextMarker pMarker, int iItem, string[] pbstrText, uint[] pcmdf)
             {
-                if (pbstrText != null && pbstrText.Length > 0)
-                    pbstrText[0] = string.Empty;
-                if (pcmdf != null && pcmdf.Length > 0)
-                    pcmdf[0] = 0;
+                const uint OLECMDF_ENABLED = 0x02;
+                const uint OLECMDF_SUPPORTED = 0x01;
+                uint enabledSupported = OLECMDF_ENABLED | OLECMDF_SUPPORTED;
+
+                switch (iItem)
+                {
+                    case 0:
+                        if (pbstrText != null && pbstrText.Length > 0)
+                            pbstrText[0] = "Fix with Checkmarx One Assist";
+                        if (pcmdf != null && pcmdf.Length > 0)
+                            pcmdf[0] = enabledSupported;
+                        return VSConstants.S_OK;
+                    case 1:
+                        if (pbstrText != null && pbstrText.Length > 0)
+                            pbstrText[0] = string.Empty;
+                        if (pcmdf != null && pcmdf.Length > 0)
+                            pcmdf[0] = 0;
+                        return VSConstants.S_OK;
+                }
                 return VSConstants.E_NOTIMPL;
             }
 
             public int ExecMarkerCommand(IVsTextMarker pMarker, int iItem)
             {
+                switch (iItem)
+                {
+                    case 0: // Fix with AI
+                        _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () => await ExecuteFixWithAIAsync());
+                        return VSConstants.S_OK;
+                }
                 return VSConstants.E_NOTIMPL;
+            }
+
+            private async Task ExecuteFixWithAIAsync()
+            {
+                try
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    var copilotService = new CopilotIntegration();
+                    var promptBuilder = new PromptBuilderService();
+                    string prompt = promptBuilder.BuildASCAPrompt(_ruleName, _remediation, "", "",0);
+                    await copilotService.OpenCopilotChatAsync(prompt);
+                }
+                catch (Exception ex)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    System.Windows.MessageBox.Show($"Error opening AI Chat: {ex.Message}", "AI Chat Error",
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                }
             }
 
             /// <summary>
