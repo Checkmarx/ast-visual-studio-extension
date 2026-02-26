@@ -16,7 +16,8 @@
              local:VsTheme.UseVsTheme="True"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="1308"
-             Name="CxWindow">
+             Name="CxWindow"
+             Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBackgroundKey}}">
 
     <UserControl.Resources>
         <converters:ResourceKeyToColorConverter x:Key="ResourceKeyToColorConverter"/>
@@ -872,7 +873,7 @@
                     <DataTemplate.Resources>
                         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
                     </DataTemplate.Resources>
-                    <TextBlock Text="Findings" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TabHeaderText, ElementName=CxAssistFindingsControl}" VerticalAlignment="Center"/>
                 </DataTemplate>
             </TabItem.HeaderTemplate>
             <TabItem.Content>
@@ -880,7 +881,7 @@
             </TabItem.Content>
         </TabItem>
 
-        <!-- Tab 3: Ignored Findings -->
+        <!-- Tab 3: Ignored Findings (no filters) -->
         <TabItem x:Name="IgnoredFindingsTab">
             <TabItem.HeaderTemplate>
                 <DataTemplate>
@@ -893,15 +894,9 @@
             <TabItem.Content>
                 <Grid Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBackgroundKey}}">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="??" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,20"
-                                   Opacity="0.3"/>
                         <TextBlock Text="No ignored findings" FontSize="16" FontWeight="Bold"
-                                   HorizontalAlignment="Center" Margin="0,0,0,10"
-                                   Foreground="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}"/>
-                        <TextBlock Text="Ignored findings will appear here" FontSize="12"
                                    HorizontalAlignment="Center"
-                                   Foreground="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}"
-                                   Opacity="0.7"/>
+                                   Foreground="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}"/>
                     </StackPanel>
                 </Grid>
             </TabItem.Content>
