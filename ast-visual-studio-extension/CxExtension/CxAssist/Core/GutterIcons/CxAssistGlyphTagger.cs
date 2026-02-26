@@ -102,7 +102,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             {
                 foreach (var vuln in vulnerabilities)
                 {
-                    int lineNumber = vuln.LineNumber - 1; // 0-based line for snapshot
+                    int lineNumber = vuln.LineNumber; // +1 display: use LineNumber as 0-based key (show at display line LineNumber + 1)
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
                         _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
                     _vulnerabilitiesByLine[lineNumber].Add(vuln);

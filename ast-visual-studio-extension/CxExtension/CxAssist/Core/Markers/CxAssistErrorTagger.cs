@@ -60,11 +60,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                                     continue;
 
                                 var line = snapshot.GetLineFromLineNumber(lineNumber);
-                                var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
+                                SnapshotSpan underlineSpan = GetUnderlineSpan(snapshot, line, vulnerability);
 
                                 var tooltipText = BuildTooltipText(vulnerability);
                                 IErrorTag tag = new ErrorTag("Error", tooltipText);
-                                result.Add(new TagSpan<IErrorTag>(lineSpan, tag));
+                                result.Add(new TagSpan<IErrorTag>(underlineSpan, tag));
                             }
                         }
                     }
@@ -76,6 +76,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Gets the snapshot span for the underline: from StartIndex to EndIndex (0-based within line) when set;
+        /// otherwise the full line. Clamps to line bounds.
+        /// </summary>
+        private static SnapshotSpan GetUnderlineSpan(ITextSnapshot snapshot, ITextSnapshotLine line, Vulnerability v)
+        {
+            if (v.EndIndex > v.StartIndex && v.StartIndex >= 0)
+            {
+                int startOffset = Math.Min(v.StartIndex, line.Length);
+                int length = Math.Min(v.EndIndex - v.StartIndex, line.Length - startOffset);
+                if (length > 0)
+                {
+                    int startPos = line.Start + startOffset;
+                    return new SnapshotSpan(snapshot, startPos, length);
+                }
+            }
+            return new SnapshotSpan(snapshot, line.Start, line.Length);
         }
 
         /// <summary>
@@ -131,7 +150,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 foreach (var vulnerability in vulnerabilities)
                 {
-                    int lineNumber = vulnerability.LineNumber - 1;
+                    int lineNumber = vulnerability.LineNumber; // +1 display: use LineNumber as 0-based key (show at display line LineNumber + 1)
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
                         _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
                     _vulnerabilitiesByLine[lineNumber].Add(vulnerability);

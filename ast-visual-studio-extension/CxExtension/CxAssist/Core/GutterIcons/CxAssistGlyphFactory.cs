@@ -102,7 +102,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                     iconFileName = "low";
                     break;
                 case "ok":
-                    iconFileName = "ok";
+                    iconFileName = "ok";  // OSS no vul / success (JetBrains: Status OK)
+                    break;
+                case "unknown":
+                    iconFileName = "unknown";  // OSS unknown status / other scanners (JetBrains: Status Unknown)
                     break;
                 case "ignored":
                     iconFileName = "ignored";
