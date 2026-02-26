@@ -103,17 +103,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                 foreach (var v in list)
                 {
+                    // Success (Ok) and Unknown: gutter icon only; do not show in Error List
+                    if (v.Severity == SeverityLevel.Ok || v.Severity == SeverityLevel.Unknown)
+                        continue;
                     string severityLabel = v.Severity.ToString();
                     string docPath = GetDocumentPath(v.FilePath, filePath);
                     string helpKeyword = HelpKeywordPrefix + v.Id;
                     var task = new ErrorTask
                     {
-                        Category = TaskCategory.CodeSense,
+                        // Use BuildCompile so tasks appear in Error List but are not merged into the editor
+                        // hover tooltip (which aggregates CodeSense). Avoids showing the same finding twice in the popup.
+                        Category = TaskCategory.BuildCompile,
                         ErrorCategory = GetErrorCategory(v.Severity),
                         Text = $"[{CxAssistConstants.LogCategory}] [{severityLabel}] {v.Title}",
                         Document = docPath,
-                        Line = Math.Max(0, v.LineNumber - 1),
-                        Column = Math.Max(0, v.ColumnNumber),
+                        Line = Math.Max(1, v.LineNumber), // 1-based display: LineNumber + 1
+                        Column = Math.Max(1, v.ColumnNumber),
                         HierarchyItem = document != null ? GetHierarchyItem(document) : null,
                         HelpKeyword = helpKeyword
                     };
@@ -141,24 +146,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
         }
 
+        /// <summary>
+        /// Use Error for all findings so the Error List draws only red underlines. Otherwise
+        /// Warning (green) and Message (blue) on the same line can override red and make severity unclear.
+        /// Severity is still shown in the task Text (e.g. [High], [Medium]).
+        /// </summary>
         private static TaskErrorCategory GetErrorCategory(SeverityLevel severity)
         {
-            switch (severity)
-            {
-                case SeverityLevel.Malicious:
-                case SeverityLevel.Critical:
-                case SeverityLevel.High:
-                    return TaskErrorCategory.Error;
-                case SeverityLevel.Medium:
-                    return TaskErrorCategory.Warning;
-                case SeverityLevel.Low:
-                case SeverityLevel.Info:
-                case SeverityLevel.Unknown:
-                case SeverityLevel.Ok:
-                case SeverityLevel.Ignored:
-                default:
-                    return TaskErrorCategory.Message;
-            }
+            return TaskErrorCategory.Error;
         }
 
         private static IVsHierarchy GetHierarchyItem(Document document)
@@ -189,7 +184,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 if (doc?.Object("TextDocument") is TextDocument textDoc)
                 {
                     var selection = textDoc.Selection;
-                    int line = Math.Max(1, v.LineNumber);
+                    int line = Math.Max(1, v.LineNumber + 1); 
                     selection.MoveToLineAndOffset(line, 1);
                     selection.SelectLine();
                 }

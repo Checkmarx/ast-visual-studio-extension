@@ -79,7 +79,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             if (vulnerabilities == null || vulnerabilities.Count == 0)
                 return;
 
-            object content = BuildQuickInfoContentForLine(vulnerabilities);
+            // Success (Ok) and Unknown: gutter icon only; do not show in popup
+            var issuesOnly = vulnerabilities
+                .Where(v => v.Severity != SeverityLevel.Ok && v.Severity != SeverityLevel.Unknown)
+                .ToList();
+            if (issuesOnly.Count == 0)
+                return;
+
+            object content = BuildQuickInfoContentForLine(issuesOnly);
             if (content == null)
                 return;
 

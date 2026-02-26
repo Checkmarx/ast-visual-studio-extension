@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,6 +70,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             if (vulnerabilities == null || vulnerabilities.Count == 0)
                 return null;
 
+            // Success (Ok) and Unknown: gutter icon only; do not show in popup
+            var issuesOnly = vulnerabilities
+                .Where(v => v.Severity != SeverityLevel.Ok && v.Severity != SeverityLevel.Unknown)
+                .ToList();
+            if (issuesOnly.Count == 0)
+                return null;
+
             // Only one of our sources (per session) should contribute; avoid duplicate blocks when multiple subject buffers exist.
             lock (_sessionLock)
             {
@@ -91,7 +99,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
             session.StateChanged += OnSessionStateChanged;
 
-            object content = CxAssistQuickInfoSource.BuildQuickInfoContentForLine(vulnerabilities);
+            object content = CxAssistQuickInfoSource.BuildQuickInfoContentForLine(issuesOnly);
             if (content == null)
             {
                 lock (_sessionLock)

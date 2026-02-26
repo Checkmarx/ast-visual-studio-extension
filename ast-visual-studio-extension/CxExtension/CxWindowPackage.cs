@@ -82,9 +82,10 @@ namespace ast_visual_studio_extension.CxExtension
                 // Command still works programmatically but not visible in menu
                 await ShowFindingsWindowCommand.InitializeAsync(this);
 
-                // Sync CxAssist findings to the built-in Error List (findings appear in both our window and Error List)
+                // Sync CxAssist findings to the built-in Error List when enabled. When disabled, hover shows only one block (like C# symbol hover).
                 _CxAssistErrorListSync = new CxAssistErrorListSync();
-                _CxAssistErrorListSync.Start();
+                if (CxAssistConstants.SyncFindingsToBuiltInErrorList)
+                    _CxAssistErrorListSync.Start();
             }
             catch (Exception ex)
             {
