@@ -65,10 +65,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                                 var line = snapshot.GetLineFromLineNumber(lineNumber);
                                 var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
 
-                                var tooltipText = BuildTooltipText(vulnerabilities);
+                                // Tooltip shows only the severity that matches the icon (precedence / most severe on line)
                                 var tag = new CxAssistGlyphTag(
                                     mostSevere.Severity.ToString(),
-                                    tooltipText,
+                                    mostSevere.Severity.ToString(),
                                     mostSevere.Id
                                 );
                                 result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
@@ -163,23 +163,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             }
         }
 
-        /// <summary>
-        /// Builds tooltip text for multiple vulnerabilities on the same line
-        /// Based on JetBrains GutterIconRenderer.getTooltipText pattern
-        /// </summary>
-        private string BuildTooltipText(List<Vulnerability> vulnerabilities)
-        {
-            if (vulnerabilities.Count == 1)
-            {
-                var vuln = vulnerabilities[0];
-                return $"{vuln.Severity} - {vuln.Title}\n{vuln.Description}\n({CxAssistConstants.LogCategory} - {vuln.Scanner})";
-            }
-            else
-            {
-                return $"{vulnerabilities.Count} vulnerabilities on this line\n" +
-                       string.Join("\n", vulnerabilities.Select(v => $"• {v.Severity}: {v.Title}"));
-            }
-        }
     }
 }
 

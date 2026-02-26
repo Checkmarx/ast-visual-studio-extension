@@ -687,7 +687,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     Description = "Ensure that HEALTHCHECK is being used. The HEALTHCHECK instruction tells Docker how to test a container to check that it is still working",
                     Severity = SeverityLevel.Low,
                     Scanner = ScannerType.Containers,
-                    LineNumber = 9,
+                    LineNumber = 8,
                     ColumnNumber = 1,
                     StartIndex = 0,
                     EndIndex = 19,
