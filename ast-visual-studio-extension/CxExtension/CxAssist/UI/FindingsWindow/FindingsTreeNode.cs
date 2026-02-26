@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 {
@@ -113,6 +115,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         private int _line;
         private int _column;
         private string _filePath;
+        private ScannerType _scanner;
 
         public string Severity
         {
@@ -162,19 +165,57 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             set { _filePath = value; OnPropertyChanged(nameof(FilePath)); }
         }
 
+        /// <summary>Scanner that produced this finding (OSS, ASCA, Secrets, etc.). Used for JetBrains-style primary text.</summary>
+        public ScannerType Scanner
+        {
+            get => _scanner;
+            set { _scanner = value; OnPropertyChanged(nameof(Scanner)); }
+        }
+
         /// <summary>
-        /// Formatted display text (e.g., "High-risk package: helm.sh/helm/v3@v3.18.2 Checkmarx One Assist [Ln 38, Col 1]")
+        /// Full formatted display text: primary + " " + agent name + " [Ln N, Col M]" (used for copy, tooltips, message boxes).
         /// </summary>
         public string DisplayText
         {
+            get => $"{PrimaryDisplayText} {CxAssistConstants.DisplayName} [Ln {Line}, Col {Column}]";
+        }
+
+        /// <summary>Primary text (bright), formatted by scanner like JetBrains IssueTreeRenderer: ASCA/IaC=title, OSS=severity-risk package: name@version, Secrets=severity-risk secret: title, Containers=severity-risk container image: title. Grouped-by-line rows show only the summary (e.g. "N OSS issues detected on this line").</summary>
+        public string PrimaryDisplayText
+        {
             get
             {
-                if (!string.IsNullOrEmpty(PackageName))
+                string title = !string.IsNullOrEmpty(Description) ? Description : "";
+                // Grouped-by-line summary rows: show only the message (e.g. "3 OSS issues detected on this line")
+                if (title.Contains(" detected on this line") || title.Contains(" violations detected on this line"))
+                    return title.TrimEnd();
+                switch (Scanner)
                 {
-                    return $"{Severity}-risk package: {PackageName}@{PackageVersion} Checkmarx One Assist [Ln {Line}, Col {Column}]";
+                    case ScannerType.ASCA:
+                        return title + (string.IsNullOrEmpty(title) ? "" : " ");
+                    case ScannerType.OSS:
+                        {
+                            // JetBrains uses detail.getTitle() + "@" + packageVersion; prefer title (e.g. "validator (CVE-...)") then PackageName
+                            string name = !string.IsNullOrEmpty(title) ? title : (PackageName ?? "");
+                            string version = !string.IsNullOrEmpty(PackageVersion) ? $"@{PackageVersion}" : "";
+                            return $"{Severity}-risk package: {name}{version}";
+                        }
+                    case ScannerType.Secrets:
+                        return $"{Severity}-risk secret: {title}";
+                    case ScannerType.Containers:
+                        return $"{Severity}-risk container image: {title}";
+                    case ScannerType.IaC:
+                        return title + (string.IsNullOrEmpty(title) ? "" : " ");
+                    default:
+                        return title;
                 }
-                return $"{Description} Checkmarx One Assist [Ln {Line}, Col {Column}]";
             }
+        }
+
+        /// <summary>Secondary text (darker grey): agent name + location e.g. "Checkmarx One Assist [Ln 14, Col 4]" for JetBrains-style UI.</summary>
+        public string SecondaryDisplayText
+        {
+            get => $"{CxAssistConstants.DisplayName} [Ln {Line}, Col {Column}]";
         }
     }
 }

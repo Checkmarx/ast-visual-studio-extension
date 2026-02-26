@@ -9,6 +9,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>Product name shown in UI (Quick Info header, messages, Error List).</summary>
         public const string DisplayName = "Checkmarx One Assist";
 
+        /// <summary>Suffix for grouped IaC findings on same line (JetBrains-style). Use as: count + MultipleIacIssuesOnLine.</summary>
+        public const string MultipleIacIssuesOnLine = " IAC issues detected on this line";
+
+        /// <summary>Suffix for grouped ASCA findings on same line (JetBrains-style). Use as: count + MultipleAscaViolationsOnLine.</summary>
+        public const string MultipleAscaViolationsOnLine = " ASCA violations detected on this line";
+
+        /// <summary>Suffix for grouped OSS findings on same line. Use as: count + MultipleOssIssuesOnLine.</summary>
+        public const string MultipleOssIssuesOnLine = " OSS issues detected on this line";
+
+        /// <summary>Suffix for grouped Secrets findings on same line. Use as: count + MultipleSecretsIssuesOnLine.</summary>
+        public const string MultipleSecretsIssuesOnLine = " Secrets issues detected on this line";
+
+        /// <summary>Suffix for grouped Containers findings on same line. Use as: count + MultipleContainersIssuesOnLine.</summary>
+        public const string MultipleContainersIssuesOnLine = " Container issues detected on this line";
+
         /// <summary>Log category for debug/trace output (e.g. Debug.WriteLine).</summary>
         public const string LogCategory = "CxAssist";
 
