@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -9,6 +10,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxExtension.Commands
 {
@@ -93,13 +95,8 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 return;
             }
 
-            // No current findings (no file opened yet), show mock data so the window is not empty
-            var vulnerabilities = CxAssistMockData.GetCommonVulnerabilities(CxAssistMockData.DefaultFilePath);
-            var fileNodes = CxAssistMockData.BuildFileNodesFromVulnerabilities(
-                vulnerabilities,
-                loadSeverityIcon: LoadSeverityIcon,
-                loadFileIcon: () => LoadIcon("document.png"));
-            control.SetAllFileNodes(fileNodes);
+            // No current findings (no file opened yet): show empty list. Findings and Error List will show data only after a file with findings is opened (e.g. package.json).
+            control.SetAllFileNodes(new ObservableCollection<FileNode>());
         }
 
         /// <summary>

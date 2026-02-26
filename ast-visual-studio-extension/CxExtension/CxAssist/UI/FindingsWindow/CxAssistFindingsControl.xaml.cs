@@ -127,7 +127,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         {
             var current = CxAssistDisplayCoordinator.GetCurrentFindings();
             var fileNodes = current != null && current.Count > 0
-                ? CxAssistMockData.BuildFileNodesFromVulnerabilities(current, LoadSeverityIconForTree, null)
+                ? FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(current, LoadSeverityIconForTree, null)
                 : new ObservableCollection<FileNode>();
             SetAllFileNodes(fileNodes);
         }

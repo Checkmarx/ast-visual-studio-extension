@@ -196,6 +196,32 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
+        /// Sets the stored findings by file and raises IssuesUpdated without updating gutter/underline.
+        /// Use when displaying fallback data (e.g. package.json mock) in the Findings window so the Error List shows the same data.
+        /// </summary>
+        public static void SetFindingsByFile(IReadOnlyDictionary<string, List<Vulnerability>> issuesByFile)
+        {
+            if (issuesByFile == null) return;
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            lock (_lock)
+            {
+                _fileToIssues.Clear();
+                foreach (var kv in issuesByFile)
+                {
+                    if (string.IsNullOrEmpty(kv.Key) || kv.Value == null) continue;
+                    string key = NormalizePath(kv.Key);
+                    if (string.IsNullOrEmpty(key)) continue;
+                    _fileToIssues[key] = new List<Vulnerability>(kv.Value);
+                }
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+            IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
         /// Updates the problem window control with the current findings (builds FileNodes and calls SetAllFileNodes).
         /// Call this when the Findings window is shown so it displays the same data as gutter/underline.
         /// </summary>
@@ -213,7 +239,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 List<Vulnerability> current = GetCurrentFindings();
                 ObservableCollection<FileNode> fileNodes = current != null && current.Count > 0
-                    ? CxAssistMockData.BuildFileNodesFromVulnerabilities(current, loadSeverityIcon, loadFileIcon)
+                    ? FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(current, loadSeverityIcon, loadFileIcon)
                     : new ObservableCollection<FileNode>();
                 findingsControl.SetAllFileNodes(fileNodes);
             }, "Coordinator.RefreshProblemWindow");

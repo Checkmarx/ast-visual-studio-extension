@@ -18,7 +18,7 @@
         <!-- TreeViewItem Style with hover and selection effects -->
         <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="True"/>
-            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Padding" Value="2,2"/>
             <EventSetter Event="MouseDoubleClick" Handler="TreeViewItem_MouseDoubleClick"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -342,19 +342,18 @@
             </TreeView.ContextMenu>
 
             <TreeView.Resources>
-                <!-- File Node Template -->
+                <!-- File Node Template (JetBrains-style: expander + file icon + name + severity badges) -->
                 <HierarchicalDataTemplate DataType="{x:Type local:FileNode}" ItemsSource="{Binding Vulnerabilities}">
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <!-- File Icon -->
-                        <Image Source="{Binding FileIcon}" Width="16" Height="16" Margin="0,0,4,0" 
+                    <StackPanel Orientation="Horizontal" Margin="0,2" VerticalAlignment="Center">
+                        <!-- File Icon (same size as severity icons in list) -->
+                        <Image Source="{Binding FileIcon}" Width="18" Height="18" Margin="0,0,3,0"
+                               VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
-                        
-                        <!-- File Name -->
-                        <TextBlock Text="{Binding FileName}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"
+                        <!-- File Name (primary text) -->
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
-
-                        <!-- Severity Count Badges (Horizontal Layout) -->
-                        <ItemsControl ItemsSource="{Binding SeverityCounts}">
+                        <!-- Severity Count Badges (shield + count, JetBrains-style) -->
+                        <ItemsControl ItemsSource="{Binding SeverityCounts}" VerticalAlignment="Center">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal"/>
@@ -362,38 +361,34 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <!-- Severity Badge with colored background -->
-                                    <Border Background="#20FFFFFF"
-                                            BorderBrush="#40FFFFFF"
-                                            BorderThickness="1"
-                                            CornerRadius="3"
-                                            Padding="4,2"
-                                            Margin="0,0,4,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <!-- Severity Icon -->
-                                            <Image Source="{Binding Icon}" Width="14" Height="14" Margin="0,0,3,0"
-                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
-                                            <!-- Count -->
-                                            <TextBlock Text="{Binding Count}" FontWeight="Bold" FontSize="11"
-                                                       VerticalAlignment="Center"
-                                                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
-                                        </StackPanel>
-                                    </Border>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,6,0">
+                                        <Image Source="{Binding Icon}" Width="14" Height="14" Margin="0,0,2,0"
+                                               VerticalAlignment="Center"
+                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                                        <TextBlock Text="{Binding Count}" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
                 </HierarchicalDataTemplate>
 
-                <!-- Vulnerability Node Template -->
+                <!-- Vulnerability Node Template (JetBrains-style: icon, primary text bright, secondary text darker) -->
                 <DataTemplate DataType="{x:Type local:VulnerabilityNode}">
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <!-- Severity Icon -->
-                        <Image Source="{Binding SeverityIcon}" Width="16" Height="16" Margin="0,0,4,0"
+                    <StackPanel Orientation="Horizontal" Margin="0,2" VerticalAlignment="Center">
+                        <!-- Severity Icon (aligned with JetBrains size) -->
+                        <Image Source="{Binding SeverityIcon}" Width="14" Height="14" Margin="0,0,3,0"
+                               VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
-
-                        <!-- Description -->
-                        <TextBlock Text="{Binding DisplayText}" VerticalAlignment="Center" TextWrapping="NoWrap"
+                        <!-- Primary text: risk type + package (bright) -->
+                        <TextBlock Text="{Binding PrimaryDisplayText}" VerticalAlignment="Center" TextWrapping="NoWrap"
+                                   Margin="0,0,4,0"
+                                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
+                        <!-- Secondary text: source + location (darker grey) -->
+                        <TextBlock Text="{Binding SecondaryDisplayText}" VerticalAlignment="Center" TextWrapping="NoWrap"
+                                   Opacity="0.7"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
                     </StackPanel>
                 </DataTemplate>
