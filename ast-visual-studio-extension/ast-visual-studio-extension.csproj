@@ -350,6 +350,11 @@
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ignored.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ok.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\unknown.svg" />
+    <!-- CxAssist Icons - Expand/Collapse All (from JetBrains IntelliJ platform, same as ast-jetbrains-plugin) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\expandall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\collapseall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\expandall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\collapseall.svg" />
     <!-- CxAssist Icons - PNG Light Theme (JetBrains tooltip icons for tree view) -->
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\critical.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\high.png" />

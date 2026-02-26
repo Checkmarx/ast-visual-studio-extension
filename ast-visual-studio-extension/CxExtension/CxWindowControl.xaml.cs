@@ -89,6 +89,40 @@ namespace ast_visual_studio_extension.CxExtension
 
             _ = InitializeAsync();
             cxToolbar.Init();
+            Loaded += CxWindowControl_Loaded;
+        }
+
+        /// <summary>
+        /// When loaded, wire Findings tab Settings and other one-time setup.
+        /// </summary>
+        private void CxWindowControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= CxWindowControl_Loaded;
+            try
+            {
+                // Findings tab Settings button opens same Checkmarx settings as Scan Results
+                if (CxAssistFindingsControl != null)
+                    CxAssistFindingsControl.SettingsClick += OnCxAssistSettingsClick;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CxWindowControl_Loaded: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Opens the same Checkmarx settings (options page) as Scan Results when user clicks Settings in the Findings tab.
+        /// </summary>
+        private void OnCxAssistSettingsClick(object sender, EventArgs e)
+        {
+            try
+            {
+                package?.ShowOptionPage(typeof(CxPreferencesModule));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CxWindowControl: open settings from Findings tab: {ex.Message}");
+            }
         }
 
         /// <summary>

@@ -11,6 +11,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Shell;
 using EnvDTE;
+using SharpVectors.Converters;
+using SharpVectors.Renderers.Wpf;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
@@ -28,6 +30,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Raised when the user clicks the Settings button. Parent (e.g. CxWindowControl) can subscribe to open the same Checkmarx settings as Scan Results.
+        /// </summary>
+        public event EventHandler SettingsClick;
+
         public ObservableCollection<FileNode> FileNodes
         {
             get => _fileNodes;
@@ -37,7 +44,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 OnPropertyChanged(nameof(FileNodes));
                 OnPropertyChanged(nameof(HasFindings));
                 OnPropertyChanged(nameof(ShowEmptyState));
+                OnPropertyChanged(nameof(TabHeaderText));
                 UpdateStatusBar();
+            }
+        }
+
+        /// <summary>Tab header text with vulnerability count, e.g. "Checkmarx One Assist Findings (5)".</summary>
+        public string TabHeaderText
+        {
+            get
+            {
+                int count = FileNodes != null ? FileNodes.Sum(f => f.Vulnerabilities?.Count ?? 0) : 0;
+                return $"Checkmarx One Assist Findings ({count})";
             }
         }
 
@@ -137,17 +155,51 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             {
                 string themeFolder = IsDarkTheme() ? "Dark" : "Light";
 
-                // Set icons directly to Image controls
+                // Set icons: Malicious, Critical, High, Medium, Low
+                MaliciousFilterIcon.Source = LoadIcon(themeFolder, "malicious.png");
                 CriticalFilterIcon.Source = LoadIcon(themeFolder, "critical.png");
                 HighFilterIcon.Source = LoadIcon(themeFolder, "high.png");
                 MediumFilterIcon.Source = LoadIcon(themeFolder, "medium.png");
                 LowFilterIcon.Source = LoadIcon(themeFolder, "low.png");
-                MaliciousFilterIcon.Source = LoadIcon(themeFolder, "malicious.png");
+
+                // Expand All / Collapse All: same icons as JetBrains plugin (AllIcons.Actions.Expandall / Collapseall)
+                ExpandAllIcon.Source = LoadSvgIcon(themeFolder, "expandall.svg");
+                CollapseAllIcon.Source = LoadSvgIcon(themeFolder, "collapseall.svg");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading filter icons: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Load SVG icon from CxAssist Icons (e.g. expandall.svg, collapseall.svg from JetBrains IntelliJ platform).
+        /// </summary>
+        private ImageSource LoadSvgIcon(string themeFolder, string iconFileName)
+        {
+            try
+            {
+                var iconUri = new Uri($"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconFileName}");
+                var streamInfo = System.Windows.Application.GetResourceStream(iconUri);
+                if (streamInfo?.Stream == null) return null;
+                var settings = new WpfDrawingSettings { IncludeRuntime = true, TextAsGeometry = false, OptimizePath = true };
+                using (var stream = streamInfo.Stream)
+                {
+                    var converter = new FileSvgReader(settings);
+                    var drawing = converter.Read(stream);
+                    if (drawing != null)
+                    {
+                        var drawingImage = new DrawingImage(drawing);
+                        drawingImage.Freeze();
+                        return drawingImage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading SVG icon {iconFileName}: {ex.Message}");
+            }
+            return null;
         }
 
         /// <summary>
@@ -383,6 +435,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             // Get active filters
             var activeFilters = new System.Collections.Generic.List<string>();
 
+            if (MaliciousFilterButton.IsChecked == true)
+                activeFilters.Add("Malicious");
             if (CriticalFilterButton.IsChecked == true)
                 activeFilters.Add("Critical");
             if (HighFilterButton.IsChecked == true)
@@ -391,13 +445,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 activeFilters.Add("Medium");
             if (LowFilterButton.IsChecked == true)
                 activeFilters.Add("Low");
-            if (MaliciousFilterButton.IsChecked == true)
-                activeFilters.Add("Malicious");
 
-            // If no filters are active, show all
+            // If no filters are active, show nothing (user has disabled all severities)
             if (activeFilters.Count == 0)
             {
-                FileNodes = new ObservableCollection<FileNode>(_allFileNodes);
+                FileNodes = new ObservableCollection<FileNode>();
                 return;
             }
 
@@ -423,6 +475,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                     {
                         filteredFile.Vulnerabilities.Add(vuln);
                     }
+
+                    // Update severity count badges to reflect filtered list (so counts match visible findings)
+                    var severityCounts = filteredFile.Vulnerabilities
+                        .GroupBy(n => n.Severity)
+                        .Select(g => new SeverityCount
+                        {
+                            Severity = g.Key,
+                            Count = g.Count(),
+                            Icon = g.First().SeverityIcon
+                        });
+                    foreach (var sc in severityCounts)
+                        filteredFile.SeverityCounts.Add(sc);
 
                     filteredFiles.Add(filteredFile);
                 }
@@ -461,11 +525,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         /// <summary>
-        /// Open settings (placeholder for now)
+        /// Open settings - raises SettingsClick so parent can open the same Checkmarx options page as Scan Results.
         /// </summary>
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Settings functionality coming soon!", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+            SettingsClick?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
