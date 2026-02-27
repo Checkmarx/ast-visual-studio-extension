@@ -195,8 +195,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                         return title + (string.IsNullOrEmpty(title) ? "" : " ");
                     case ScannerType.OSS:
                         {
-                            // JetBrains uses detail.getTitle() + "@" + packageVersion; prefer title (e.g. "validator (CVE-...)") then PackageName
+                            // Prefer title then PackageName; strip (CVE-...) from display for cleaner UI
                             string name = !string.IsNullOrEmpty(title) ? title : (PackageName ?? "");
+                            name = CxAssistConstants.StripCveFromDisplayName(name);
                             string version = !string.IsNullOrEmpty(PackageVersion) ? $"@{PackageVersion}" : "";
                             return $"{Severity}-risk package: {name}{version}";
                         }

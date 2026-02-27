@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 {
     /// <summary>
@@ -6,6 +8,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistConstants
     {
+        /// <summary>Removes the "(CVE-...)" part from package/title text for display (e.g. "validator (CVE-2025-12758)" → "validator").</summary>
+        public static string StripCveFromDisplayName(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            return Regex.Replace(text.Trim(), @"\s*\(CVE-[^)]+\)", "").Trim();
+        }
         /// <summary>Product name shown in UI (Quick Info header, messages, Error List).</summary>
         public const string DisplayName = "Checkmarx One Assist";
 
