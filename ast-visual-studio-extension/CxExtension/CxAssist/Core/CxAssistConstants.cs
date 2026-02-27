@@ -1,4 +1,6 @@
+using System;
 using System.Text.RegularExpressions;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 {
@@ -8,11 +10,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistConstants
     {
-        /// <summary>Removes the "(CVE-...)" part from package/title text for display (e.g. "validator (CVE-2025-12758)" → "validator").</summary>
+        /// <summary>IaC/KICS uses 1-based line numbers; other scanners use 0-based. Convert to 0-based for editor/taggers.</summary>
+        public static int To0BasedLineForEditor(ScannerType scanner, int lineNumber)
+        {
+            return scanner == ScannerType.IaC ? Math.Max(0, lineNumber - 1) : lineNumber;
+        }
+
+        /// <summary>Convert to 1-based line for DTE MoveToLineAndOffset (IaC already 1-based; others add 1).</summary>
+        public static int To1BasedLineForDte(ScannerType scanner, int lineNumber)
+        {
+            return scanner == ScannerType.IaC ? Math.Max(1, lineNumber) : Math.Max(1, lineNumber + 1);
+        }
+        /// <summary>Removes "(CVE-...)" and "(Malicious)" from package/title text for display (e.g. "node-ipc (Malicious)@10.1.1" → "node-ipc").</summary>
         public static string StripCveFromDisplayName(string text)
         {
             if (string.IsNullOrEmpty(text)) return text;
-            return Regex.Replace(text.Trim(), @"\s*\(CVE-[^)]+\)", "").Trim();
+            text = Regex.Replace(text.Trim(), @"\s*\(CVE-[^)]+\)", "").Trim();
+            text = Regex.Replace(text, @"\s*\(Malicious\)", "", RegexOptions.IgnoreCase).Trim();
+            return text;
         }
         /// <summary>Product name shown in UI (Quick Info header, messages, Error List).</summary>
         public const string DisplayName = "Checkmarx One Assist";

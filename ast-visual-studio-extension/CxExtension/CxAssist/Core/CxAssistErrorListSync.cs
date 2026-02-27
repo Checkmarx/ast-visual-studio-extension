@@ -146,15 +146,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             int LineForErrorList(int ln) => Math.Max(0, ln);
             int ColForErrorList(int c) => Math.Max(1, c);
 
-            // IaC: group by line (same as Findings tree)
+            // IaC: group by line (same as Findings tree). IaC uses 1-based LineNumber → 0-based for Error List.
             foreach (var lineGroup in issuesOnly.Where(v => v.Scanner == ScannerType.IaC).GroupBy(v => v.LineNumber))
             {
                 var lineList = lineGroup.ToList();
                 var first = lineList[0];
+                int line0Based = CxAssistConstants.To0BasedLineForEditor(ScannerType.IaC, first.LineNumber);
                 if (lineList.Count > 1)
-                    result.Add((lineList.Count + CxAssistConstants.MultipleIacIssuesOnLine, LineForErrorList(first.LineNumber), ColForErrorList(first.ColumnNumber), first));
+                    result.Add((lineList.Count + CxAssistConstants.MultipleIacIssuesOnLine, line0Based, ColForErrorList(first.ColumnNumber), first));
                 else
-                    result.Add((GetPrimaryDisplayText(first.Severity, first.Scanner, first.Title ?? first.Description, first.PackageName, first.PackageVersion), LineForErrorList(first.LineNumber), ColForErrorList(first.ColumnNumber), first));
+                    result.Add((GetPrimaryDisplayText(first.Severity, first.Scanner, first.Title ?? first.Description, first.PackageName, first.PackageVersion), line0Based, ColForErrorList(first.ColumnNumber), first));
             }
 
             // ASCA: group by line; multiple on same line → show highest-severity detail only (same as Findings)
@@ -270,13 +271,48 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             try
             {
-                var window = dte.ItemOperations.OpenFile(v.FilePath, EnvDTE.Constants.vsViewKindCode);
-                Document doc = window.Document;
-                if (doc?.Object("TextDocument") is TextDocument textDoc)
+                Window window = null;
+                string pathToTry = v.FilePath;
+
+                window = dte.ItemOperations.OpenFile(pathToTry, EnvDTE.Constants.vsViewKindCode);
+                if (window == null && !Path.IsPathRooted(pathToTry))
+                {
+                    try
+                    {
+                        pathToTry = Path.GetFullPath(pathToTry);
+                        window = dte.ItemOperations.OpenFile(pathToTry, EnvDTE.Constants.vsViewKindCode);
+                    }
+                    catch { /* ignore */ }
+                }
+                if (window == null && dte.Solution != null)
+                {
+                    try
+                    {
+                        string solDir = Path.GetDirectoryName(dte.Solution.FullName);
+                        if (!string.IsNullOrEmpty(solDir))
+                        {
+                            string pathInSolution = Path.Combine(solDir, Path.GetFileName(v.FilePath));
+                            if (pathInSolution != pathToTry)
+                                window = dte.ItemOperations.OpenFile(pathInSolution, EnvDTE.Constants.vsViewKindCode);
+                        }
+                    }
+                    catch { /* ignore */ }
+                }
+                if (window == null && dte.Documents != null)
+                {
+                    string fileName = Path.GetFileName(pathToTry);
+                    Document doc = dte.Documents.Cast<Document>().FirstOrDefault(d =>
+                        string.Equals(d.FullName, pathToTry, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(Path.GetFileName(d.FullName), fileName, StringComparison.OrdinalIgnoreCase));
+                    if (doc != null)
+                        window = doc.ActiveWindow;
+                }
+
+                if (window?.Document?.Object("TextDocument") is TextDocument textDoc)
                 {
                     var selection = textDoc.Selection;
-                    int line = Math.Max(1, v.LineNumber + 1); 
-                    selection.MoveToLineAndOffset(line, 1);
+                    int line = CxAssistConstants.To1BasedLineForDte(v.Scanner, v.LineNumber);
+                    selection.MoveToLineAndOffset(line, Math.Max(1, v.ColumnNumber));
                     selection.SelectLine();
                 }
             }

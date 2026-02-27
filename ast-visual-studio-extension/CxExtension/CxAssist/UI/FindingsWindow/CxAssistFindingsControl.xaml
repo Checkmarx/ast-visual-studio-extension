@@ -78,13 +78,13 @@
                                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
                                 </Grid>
                             </Border>
-                            <!-- Children -->
-                            <ItemsPresenter x:Name="ItemsHost" Grid.Row="1" Margin="16,0,0,0"/>
+                            <!-- Children (reduced left margin so vulnerability rows don't have huge gap) -->
+                            <ItemsPresenter x:Name="ItemsHost" Grid.Row="1" Margin="12,0,0,0"/>
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <!-- Hide expander if no children -->
+                            <!-- Collapse expander if no children (Collapsed = no layout space; removes gap before vulnerability text) -->
                             <Trigger Property="HasItems" Value="False">
-                                <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                                <Setter TargetName="Expander" Property="Visibility" Value="Collapsed"/>
                             </Trigger>
                             <!-- Hover effect: grey in dark theme -->
                             <Trigger Property="IsMouseOver" Value="True">
@@ -366,10 +366,6 @@
                 <!-- File Node Template (JetBrains-style: expander + file icon + name + severity badges) -->
                 <HierarchicalDataTemplate DataType="{x:Type local:FileNode}" ItemsSource="{Binding Vulnerabilities}">
                     <StackPanel Orientation="Horizontal" Margin="0,2" VerticalAlignment="Center">
-                        <!-- File Icon (same size as severity icons in list) -->
-                        <Image Source="{Binding FileIcon}" Width="18" Height="18" Margin="0,0,3,0"
-                               VerticalAlignment="Center"
-                               RenderOptions.BitmapScalingMode="HighQuality"/>
                         <!-- File Name (primary text) -->
                         <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>

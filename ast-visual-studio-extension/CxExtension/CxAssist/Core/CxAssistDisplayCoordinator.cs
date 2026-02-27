@@ -130,11 +130,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             string key;
             try { key = Path.GetFullPath(documentPath); }
             catch { key = documentPath; }
-            int line1Based = zeroBasedLine + 1;
             lock (_lock)
             {
                 if (!_fileToIssues.TryGetValue(key, out var list) || list == null) return null;
-                return list.FirstOrDefault(v => v.LineNumber == line1Based);
+                // IaC uses 1-based LineNumber in the model; Error List passes 0-based, so match accordingly.
+                return list.FirstOrDefault(v =>
+                    v.Scanner == ScannerType.IaC
+                        ? v.LineNumber == zeroBasedLine + 1
+                        : v.LineNumber == zeroBasedLine);
             }
         }
 
@@ -227,11 +230,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         /// <param name="findingsControl">The CxAssist Findings control to update.</param>
         /// <param name="loadSeverityIcon">Optional; if null, severity icons are not set.</param>
-        /// <param name="loadFileIcon">Optional; if null, file icon is not set.</param>
+        /// <param name="loadFileIcon">Optional; callback (filePath -> ImageSource) for file-type icon per file. If null, file icon is not set.</param>
         public static void RefreshProblemWindow(
             CxAssistFindingsControl findingsControl,
             Func<string, System.Windows.Media.ImageSource> loadSeverityIcon = null,
-            Func<System.Windows.Media.ImageSource> loadFileIcon = null)
+            Func<string, System.Windows.Media.ImageSource> loadFileIcon = null)
         {
             if (findingsControl == null) return;
 

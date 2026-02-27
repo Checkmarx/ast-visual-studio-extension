@@ -91,7 +91,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             var current = CxAssistDisplayCoordinator.GetCurrentFindings();
             if (current != null && current.Count > 0)
             {
-                CxAssistDisplayCoordinator.RefreshProblemWindow(control, LoadSeverityIcon, () => LoadIcon("document.png"));
+                CxAssistDisplayCoordinator.RefreshProblemWindow(control, LoadSeverityIcon, null);
                 return;
             }
 
