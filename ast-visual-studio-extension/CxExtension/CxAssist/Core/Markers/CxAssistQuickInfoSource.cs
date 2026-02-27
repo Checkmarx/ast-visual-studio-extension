@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Adornments;
 using System;
 using System.Collections.Generic;
@@ -22,78 +21,12 @@ using System.Windows.Threading;
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 {
     /// <summary>
-    /// Quick Info source using official content types (ContainerElement, ClassifiedTextElement, ClassifiedTextRun)
-    /// so the default Quick Info presenter shows description, links, and optional image.
+    /// Static helper for building Quick Info content (ContainerElement, ClassifiedTextElement, ClassifiedTextRun).
+    /// Used by <see cref="CxAssistAsyncQuickInfoSource"/> (IAsyncQuickInfoSource); legacy IQuickInfoSource was removed.
     /// </summary>
-    internal class CxAssistQuickInfoSource : IQuickInfoSource
+    internal static class CxAssistQuickInfoSource
     {
         internal const bool UseRichHover = true;
-
-        private readonly CxAssistQuickInfoSourceProvider _provider;
-        private readonly ITextBuffer _buffer;
-        private bool _disposed;
-
-        public CxAssistQuickInfoSource(CxAssistQuickInfoSourceProvider provider, ITextBuffer buffer)
-        {
-            _provider = provider;
-            _buffer = buffer;
-        }
-
-        public void AugmentQuickInfoSession(IQuickInfoSession session, IList<object> qiContent, out ITrackingSpan applicableToSpan)
-        {
-            applicableToSpan = null;
-
-            if (!UseRichHover)
-                return;
-
-            SnapshotPoint? triggerPoint = session.GetTriggerPoint(_buffer.CurrentSnapshot);
-            if (!triggerPoint.HasValue && session.TextView != null)
-            {
-                var viewSnapshot = session.TextView.TextSnapshot;
-                var viewTrigger = session.GetTriggerPoint(viewSnapshot);
-                if (viewTrigger.HasValue && viewTrigger.Value.Snapshot.TextBuffer != _buffer)
-                {
-                    var mapped = session.TextView.BufferGraph.MapDownToFirstMatch(
-                        viewTrigger.Value,
-                        Microsoft.VisualStudio.Text.PointTrackingMode.Positive,
-                        sb => sb == _buffer,
-                        Microsoft.VisualStudio.Text.PositionAffinity.Predecessor);
-                    if (mapped.HasValue)
-                        triggerPoint = mapped.Value;
-                }
-                else if (viewTrigger.HasValue && viewTrigger.Value.Snapshot.TextBuffer == _buffer)
-                    triggerPoint = viewTrigger;
-            }
-
-            if (!triggerPoint.HasValue)
-                return;
-
-            var snapshot = triggerPoint.Value.Snapshot;
-            int lineNumber = snapshot.GetLineNumberFromPosition(triggerPoint.Value.Position);
-
-            var tagger = CxAssistErrorTaggerProvider.GetTaggerForBuffer(_buffer);
-            if (tagger == null)
-                return;
-
-            var vulnerabilities = tagger.GetVulnerabilitiesForLine(lineNumber);
-            if (vulnerabilities == null || vulnerabilities.Count == 0)
-                return;
-
-            // Success (Ok) and Unknown: gutter icon only; do not show in popup
-            var issuesOnly = vulnerabilities
-                .Where(v => v.Severity != SeverityLevel.Ok && v.Severity != SeverityLevel.Unknown)
-                .ToList();
-            if (issuesOnly.Count == 0)
-                return;
-
-            object content = BuildQuickInfoContentForLine(issuesOnly);
-            if (content == null)
-                return;
-
-            var line = snapshot.GetLineFromLineNumber(lineNumber);
-            applicableToSpan = snapshot.CreateTrackingSpan(line.Extent, SpanTrackingMode.EdgeInclusive);
-            qiContent.Insert(0, content);
-        }
 
         /// <summary>
         /// Builds Quick Info content for all vulnerabilities on the line (e.g. line 13 with 2 findings shows both).
@@ -670,14 +603,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 case SeverityLevel.Ignored: return "Ignored";
                 default: return severity.ToString();
             }
-        }
-
-        public void Dispose()
-        {
-            if (_disposed)
-                return;
-            GC.SuppressFinalize(this);
-            _disposed = true;
         }
     }
 }

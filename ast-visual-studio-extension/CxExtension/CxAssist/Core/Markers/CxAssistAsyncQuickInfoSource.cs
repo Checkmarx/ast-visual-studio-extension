@@ -29,9 +29,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         public async Task<QuickInfoItem> GetQuickInfoItemAsync(IAsyncQuickInfoSession session, CancellationToken cancellationToken)
         {
-            if (!CxAssistQuickInfoSource.UseRichHover)
-                return null;
-
             SnapshotPoint? triggerPoint = session.GetTriggerPoint(_buffer.CurrentSnapshot);
             if (!triggerPoint.HasValue && session.TextView != null)
             {

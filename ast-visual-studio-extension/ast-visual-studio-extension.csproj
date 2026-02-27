@@ -161,7 +161,6 @@
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSource.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSourceProvider.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoSource.cs" />
-    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoSourceProvider.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoClassifications.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSourceProvider.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSource.cs" />
