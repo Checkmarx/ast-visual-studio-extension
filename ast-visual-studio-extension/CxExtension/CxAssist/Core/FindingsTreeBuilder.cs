@@ -24,12 +24,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         /// <param name="vulnerabilities">Findings from mock or real-time (e.g. GetCommonVulnerabilities or coordinator).</param>
         /// <param name="loadSeverityIcon">Callback to get severity icon. Can be null.</param>
-        /// <param name="loadFileIcon">Callback to get file icon. Can be null.</param>
+        /// <param name="loadFileIcon">Callback to get file-type icon by file path (e.g. for VS built-in icons). Can be null.</param>
         /// <param name="defaultFilePath">Used when vulnerability.FilePath is null/empty. Defaults to DefaultFilePath.</param>
         public static ObservableCollection<FileNode> BuildFileNodesFromVulnerabilities(
             List<Vulnerability> vulnerabilities,
             Func<string, ImageSource> loadSeverityIcon = null,
-            Func<ImageSource> loadFileIcon = null,
+            Func<string, ImageSource> loadFileIcon = null,
             string defaultFilePath = null)
         {
             if (vulnerabilities == null || vulnerabilities.Count == 0)
@@ -44,7 +44,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             if (issuesOnly.Count == 0)
                 return new ObservableCollection<FileNode>();
 
-            var fileIcon = loadFileIcon?.Invoke();
             var grouped = issuesOnly
                 .GroupBy(v => string.IsNullOrEmpty(v.FilePath) ? fallbackPath : v.FilePath)
                 .OrderBy(g => g.Key);
@@ -57,6 +56,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 var fileName = Path.GetFileName(filePath);
                 if (string.IsNullOrEmpty(fileName)) fileName = filePath;
 
+                var fileIcon = loadFileIcon?.Invoke(filePath);
                 var fileNode = new FileNode
                 {
                     FileName = fileName,
@@ -73,11 +73,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                 var nodesToAdd = new List<VulnerabilityNode>();
 
-                // IaC: group by line; multiple issues on same line → one row "N IAC issues detected on this line" (JetBrains-style)
+                // IaC: group by line; multiple issues on same line → one row "N IAC issues detected on this line" (JetBrains-style).
+                // IaC/KICS uses 1-based line numbers; use as-is for display and navigation.
                 foreach (var lineGroup in iacVulns.GroupBy(v => v.LineNumber))
                 {
                     var list = lineGroup.ToList();
                     var first = list[0];
+                    int line1Based = CxAssistConstants.To1BasedLineForDte(ScannerType.IaC, first.LineNumber);
                     if (list.Count > 1)
                     {
                         nodesToAdd.Add(new VulnerabilityNode
@@ -85,7 +87,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             Severity = first.Severity.ToString(),
                             SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
                             Description = list.Count + CxAssistConstants.MultipleIacIssuesOnLine,
-                            Line = first.LineNumber + 1,
+                            Line = line1Based,
                             Column = first.ColumnNumber,
                             FilePath = first.FilePath,
                             Scanner = ScannerType.IaC
@@ -98,7 +100,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             Severity = first.Severity.ToString(),
                             SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
                             Description = first.Title ?? first.Description,
-                            Line = first.LineNumber + 1,
+                            Line = line1Based,
                             Column = first.ColumnNumber,
                             FilePath = first.FilePath,
                             Scanner = ScannerType.IaC

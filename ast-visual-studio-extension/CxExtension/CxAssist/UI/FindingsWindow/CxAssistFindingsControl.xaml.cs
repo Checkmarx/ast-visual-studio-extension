@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
@@ -326,6 +328,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         /// <summary>
         /// Navigate to vulnerability location in code (same approach as Error List navigation).
+        /// Tries OpenFile with path, then full path, then finds already-open document by name.
         /// </summary>
         private void NavigateToVulnerability(VulnerabilityNode vulnerability)
         {
@@ -337,9 +340,44 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 var dte = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(DTE)) as DTE;
                 if (dte == null) return;
 
-                var window = dte.ItemOperations.OpenFile(vulnerability.FilePath, EnvDTE.Constants.vsViewKindCode);
-                Document doc = window?.Document;
-                if (doc?.Object("TextDocument") is TextDocument textDoc)
+                EnvDTE.Window window = null;
+                string pathToTry = vulnerability.FilePath;
+
+                window = dte.ItemOperations.OpenFile(pathToTry, EnvDTE.Constants.vsViewKindCode);
+                if (window == null && !Path.IsPathRooted(pathToTry))
+                {
+                    try
+                    {
+                        pathToTry = Path.GetFullPath(pathToTry);
+                        window = dte.ItemOperations.OpenFile(pathToTry, EnvDTE.Constants.vsViewKindCode);
+                    }
+                    catch { /* ignore */ }
+                }
+                if (window == null && dte.Solution != null)
+                {
+                    try
+                    {
+                        string solDir = Path.GetDirectoryName(dte.Solution.FullName);
+                        if (!string.IsNullOrEmpty(solDir))
+                        {
+                            string pathInSolution = Path.Combine(solDir, Path.GetFileName(vulnerability.FilePath));
+                            if (pathInSolution != pathToTry)
+                                window = dte.ItemOperations.OpenFile(pathInSolution, EnvDTE.Constants.vsViewKindCode);
+                        }
+                    }
+                    catch { /* ignore */ }
+                }
+                if (window == null && dte.Documents != null)
+                {
+                    string fileName = Path.GetFileName(pathToTry);
+                    Document doc = dte.Documents.Cast<Document>().FirstOrDefault(d =>
+                        string.Equals(d.FullName, pathToTry, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(Path.GetFileName(d.FullName), fileName, StringComparison.OrdinalIgnoreCase));
+                    if (doc != null)
+                        window = doc.ActiveWindow;
+                }
+
+                if (window?.Document?.Object("TextDocument") is TextDocument textDoc)
                 {
                     int line = Math.Max(1, vulnerability.Line);
                     int column = Math.Max(1, vulnerability.Column);

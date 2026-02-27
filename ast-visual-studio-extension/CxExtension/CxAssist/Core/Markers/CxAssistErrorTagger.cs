@@ -150,7 +150,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 foreach (var vulnerability in vulnerabilities)
                 {
-                    int lineNumber = vulnerability.LineNumber; // +1 display: use LineNumber as 0-based key (show at display line LineNumber + 1)
+                    int lineNumber = CxAssistConstants.To0BasedLineForEditor(vulnerability.Scanner, vulnerability.LineNumber);
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
                         _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
                     _vulnerabilitiesByLine[lineNumber].Add(vulnerability);

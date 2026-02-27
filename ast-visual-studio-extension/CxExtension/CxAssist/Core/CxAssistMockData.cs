@@ -558,7 +558,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     Description = "Incoming container traffic should be bound to a specific host interface",
                     Severity = SeverityLevel.Medium,
                     Scanner = ScannerType.IaC,
-                    LineNumber = 10,
+                    LineNumber = 10, // 1-based (IaC/KICS): line 10 in file (ports)
                     ColumnNumber = 5,
                     StartIndex = 4,
                     EndIndex = 10,
@@ -573,7 +573,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     Description = "Check containers periodically to see if they are running properly.",
                     Severity = SeverityLevel.Medium,
                     Scanner = ScannerType.IaC,
-                    LineNumber = 3,
+                    LineNumber = 3, // 1-based (IaC/KICS): line 3 in file (services:)
                     ColumnNumber = 3,
                     StartIndex = 2,
                     EndIndex = 9,
@@ -588,7 +588,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     Description = "Memory limits should be defined for each container. This prevents potential resource exhaustion by ensuring that containers consume not more than the designated amount of memory",
                     Severity = SeverityLevel.Medium,
                     Scanner = ScannerType.IaC,
-                    LineNumber = 3,
+                    LineNumber = 3, // 1-based (IaC/KICS): line 3 in file
                     ColumnNumber = 3,
                     StartIndex = 2,
                     EndIndex = 9,
@@ -603,7 +603,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     Description = "Attribute 'security_opt' should be defined.",
                     Severity = SeverityLevel.Medium,
                     Scanner = ScannerType.IaC,
-                    LineNumber = 3,
+                    LineNumber = 3, // 1-based (IaC/KICS): line 3 in file
                     ColumnNumber = 3,
                     StartIndex = 2,
                     EndIndex = 9,
@@ -618,7 +618,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     Description = "CPU limits should be set because if the system has CPU time free, a container is guaranteed to be allocated as much CPU as it requests",
                     Severity = SeverityLevel.Low,
                     Scanner = ScannerType.IaC,
-                    LineNumber = 3,
+                    LineNumber = 3, // 1-based (IaC/KICS): line 3 in file
                     ColumnNumber = 3,
                     StartIndex = 2,
                     EndIndex = 9,
