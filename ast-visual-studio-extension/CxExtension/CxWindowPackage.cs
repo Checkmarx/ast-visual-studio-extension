@@ -87,7 +87,7 @@ namespace ast_visual_studio_extension.CxExtension
                 if (CxAssistConstants.SyncFindingsToBuiltInErrorList)
                     _CxAssistErrorListSync.Start();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //Console.WriteLine(ex.ToString());
             }
