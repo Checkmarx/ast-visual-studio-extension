@@ -86,10 +86,10 @@
                             <Trigger Property="HasItems" Value="False">
                                 <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
                             </Trigger>
-                            <!-- Hover effect -->
+                            <!-- Hover effect: grey in dark theme -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.CommandBarMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
                             </Trigger>
                             <!-- Selection effect -->
                             <Trigger Property="IsSelected" Value="True">
@@ -124,31 +124,53 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Hover: same border as Scan Results (ActiveBorderKey), keep original background -->
+                            <!-- Hover: grey in dark theme (no blue) for all filters -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.CommandBarMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
                                 <Setter TargetName="Border" Property="BorderBrush"
                                         Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                             </Trigger>
-                            <!-- Checked (selected): same border as Scan Results, keep original background -->
+                            <!-- Checked (selected): same border as Scan Results -->
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Border" Property="Background"
                                         Value="{DynamicResource {x:Static vsui:EnvironmentColors.CommandBarSelectedBrushKey}}"/>
                                 <Setter TargetName="Border" Property="BorderBrush"
                                         Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                             </Trigger>
-                            <!-- Checked + Hover: keep original background -->
+                            <!-- Checked + Hover: grey hover when filter is selected -->
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsChecked" Value="True"/>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.CommandBarMouseDownBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
                                 <Setter TargetName="Border" Property="BorderBrush"
                                         Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                             </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Toolbar action buttons (Expand All, Collapse All, Settings): grey hover for dark theme, no blue -->
+        <Style x:Key="ToolbarActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="Transparent" BorderThickness="0" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background"
+                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -163,19 +185,18 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <!-- HR line below tab row (#000000, slightly taller) -->
-        <Border Grid.ColumnSpan="4" Height="2" VerticalAlignment="Top"
-                BorderBrush="#000000"
-                BorderThickness="0,2,0,0"/>
+        <!-- HR line below tab row: black -->
+        <Border Grid.ColumnSpan="4" Height="1" VerticalAlignment="Top"
+                Background="#000000"
+                BorderThickness="0"/>
         <Grid Grid.Column="0" Grid.ColumnSpan="4" Margin="0,2,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
         <!-- Loading Indicator (Overlay) -->
-        <Border Grid.Row="0" Grid.RowSpan="3"
+        <Border Grid.Row="0" Grid.RowSpan="2"
                 x:Name="LoadingOverlay"
                 Background="#80000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -187,11 +208,11 @@
             </StackPanel>
         </Border>
 
-        <!-- Top Toolbar: compact height, HR line below toolbar slightly taller -->
+        <!-- Top Toolbar: compact height, HR line below toolbar (black) -->
         <Border Grid.Row="0"
                 Background="Transparent"
                 BorderBrush="#000000"
-                BorderThickness="0,0,0,2"
+                BorderThickness="0,0,0,1"
                 Padding="4,2,4,2">
             <!-- Severity filter icons: Malicious, Critical, High, Medium, Low; same size/margin as Scan Results -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -258,11 +279,11 @@
                 <Button x:Name="ExpandAllButton"
                         Click="ExpandAll_Click"
                         ToolTip="Expand All"
-                        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
-                        Width="24" Height="24" Margin="2,0"
+                        Style="{StaticResource ToolbarActionButtonStyle}"
+                        Width="28" Height="28" Margin="2,0"
                         Background="Transparent" BorderThickness="0"
                         Padding="0">
-                    <Image x:Name="ExpandAllIcon" Width="16" Height="16"
+                    <Image x:Name="ExpandAllIcon" Width="20" Height="20"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
@@ -270,11 +291,11 @@
                 <Button x:Name="CollapseAllButton"
                         Click="CollapseAll_Click"
                         ToolTip="Collapse All"
-                        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
-                        Width="24" Height="24" Margin="2,0"
+                        Style="{StaticResource ToolbarActionButtonStyle}"
+                        Width="28" Height="28" Margin="2,0"
                         Background="Transparent" BorderThickness="0"
                         Padding="0">
-                    <Image x:Name="CollapseAllIcon" Width="16" Height="16"
+                    <Image x:Name="CollapseAllIcon" Width="20" Height="20"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
@@ -286,7 +307,7 @@
                 <Button x:Name="SettingsButton"
                         Click="Settings_Click"
                         ToolTip="Settings"
-                        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                        Style="{StaticResource ToolbarActionButtonStyle}"
                         Width="24" Height="24" Margin="2,0"
                         Background="Transparent" BorderThickness="0">
                     <TextBlock Text="⚙" FontSize="14"
@@ -382,13 +403,15 @@
                         <Image Source="{Binding SeverityIcon}" Width="14" Height="14" Margin="0,0,3,0"
                                VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
-                        <!-- Primary text: risk type + package (bright) -->
+                        <!-- Primary text: risk type + package (larger, prominent - match JetBrains) -->
                         <TextBlock Text="{Binding PrimaryDisplayText}" VerticalAlignment="Center" TextWrapping="NoWrap"
-                                   Margin="0,0,4,0"
+                                   FontSize="13"
+                                   Margin="0,0,6,0"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
-                        <!-- Secondary text: source + location (darker grey) -->
+                        <!-- Secondary text: source + location (smaller, dimmer - match JetBrains) -->
                         <TextBlock Text="{Binding SecondaryDisplayText}" VerticalAlignment="Center" TextWrapping="NoWrap"
-                                   Opacity="0.7"
+                                   FontSize="13"
+                                   Opacity="0.5"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
                     </StackPanel>
                 </DataTemplate>
@@ -404,17 +427,6 @@
                            HorizontalAlignment="Center"
                            Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
             </StackPanel>
-        </Border>
-
-        <!-- Status Bar / Summary (HR line above slightly taller) -->
-        <Border Grid.Row="2"
-                Background="Transparent"
-                BorderBrush="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowBorderBrushKey}}"
-                BorderThickness="0,2,0,0"
-                Padding="8,4">
-            <TextBlock Text="{Binding StatusBarText}"
-                       FontSize="11"
-                       Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
         </Border>
 
         </Grid>

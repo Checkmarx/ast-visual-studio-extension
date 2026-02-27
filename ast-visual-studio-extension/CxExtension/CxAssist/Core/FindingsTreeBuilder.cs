@@ -106,123 +106,74 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     }
                 }
 
-                // ASCA: group by line; multiple on same line → one row "N ASCA violations detected on this line" (JetBrains-style)
+                // ASCA: group by line; multiple on same line → show highest-severity detail only (not "N ASCA violations...")
                 foreach (var lineGroup in ascaVulns.GroupBy(v => v.LineNumber))
                 {
                     var list = lineGroup.ToList();
-                    var first = list[0];
-                    if (list.Count > 1)
+                    var v = list.Count > 1 ? list.OrderBy(x => x.Severity).First() : list[0];
+                    nodesToAdd.Add(new VulnerabilityNode
                     {
-                        nodesToAdd.Add(new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = list.Count + CxAssistConstants.MultipleAscaViolationsOnLine,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.ASCA
-                        });
-                    }
-                    else
-                    {
-                        nodesToAdd.Add(new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = first.Title ?? first.Description,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.ASCA
-                        });
-                    }
+                        Severity = v.Severity.ToString(),
+                        SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
+                        Description = v.Title ?? v.Description,
+                        Line = v.LineNumber + 1,
+                        Column = v.ColumnNumber,
+                        FilePath = v.FilePath,
+                        Scanner = ScannerType.ASCA
+                    });
                 }
 
-                // OSS: group by line; multiple on same line → one row "N OSS issues detected on this line"
+                // OSS: group by line; multiple on same line → show highest-severity detail only (not "N OSS issues...")
                 foreach (var lineGroup in ossVulns.GroupBy(v => v.LineNumber))
                 {
                     var list = lineGroup.ToList();
-                    var first = list[0];
-                    nodesToAdd.Add(list.Count > 1
-                        ? new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = list.Count + CxAssistConstants.MultipleOssIssuesOnLine,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.OSS
-                        }
-                        : new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = first.Title ?? first.Description,
-                            PackageName = first.PackageName,
-                            PackageVersion = first.PackageVersion,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.OSS
-                        });
+                    var v = list.Count > 1 ? list.OrderBy(x => x.Severity).First() : list[0];
+                    nodesToAdd.Add(new VulnerabilityNode
+                    {
+                        Severity = v.Severity.ToString(),
+                        SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
+                        Description = v.Title ?? v.Description,
+                        PackageName = v.PackageName,
+                        PackageVersion = v.PackageVersion,
+                        Line = v.LineNumber + 1,
+                        Column = v.ColumnNumber,
+                        FilePath = v.FilePath,
+                        Scanner = ScannerType.OSS
+                    });
                 }
 
-                // Secrets: group by line; multiple on same line → one row "N Secrets issues detected on this line"
+                // Secrets: group by line; multiple on same line → show highest-severity detail only
                 foreach (var lineGroup in secretsVulns.GroupBy(v => v.LineNumber))
                 {
                     var list = lineGroup.ToList();
-                    var first = list[0];
-                    nodesToAdd.Add(list.Count > 1
-                        ? new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = list.Count + CxAssistConstants.MultipleSecretsIssuesOnLine,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.Secrets
-                        }
-                        : new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = first.Title ?? first.Description,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.Secrets
-                        });
+                    var v = list.Count > 1 ? list.OrderBy(x => x.Severity).First() : list[0];
+                    nodesToAdd.Add(new VulnerabilityNode
+                    {
+                        Severity = v.Severity.ToString(),
+                        SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
+                        Description = v.Title ?? v.Description,
+                        Line = v.LineNumber + 1,
+                        Column = v.ColumnNumber,
+                        FilePath = v.FilePath,
+                        Scanner = ScannerType.Secrets
+                    });
                 }
 
-                // Containers: group by line; multiple on same line → one row "N Container issues detected on this line"
+                // Containers: group by line; multiple on same line → show highest-severity detail only
                 foreach (var lineGroup in containersVulns.GroupBy(v => v.LineNumber))
                 {
                     var list = lineGroup.ToList();
-                    var first = list[0];
-                    nodesToAdd.Add(list.Count > 1
-                        ? new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = list.Count + CxAssistConstants.MultipleContainersIssuesOnLine,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.Containers
-                        }
-                        : new VulnerabilityNode
-                        {
-                            Severity = first.Severity.ToString(),
-                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
-                            Description = first.Title ?? first.Description,
-                            Line = first.LineNumber + 1,
-                            Column = first.ColumnNumber,
-                            FilePath = first.FilePath,
-                            Scanner = ScannerType.Containers
-                        });
+                    var v = list.Count > 1 ? list.OrderBy(x => x.Severity).First() : list[0];
+                    nodesToAdd.Add(new VulnerabilityNode
+                    {
+                        Severity = v.Severity.ToString(),
+                        SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
+                        Description = v.Title ?? v.Description,
+                        Line = v.LineNumber + 1,
+                        Column = v.ColumnNumber,
+                        FilePath = v.FilePath,
+                        Scanner = ScannerType.Containers
+                    });
                 }
 
                 // Sort by line then column (JetBrains order)

@@ -101,31 +101,122 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     // Document may not be open
                 }
 
-                foreach (var v in list)
+                // Build entries like the Findings tree: same-line grouping for IaC and ASCA (one row per line when 2+ issues)
+                var entries = BuildErrorListEntries(list);
+                string docPath = GetDocumentPath(list.Count > 0 ? list[0].FilePath : null, filePath);
+
+                foreach (var entry in entries)
                 {
-                    // Success (Ok) and Unknown: gutter icon only; do not show in Error List
-                    if (v.Severity == SeverityLevel.Ok || v.Severity == SeverityLevel.Unknown)
-                        continue;
-                    string severityLabel = v.Severity.ToString();
-                    string docPath = GetDocumentPath(v.FilePath, filePath);
-                    string helpKeyword = HelpKeywordPrefix + v.Id;
+                    var v = entry.Vulnerability;
+                    // Same description format as Findings tab: PrimaryDisplayText + " Checkmarx One Assist [Ln X, Col Y]"
+                    int displayLine = entry.Line + 1; // 1-based for description text to match Findings
+                    string fullDescription = $"{entry.DisplayText} {CxAssistConstants.DisplayName} [Ln {displayLine}, Col {entry.Column}]";
                     var task = new ErrorTask
                     {
-                        // Use BuildCompile so tasks appear in Error List but are not merged into the editor
-                        // hover tooltip (which aggregates CodeSense). Avoids showing the same finding twice in the popup.
                         Category = TaskCategory.BuildCompile,
                         ErrorCategory = GetErrorCategory(v.Severity),
-                        Text = $"[{CxAssistConstants.LogCategory}] [{severityLabel}] {v.Title}",
+                        Text = fullDescription,
                         Document = docPath,
-                        Line = Math.Max(1, v.LineNumber), // 1-based display: LineNumber + 1
-                        Column = Math.Max(1, v.ColumnNumber),
+                        Line = entry.Line,
+                        Column = Math.Max(1, entry.Column),
                         HierarchyItem = document != null ? GetHierarchyItem(document) : null,
-                        HelpKeyword = helpKeyword
+                        HelpKeyword = HelpKeywordPrefix + v.Id
                     };
 
                     task.Navigate += (s, e) => NavigateToVulnerability(v);
                     _errorListProvider.Tasks.Add(task);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Builds Error List entries with same-line grouping as the Findings tree: all scanners
+        /// show one entry per line when multiple issues share a line (e.g. "N OSS issues detected on this line").
+        /// Vulnerability.LineNumber is 0-based. Findings tab displays 1-based: Line = LineNumber + 1.
+        /// Error List (ErrorTask.Line) uses 0-based line index; VS displays it as 1-based, so we pass
+        /// LineNumber (0-based) so the Error List column matches "[Ln X, Col Y]" in the Findings tab.
+        /// </summary>
+        private static List<(string DisplayText, int Line, int Column, Vulnerability Vulnerability)> BuildErrorListEntries(List<Vulnerability> list)
+        {
+            var result = new List<(string, int, int, Vulnerability)>();
+            var issuesOnly = list.Where(v => v.Severity != SeverityLevel.Ok && v.Severity != SeverityLevel.Unknown).ToList();
+
+            // Error List expects 0-based line (VS shows 1-based in UI). Match Findings by passing LineNumber as-is.
+            // C# 7.3: inline instead of static local functions
+            int LineForErrorList(int ln) => Math.Max(0, ln);
+            int ColForErrorList(int c) => Math.Max(1, c);
+
+            // IaC: group by line (same as Findings tree)
+            foreach (var lineGroup in issuesOnly.Where(v => v.Scanner == ScannerType.IaC).GroupBy(v => v.LineNumber))
+            {
+                var lineList = lineGroup.ToList();
+                var first = lineList[0];
+                if (lineList.Count > 1)
+                    result.Add((lineList.Count + CxAssistConstants.MultipleIacIssuesOnLine, LineForErrorList(first.LineNumber), ColForErrorList(first.ColumnNumber), first));
+                else
+                    result.Add((GetPrimaryDisplayText(first.Severity, first.Scanner, first.Title ?? first.Description, first.PackageName, first.PackageVersion), LineForErrorList(first.LineNumber), ColForErrorList(first.ColumnNumber), first));
+            }
+
+            // ASCA: group by line; multiple on same line → show highest-severity detail only (same as Findings)
+            foreach (var lineGroup in issuesOnly.Where(v => v.Scanner == ScannerType.ASCA).GroupBy(v => v.LineNumber))
+            {
+                var lineList = lineGroup.ToList();
+                var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+            }
+
+            // OSS: group by line; multiple on same line → show highest-severity detail only (same as Findings)
+            foreach (var lineGroup in issuesOnly.Where(v => v.Scanner == ScannerType.OSS).GroupBy(v => v.LineNumber))
+            {
+                var lineList = lineGroup.ToList();
+                var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+            }
+
+            // Secrets: group by line; multiple on same line → show highest-severity detail only
+            foreach (var lineGroup in issuesOnly.Where(v => v.Scanner == ScannerType.Secrets).GroupBy(v => v.LineNumber))
+            {
+                var lineList = lineGroup.ToList();
+                var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+            }
+
+            // Containers: group by line; multiple on same line → show highest-severity detail only
+            foreach (var lineGroup in issuesOnly.Where(v => v.Scanner == ScannerType.Containers).GroupBy(v => v.LineNumber))
+            {
+                var lineList = lineGroup.ToList();
+                var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Builds the same primary description text as the Findings tab (VulnerabilityNode.PrimaryDisplayText)
+        /// so the Error List description column matches the Findings tree.
+        /// </summary>
+        private static string GetPrimaryDisplayText(SeverityLevel severity, ScannerType scanner, string titleOrDescription, string packageName, string packageVersion)
+        {
+            string title = titleOrDescription ?? "";
+            if (title.Contains(" detected on this line") || title.Contains(" violations detected on this line"))
+                return title.TrimEnd();
+            string severityStr = severity.ToString();
+            switch (scanner)
+            {
+                case ScannerType.OSS:
+                    string name = !string.IsNullOrEmpty(title) ? title : (packageName ?? "");
+                    name = CxAssistConstants.StripCveFromDisplayName(name);
+                    string version = !string.IsNullOrEmpty(packageVersion) ? "@" + packageVersion : "";
+                    return $"{severityStr}-risk package: {name}{version}";
+                case ScannerType.Secrets:
+                    return $"{severityStr}-risk secret: {title}";
+                case ScannerType.Containers:
+                    return $"{severityStr}-risk container image: {title}";
+                case ScannerType.ASCA:
+                case ScannerType.IaC:
+                default:
+                    return title + (string.IsNullOrEmpty(title) ? "" : " ");
             }
         }
 
