@@ -14,6 +14,8 @@
     <UserControl.Resources>
         <!-- Bool to Visibility Converter -->
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <!-- Dark theme -> 0.88 opacity for file icons (softer in dark theme); light -> 1.0 -->
+        <local:DarkThemeToFileIconOpacityConverter x:Key="DarkThemeToFileIconOpacityConverter"/>
 
         <!-- TreeViewItem Style with hover and selection effects -->
         <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
@@ -366,6 +368,22 @@
                 <!-- File Node Template (JetBrains-style: expander + file icon + name + severity badges) -->
                 <HierarchicalDataTemplate DataType="{x:Type local:FileNode}" ItemsSource="{Binding Vulnerabilities}">
                     <StackPanel Orientation="Horizontal" Margin="0,2" VerticalAlignment="Center">
+                        <!-- File / package icon at start; opacity softened in dark theme for better look -->
+                        <Image Source="{Binding FileIcon}" Width="16" Height="16" Margin="0,0,6,0"
+                               VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               Opacity="{Binding IsDarkTheme, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource DarkThemeToFileIconOpacityConverter}}">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FileIcon}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <!-- File Name (primary text) -->
                         <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
