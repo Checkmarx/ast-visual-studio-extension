@@ -70,6 +70,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// popup does not show a second duplicate block (VS still shows the task in the list with File/Line/Column;
         /// full details are in our Quick Info on hover). When false: full description is shown in the Error List
         /// but the same text appears again in the hover (duplicate).
-        /// </summary
+        /// </summary>
+        public const string FixWithCxOneAssist = "Fix with Checkmarx Assist";
+        public const string ViewDetails = "View Details";
+        public const string IgnoreThis = "Ignore vulnerability";
+        public const string IgnoreAllOfThisType = "Ignore all of this type";
+        public const string SecretFindingLabel = "Secret finding";
+        public const string SastVulnerabilityLabel = "SAST vulnerability";
+        public const string IacVulnerabilityLabel = "IaC vulnerability";
+        public const string SeverityPackageLabel = "package";
     }
 }

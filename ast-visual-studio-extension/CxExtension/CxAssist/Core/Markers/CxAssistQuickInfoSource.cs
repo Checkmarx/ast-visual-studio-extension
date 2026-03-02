@@ -29,8 +29,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         internal const bool UseRichHover = true;
 
         /// <summary>
-        /// Builds Quick Info content for all vulnerabilities on the line (e.g. line 13 with 2 findings shows both).
-        /// Shared for use by CxAssistAsyncQuickInfoSource (IAsyncQuickInfoSource).
+        /// Builds Quick Info content for all vulnerabilities on the line (JetBrains-style: grouped by scanner, engine-specific layout).
+        /// Single vuln: one scanner block. Multiple same scanner: OSS/Containers show severity counts; ASCA/IAC show per-vuln rows. Multiple scanners: one section per scanner.
         /// </summary>
         internal static object BuildQuickInfoContentForLine(IReadOnlyList<Vulnerability> vulnerabilities)
         {
@@ -40,96 +40,47 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 return BuildQuickInfoContent(vulnerabilities[0]);
 
             var elements = new List<object>();
+            AddHeaderRow(elements);
 
-            // Single header at top
-            var headerRow = CreateHeaderRow();
-            if (headerRow != null)
-                elements.Add(headerRow);
-            else
-                elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.DisplayName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
-                ));
+            var byScanner = vulnerabilities
+                .GroupBy(v => v.Scanner)
+                .OrderBy(g => g.Key.ToString())
+                .ToList();
 
-            for (int i = 0; i < vulnerabilities.Count; i++)
+            for (int i = 0; i < byScanner.Count; i++)
             {
-                var v = vulnerabilities[i];
-                var title = !string.IsNullOrEmpty(v.Title) ? v.Title : (!string.IsNullOrEmpty(v.RuleName) ? v.RuleName : v.Description);
-                var description = !string.IsNullOrEmpty(v.Description) ? v.Description : "Vulnerability detected by " + v.Scanner + ".";
-                var severityName = GetRichSeverityName(v.Severity);
-
                 if (i > 0)
                 {
-                    var betweenSeparator = CreateHorizontalSeparator();
-                    if (betweenSeparator != null)
-                        elements.Add(betweenSeparator);
-                    // Header (Checkmarx One Assist) for each additional finding
-                    var headerForFinding = CreateHeaderRow();
-                    if (headerForFinding != null)
-                        elements.Add(headerForFinding);
-                    else
-                        elements.Add(new ClassifiedTextElement(
-                            new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.DisplayName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
-                        ));
+                    var sep = CreateHorizontalSeparator();
+                    if (sep != null) elements.Add(sep);
                 }
-
-                var severityTitleRow = CreateSeverityTitleRow(v.Severity, title ?? "", severityName);
-                if (severityTitleRow != null)
-                    elements.Add(severityTitleRow);
-                else
-                {
-                    elements.Add(new ClassifiedTextElement(
-                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, severityName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
-                    ));
-                    elements.Add(new ClassifiedTextElement(
-                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, title ?? "", ClassifiedTextRunStyle.UseClassificationFont)
-                    ));
-                }
-
-                var descriptionBlock = CreateDescriptionBlock(description);
-                if (descriptionBlock != null)
-                    elements.Add(descriptionBlock);
-                else
-                    elements.Add(new ClassifiedTextElement(
-                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, description, ClassifiedTextRunStyle.UseClassificationFont)
-                    ));
-
-                var linksRow = CreateActionLinksRow(v);
-                if (linksRow != null)
-                    elements.Add(linksRow);
-                else
-                {
-                    const string urlClassification = "url";
-                    elements.Add(new ClassifiedTextElement(
-                        new ClassifiedTextRun(urlClassification, "Fix with Checkmarx Assist", () => RunFixWithAssist(v), "Fix with Checkmarx Assist", ClassifiedTextRunStyle.Underline),
-                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                        new ClassifiedTextRun(urlClassification, "View Details", () => RunViewDetails(v), "View Details", ClassifiedTextRunStyle.Underline),
-                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                        new ClassifiedTextRun(urlClassification, "Ignore vulnerability", () => RunIgnoreVulnerability(v), "Ignore vulnerability", ClassifiedTextRunStyle.Underline)
-                    ));
-                }
+                BuildContentForScannerGroup(byScanner[i].Key, byScanner[i].ToList(), elements);
             }
 
             var separator = CreateHorizontalSeparator();
-            if (separator != null)
-                elements.Add(separator);
-
+            if (separator != null) elements.Add(separator);
             return new ContainerElement(ContainerElementStyle.Stacked, elements);
         }
 
         /// <summary>
-        /// Builds content for a single vulnerability (header + severity+title + description + links + separator).
+        /// Builds content for a single vulnerability (JetBrains-style: one scanner block).
         /// </summary>
         internal static object BuildQuickInfoContent(Vulnerability v)
         {
             if (v == null) return null;
-
-            var title = !string.IsNullOrEmpty(v.Title) ? v.Title : (!string.IsNullOrEmpty(v.RuleName) ? v.RuleName : v.Description);
-            var description = !string.IsNullOrEmpty(v.Description) ? v.Description : "Vulnerability detected by " + v.Scanner + ".";
-            var severityName = GetRichSeverityName(v.Severity);
-
             var elements = new List<object>();
+            AddHeaderRow(elements);
+            BuildContentForScannerGroup(v.Scanner, new List<Vulnerability> { v }, elements);
+            var separator = CreateHorizontalSeparator();
+            if (separator != null) elements.Add(separator);
+            return new ContainerElement(ContainerElementStyle.Stacked, elements);
+        }
 
-            // Row 1 – Header (badge + "Checkmarx One Assist") – custom-popup style
+        /// <summary>
+        /// Appends DevAssist header row to elements.
+        /// </summary>
+        private static void AddHeaderRow(List<object> elements)
+        {
             var headerRow = CreateHeaderRow();
             if (headerRow != null)
                 elements.Add(headerRow);
@@ -137,52 +88,231 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 elements.Add(new ClassifiedTextElement(
                     new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.DisplayName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
                 ));
+        }
 
-            // Row 2 – Severity icon + title on one line – custom-popup style
-            var severityTitleRow = CreateSeverityTitleRow(v.Severity, title ?? "", severityName);
-            if (severityTitleRow != null)
-                elements.Add(severityTitleRow);
+        /// <summary>
+        /// JetBrains-style: one block per scanner type. OSS/Containers = header + severity counts + remediation. Secrets = severity + title + "Secret finding". ASCA/IAC = per-vuln rows with remediation each.
+        /// </summary>
+        private static void BuildContentForScannerGroup(ScannerType scanner, List<Vulnerability> vulns, List<object> elements)
+        {
+            if (vulns == null || vulns.Count == 0) return;
+
+            switch (scanner)
+            {
+                case ScannerType.OSS:
+                    BuildOssDescription(vulns, elements);
+                    break;
+                case ScannerType.Containers:
+                    BuildContainerDescription(vulns, elements);
+                    break;
+                case ScannerType.Secrets:
+                    BuildSecretsDescription(vulns, elements);
+                    break;
+                case ScannerType.ASCA:
+                    BuildAscaDescription(vulns, elements);
+                    break;
+                case ScannerType.IaC:
+                    BuildIacDescription(vulns, elements);
+                    break;
+                default:
+                    BuildDefaultDescription(vulns, elements);
+                    break;
+            }
+        }
+
+        /// <summary>OSS: package header (title@version + severity package) + severity count section + remediation (with Ignore all of this type).</summary>
+        private static void BuildOssDescription(List<Vulnerability> vulns, List<object> elements)
+        {
+            var first = vulns[0];
+            var title = string.IsNullOrEmpty(first.PackageName) ? (first.Title ?? first.Description ?? "") : first.PackageName;
+            var version = first.PackageVersion ?? "";
+            var severityLabel = first.Severity == SeverityLevel.Malicious ? "Malicious package" : (GetRichSeverityName(first.Severity) + " " + CxAssistConstants.SeverityPackageLabel);
+            var displayTitle = string.IsNullOrEmpty(version) ? title : $"{title}@{version}";
+            var packageTitleRow = CreateSeverityTitleRow(first.Severity, $"{displayTitle} - {severityLabel}", severityLabel);
+            if (packageTitleRow != null) elements.Add(packageTitleRow);
+            else
+                elements.Add(new ClassifiedTextElement(
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, severityLabel, ClassifiedTextRunStyle.UseClassificationFont),
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title + (string.IsNullOrEmpty(version) ? "" : "@" + version), ClassifiedTextRunStyle.UseClassificationFont)
+                ));
+            BuildSeverityCountSection(vulns, elements);
+            var linksRow = CreateActionLinksRow(first, includeIgnoreAllOfThisType: true);
+            if (linksRow != null) elements.Add(linksRow);
+            else AddDefaultActionLinks(first, elements, includeIgnoreAll: true);
+        }
+
+        /// <summary>Containers: image header (title@tag) + severity count section + remediation (with Ignore all of this type).</summary>
+        private static void BuildContainerDescription(List<Vulnerability> vulns, List<object> elements)
+        {
+            var first = vulns[0];
+            var title = first.Title ?? first.PackageName ?? first.Description ?? "Container image";
+            var tag = first.PackageVersion ?? "";
+            var headerText = string.IsNullOrEmpty(tag) ? title : $"{title}@{tag}";
+            var row = CreateSeverityTitleRow(first.Severity, headerText, "Container");
+            if (row != null) elements.Add(row);
+            else
+                elements.Add(new ClassifiedTextElement(
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, "Container", ClassifiedTextRunStyle.UseClassificationFont),
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + headerText, ClassifiedTextRunStyle.UseClassificationFont)
+                ));
+            BuildSeverityCountSection(vulns, elements);
+            var linksRow = CreateActionLinksRow(first, includeIgnoreAllOfThisType: true);
+            if (linksRow != null) elements.Add(linksRow);
+            else AddDefaultActionLinks(first, elements, includeIgnoreAll: true);
+        }
+
+        /// <summary>Secrets: severity icon + bold title + "Secret finding" + remediation.</summary>
+        private static void BuildSecretsDescription(List<Vulnerability> vulns, List<object> elements)
+        {
+            var v = vulns[0];
+            var title = v.Title ?? v.RuleName ?? v.Description ?? "";
+            var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, CxAssistConstants.SecretFindingLabel);
+            if (severityTitleRow != null) elements.Add(severityTitleRow);
             else
             {
                 elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, severityName, ClassifiedTextRunStyle.UseClassificationStyle | ClassifiedTextRunStyle.UseClassificationFont)
-                ));
-                elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, title ?? "", ClassifiedTextRunStyle.UseClassificationFont)
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title + " - " + CxAssistConstants.SecretFindingLabel, ClassifiedTextRunStyle.UseClassificationFont)
                 ));
             }
+            var linksRow = CreateActionLinksRow(v, includeIgnoreAllOfThisType: false);
+            if (linksRow != null) elements.Add(linksRow);
+            else AddDefaultActionLinks(v, elements, includeIgnoreAll: false);
+        }
 
-            // Description with extra line spacing between lines
-            var descriptionBlock = CreateDescriptionBlock(description);
-            if (descriptionBlock != null)
-                elements.Add(descriptionBlock);
-            else
-                elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, description, ClassifiedTextRunStyle.UseClassificationFont)
-                ));
+        /// <summary>ASCA: per-vuln row (severity + title + description + "SAST vulnerability") + remediation each.</summary>
+        private static void BuildAscaDescription(List<Vulnerability> vulns, List<object> elements)
+        {
+            foreach (var v in vulns)
+            {
+                var title = v.Title ?? v.RuleName ?? v.Description ?? "";
+                var desc = v.Description ?? "Vulnerability detected by ASCA.";
+                var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, GetRichSeverityName(v.Severity));
+                if (severityTitleRow != null) elements.Add(severityTitleRow);
+                else
+                    elements.Add(new ClassifiedTextElement(
+                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title, ClassifiedTextRunStyle.UseClassificationFont)
+                    ));
+                var descBlock = CreateDescriptionBlock(desc);
+                if (descBlock != null) elements.Add(descBlock);
+                else elements.Add(new ClassifiedTextElement(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, desc + " - " + CxAssistConstants.SastVulnerabilityLabel, ClassifiedTextRunStyle.UseClassificationFont)));
+                var linksRow = CreateActionLinksRow(v, includeIgnoreAllOfThisType: false);
+                if (linksRow != null) elements.Add(linksRow);
+                else AddDefaultActionLinks(v, elements, includeIgnoreAll: false);
+            }
+        }
 
-            // Action links: underline only on mouse hover
-            var linksRow = CreateActionLinksRow(v);
-            if (linksRow != null)
-                elements.Add(linksRow);
+        /// <summary>IAC: per-vuln row (severity + title + actualValue + description + "IaC vulnerability") + remediation each.</summary>
+        private static void BuildIacDescription(List<Vulnerability> vulns, List<object> elements)
+        {
+            foreach (var v in vulns)
+            {
+                var title = v.Title ?? v.RuleName ?? v.Description ?? "";
+                var actualVal = v.ActualValue ?? "";
+                var desc = v.Description ?? "IaC finding.";
+                var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, GetRichSeverityName(v.Severity));
+                if (severityTitleRow != null) elements.Add(severityTitleRow);
+                else
+                    elements.Add(new ClassifiedTextElement(
+                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title, ClassifiedTextRunStyle.UseClassificationFont)
+                    ));
+                var line2 = string.IsNullOrEmpty(actualVal) ? desc : $"{actualVal} - {desc}";
+                var descBlock = CreateDescriptionBlock(line2 + " - " + CxAssistConstants.IacVulnerabilityLabel);
+                if (descBlock != null) elements.Add(descBlock);
+                else elements.Add(new ClassifiedTextElement(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, line2 + " - " + CxAssistConstants.IacVulnerabilityLabel, ClassifiedTextRunStyle.UseClassificationFont)));
+                var linksRow = CreateActionLinksRow(v, includeIgnoreAllOfThisType: false);
+                if (linksRow != null) elements.Add(linksRow);
+                else AddDefaultActionLinks(v, elements, includeIgnoreAll: false);
+            }
+        }
+
+        /// <summary>Default: severity + title + description + remediation.</summary>
+        private static void BuildDefaultDescription(List<Vulnerability> vulns, List<object> elements)
+        {
+            var v = vulns[0];
+            var title = v.Title ?? v.RuleName ?? v.Description ?? "";
+            var description = v.Description ?? "Vulnerability detected by " + v.Scanner + ".";
+            var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, GetRichSeverityName(v.Severity));
+            if (severityTitleRow != null) elements.Add(severityTitleRow);
             else
             {
-                const string urlClassification = "url";
                 elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(urlClassification, "Fix with Checkmarx Assist", () => RunFixWithAssist(v), "Fix with Checkmarx Assist", ClassifiedTextRunStyle.Underline),
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                    new ClassifiedTextRun(urlClassification, "View Details", () => RunViewDetails(v), "View Details", ClassifiedTextRunStyle.Underline),
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                    new ClassifiedTextRun(urlClassification, "Ignore vulnerability", () => RunIgnoreVulnerability(v), "Ignore vulnerability", ClassifiedTextRunStyle.Underline)
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title, ClassifiedTextRunStyle.UseClassificationFont)
                 ));
             }
+            var descBlock = CreateDescriptionBlock(description);
+            if (descBlock != null) elements.Add(descBlock);
+            else elements.Add(new ClassifiedTextElement(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, description, ClassifiedTextRunStyle.UseClassificationFont)));
+            var linksRow = CreateActionLinksRow(v, includeIgnoreAllOfThisType: false);
+            if (linksRow != null) elements.Add(linksRow);
+            else AddDefaultActionLinks(v, elements, includeIgnoreAll: false);
+        }
 
-            // Horizontal separator line after our details
-            var separator = CreateHorizontalSeparator();
-            if (separator != null)
-                elements.Add(separator);
+        /// <summary>Severity count row: icon + count for each severity (JetBrains buildVulnerabilitySection).</summary>
+        private static void BuildSeverityCountSection(List<Vulnerability> vulns, List<object> elements)
+        {
+            var counts = vulns.GroupBy(x => x.Severity).ToDictionary(g => g.Key, g => g.Count());
+            var order = new[] { SeverityLevel.Malicious, SeverityLevel.Critical, SeverityLevel.High, SeverityLevel.Medium, SeverityLevel.Low, SeverityLevel.Info };
+            try
+            {
+                var panel = ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    var stack = new StackPanel { Orientation = Orientation.Horizontal };
+                    foreach (var sev in order)
+                        if (counts.TryGetValue(sev, out var c) && c > 0)
+                        {
+                            var icon = CreateSmallSeverityIcon(sev);
+                            if (icon != null) stack.Children.Add(icon);
+                            stack.Children.Add(new TextBlock { Text = c.ToString(), FontSize = 10, Foreground = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD)), Margin = new Thickness(2, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
+                        }
+                    return (System.Windows.UIElement)stack;
+                });
+                if (panel != null && ((System.Windows.Controls.Panel)panel).Children.Count > 0)
+                    elements.Add(panel);
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.BuildSeverityCountSection");
+            }
+        }
 
-            return new ContainerElement(ContainerElementStyle.Stacked, elements);
+        private static System.Windows.UIElement CreateSmallSeverityIcon(SeverityLevel severity)
+        {
+            string theme = GetCurrentTheme();
+            string fileName = GetSeverityIconFileName(severity);
+            if (string.IsNullOrEmpty(fileName)) return null;
+            var source = LoadIconFromAssembly(theme, fileName);
+            if (source == null && theme != CxAssistConstants.ThemeDark) source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, fileName);
+            if (source == null) return null;
+            return new Image { Source = source, Width = 14, Height = 14, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 2, 0) };
+        }
+
+        private static void AddDefaultActionLinks(Vulnerability v, List<object> elements, bool includeIgnoreAll)
+        {
+            const string urlClassification = "url";
+            var runs = new List<ClassifiedTextRun>
+            {
+                new ClassifiedTextRun(urlClassification, CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v), CxAssistConstants.FixWithCxOneAssist, ClassifiedTextRunStyle.Underline),
+                new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
+                new ClassifiedTextRun(urlClassification, CxAssistConstants.ViewDetails, () => RunViewDetails(v), CxAssistConstants.ViewDetails, ClassifiedTextRunStyle.Underline),
+                new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
+                new ClassifiedTextRun(urlClassification, CxAssistConstants.IgnoreThis, () => RunIgnoreVulnerability(v), CxAssistConstants.IgnoreThis, ClassifiedTextRunStyle.Underline)
+            };
+            if (includeIgnoreAll)
+            {
+                runs.Add(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont));
+                runs.Add(new ClassifiedTextRun(urlClassification, CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v), CxAssistConstants.IgnoreAllOfThisType, ClassifiedTextRunStyle.Underline));
+            }
+            elements.Add(new ClassifiedTextElement(runs.ToArray()));
+        }
+
+        internal static void RunIgnoreAllOfThisType(Vulnerability v)
+        {
+            RunOnUiThread(() => MessageBox.Show($"Ignore all of this type:\n{v?.Title ?? v?.Description ?? "—"}\n(Scanner: {v?.Scanner})", CxAssistConstants.DisplayName));
         }
 
         internal static void RunFixWithAssist(Vulnerability v)
@@ -263,9 +393,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         }
 
         /// <summary>
-        /// Action links row: underline only on mouse hover (not by default).
+        /// Action links row: Fix with Checkmarx Assist, View Details, Ignore vulnerability; for OSS/Containers also "Ignore all of this type" (JetBrains-style).
         /// </summary>
-        private static System.Windows.UIElement CreateActionLinksRow(Vulnerability v)
+        private static System.Windows.UIElement CreateActionLinksRow(Vulnerability v, bool includeIgnoreAllOfThisType = false)
         {
             if (v == null) return null;
             try
@@ -291,9 +421,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         panel.Children.Add(block);
                     }
 
-                    AddLink("Fix with Checkmarx Assist", () => RunFixWithAssist(v));
-                    AddLink("View Details", () => RunViewDetails(v));
-                    AddLink("Ignore vulnerability", () => RunIgnoreVulnerability(v));
+                    AddLink(CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v));
+                    AddLink(CxAssistConstants.ViewDetails, () => RunViewDetails(v));
+                    AddLink(CxAssistConstants.IgnoreThis, () => RunIgnoreVulnerability(v));
+                    if (includeIgnoreAllOfThisType)
+                        AddLink(CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v));
 
                     return (System.Windows.UIElement)panel;
                 });

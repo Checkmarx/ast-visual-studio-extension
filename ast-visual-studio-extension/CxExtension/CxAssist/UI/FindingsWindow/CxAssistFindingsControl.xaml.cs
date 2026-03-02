@@ -2,14 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.VisualStudio.Imaging.Interop;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
@@ -87,6 +92,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             }
         }
 
+        /// <summary>True when dark theme is active; used to soften file icons in dark theme for better appearance.</summary>
+        public bool IsDarkTheme
+        {
+            get => _isDarkTheme;
+            private set
+            {
+                if (_isDarkTheme == value) return;
+                _isDarkTheme = value;
+                OnPropertyChanged(nameof(IsDarkTheme));
+            }
+        }
+        private bool _isDarkTheme;
+
         public CxAssistFindingsControl()
         {
             InitializeComponent();
@@ -101,6 +119,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            UpdateThemeState();
             LoadFilterIcons();
             _onIssuesUpdated = OnIssuesUpdated;
             CxAssistDisplayCoordinator.IssuesUpdated += _onIssuesUpdated;
@@ -127,11 +146,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         /// </summary>
         private void RefreshFromCoordinator()
         {
+            UpdateThemeState();
             var current = CxAssistDisplayCoordinator.GetCurrentFindings();
             var fileNodes = current != null && current.Count > 0
-                ? FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(current, LoadSeverityIconForTree, null)
+                ? FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(current, LoadSeverityIconForTree, LoadFileIconForTree)
                 : new ObservableCollection<FileNode>();
             SetAllFileNodes(fileNodes);
+        }
+
+        /// <summary>
+        /// Updates IsDarkTheme from current VS theme so file icon opacity and filter icons stay in sync.
+        /// </summary>
+        private void UpdateThemeState()
+        {
+            IsDarkTheme = DetectDarkTheme();
         }
 
         /// <summary>
@@ -141,11 +169,97 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         {
             try
             {
-                string themeFolder = IsDarkTheme() ? "Dark" : "Light";
+                string themeFolder = DetectDarkTheme() ? "Dark" : "Light";
                 string iconName = (severity ?? "unknown").ToLower() + ".png";
                 return LoadIcon(themeFolder, iconName);
             }
             catch { return null; }
+        }
+
+        /// <summary>
+        /// Load file icon for file nodes. Always uses VS default file-type icons (e.g. Dockerfile, .yaml, .json, .py)
+        /// when the image service is available. Passes current theme background for correct dark/light rendering.
+        /// Falls back to theme-specific unknown.svg only when VS image service is unavailable.
+        /// </summary>
+        private System.Windows.Media.ImageSource LoadFileIconForTree(string filePath)
+        {
+            try
+            {
+                System.Windows.Media.Color? bgColor = GetToolWindowBackgroundColor();
+                ImageSource vsIcon = GetVsFileTypeIcon(filePath, 16, 16, bgColor);
+                if (vsIcon != null) return vsIcon;
+                string themeFolder = DetectDarkTheme() ? "Dark" : "Light";
+                return LoadSvgIcon(themeFolder, "unknown.svg");
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Gets the current tool window background color for theme-aware icon rendering (dark vs light).
+        /// </summary>
+        private static System.Windows.Media.Color? GetToolWindowBackgroundColor()
+        {
+            try
+            {
+                var color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+                return System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Gets the Visual Studio built-in file-type icon for the given file path.
+        /// Handles both dark and light theme by passing the current tool window background so the image service
+        /// returns a theme-appropriate icon. Uses IAF_Background and IAF_Theme when available.
+        /// </summary>
+        private static ImageSource GetVsFileTypeIcon(string filePath, int width, int height, System.Windows.Media.Color? backgroundColor)
+        {
+            if (string.IsNullOrEmpty(filePath)) return null;
+            try
+            {
+                var imageService = Package.GetGlobalService(typeof(SVsImageService)) as IVsImageService2;
+                if (imageService == null) return null;
+
+                ImageMoniker moniker = imageService.GetImageMonikerForFile(filePath);
+                uint flags = (uint)_ImageAttributesFlags.IAF_RequiredFlags;
+                uint backgroundRef = 0;
+
+                if (backgroundColor.HasValue)
+                {
+                    var c = backgroundColor.Value;
+                    backgroundRef = (uint)(c.B | (c.G << 8) | (c.R << 16));
+                    flags |= unchecked((uint)_ImageAttributesFlags.IAF_Background);
+                    // IAF_Theme (0x04) requests theme-appropriate icon for dark/light so icons are visible in both themes
+                    flags |= 0x04u;
+                }
+
+                var imageAttributes = new ImageAttributes
+                {
+                    StructSize = Marshal.SizeOf(typeof(ImageAttributes)),
+                    Format = (uint)_UIDataFormat.DF_WPF,
+                    LogicalWidth = width,
+                    LogicalHeight = height,
+                    Flags = flags,
+                    ImageType = (uint)_UIImageType.IT_Bitmap,
+                    Background = backgroundRef
+                };
+
+                IVsUIObject uiObject = imageService.GetImage(moniker, imageAttributes);
+                if (uiObject == null) return null;
+
+                uiObject.get_Data(out object data);
+                if (data is BitmapSource bitmap)
+                {
+                    bitmap.Freeze();
+                    return bitmap;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetVsFileTypeIcon: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -155,7 +269,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         {
             try
             {
-                string themeFolder = IsDarkTheme() ? "Dark" : "Light";
+                string themeFolder = DetectDarkTheme() ? "Dark" : "Light";
 
                 // Set icons: Malicious, Critical, High, Medium, Low
                 MaliciousFilterIcon.Source = LoadIcon(themeFolder, "malicious.png");
@@ -256,9 +370,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         /// <summary>
-        /// Detect if dark theme is active
+        /// Detect if dark theme is active (used for filter icons and theme-aware file icon opacity).
         /// </summary>
-        private bool IsDarkTheme()
+        private bool DetectDarkTheme()
         {
             try
             {
@@ -675,6 +789,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Converts IsDarkTheme (bool) to opacity for file icons: dark theme uses 0.88 for a softer look, light theme uses 1.0.
+    /// </summary>
+    internal sealed class DarkThemeToFileIconOpacityConverter : IValueConverter
+    {
+        private const double DarkThemeOpacity = 0.88;
+        private const double LightThemeOpacity = 1.0;
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool isDark)
+                return isDark ? DarkThemeOpacity : LightThemeOpacity;
+            return LightThemeOpacity;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
     }
 }
 
