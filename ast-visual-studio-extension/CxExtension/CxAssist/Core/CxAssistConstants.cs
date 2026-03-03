@@ -47,6 +47,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>Suffix for grouped Containers findings on same line. Use as: count + MultipleContainersIssuesOnLine.</summary>
         public const string MultipleContainersIssuesOnLine = " Container issues detected on this line";
 
+        /// <summary>Human-readable severity name for UI (Quick Info, tooltips, etc.).</summary>
+        public static string GetRichSeverityName(SeverityLevel severity)
+        {
+            switch (severity)
+            {
+                case SeverityLevel.Critical: return "Critical";
+                case SeverityLevel.High: return "High";
+                case SeverityLevel.Medium: return "Medium";
+                case SeverityLevel.Low: return "Low";
+                case SeverityLevel.Info: return "Info";
+                case SeverityLevel.Malicious: return "Malicious";
+                case SeverityLevel.Unknown: return "Unknown";
+                case SeverityLevel.Ok: return "Ok";
+                case SeverityLevel.Ignored: return "Ignored";
+                default: return severity.ToString();
+            }
+        }
+
         /// <summary>Log category for debug/trace output (e.g. Debug.WriteLine).</summary>
         public const string LogCategory = "CxAssist";
 

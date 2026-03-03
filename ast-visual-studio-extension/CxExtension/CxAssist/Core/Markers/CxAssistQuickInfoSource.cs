@@ -2,15 +2,12 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
-using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Adornments;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -126,7 +123,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             var first = vulns[0];
             var title = string.IsNullOrEmpty(first.PackageName) ? (first.Title ?? first.Description ?? "") : first.PackageName;
             var version = first.PackageVersion ?? "";
-            var severityLabel = first.Severity == SeverityLevel.Malicious ? "Malicious package" : (GetRichSeverityName(first.Severity) + " " + CxAssistConstants.SeverityPackageLabel);
+            var severityLabel = first.Severity == SeverityLevel.Malicious ? "Malicious package" : (CxAssistConstants.GetRichSeverityName(first.Severity) + " " + CxAssistConstants.SeverityPackageLabel);
             var displayTitle = string.IsNullOrEmpty(version) ? title : $"{title}@{version}";
             var packageTitleRow = CreateSeverityTitleRow(first.Severity, $"{displayTitle} - {severityLabel}", severityLabel);
             if (packageTitleRow != null) elements.Add(packageTitleRow);
@@ -171,7 +168,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             else
             {
                 elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
                     new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title + " - " + CxAssistConstants.SecretFindingLabel, ClassifiedTextRunStyle.UseClassificationFont)
                 ));
             }
@@ -187,11 +184,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 var title = v.Title ?? v.RuleName ?? v.Description ?? "";
                 var desc = v.Description ?? "Vulnerability detected by ASCA.";
-                var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, GetRichSeverityName(v.Severity));
+                var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, CxAssistConstants.GetRichSeverityName(v.Severity));
                 if (severityTitleRow != null) elements.Add(severityTitleRow);
                 else
                     elements.Add(new ClassifiedTextElement(
-                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
                         new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title, ClassifiedTextRunStyle.UseClassificationFont)
                     ));
                 var descBlock = CreateDescriptionBlock(desc);
@@ -211,11 +208,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 var title = v.Title ?? v.RuleName ?? v.Description ?? "";
                 var actualVal = v.ActualValue ?? "";
                 var desc = v.Description ?? "IaC finding.";
-                var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, GetRichSeverityName(v.Severity));
+                var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, CxAssistConstants.GetRichSeverityName(v.Severity));
                 if (severityTitleRow != null) elements.Add(severityTitleRow);
                 else
                     elements.Add(new ClassifiedTextElement(
-                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                        new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
                         new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title, ClassifiedTextRunStyle.UseClassificationFont)
                     ));
                 var line2 = string.IsNullOrEmpty(actualVal) ? desc : $"{actualVal} - {desc}";
@@ -234,12 +231,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             var v = vulns[0];
             var title = v.Title ?? v.RuleName ?? v.Description ?? "";
             var description = v.Description ?? "Vulnerability detected by " + v.Scanner + ".";
-            var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, GetRichSeverityName(v.Severity));
+            var severityTitleRow = CreateSeverityTitleRow(v.Severity, title, CxAssistConstants.GetRichSeverityName(v.Severity));
             if (severityTitleRow != null) elements.Add(severityTitleRow);
             else
             {
                 elements.Add(new ClassifiedTextElement(
-                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
+                    new ClassifiedTextRun(PredefinedClassificationTypeNames.Keyword, CxAssistConstants.GetRichSeverityName(v.Severity), ClassifiedTextRunStyle.UseClassificationFont),
                     new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, " " + title, ClassifiedTextRunStyle.UseClassificationFont)
                 ));
             }
@@ -282,11 +279,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         private static System.Windows.UIElement CreateSmallSeverityIcon(SeverityLevel severity)
         {
-            string theme = GetCurrentTheme();
-            string fileName = GetSeverityIconFileName(severity);
-            if (string.IsNullOrEmpty(fileName)) return null;
-            var source = LoadIconFromAssembly(theme, fileName);
-            if (source == null && theme != CxAssistConstants.ThemeDark) source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, fileName);
+            var source = AssistIconLoader.LoadSeverityPngIcon(severity);
             if (source == null) return null;
             return new Image { Source = source, Width = 14, Height = 14, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 2, 0) };
         }
@@ -463,32 +456,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         }
 
         /// <summary>
-        /// Returns current VS theme folder name for icon paths: "Dark" or "Light".
-        /// Uses VSColorTheme so badge and severity icons follow IDE theme dynamically.
-        /// </summary>
-        private static string GetCurrentTheme()
-        {
-            try
-            {
-                var backgroundColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
-                double brightness = (0.299 * backgroundColor.R + 0.587 * backgroundColor.G + 0.114 * backgroundColor.B) / 255.0;
-                return brightness < 0.5 ? CxAssistConstants.ThemeDark : CxAssistConstants.ThemeLight;
-            }
-            catch
-            {
-                return CxAssistConstants.ThemeDark;
-            }
-        }
-
-        /// <summary>
         /// Header row: badge + "Checkmarx One Assist" text (custom-popup style, no custom popup).
         /// </summary>
         private static System.Windows.UIElement CreateHeaderRow()
         {
-            string theme = GetCurrentTheme();
-            var source = LoadIconFromAssembly(theme, CxAssistConstants.BadgeIconFileName);
-            if (source == null && theme != CxAssistConstants.ThemeDark)
-                source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, CxAssistConstants.BadgeIconFileName);
+            var source = AssistIconLoader.LoadBadgeIcon();
             if (source == null)
                 return null;
             try
@@ -526,15 +498,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         /// </summary>
         private static System.Windows.UIElement CreateSeverityTitleRow(SeverityLevel severity, string title, string severityName)
         {
-            string theme = GetCurrentTheme();
-            string fileName = GetSeverityIconFileName(severity);
-            ImageSource severitySource = null;
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                severitySource = LoadIconFromAssembly(theme, fileName);
-                if (severitySource == null && theme != CxAssistConstants.ThemeDark)
-                    severitySource = LoadIconFromAssembly(CxAssistConstants.ThemeDark, fileName);
-            }
+            var severitySource = AssistIconLoader.LoadSeverityPngIcon(severity);
             try
             {
                 return ThreadHelper.JoinableTaskFactory.Run(async () =>
@@ -579,10 +543,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         /// </summary>
         private static System.Windows.UIElement CreateCxAssistBadgeImage()
         {
-            string theme = GetCurrentTheme();
-            var source = LoadIconFromAssembly(theme, CxAssistConstants.BadgeIconFileName);
-            if (source == null && theme != CxAssistConstants.ThemeDark)
-                source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, CxAssistConstants.BadgeIconFileName);
+            var source = AssistIconLoader.LoadBadgeIcon();
             if (source == null)
                 return null;
             try
@@ -613,13 +574,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         /// </summary>
         private static System.Windows.UIElement CreateSeverityImage(SeverityLevel severity)
         {
-            string theme = GetCurrentTheme();
-            string fileName = GetSeverityIconFileName(severity);
-            if (string.IsNullOrEmpty(fileName))
-                return null;
-            var source = LoadIconFromAssembly(theme, fileName);
-            if (source == null && theme != CxAssistConstants.ThemeDark)
-                source = LoadIconFromAssembly(CxAssistConstants.ThemeDark, fileName);
+            var source = AssistIconLoader.LoadSeverityPngIcon(severity);
             if (source == null)
                 return null;
             try
@@ -645,96 +600,5 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
         }
 
-        private static string GetSeverityIconFileName(SeverityLevel severity)
-        {
-            switch (severity)
-            {
-                case SeverityLevel.Malicious: return "malicious.png";
-                case SeverityLevel.Critical: return "critical.png";
-                case SeverityLevel.High: return "high.png";
-                case SeverityLevel.Medium: return "medium.png";
-                case SeverityLevel.Low:
-                case SeverityLevel.Info: return "low.png";
-                default: return null;
-            }
-        }
-
-        /// <summary>
-        /// Loads a PNG from CxAssist Icons by theme (Dark/Light). Used for badge and severity icons.
-        /// </summary>
-        private static BitmapImage LoadIconFromAssembly(string theme, string fileName)
-        {
-            var packPath = $"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{theme}/{fileName}";
-            try
-            {
-                var streamInfo = System.Windows.Application.GetResourceStream(new Uri(packPath, UriKind.Absolute));
-                if (streamInfo?.Stream != null)
-                {
-                    using (var ms = new MemoryStream())
-                    {
-                        streamInfo.Stream.CopyTo(ms);
-                        ms.Position = 0;
-                        var img = new BitmapImage();
-                        img.BeginInit();
-                        img.StreamSource = ms;
-                        img.CacheOption = BitmapCacheOption.OnLoad;
-                        img.EndInit();
-                        img.Freeze();
-                        return img;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                CxAssistErrorHandler.LogAndSwallow(ex, $"QuickInfo.LoadIconFromAssembly (pack): {fileName}");
-            }
-
-            try
-            {
-                var asm = Assembly.GetExecutingAssembly();
-                var resourceName = asm.GetManifestResourceNames()
-                    .FirstOrDefault(n => n.Replace('\\', '/').EndsWith($"CxAssist/Icons/{theme}/{fileName}", StringComparison.OrdinalIgnoreCase)
-                                      || n.Replace('\\', '.').EndsWith($"CxAssist.Icons.{theme}.{fileName}", StringComparison.OrdinalIgnoreCase));
-                if (resourceName != null)
-                {
-                    using (var stream = asm.GetManifestResourceStream(resourceName))
-                    {
-                        if (stream != null)
-                        {
-                            var img = new BitmapImage();
-                            img.BeginInit();
-                            img.StreamSource = stream;
-                            img.CacheOption = BitmapCacheOption.OnLoad;
-                            img.EndInit();
-                            img.Freeze();
-                            return img;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                CxAssistErrorHandler.LogAndSwallow(ex, $"QuickInfo.LoadIconFromAssembly (manifest): {fileName}");
-            }
-
-            return null;
-        }
-
-        internal static string GetRichSeverityName(SeverityLevel severity)
-        {
-            switch (severity)
-            {
-                case SeverityLevel.Critical: return "Critical";
-                case SeverityLevel.High: return "High";
-                case SeverityLevel.Medium: return "Medium";
-                case SeverityLevel.Low: return "Low";
-                case SeverityLevel.Info: return "Info";
-                case SeverityLevel.Malicious: return "Malicious";
-                case SeverityLevel.Unknown: return "Unknown";
-                case SeverityLevel.Ok: return "Ok";
-                case SeverityLevel.Ignored: return "Ignored";
-                default: return severity.ToString();
-            }
-        }
     }
 }

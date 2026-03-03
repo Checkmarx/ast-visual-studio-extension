@@ -18,8 +18,6 @@ using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
-using SharpVectors.Converters;
-using SharpVectors.Renderers.Wpf;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
@@ -159,19 +157,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         /// </summary>
         private void UpdateThemeState()
         {
-            IsDarkTheme = DetectDarkTheme();
+            IsDarkTheme = AssistIconLoader.IsDarkTheme();
         }
 
         /// <summary>
-        /// Load severity icon for tree items (same theme logic as filter icons).
+        /// Load severity icon for tree items (uses shared AssistIconLoader).
         /// </summary>
         private System.Windows.Media.ImageSource LoadSeverityIconForTree(string severity)
         {
             try
             {
-                string themeFolder = DetectDarkTheme() ? "Dark" : "Light";
-                string iconName = (severity ?? "unknown").ToLower() + ".png";
-                return LoadIcon(themeFolder, iconName);
+                return AssistIconLoader.LoadSeveritySvgIcon(severity ?? "unknown")
+                    ?? (ImageSource)AssistIconLoader.LoadSeverityPngIcon(severity ?? "unknown");
             }
             catch { return null; }
         }
@@ -188,8 +185,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 System.Windows.Media.Color? bgColor = GetToolWindowBackgroundColor();
                 ImageSource vsIcon = GetVsFileTypeIcon(filePath, 16, 16, bgColor);
                 if (vsIcon != null) return vsIcon;
-                string themeFolder = DetectDarkTheme() ? "Dark" : "Light";
-                return LoadSvgIcon(themeFolder, "unknown.svg");
+                return AssistIconLoader.LoadSvgIcon(AssistIconLoader.GetCurrentTheme(), "unknown");
             }
             catch { return null; }
         }
@@ -263,81 +259,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         /// <summary>
-        /// Load severity icons for filter buttons
+        /// Load severity icons for filter buttons (uses shared AssistIconLoader).
         /// </summary>
         private void LoadFilterIcons()
         {
             try
             {
-                string themeFolder = DetectDarkTheme() ? "Dark" : "Light";
-
-                // Set icons: Malicious, Critical, High, Medium, Low
-                MaliciousFilterIcon.Source = LoadIcon(themeFolder, "malicious.png");
-                CriticalFilterIcon.Source = LoadIcon(themeFolder, "critical.png");
-                HighFilterIcon.Source = LoadIcon(themeFolder, "high.png");
-                MediumFilterIcon.Source = LoadIcon(themeFolder, "medium.png");
-                LowFilterIcon.Source = LoadIcon(themeFolder, "low.png");
-
-                // Expand All / Collapse All: same icons as JetBrains plugin (AllIcons.Actions.Expandall / Collapseall)
-                ExpandAllIcon.Source = LoadSvgIcon(themeFolder, "expandall.svg");
-                CollapseAllIcon.Source = LoadSvgIcon(themeFolder, "collapseall.svg");
+                string theme = AssistIconLoader.GetCurrentTheme();
+                MaliciousFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "malicious.png");
+                CriticalFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "critical.png");
+                HighFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "high.png");
+                MediumFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "medium.png");
+                LowFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "low.png");
+                ExpandAllIcon.Source = AssistIconLoader.LoadSvgIcon(theme, "expandall");
+                CollapseAllIcon.Source = AssistIconLoader.LoadSvgIcon(theme, "collapseall");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading filter icons: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Load SVG icon from CxAssist Icons (e.g. expandall.svg, collapseall.svg from JetBrains IntelliJ platform).
-        /// </summary>
-        private ImageSource LoadSvgIcon(string themeFolder, string iconFileName)
-        {
-            try
-            {
-                var iconUri = new Uri($"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconFileName}");
-                var streamInfo = System.Windows.Application.GetResourceStream(iconUri);
-                if (streamInfo?.Stream == null) return null;
-                var settings = new WpfDrawingSettings { IncludeRuntime = true, TextAsGeometry = false, OptimizePath = true };
-                using (var stream = streamInfo.Stream)
-                {
-                    var converter = new FileSvgReader(settings);
-                    var drawing = converter.Read(stream);
-                    if (drawing != null)
-                    {
-                        var drawingImage = new DrawingImage(drawing);
-                        drawingImage.Freeze();
-                        return drawingImage;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading SVG icon {iconFileName}: {ex.Message}");
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Load icon from resources
-        /// </summary>
-        private ImageSource LoadIcon(string themeFolder, string iconName)
-        {
-            try
-            {
-                string iconPath = $"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconName}";
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                return bitmap;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading icon {iconName}: {ex.Message}");
-                return null;
             }
         }
 
@@ -366,27 +305,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             catch
             {
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// Detect if dark theme is active (used for filter icons and theme-aware file icon opacity).
-        /// </summary>
-        private bool DetectDarkTheme()
-        {
-            try
-            {
-                var color = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(
-                    Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolWindowBackgroundColorKey);
-                int brightness = (int)Math.Sqrt(
-                    color.R * color.R * 0.299 +
-                    color.G * color.G * 0.587 +
-                    color.B * color.B * 0.114);
-                return brightness < 128;
-            }
-            catch
-            {
-                return true;
             }
         }
 

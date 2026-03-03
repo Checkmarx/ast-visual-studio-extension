@@ -6,14 +6,14 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Microsoft.VisualStudio.PlatformUI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class UIUtils
     {
         /// <summary>
-        /// Returns theme-aware severity icon (CxAssist Dark/Light). Info uses the original icon; all others use CxAssist Icons.
+        /// Returns theme-aware severity icon (CxAssist Dark/Light). Info uses the original icon; all others use shared AssistIconLoader.
         /// </summary>
         public static ImageSource GetSeverityIconSource(string severity, bool iconForTitle)
         {
@@ -34,42 +34,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 }
                 catch { return null; }
             }
-            string themeFolder = IsDarkTheme() ? "Dark" : "Light";
-            string iconName;
-            switch (s)
-            {
-                case "CRITICAL": iconName = "critical.png"; break;
-                case "HIGH": iconName = "high.png"; break;
-                case "MEDIUM": iconName = "medium.png"; break;
-                case "LOW": iconName = "low.png"; break;
-                default: iconName = "low.png"; break;
-            }
-            try
-            {
-                string iconPath = $"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconName}";
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                return bitmap;
-            }
-            catch { return null; }
-        }
-
-        private static bool IsDarkTheme()
-        {
-            try
-            {
-                var color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
-                int brightness = (int)Math.Sqrt(
-                    color.R * color.R * 0.299 +
-                    color.G * color.G * 0.587 +
-                    color.B * color.B * 0.114);
-                return brightness < 128;
-            }
-            catch { return true; }
+            return AssistIconLoader.LoadSeveritySvgIcon(severity) ?? (ImageSource)AssistIconLoader.LoadSeverityPngIcon(severity);
         }
 
         public static string FormatStateName(string stateName)
