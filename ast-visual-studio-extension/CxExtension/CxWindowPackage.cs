@@ -86,6 +86,9 @@ namespace ast_visual_studio_extension.CxExtension
                 _CxAssistErrorListSync = new CxAssistErrorListSync();
                 if (CxAssistConstants.SyncFindingsToBuiltInErrorList)
                     _CxAssistErrorListSync.Start();
+
+                // Error List context menu: Fix with Checkmarx One Assist, View details (when a CxAssist finding is selected).
+                await ErrorListContextMenuCommand.InitializeAsync(this);
             }
             catch (Exception)
             {
