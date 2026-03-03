@@ -387,8 +387,8 @@
 
     </UserControl.Resources>
 
-    <!-- Top-level TabControl for Scan Results and CxAssist Findings -->
-    <TabControl x:Name="MainTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent" BorderBrush="Transparent">
+    <!-- Top-level TabControl for Scan Results and CxAssist Findings; black border under tab strip (same for all tabs) -->
+    <TabControl x:Name="MainTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent" BorderBrush="#000000" BorderThickness="0,0,0,1">
         <!-- Custom ItemsPanel with Checkmarx title + tabs in one line -->
         <TabControl.ItemsPanel>
             <ItemsPanelTemplate>
@@ -406,22 +406,16 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
-                            <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical">
-                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="10,2"/>
+                            <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical" Background="Transparent">
+                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="10,2,10,2"/>
                                 <TextBlock Name="BottomBar" Background="Transparent" Height="3" />
-                                <StackPanel.Style>
-                                    <Style TargetType="{x:Type StackPanel}">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
                             </StackPanel>
                             <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Panel" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                                </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="BottomBar" Property="Background" Value="LightBlue" />
+                                    <Setter TargetName="BottomBar" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -502,19 +496,19 @@
 
 
             <ToggleButton ToolTip="Critical" Style="{StaticResource SeverityFilterStyle}" x:Name="CriticalSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="CriticalSeverityFilterImage" Stretch="None"></Image>
+                <Image x:Name="CriticalSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
             <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="HighSeverityFilterImage" Stretch="None"></Image>
+                <Image x:Name="HighSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
             <ToggleButton ToolTip="Medium" Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="MediumSeverityFilterImage" Stretch="None"></Image>
+                <Image x:Name="MediumSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
             <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="LowSeverityFilterImage" Stretch="None"></Image>
+                <Image x:Name="LowSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
                 <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
-                    <Image x:Name="InfoSeverityFilterImage" Stretch="None"></Image>
+                    <Image x:Name="InfoSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </ToggleButton>
                 <Menu Background="Transparent">
                     <MenuItem x:Name="StateFilterMenuItem" ToolTip="Filter results" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
@@ -639,22 +633,16 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="TabItem">
-                                    <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical">
-                                        <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="10,2"/>
+                                    <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical" Background="Transparent">
+                                        <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="10,2,10,2"/>
                                         <TextBlock Name="BottomBar" Background="Transparent" Height="3" />
-                                        <StackPanel.Style>
-                                            <Style TargetType="{x:Type StackPanel}">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </StackPanel.Style>
                                     </StackPanel>
                                     <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Panel" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                                        </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="BottomBar" Property="Background" Value="LightBlue" />
+                                            <Setter TargetName="BottomBar" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -754,22 +742,16 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="TabItem">
-                                    <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical">
-                                        <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="10,2"/>
+                                    <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical" Background="Transparent">
+                                        <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="10,2,10,2"/>
                                         <TextBlock Name="BottomBar" Background="Transparent" Height="3" />
-                                        <StackPanel.Style>
-                                            <Style TargetType="{x:Type StackPanel}">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </StackPanel.Style>
                                     </StackPanel>
                                     <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Panel" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
+                                        </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="BottomBar" Property="Background" Value="LightBlue" />
+                                            <Setter TargetName="BottomBar" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>

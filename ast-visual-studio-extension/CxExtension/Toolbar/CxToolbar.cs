@@ -1,7 +1,8 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxWrapper.Models;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
@@ -10,6 +11,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.VisualStudio.TaskStatusCenter;
 using System.Threading;
@@ -212,7 +214,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 var severity = pair.Key;
                 var control = pair.Value;
-                control.Source = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity.ToString(), true), UriKind.RelativeOrAbsolute));
+                control.Source = LoadSeverityFilterIconFromCxAssist(severity);
             }
             foreach (KeyValuePair<MenuItem, GroupBy> pair in GroupByOptions)
             {
@@ -260,6 +262,77 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     }
                 }
              
+            }
+        }
+
+        /// <summary>
+        /// Load severity filter icon from CxAssist Icons (same images as Problem Findings window), theme-aware (Dark/Light).
+        /// Info uses the original icon (I-L.png) from Resources.
+        /// </summary>
+        private static ImageSource LoadSeverityFilterIconFromCxAssist(Severity severity)
+        {
+            if (severity == Severity.INFO)
+            {
+                try
+                {
+                    string iconPath = CxUtils.GetIconPathFromSeverity(Severity.INFO.ToString(), true);
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(iconPath, UriKind.RelativeOrAbsolute);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    return bitmap;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"CxToolbar.LoadSeverityFilterIconFromCxAssist (Info): {ex.Message}");
+                    return null;
+                }
+            }
+
+            string themeFolder = IsDarkTheme() ? "Dark" : "Light";
+            string iconName;
+            switch (severity)
+            {
+                case Severity.CRITICAL: iconName = "critical.png"; break;
+                case Severity.HIGH: iconName = "high.png"; break;
+                case Severity.MEDIUM: iconName = "medium.png"; break;
+                case Severity.LOW:
+                default: iconName = "low.png"; break;
+            }
+            try
+            {
+                string iconPath = $"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconName}";
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                return bitmap;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CxToolbar.LoadSeverityFilterIconFromCxAssist: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static bool IsDarkTheme()
+        {
+            try
+            {
+                var color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+                int brightness = (int)Math.Sqrt(
+                    color.R * color.R * 0.299 +
+                    color.G * color.G * 0.587 +
+                    color.B * color.B * 0.114);
+                return brightness < 128;
+            }
+            catch
+            {
+                return true;
             }
         }
 
