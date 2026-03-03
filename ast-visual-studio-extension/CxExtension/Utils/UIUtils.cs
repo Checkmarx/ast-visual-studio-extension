@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
@@ -6,11 +6,71 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.VisualStudio.PlatformUI;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class UIUtils
     {
+        /// <summary>
+        /// Returns theme-aware severity icon (CxAssist Dark/Light). Info uses the original icon; all others use CxAssist Icons.
+        /// </summary>
+        public static ImageSource GetSeverityIconSource(string severity, bool iconForTitle)
+        {
+            if (string.IsNullOrEmpty(severity)) return null;
+            string s = severity.ToUpperInvariant();
+            if (s == "INFO")
+            {
+                try
+                {
+                    string path = CxUtils.GetIconPathFromSeverity("INFO", iconForTitle);
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(path, UriKind.RelativeOrAbsolute);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    return bitmap;
+                }
+                catch { return null; }
+            }
+            string themeFolder = IsDarkTheme() ? "Dark" : "Light";
+            string iconName;
+            switch (s)
+            {
+                case "CRITICAL": iconName = "critical.png"; break;
+                case "HIGH": iconName = "high.png"; break;
+                case "MEDIUM": iconName = "medium.png"; break;
+                case "LOW": iconName = "low.png"; break;
+                default: iconName = "low.png"; break;
+            }
+            try
+            {
+                string iconPath = $"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconName}";
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                return bitmap;
+            }
+            catch { return null; }
+        }
+
+        private static bool IsDarkTheme()
+        {
+            try
+            {
+                var color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+                int brightness = (int)Math.Sqrt(
+                    color.R * color.R * 0.299 +
+                    color.G * color.G * 0.587 +
+                    color.B * color.B * 0.114);
+                return brightness < 128;
+            }
+            catch { return true; }
+        }
 
         public static string FormatStateName(string stateName)
         {
@@ -41,9 +101,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
             if (!string.IsNullOrEmpty(severity))
             {
-                Image severityIcon = new Image();
-                BitmapImage severityBitmap = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity, false), UriKind.RelativeOrAbsolute));
-                severityIcon.Source = severityBitmap;
+                Image severityIcon = new Image
+                {
+                    Source = GetSeverityIconSource(severity, false),
+                    Width = 14,
+                    Height = 14,
+                    Stretch = Stretch.Uniform,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
 
                 stackPanel.Children.Add(severityIcon);
             }
@@ -106,9 +171,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                 Orientation = Orientation.Horizontal
             };
 
-            Image severityIcon = new Image();
-            BitmapImage severityBitmap = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(severity, false), UriKind.RelativeOrAbsolute));
-            severityIcon.Source = severityBitmap;
+            Image severityIcon = new Image
+            {
+                Source = GetSeverityIconSource(severity, false),
+                Width = 14,
+                Height = 14,
+                Stretch = Stretch.Uniform,
+                VerticalAlignment = VerticalAlignment.Center
+            };
 
             stackPanel.Children.Add(severityIcon);
 
