@@ -89,10 +89,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// full details are in our Quick Info on hover). When false: full description is shown in the Error List
         /// but the same text appears again in the hover (duplicate).
         /// </summary>
-        public const string FixWithCxOneAssist = "Fix with Checkmarx Assist";
-        public const string ViewDetails = "View Details";
-        public const string IgnoreThis = "Ignore vulnerability";
+        /// <summary>Menu label (JetBrains-aligned).</summary>
+        public const string FixWithCxOneAssist = "Fix with Checkmarx One Assist";
+        public const string ViewDetails = "View details";
+        public const string IgnoreThis = "Ignore this vulnerability";
         public const string IgnoreAllOfThisType = "Ignore all of this type";
+        public const string CopyMessage = "Copy Message";
         public const string SecretFindingLabel = "Secret finding";
         public const string SastVulnerabilityLabel = "SAST vulnerability";
         public const string IacVulnerabilityLabel = "IaC vulnerability";

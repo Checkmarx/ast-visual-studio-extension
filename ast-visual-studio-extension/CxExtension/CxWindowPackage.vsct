@@ -37,6 +37,13 @@
 			<Group guid="guidCxWindowPackageCmdSet" id="TWToolbarGroup" priority="0x0000">
 				<Parent guid="guidCxWindowPackageCmdSet" id="TWToolbar" />
 			</Group>
+			<!-- Error List context menu: place commands directly (no submenu); Visible/Enabled set in code when CxAssist finding selected -->
+			<Group guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup" priority="0x0300">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ERRORLIST"/>
+				<Strings>
+					<CommandName>Checkmarx One Assist</CommandName>
+				</Strings>
+			</Group>
 		</Groups>
 
 		<Buttons>
@@ -63,6 +70,21 @@
 				<Strings>
 					<ButtonText>Test CxAssist Hover Popup</ButtonText>
 					<CommandName>TestCxAssistHoverPopup</CommandName>
+				</Strings>
+			</Button>
+			<!-- Error List context menu: Fix, View details (visible when a CxAssist finding is selected) -->
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListFixId" priority="0x0100" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<Strings>
+					<ButtonText>Fix with Checkmarx One Assist</ButtonText>
+					<CommandName>Fix with Checkmarx One Assist</CommandName>
+				</Strings>
+			</Button>
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListViewDetailsId" priority="0x0200" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<Strings>
+					<ButtonText>View details</ButtonText>
+					<CommandName>View details</CommandName>
 				</Strings>
 			</Button>
 		</Buttons>
@@ -103,6 +125,13 @@
 		<!-- ShowFindingsWindowCommand - POC for AST-133228, tool command only -->
 		<GuidSymbol name="guidShowFindingsWindowCommandSet" value="{a6e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e3f}">
 			<IDSymbol name="ShowFindingsWindowCommandId" value="0x0110" />
+		</GuidSymbol>
+
+		<!-- CxAssist Error List context menu: Group parented to IDM_VS_CTXT_ERRORLIST (vsshlids.h); commands visible when CxAssist finding selected -->
+		<GuidSymbol name="guidCxAssistErrorListCmdSet" value="{b7e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e40}">
+			<IDSymbol name="CxAssistErrorListGroup" value="0x0201" />
+			<IDSymbol name="CxAssistErrorListFixId" value="0x0210" />
+			<IDSymbol name="CxAssistErrorListViewDetailsId" value="0x0211" />
 		</GuidSymbol>
 	</Symbols>
 </CommandTable>

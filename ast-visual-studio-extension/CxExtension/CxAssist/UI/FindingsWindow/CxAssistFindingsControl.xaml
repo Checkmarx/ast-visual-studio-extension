@@ -334,39 +334,40 @@
                   ItemContainerStyle="{StaticResource TreeViewItemStyle}"
                   BorderThickness="0"
                   Background="Transparent"
-                  Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}">
+                  Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+                  ContextMenuOpening="FindingsTreeView_ContextMenuOpening">
 
-            <!-- Context Menu (right-click on vulnerability) -->
+            <!-- Context Menu (right-click on vulnerability only; hidden on file node) -->
             <TreeView.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Fix with CxOne Assist" Click="FixWithCxOneAssist_Click">
+                <ContextMenu x:Name="VulnerabilityContextMenu">
+                    <MenuItem Header="Fix with Checkmarx One Assist" Click="FixWithCxOneAssist_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="🔧" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="View Details" Click="ViewDetails_Click">
+                    <MenuItem Header="View details" Click="ViewDetails_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="ℹ" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Navigate to Code" Click="NavigateMenuItem_Click">
-                        <MenuItem.Icon>
-                            <TextBlock Text="➡" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Ignore vuln" Click="Ignore_Click">
+                    <MenuItem Header="Ignore this vulnerability" Click="Ignore_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="🚫" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Ignore all" Click="IgnoreAll_Click">
+                    <MenuItem Header="Ignore all of this type" Click="IgnoreAll_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="🚫" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator/>
                     <MenuItem Header="Copy" Click="CopyMenuItem_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="📋" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Copy Message" Click="CopyMessage_Click">
                         <MenuItem.Icon>
                             <TextBlock Text="📋" FontSize="14"/>
                         </MenuItem.Icon>

@@ -134,6 +134,7 @@
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />
     <Compile Include="CxExtension\Commands\TestGutterIconsDirectCommand.cs" />
     <Compile Include="CxExtension\Commands\TestErrorListCustomizationCommand.cs" />
+    <Compile Include="CxExtension\Commands\ErrorListContextMenuCommand.cs" />
     <Compile Include="CxExtension\Commands\ShowFindingsWindowCommand.cs" />
     <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\FindingsTreeNode.cs" />
     <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsWindow.cs" />

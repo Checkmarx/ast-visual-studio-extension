@@ -261,7 +261,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return hierarchy;
         }
 
-        private static void NavigateToVulnerability(Vulnerability v)
+        /// <summary>Called when user navigates from Error List task or from Error List context menu.</summary>
+        internal static void NavigateToVulnerability(Vulnerability v)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (string.IsNullOrEmpty(v?.FilePath)) return;

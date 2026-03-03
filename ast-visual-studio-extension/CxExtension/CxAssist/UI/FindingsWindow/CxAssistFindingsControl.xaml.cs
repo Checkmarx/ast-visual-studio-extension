@@ -425,6 +425,28 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         #region Context Menu Handlers
 
+        /// <summary>
+        /// Show context menu only when right-clicking a vulnerability row, not the file (main) node (JetBrains-style).
+        /// </summary>
+        private void FindingsTreeView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            var treeViewItem = FindVisualAncestor<TreeViewItem>(e.OriginalSource as DependencyObject);
+            if (treeViewItem?.DataContext is FileNode)
+            {
+                e.Handled = true; // Hide context menu when right-click is on file node
+            }
+        }
+
+        private static T FindVisualAncestor<T>(DependencyObject obj) where T : DependencyObject
+        {
+            while (obj != null)
+            {
+                if (obj is T t) return t;
+                obj = VisualTreeHelper.GetParent(obj);
+            }
+            return null;
+        }
+
         private void FixWithCxOneAssist_Click(object sender, RoutedEventArgs e)
         {
             var vulnerability = GetSelectedVulnerability();
@@ -628,60 +650,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         #region Context Menu Handlers
 
         /// <summary>
-        /// Copy selected item details to clipboard
+        /// Copy selected item details to clipboard (full display text).
         /// </summary>
         private void CopyMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            var selectedItem = FindingsTreeView.SelectedItem;
-            if (selectedItem == null) return;
-
-            string textToCopy = "";
-            if (selectedItem is FileNode fileNode)
-            {
-                textToCopy = $"{fileNode.FileName} - {fileNode.FilePath}";
-            }
-            else if (selectedItem is VulnerabilityNode vulnNode)
-            {
-                textToCopy = vulnNode.DisplayText;
-            }
-
-            if (!string.IsNullOrEmpty(textToCopy))
-            {
-                Clipboard.SetText(textToCopy);
-            }
+            var vuln = GetSelectedVulnerability();
+            if (vuln != null)
+                Clipboard.SetText(vuln.DisplayText);
         }
 
         /// <summary>
-        /// Navigate to code location
+        /// Copy short message to clipboard (JetBrains "Copy Message": e.g. "High-risk package: validator@13.12").
         /// </summary>
-        private void NavigateMenuItem_Click(object sender, RoutedEventArgs e)
+        private void CopyMessage_Click(object sender, RoutedEventArgs e)
         {
-            var selectedItem = FindingsTreeView.SelectedItem;
-            if (selectedItem is VulnerabilityNode vulnNode)
-            {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    NavigateToVulnerability(vulnNode);
-                });
-            }
-            else if (selectedItem is FileNode fileNode && !string.IsNullOrEmpty(fileNode.FilePath))
-            {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    try
-                    {
-                        var dte = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(DTE)) as DTE;
-                        if (dte != null)
-                            dte.ItemOperations.OpenFile(fileNode.FilePath, EnvDTE.Constants.vsViewKindCode);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error navigating to file: {ex.Message}");
-                    }
-                });
-            }
+            var vuln = GetSelectedVulnerability();
+            if (vuln != null && !string.IsNullOrEmpty(vuln.PrimaryDisplayText))
+                Clipboard.SetText(vuln.PrimaryDisplayText);
         }
 
         /// <summary>
