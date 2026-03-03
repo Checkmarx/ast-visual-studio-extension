@@ -3,14 +3,11 @@ using System.ComponentModel.Composition;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using Microsoft.VisualStudio.PlatformUI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Formatting;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
-using SharpVectors.Converters;
-using SharpVectors.Renderers.Wpf;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
@@ -38,8 +35,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
             try
             {
-                // Create image element for the glyph
-                var iconSource = GetIconForSeverity(glyphTag.Severity);
+                // Create image element for the glyph (SVG preferred, fallback to PNG)
+                var iconSource = AssistIconLoader.LoadSeveritySvgIcon(glyphTag.Severity)
+                    ?? (ImageSource)AssistIconLoader.LoadSeverityPngIcon(glyphTag.Severity);
                 if (iconSource == null)
                 {
                     System.Diagnostics.Debug.WriteLine($"CxAssist: Icon source is null for severity: {glyphTag.Severity}");
@@ -69,145 +67,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             }
         }
 
-        /// <summary>
-        /// Gets the appropriate icon based on severity level
-        /// Maps to JetBrains CxIcons.Small pattern (16x16 icons)
-        /// Uses SVG icons from ast-jetbrains-plugin organized by theme
-        /// Supports: MALICIOUS, CRITICAL, HIGH, MEDIUM, LOW, OK, IGNORED, UNKNOWN
-        /// </summary>
-        private ImageSource GetIconForSeverity(string severity)
-        {
-            string iconFileName;
-
-            switch (severity?.ToLower())
-            {
-                case "malicious":
-                    iconFileName = "malicious";
-                    break;
-                case "critical":
-                    iconFileName = "critical";
-                    break;
-                case "high":
-                    iconFileName = "high";
-                    break;
-                case "medium":
-                    iconFileName = "medium";
-                    break;
-                case "low":
-                    iconFileName = "low";
-                    break;
-                case "info":
-                    // Info severity - could use a separate info icon if available
-                    // For now, using low severity icon as fallback
-                    iconFileName = "low";
-                    break;
-                case "ok":
-                    iconFileName = "ok";  // OSS no vul / success (JetBrains: Status OK)
-                    break;
-                case "unknown":
-                    iconFileName = "unknown";  // OSS unknown status / other scanners (JetBrains: Status Unknown)
-                    break;
-                case "ignored":
-                    iconFileName = "ignored";
-                    break;
-                default:
-                    iconFileName = "unknown"; // Default fallback
-                    break;
-            }
-
-            // Try to load themed icon, fallback to PNG if loading fails
-            try
-            {
-                return LoadThemedIcon(iconFileName);
-            }
-            catch
-            {
-                // Fallback to existing PNG if themed icon loading fails
-                var pngFileName = iconFileName + ".png";
-                var iconUri = new Uri($"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/{pngFileName}");
-                return new BitmapImage(iconUri);
-            }
-        }
-
-        /// <summary>
-        /// Loads a themed icon from the organized folder structure
-        /// Detects Visual Studio theme (Light/Dark) and loads appropriate icon
-        /// Path: CxExtension/Resources/CxAssist/Icons/{Light|Dark}/{iconName}.svg
-        /// Uses SharpVectors to render SVG files in WPF
-        /// </summary>
-        private ImageSource LoadThemedIcon(string iconName)
-        {
-            // Detect Visual Studio theme
-            bool isDarkTheme = IsVsDarkTheme();
-            string themeFolder = isDarkTheme ? "Dark" : "Light";
-
-            // Build path to themed SVG icon
-            var iconUri = new Uri($"pack://application:,,,/ast-visual-studio-extension;component/CxExtension/Resources/CxAssist/Icons/{themeFolder}/{iconName}.svg");
-
-            try
-            {
-                // Load SVG from Pack URI using StreamResourceInfo
-                var streamInfo = System.Windows.Application.GetResourceStream(iconUri);
-                if (streamInfo == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"CxAssist: Failed to load SVG icon {iconName} - resource not found");
-                    return null;
-                }
-
-                // Use SharpVectors to load and render SVG from stream
-                var settings = new WpfDrawingSettings
-                {
-                    IncludeRuntime = true,
-                    TextAsGeometry = false,
-                    OptimizePath = true
-                };
-
-                using (var stream = streamInfo.Stream)
-                {
-                    var converter = new FileSvgReader(settings);
-                    var drawing = converter.Read(stream);
-
-                    if (drawing != null)
-                    {
-                        var drawingImage = new DrawingImage(drawing);
-                        drawingImage.Freeze(); // Freeze for better performance
-                        return drawingImage;
-                    }
-                }
-
-                System.Diagnostics.Debug.WriteLine($"CxAssist: Failed to load SVG icon {iconName} - drawing is null");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"CxAssist: Failed to load SVG icon {iconName}: {ex.Message}");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Detects if Visual Studio is using a dark theme
-        /// Uses VSColorTheme to detect current theme
-        /// </summary>
-        private bool IsVsDarkTheme()
-        {
-            try
-            {
-                // Get the current VS theme background color
-                var backgroundColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
-
-                // Calculate brightness (simple luminance formula)
-                double brightness = (0.299 * backgroundColor.R + 0.587 * backgroundColor.G + 0.114 * backgroundColor.B) / 255.0;
-
-                // If brightness is less than 0.5, it's a dark theme
-                return brightness < 0.5;
-            }
-            catch
-            {
-                // Default to light theme if detection fails
-                return false;
-            }
-        }
     }
 
     /// <summary>

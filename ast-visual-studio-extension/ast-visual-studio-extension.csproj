@@ -172,6 +172,7 @@
     <Compile Include="CxExtension\CxAssist\Core\FindingsTreeBuilder.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorListSync.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistConstants.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\AssistIconLoader.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\SeverityLevel.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\ScannerType.cs" />
