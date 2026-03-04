@@ -13,7 +13,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
     /// <summary>
     /// Tagger that provides glyph tags for CxAssist vulnerabilities
-    /// Based on JetBrains MarkupModel.addRangeHighlighter pattern
+    /// Based on reference MarkupModel.addRangeHighlighter pattern
     /// Manages the lifecycle of gutter icons in the text view
     /// </summary>
     internal class CxAssistGlyphTagger : ITagger<CxAssistGlyphTag>
@@ -87,7 +87,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
         /// <summary>
         /// Updates vulnerabilities for the buffer
-        /// Based on JetBrains ProblemDecorator.decorateUI pattern
+        /// Based on reference ProblemDecorator.decorateUI pattern
         /// </summary>
         public void UpdateVulnerabilities(List<Vulnerability> vulnerabilities)
         {
@@ -116,7 +116,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
         /// <summary>
         /// Clears all vulnerabilities
-        /// Based on JetBrains ProblemDecorator.removeAllHighlighters pattern
+        /// Based on reference ProblemDecorator.removeAllHighlighters pattern
         /// </summary>
         public void ClearVulnerabilities()
         {
@@ -129,7 +129,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
         /// <summary>
         /// Gets the most severe vulnerability from a list
-        /// Based on JetBrains ProblemDecorator.getMostSeverity pattern
+        /// Based on reference ProblemDecorator.getMostSeverity pattern
         /// </summary>
         private Vulnerability GetMostSevereVulnerability(List<Vulnerability> vulnerabilities)
         {
@@ -144,7 +144,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
         /// <summary>
         /// Gets severity priority for ordering (higher number = more severe)
-        /// Based on JetBrains SeverityLevel precedence (inverted for descending order)
+        /// Based on reference SeverityLevel precedence (inverted for descending order)
         /// </summary>
         private int GetSeverityPriority(SeverityLevel severity)
         {

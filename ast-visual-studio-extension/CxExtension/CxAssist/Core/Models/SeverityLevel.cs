@@ -2,12 +2,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Models
 {
     /// <summary>
     /// Severity levels for vulnerabilities
-    /// Based on JetBrains SeverityLevel enum
+    /// Based on reference SeverityLevel enum
     /// Matches: src/main/java/com/checkmarx/intellij/util/SeverityLevel.java
     /// </summary>
     public enum SeverityLevel
     {
-        Malicious,  // Highest priority (precedence 1 in JetBrains)
+        Malicious,  // Highest priority (precedence 1 in reference)
         Critical,   // precedence 2
         High,       // precedence 3
         Medium,     // precedence 4

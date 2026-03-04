@@ -287,7 +287,7 @@
                 <TextBlock Text="|" VerticalAlignment="Center" Margin="6,0" FontSize="18"
                            Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.7"/>
 
-                <!-- Expand All: same icon as JetBrains plugin (AllIcons.Actions.Expandall) -->
+                <!-- Expand All: same icon as reference plugin (AllIcons.Actions.Expandall) -->
                 <Button x:Name="ExpandAllButton"
                         Click="ExpandAll_Click"
                         ToolTip="Expand All"
@@ -299,7 +299,7 @@
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
-                <!-- Collapse All: same icon as JetBrains plugin (AllIcons.Actions.Collapseall) -->
+                <!-- Collapse All: same icon as reference plugin (AllIcons.Actions.Collapseall) -->
                 <Button x:Name="CollapseAllButton"
                         Click="CollapseAll_Click"
                         ToolTip="Collapse All"
@@ -337,46 +337,22 @@
                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
                   ContextMenuOpening="FindingsTreeView_ContextMenuOpening">
 
-            <!-- Context Menu (right-click on vulnerability only; hidden on file node) -->
+            <!-- Context Menu (right-click on vulnerability only; hidden on file node). Icons set in code via ApplyStarActionIconsToContextMenu (JetBrains star-action). -->
             <TreeView.ContextMenu>
                 <ContextMenu x:Name="VulnerabilityContextMenu">
-                    <MenuItem Header="Fix with Checkmarx One Assist" Click="FixWithCxOneAssist_Click">
-                        <MenuItem.Icon>
-                            <TextBlock Text="🔧" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="View details" Click="ViewDetails_Click">
-                        <MenuItem.Icon>
-                            <TextBlock Text="ℹ" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
+                    <MenuItem Header="Fix with Checkmarx One Assist" Click="FixWithCxOneAssist_Click"/>
+                    <MenuItem Header="View details" Click="ViewDetails_Click"/>
                     <Separator/>
-                    <MenuItem Header="Ignore this vulnerability" Click="Ignore_Click">
-                        <MenuItem.Icon>
-                            <TextBlock Text="🚫" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Ignore all of this type" Click="IgnoreAll_Click">
-                        <MenuItem.Icon>
-                            <TextBlock Text="🚫" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
+                    <MenuItem Header="Ignore this vulnerability" Click="Ignore_Click"/>
+                    <MenuItem Header="Ignore all of this type" Click="IgnoreAll_Click"/>
                     <Separator/>
-                    <MenuItem Header="Copy" Click="CopyMenuItem_Click">
-                        <MenuItem.Icon>
-                            <TextBlock Text="📋" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Copy Message" Click="CopyMessage_Click">
-                        <MenuItem.Icon>
-                            <TextBlock Text="📋" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
+                    <MenuItem Header="Copy" Click="CopyMenuItem_Click"/>
+                    <MenuItem Header="Copy Message" Click="CopyMessage_Click"/>
                 </ContextMenu>
             </TreeView.ContextMenu>
 
             <TreeView.Resources>
-                <!-- File Node Template (JetBrains-style: expander + file icon + name + severity badges) -->
+                <!-- File Node Template (reference-style: expander + file icon + name + severity badges) -->
                 <HierarchicalDataTemplate DataType="{x:Type local:FileNode}" ItemsSource="{Binding Vulnerabilities}">
                     <StackPanel Orientation="Horizontal" Margin="0,2" VerticalAlignment="Center">
                         <!-- File / package icon at start; opacity softened in dark theme for better look -->
@@ -398,7 +374,7 @@
                         <!-- File Name (primary text) -->
                         <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,6,0"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" FontSize="12"/>
-                        <!-- Severity Count Badges (shield + count, JetBrains-style) -->
+                        <!-- Severity Count Badges (shield + count, reference-style) -->
                         <ItemsControl ItemsSource="{Binding SeverityCounts}" VerticalAlignment="Center">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -421,19 +397,19 @@
                     </StackPanel>
                 </HierarchicalDataTemplate>
 
-                <!-- Vulnerability Node Template (JetBrains-style: icon, primary text bright, secondary text darker) -->
+                <!-- Vulnerability Node Template (reference-style: icon, primary text bright, secondary text darker) -->
                 <DataTemplate DataType="{x:Type local:VulnerabilityNode}">
                     <StackPanel Orientation="Horizontal" Margin="14,2" VerticalAlignment="Center">
-                        <!-- Severity Icon (aligned with JetBrains size) -->
+                        <!-- Severity Icon (aligned with reference size) -->
                         <Image Source="{Binding SeverityIcon}" Width="14" Height="14" Margin="0,0,3,0"
                                VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
-                        <!-- Primary text: risk type + package (larger, prominent - match JetBrains) -->
+                        <!-- Primary text: risk type + package (larger, prominent - match reference) -->
                         <TextBlock Text="{Binding PrimaryDisplayText}" VerticalAlignment="Center" TextWrapping="NoWrap"
                                    FontSize="13"
                                    Margin="0,0,6,0"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
-                        <!-- Secondary text: source + location (smaller, dimmer - match JetBrains) -->
+                        <!-- Secondary text: source + location (smaller, dimmer - match reference) -->
                         <TextBlock Text="{Binding SecondaryDisplayText}" VerticalAlignment="Center" TextWrapping="NoWrap"
                                    FontSize="13"
                                    Opacity="0.5"

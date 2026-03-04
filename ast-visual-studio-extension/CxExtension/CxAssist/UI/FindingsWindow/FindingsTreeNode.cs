@@ -165,7 +165,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             set { _filePath = value; OnPropertyChanged(nameof(FilePath)); }
         }
 
-        /// <summary>Scanner that produced this finding (OSS, ASCA, Secrets, etc.). Used for JetBrains-style primary text.</summary>
+        /// <summary>Scanner that produced this finding (OSS, ASCA, Secrets, etc.). Used for reference-style primary text.</summary>
         public ScannerType Scanner
         {
             get => _scanner;
@@ -180,7 +180,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             get => $"{PrimaryDisplayText} {CxAssistConstants.DisplayName} [Ln {Line}, Col {Column}]";
         }
 
-        /// <summary>Primary text (bright), formatted by scanner like JetBrains IssueTreeRenderer: ASCA/IaC=title, OSS=severity-risk package: name@version, Secrets=severity-risk secret: title, Containers=severity-risk container image: title. Grouped-by-line rows show only the summary (e.g. "N OSS issues detected on this line").</summary>
+        /// <summary>Primary text (bright), formatted by scanner like reference IssueTreeRenderer: ASCA/IaC=title, OSS=severity-risk package: name@version, Secrets=severity-risk secret: title, Containers=severity-risk container image: title. Grouped-by-line rows show only the summary (e.g. "N OSS issues detected on this line").</summary>
         public string PrimaryDisplayText
         {
             get
@@ -213,7 +213,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             }
         }
 
-        /// <summary>Secondary text (darker grey): agent name + location e.g. "Checkmarx One Assist [Ln 14, Col 4]" for JetBrains-style UI.</summary>
+        /// <summary>Secondary text (darker grey): agent name + location e.g. "Checkmarx One Assist [Ln 14, Col 4]" for reference-style UI.</summary>
         public string SecondaryDisplayText
         {
             get => $"{CxAssistConstants.DisplayName} [Ln {Line}, Col {Column}]";

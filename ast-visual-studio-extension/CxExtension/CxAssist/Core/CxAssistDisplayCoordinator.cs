@@ -15,7 +15,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// <summary>
     /// Single coordinator for CxAssist display (Option B).
     /// Takes one List&lt;Vulnerability&gt; and updates gutter, underline, and problem window in one go.
-    /// Stores issues per file (like JetBrains ProblemHolderService) and notifies via IssuesUpdated so the findings window can subscribe and stay in sync.
+    /// Stores issues per file (like reference ProblemHolderService) and notifies via IssuesUpdated so the findings window can subscribe and stay in sync.
     /// </summary>
     public static class CxAssistDisplayCoordinator
     {
@@ -69,12 +69,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Raised when issues are updated (any file). Subscribers (e.g. findings window) can refresh to stay in sync (JetBrains ISSUE_TOPIC-like).
+        /// Raised when issues are updated (any file). Subscribers (e.g. findings window) can refresh to stay in sync (reference ISSUE_TOPIC-like).
         /// </summary>
         public static event Action<IReadOnlyDictionary<string, List<Vulnerability>>> IssuesUpdated;
 
         /// <summary>
-        /// Gets all issues by file path (like JetBrains ProblemHolderService.GetAllIssues).
+        /// Gets all issues by file path (like reference ProblemHolderService.GetAllIssues).
         /// </summary>
         public static IReadOnlyDictionary<string, List<Vulnerability>> GetAllIssuesByFile()
         {
@@ -143,7 +143,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>
         /// Updates gutter icons, underlines (squiggles), and stored findings for the problem window in one call.
-        /// Stores issues per file and raises IssuesUpdated so the findings window can stay in sync (JetBrains-like).
+        /// Stores issues per file and raises IssuesUpdated so the findings window can stay in sync (reference-like).
         /// </summary>
         /// <param name="buffer">Text buffer for the open file (used to get glyph and error taggers).</param>
         /// <param name="vulnerabilities">Findings to show; can be null or empty to clear for this file.</param>
@@ -172,7 +172,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             else
                 System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: error tagger not found for buffer");
 
-            // 3. Store per file and notify (JetBrains ProblemHolderService + ISSUE_TOPIC-like)
+            // 3. Store per file and notify (reference ProblemHolderService + ISSUE_TOPIC-like)
             CxAssistErrorHandler.TryRun(() =>
             {
                 // Prefer explicit filePath, then path from buffer (so we can clear when list is empty), then first vulnerability

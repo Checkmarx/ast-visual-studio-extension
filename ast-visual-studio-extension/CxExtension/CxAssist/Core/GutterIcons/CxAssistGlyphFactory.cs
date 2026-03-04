@@ -13,7 +13,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
     /// <summary>
     /// Factory for creating custom gutter glyphs for CxAssist vulnerabilities
-    /// Based on JetBrains GutterIconRenderer pattern adapted for Visual Studio MEF
+    /// Based on reference GutterIconRenderer pattern adapted for Visual Studio MEF
     /// Uses IGlyphFactory to display custom severity icons in the gutter margin
     /// </summary>
     internal class CxAssistGlyphFactory : IGlyphFactory
@@ -97,7 +97,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
     /// <summary>
     /// Custom glyph tag for CxAssist vulnerabilities
-    /// Based on JetBrains GutterIconRenderer pattern
+    /// Based on reference GutterIconRenderer pattern
     /// </summary>
     internal class CxAssistGlyphTag : IGlyphTag
     {

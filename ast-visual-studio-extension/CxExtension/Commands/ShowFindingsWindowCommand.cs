@@ -126,7 +126,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
         }
 
         /// <summary>
-        /// Load severity icon based on severity level - uses JetBrains PNG icons with theme support
+        /// Load severity icon based on severity level - uses reference PNG icons with theme support
         /// </summary>
         private System.Windows.Media.ImageSource LoadSeverityIcon(string severity)
         {

@@ -334,7 +334,7 @@
     <Resource Include="CxExtension\Resources\medium.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <!-- CxAssist Icons - SVG Light Theme (16x16 gutter icons from JetBrains) -->
+    <!-- CxAssist Icons - SVG Light Theme (16x16 gutter icons from reference) -->
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\critical.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\high.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\medium.svg" />
@@ -343,7 +343,7 @@
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\ignored.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\ok.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\unknown.svg" />
-    <!-- CxAssist Icons - SVG Dark Theme (16x16 gutter icons from JetBrains) -->
+    <!-- CxAssist Icons - SVG Dark Theme (16x16 gutter icons from reference) -->
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\critical.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\high.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\medium.svg" />
@@ -352,12 +352,18 @@
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ignored.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ok.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\unknown.svg" />
-    <!-- CxAssist Icons - Expand/Collapse All (from JetBrains IntelliJ platform, same as ast-jetbrains-plugin) -->
+    <!-- CxAssist Icons - Expand/Collapse All (from reference IntelliJ platform, same as ast-jetbrains-plugin) -->
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\expandall.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\collapseall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\container.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\package.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\star-action.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\expandall.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\collapseall.svg" />
-    <!-- CxAssist Icons - PNG Light Theme (JetBrains tooltip icons for tree view) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\container.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\package.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\star-action.svg" />
+    <!-- CxAssist Icons - PNG Light Theme (reference tooltip icons for tree view) -->
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\critical.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\high.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\medium.png" />
@@ -366,7 +372,7 @@
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\container.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\package.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\cxone_assist.png" />
-    <!-- CxAssist Icons - PNG Dark Theme (JetBrains tooltip icons for tree view) -->
+    <!-- CxAssist Icons - PNG Dark Theme (reference tooltip icons for tree view) -->
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\critical.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\high.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\medium.png" />

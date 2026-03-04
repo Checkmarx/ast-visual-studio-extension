@@ -388,7 +388,7 @@ UITests/DevAssist/
 
 ## 🏗️ Architecture Patterns
 
-### 1. Scanner Pattern (Based on JetBrains/VSCode)
+### 1. Scanner Pattern (Based on reference/VSCode)
 
 ```csharp
 // CxExtension/DevAssist/Scanners/Common/IScannerService.cs

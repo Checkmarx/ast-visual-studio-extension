@@ -29,7 +29,7 @@ We wanted:
 
 - Different icons (e.g. per severity)
 - Clear visual difference by severity
-- A JetBrains-style experience
+- A reference-style experience
 
 ### What we built instead
 
@@ -125,7 +125,7 @@ Extensions can add items via **EnvDTE80.ErrorList**, **ErrorItems**, **ErrorItem
 
 We wanted:
 
-- Custom grouping (per file, JetBrains-like)
+- Custom grouping (per file, reference-like)
 - Custom columns and layout
 - Our own tool window (Checkmarx → DevAssist tab)
 - List driven by our in-memory model and **IssuesUpdated** events
