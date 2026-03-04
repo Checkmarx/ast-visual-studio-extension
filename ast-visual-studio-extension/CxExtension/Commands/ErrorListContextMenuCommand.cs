@@ -1,4 +1,5 @@
 using System;
+using System.Windows;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
@@ -12,12 +13,14 @@ namespace ast_visual_studio_extension.CxExtension.Commands
     /// <summary>
     /// Adds Checkmarx One Assist commands to the Error List context menu (right-click).
     /// Commands are enabled only when the selected Error List item is a CxAssist finding.
-    /// Actions: Fix with Checkmarx One Assist, View details.
+    /// Actions: Fix with Checkmarx One Assist, View details, Ignore this vulnerability, Ignore all of this type.
     /// </summary>
     internal sealed class ErrorListContextMenuCommand
     {
         public const int FixCommandId = 0x0210;
         public const int ViewDetailsCommandId = 0x0211;
+        public const int IgnoreThisCommandId = 0x0212;
+        public const int IgnoreAllCommandId = 0x0213;
 
         private static readonly Guid CommandSetGuid = new Guid("b7e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e40");
 
@@ -31,6 +34,8 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
             AddCommand(FixCommandId, OnFixWithAssist);
             AddCommand(ViewDetailsCommandId, OnViewDetails);
+            AddCommand(IgnoreThisCommandId, OnIgnoreThis, v => CxAssistConstants.GetIgnoreThisLabel(v.Scanner));
+            AddCommand(IgnoreAllCommandId, OnIgnoreAll, v => CxAssistConstants.GetIgnoreAllLabel(v.Scanner), v => CxAssistConstants.ShouldShowIgnoreAll(v.Scanner));
         }
 
         public static ErrorListContextMenuCommand Instance { get; private set; }
@@ -43,14 +48,17 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             Instance = new ErrorListContextMenuCommand(package, commandService);
         }
 
-        private void AddCommand(int commandId, EventHandler invokeHandler)
+        private void AddCommand(int commandId, EventHandler invokeHandler, Func<Vulnerability, string> getText = null, Func<Vulnerability, bool> isVisible = null)
         {
             var id = new CommandID(CommandSetGuid, commandId);
             var cmd = new OleMenuCommand(invokeHandler, id);
             cmd.BeforeQueryStatus += (s, e) =>
             {
                 var v = GetSelectedCxAssistVulnerability();
-                cmd.Visible = cmd.Enabled = (v != null);
+                bool visible = v != null && (isVisible == null || isVisible(v));
+                cmd.Visible = cmd.Enabled = visible;
+                if (getText != null && v != null)
+                    cmd.Text = getText(v);
             };
             _commandService.AddCommand(cmd);
         }
@@ -121,7 +129,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var v = GetSelectedCxAssistVulnerability();
                 if (v != null)
-                    System.Windows.MessageBox.Show($"Fix with Checkmarx One Assist:\n{v.Title ?? v.Description ?? ""}", CxAssistConstants.DisplayName, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show($"Fix with Checkmarx One Assist:\n{v.Title ?? v.Description ?? ""}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
             });
         }
 
@@ -132,7 +140,43 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var v = GetSelectedCxAssistVulnerability();
                 if (v != null)
-                    System.Windows.MessageBox.Show($"View details:\n{v.Title ?? v.Description ?? ""}\n\nSeverity: {v.Severity}\nFile: {v.FilePath}\nLine: {v.LineNumber}, Column: {v.ColumnNumber}", CxAssistConstants.DisplayName, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show($"View details:\n{v.Title ?? v.Description ?? ""}\n\nSeverity: {v.Severity}\nFile: {v.FilePath}\nLine: {v.LineNumber}, Column: {v.ColumnNumber}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+            });
+        }
+
+        private void OnIgnoreThis(object sender, EventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var v = GetSelectedCxAssistVulnerability();
+                if (v == null) return;
+                string label = CxAssistConstants.GetIgnoreThisLabel(v.Scanner);
+                var result = MessageBox.Show(
+                    $"{label}?\n{v.Title ?? v.Description ?? v.Id}",
+                    CxAssistConstants.DisplayName,
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+                if (result == MessageBoxResult.Yes)
+                    MessageBox.Show(CxAssistConstants.GetIgnoreThisSuccessMessage(v.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+            });
+        }
+
+        private void OnIgnoreAll(object sender, EventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var v = GetSelectedCxAssistVulnerability();
+                if (v == null) return;
+                string label = CxAssistConstants.GetIgnoreAllLabel(v.Scanner);
+                var result = MessageBox.Show(
+                    $"{label}?\n{v.Description}",
+                    CxAssistConstants.DisplayName,
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+                if (result == MessageBoxResult.Yes)
+                    MessageBox.Show(CxAssistConstants.GetIgnoreAllSuccessMessage(v.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
             });
         }
     }

@@ -116,5 +116,67 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>Container image Quick Info header suffix (reference: "nginx:latest - Critical Severity Image").</summary>
         public const string SeverityImageLabel = "Severity Image";
+
+        /// <summary>Context menu / Error List / Quick Info / Quick Fix: "Ignore this [finding type]" label based on scanner.</summary>
+        public static string GetIgnoreThisLabel(ScannerType scanner)
+        {
+            switch (scanner)
+            {
+                case ScannerType.Secrets: return "Ignore this secret in file";
+                case ScannerType.Containers:
+                case ScannerType.ASCA:
+                case ScannerType.IaC:
+                case ScannerType.OSS:
+                default: return "Ignore this vulnerability";
+            }
+        }
+
+        /// <summary>True only for OSS and Containers; Secret, ASCA, IaC show only "Ignore this" (no "Ignore all").</summary>
+        public static bool ShouldShowIgnoreAll(ScannerType scanner)
+        {
+            return scanner == ScannerType.OSS || scanner == ScannerType.Containers;
+        }
+
+        /// <summary>Context menu / Error List: "Ignore all [type]" label based on scanner (only shown for OSS and Containers).</summary>
+        public static string GetIgnoreAllLabel(ScannerType scanner)
+        {
+            switch (scanner)
+            {
+                case ScannerType.Secrets: return "Ignore all secrets";
+                case ScannerType.Containers: return "Ignore all container issues";
+                case ScannerType.IaC: return "Ignore all IaC findings";
+                case ScannerType.ASCA: return "Ignore all ASCA violations";
+                case ScannerType.OSS:
+                default: return "Ignore all OSS issues";
+            }
+        }
+
+        /// <summary>Success message after "Ignore this" (e.g. "Vulnerability ignored.").</summary>
+        public static string GetIgnoreThisSuccessMessage(ScannerType scanner)
+        {
+            switch (scanner)
+            {
+                case ScannerType.Secrets: return "Secret ignored.";
+                case ScannerType.Containers: return "Container image ignored.";
+                case ScannerType.IaC: return "IaC finding ignored.";
+                case ScannerType.ASCA: return "ASCA violation ignored.";
+                case ScannerType.OSS:
+                default: return "Vulnerability ignored.";
+            }
+        }
+
+        /// <summary>Success message after "Ignore all" (e.g. "All vulnerabilities of this type ignored.").</summary>
+        public static string GetIgnoreAllSuccessMessage(ScannerType scanner)
+        {
+            switch (scanner)
+            {
+                case ScannerType.Secrets: return "All secrets ignored.";
+                case ScannerType.Containers: return "All container issues ignored.";
+                case ScannerType.IaC: return "All IaC findings ignored.";
+                case ScannerType.ASCA: return "All ASCA violations ignored.";
+                case ScannerType.OSS:
+                default: return "All OSS issues ignored.";
+            }
+        }
     }
 }

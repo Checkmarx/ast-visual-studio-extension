@@ -371,13 +371,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         private static void AddDefaultActionLinks(Vulnerability v, List<object> elements, bool includeIgnoreAll)
         {
             const string urlClassification = "url";
+            string ignoreThisLabel = CxAssistConstants.GetIgnoreThisLabel(v.Scanner);
             var runs = new List<ClassifiedTextRun>
             {
                 new ClassifiedTextRun(urlClassification, CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v), CxAssistConstants.FixWithCxOneAssist, ClassifiedTextRunStyle.Underline),
                 new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
                 new ClassifiedTextRun(urlClassification, CxAssistConstants.ViewDetails, () => RunViewDetails(v), CxAssistConstants.ViewDetails, ClassifiedTextRunStyle.Underline),
                 new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                new ClassifiedTextRun(urlClassification, CxAssistConstants.IgnoreThis, () => RunIgnoreVulnerability(v), CxAssistConstants.IgnoreThis, ClassifiedTextRunStyle.Underline)
+                new ClassifiedTextRun(urlClassification, ignoreThisLabel, () => RunIgnoreVulnerability(v), ignoreThisLabel, ClassifiedTextRunStyle.Underline)
             };
             if (includeIgnoreAll)
             {
@@ -500,7 +501,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
                     AddLink(CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v));
                     AddLink(CxAssistConstants.ViewDetails, () => RunViewDetails(v));
-                    AddLink(CxAssistConstants.IgnoreThis, () => RunIgnoreVulnerability(v));
+                    AddLink(CxAssistConstants.GetIgnoreThisLabel(v.Scanner), () => RunIgnoreVulnerability(v));
                     if (includeIgnoreAllOfThisType)
                         AddLink(CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v));
 
