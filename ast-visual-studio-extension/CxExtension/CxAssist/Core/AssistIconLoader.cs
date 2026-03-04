@@ -211,6 +211,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return img;
         }
 
+        /// <summary>Loads severity icon (JetBrains-style; prefers SVG, fallback PNG). Use for Quick Info and any UI that can show either.</summary>
+        public static ImageSource LoadSeverityIcon(SeverityLevel severity)
+        {
+            var img = LoadSeveritySvgIcon(severity.ToString());
+            if (img != null) return img;
+            var png = LoadSeverityPngIcon(severity);
+            return png;
+        }
+
         /// <summary>Loads badge/logo PNG (e.g. CxAssistConstants.BadgeIconFileName).</summary>
         public static BitmapImage LoadBadgeIcon()
         {
@@ -218,6 +227,43 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             var img = LoadPngIcon(theme, CxAssistConstants.BadgeIconFileName);
             if (img == null && theme != CxAssistConstants.ThemeDark)
                 img = LoadPngIcon(CxAssistConstants.ThemeDark, CxAssistConstants.BadgeIconFileName);
+            return img;
+        }
+
+        /// <summary>Loads the package/cube icon for OSS title row (JetBrains-style; prefers SVG, fallback PNG).</summary>
+        public static ImageSource LoadPackageIcon()
+        {
+            string theme = GetCurrentTheme();
+            var img = LoadSvgIcon(theme, "package");
+            if (img == null && theme != CxAssistConstants.ThemeDark)
+                img = LoadSvgIcon(CxAssistConstants.ThemeDark, "package");
+            if (img == null)
+            {
+                var png = LoadPngIcon(theme, "package.png");
+                if (png == null && theme != CxAssistConstants.ThemeDark)
+                    png = LoadPngIcon(CxAssistConstants.ThemeDark, "package.png");
+                return png;
+            }
+            return img;
+        }
+
+        /// <summary>Loads the container/image icon for container scan title row (JetBrains card-containers graphic).</summary>
+        public static ImageSource LoadContainerIcon()
+        {
+            string theme = GetCurrentTheme();
+            var img = LoadSvgIcon(theme, "container");
+            if (img == null && theme != CxAssistConstants.ThemeDark)
+                img = LoadSvgIcon(CxAssistConstants.ThemeDark, "container");
+            return img;
+        }
+
+        /// <summary>Loads the star-action icon (JetBrains-style; used for fix/view/ignore actions).</summary>
+        public static ImageSource LoadStarActionIcon()
+        {
+            string theme = GetCurrentTheme();
+            var img = LoadSvgIcon(theme, "star-action");
+            if (img == null && theme != CxAssistConstants.ThemeDark)
+                img = LoadSvgIcon(CxAssistConstants.ThemeDark, "star-action");
             return img;
         }
     }

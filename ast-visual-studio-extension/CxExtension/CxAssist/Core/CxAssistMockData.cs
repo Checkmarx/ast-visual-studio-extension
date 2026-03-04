@@ -205,7 +205,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>
         /// Returns mock OSS-style vulnerabilities for package.json (gutter, underline, problem window, Error List, popup).
         /// Line numbers and StartIndex/EndIndex match AST-CLI OSS realtime scan output (Locations per package).
-        /// Includes Status=OK (success gutter icon) and Status=Unknown (unknown icon) per JetBrains behavior.
+        /// Includes Status=OK (success gutter icon) and Status=Unknown (unknown icon) per reference behavior.
         /// </summary>
         /// <param name="filePath">Optional file path; if null or empty, uses "package.json".</param>
         public static List<Vulnerability> GetPackageJsonMockVulnerabilities(string filePath = null)
@@ -630,9 +630,120 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
+        /// Returns mock Container image scan vulnerabilities for values.yaml (e.g. Helm chart referencing nginx:latest).
+        /// Matches AST-CLI container scan result shape: ImageName, ImageTag, FilePath, Locations (Line, StartIndex, EndIndex), Status, Vulnerabilities (CVE, Severity).
+        /// All CVEs share the same location (line 1, StartIndex 7, EndIndex 19) so they group in gutter/findings/Error List.
+        /// </summary>
+        /// <param name="filePath">Optional file path; if null or empty, uses "values.yaml".</param>
+        public static List<Vulnerability> GetContainerImageMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "values.yaml" : filePath;
+            const int lineNumber = 1;  // 1-based; scan had Line 0
+            const int startIndex = 7;
+            const int endIndex = 19;
+            const string imageTitle = "nginx:latest";
+
+            var cves = new[]
+            {
+                ("CVE-2011-3374", SeverityLevel.Low),
+                ("TEMP-0841856-B18BAF", SeverityLevel.Unknown),
+                ("CVE-2022-0563", SeverityLevel.Medium),
+                ("CVE-2025-14104", SeverityLevel.Medium),
+                ("CVE-2017-18018", SeverityLevel.High),
+                ("CVE-2025-5278", SeverityLevel.Medium),
+                ("CVE-2025-10966", SeverityLevel.Medium),
+                ("CVE-2025-15224", SeverityLevel.Low),
+                ("CVE-2025-15079", SeverityLevel.Medium),
+                ("CVE-2025-14819", SeverityLevel.Medium),
+                ("CVE-2025-14524", SeverityLevel.Medium),
+                ("CVE-2025-14017", SeverityLevel.Medium),
+                ("CVE-2025-13034", SeverityLevel.Medium),
+                ("CVE-2018-20796", SeverityLevel.High),
+                ("CVE-2019-1010025", SeverityLevel.Medium),
+                ("CVE-2010-4756", SeverityLevel.Medium),
+                ("CVE-2019-9192", SeverityLevel.High),
+                ("CVE-2019-1010024", SeverityLevel.Medium),
+                ("CVE-2019-1010023", SeverityLevel.Medium),
+                ("CVE-2019-1010022", SeverityLevel.Critical),
+                ("CVE-2026-0861", SeverityLevel.High),
+                ("CVE-2026-0915", SeverityLevel.Unknown),
+                ("CVE-2025-15281", SeverityLevel.High),
+                ("CVE-2024-38950", SeverityLevel.Medium),
+                ("CVE-2024-38949", SeverityLevel.Medium),
+                ("CVE-2025-59375", SeverityLevel.High),
+                ("CVE-2025-66382", SeverityLevel.Medium),
+                ("CVE-2026-25210", SeverityLevel.Medium),
+                ("CVE-2026-24515", SeverityLevel.Low),
+                ("CVE-2018-6829", SeverityLevel.High),
+                ("CVE-2024-2236", SeverityLevel.Medium),
+                ("CVE-2025-14831", SeverityLevel.Medium),
+                ("CVE-2011-3389", SeverityLevel.Medium),
+                ("CVE-2018-5709", SeverityLevel.High),
+                ("CVE-2024-26458", SeverityLevel.Medium),
+                ("CVE-2024-26461", SeverityLevel.High),
+                ("CVE-2025-68431", SeverityLevel.High),
+                ("CVE-2017-17740", SeverityLevel.High),
+                ("CVE-2015-3276", SeverityLevel.High),
+                ("CVE-2017-14159", SeverityLevel.Medium),
+                ("CVE-2020-15719", SeverityLevel.Medium),
+                ("CVE-2026-22185", SeverityLevel.Medium),
+                ("CVE-2021-4214", SeverityLevel.Medium),
+                ("CVE-2025-64720", SeverityLevel.High),
+                ("CVE-2025-64505", SeverityLevel.Medium),
+                ("CVE-2025-66293", SeverityLevel.High),
+                ("CVE-2025-65018", SeverityLevel.High),
+                ("CVE-2025-64506", SeverityLevel.Medium),
+                ("CVE-2021-45346", SeverityLevel.Medium),
+                ("CVE-2025-7709", SeverityLevel.Medium),
+                ("CVE-2013-4392", SeverityLevel.Medium),
+                ("CVE-2023-31437", SeverityLevel.Medium),
+                ("CVE-2023-31439", SeverityLevel.Medium),
+                ("CVE-2023-31438", SeverityLevel.Medium),
+                ("CVE-2025-13151", SeverityLevel.High),
+                ("CVE-2025-6141", SeverityLevel.Medium),
+                ("CVE-2025-8732", SeverityLevel.Medium),
+                ("CVE-2026-1757", SeverityLevel.Medium),
+                ("CVE-2026-0992", SeverityLevel.Low),
+                ("CVE-2026-0990", SeverityLevel.Medium),
+                ("CVE-2026-0989", SeverityLevel.Low),
+                ("CVE-2024-56433", SeverityLevel.Low),
+                ("TEMP-0628843-DBAD28", SeverityLevel.Unknown),
+                ("CVE-2007-5686", SeverityLevel.Medium),
+                ("CVE-2026-1642", SeverityLevel.High),
+                ("CVE-2009-4487", SeverityLevel.Medium),
+                ("CVE-2013-0337", SeverityLevel.High),
+                ("CVE-2011-4116", SeverityLevel.Low),
+                ("TEMP-0517018-A83CE6", SeverityLevel.Unknown),
+                ("TEMP-0290435-0B57B5", SeverityLevel.Unknown),
+                ("CVE-2005-2541", SeverityLevel.Critical),
+                ("CVE-2026-3184", SeverityLevel.Medium)
+            };
+
+            var list = new List<Vulnerability>(cves.Length);
+            foreach (var (cve, severity) in cves)
+            {
+                list.Add(new Vulnerability
+                {
+                    Id = cve,
+                    Title = imageTitle,
+                    Description = $"Container image vulnerability: {cve}.",
+                    Severity = severity,
+                    Scanner = ScannerType.Containers,
+                    LineNumber = lineNumber,
+                    ColumnNumber = 0,
+                    StartIndex = startIndex,
+                    EndIndex = endIndex,
+                    FilePath = path,
+                    CveName = cve
+                });
+            }
+            return list;
+        }
+
+        /// <summary>
         /// Returns mock Container (Dockerfile) vulnerabilities.
         /// Matches Container realtime scan shape: ExpectedValue, ActualValue, SimilarityID, Locations.
-        /// Includes Status=OK (success gutter icon) and Status=Unknown (unknown icon) per JetBrains ContainerScanResultAdaptor getStatus().
+        /// Includes Status=OK (success gutter icon) and Status=Unknown (unknown icon) per reference ContainerScanResultAdaptor getStatus().
         /// </summary>
         /// <param name="filePath">Optional file path; if null or empty, uses "Dockerfile".</param>
         public static List<Vulnerability> GetContainerMockVulnerabilities(string filePath = null)

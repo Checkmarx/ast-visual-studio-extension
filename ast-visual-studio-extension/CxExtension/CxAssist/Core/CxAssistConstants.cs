@@ -29,13 +29,26 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             text = Regex.Replace(text, @"\s*\(Malicious\)", "", RegexOptions.IgnoreCase).Trim();
             return text;
         }
+
+        /// <summary>Formats secret title for display: kebab-case to Title-Case (e.g. "generic-api-key" → "Generic-Api-Key"). Reference formatTitle.</summary>
+        public static string FormatSecretTitle(string title)
+        {
+            if (string.IsNullOrEmpty(title)) return title;
+            var parts = title.Split(new[] { '-' }, StringSplitOptions.None);
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (parts[i].Length > 0)
+                    parts[i] = char.ToUpperInvariant(parts[i][0]) + parts[i].Substring(1).ToLowerInvariant();
+            }
+            return string.Join("-", parts);
+        }
         /// <summary>Product name shown in UI (Quick Info header, messages, Error List).</summary>
         public const string DisplayName = "Checkmarx One Assist";
 
-        /// <summary>Suffix for grouped IaC findings on same line (JetBrains-style). Use as: count + MultipleIacIssuesOnLine.</summary>
+        /// <summary>Suffix for grouped IaC findings on same line (reference-style). Use as: count + MultipleIacIssuesOnLine.</summary>
         public const string MultipleIacIssuesOnLine = " IAC issues detected on this line";
 
-        /// <summary>Suffix for grouped ASCA findings on same line (JetBrains-style). Use as: count + MultipleAscaViolationsOnLine.</summary>
+        /// <summary>Suffix for grouped ASCA findings on same line (reference-style). Use as: count + MultipleAscaViolationsOnLine.</summary>
         public const string MultipleAscaViolationsOnLine = " ASCA violations detected on this line";
 
         /// <summary>Suffix for grouped OSS findings on same line. Use as: count + MultipleOssIssuesOnLine.</summary>
@@ -89,7 +102,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// full details are in our Quick Info on hover). When false: full description is shown in the Error List
         /// but the same text appears again in the hover (duplicate).
         /// </summary>
-        /// <summary>Menu label (JetBrains-aligned).</summary>
+        /// <summary>Menu label (reference-aligned).</summary>
         public const string FixWithCxOneAssist = "Fix with Checkmarx One Assist";
         public const string ViewDetails = "View details";
         public const string IgnoreThis = "Ignore this vulnerability";
@@ -98,6 +111,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public const string SecretFindingLabel = "Secret finding";
         public const string SastVulnerabilityLabel = "SAST vulnerability";
         public const string IacVulnerabilityLabel = "IaC vulnerability";
-        public const string SeverityPackageLabel = "package";
+        /// <summary>OSS Quick Info header suffix (reference: "validator@13.12.0 - High Severity Package").</summary>
+        public const string SeverityPackageLabel = "Severity Package";
+
+        /// <summary>Container image Quick Info header suffix (reference: "nginx:latest - Critical Severity Image").</summary>
+        public const string SeverityImageLabel = "Severity Image";
     }
 }

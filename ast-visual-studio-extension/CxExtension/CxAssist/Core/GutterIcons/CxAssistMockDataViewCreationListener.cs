@@ -44,6 +44,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             if (fileName.Equals("Dockerfile", StringComparison.OrdinalIgnoreCase))
                 return CxAssistMockData.GetContainerMockVulnerabilities(filePath);
 
+            if (fileName.Equals("values.yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                var iac = CxAssistMockData.GetIacMockVulnerabilities(filePath);
+                var containerImage = CxAssistMockData.GetContainerImageMockVulnerabilities(filePath);
+                var merged = new List<Vulnerability>(iac.Count + containerImage.Count);
+                merged.AddRange(iac);
+                merged.AddRange(containerImage);
+                return merged;
+            }
+
             if (filePath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".yml", StringComparison.OrdinalIgnoreCase))
                 return CxAssistMockData.GetIacMockVulnerabilities(filePath);
 

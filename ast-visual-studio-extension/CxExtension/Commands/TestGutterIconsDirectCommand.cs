@@ -141,7 +141,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                     $"✅ Scanner-specific content (CVE, CVSS, remediation, etc.)\n" +
                     $"✅ Action links (View Details, Navigate, Learn More, Apply Fix)\n" +
                     $"✅ Theme-aware styling\n" +
-                    $"✅ Similar to JetBrains implementation",
+                    $"✅ Similar to reference implementation",
                     "Test CxAssist Hover Popup - Scanner-Specific Content",
                     OLEMSGICON.OLEMSGICON_INFO,
                     OLEMSGBUTTON.OLEMSGBUTTON_OK,

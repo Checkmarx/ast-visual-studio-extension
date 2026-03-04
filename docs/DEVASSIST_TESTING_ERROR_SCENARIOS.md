@@ -178,7 +178,7 @@ Use these steps to verify **Checkmarx plugin findings** and **VS/compiler errors
 
 ---
 
-## 8. Manual testing: Multiple vulnerabilities on same line (JetBrains-style hover)
+## 8. Manual testing: Multiple vulnerabilities on same line (reference-style hover)
 
 Use this to verify the **multi-issue hover UI**: when several findings are on the same line, the popup shows “N issues detected on this line” and **one card per vulnerability** (icon, title, description, Fix / View details / Ignore this).
 
@@ -205,7 +205,7 @@ Use this to verify the **multi-issue hover UI**: when several findings are on th
    Hover over **line 1** or **line 7** (only one finding each).  
    **Verify:** The **single-issue** layout appears (one severity icon, one title, one description, one set of links), not the “N issues detected” header.
 
-**Summary:** Line 5 triggers the JetBrains-style multi-vulnerability UI; other lines trigger the single-issue UI.
+**Summary:** Line 5 triggers the reference-style multi-vulnerability UI; other lines trigger the single-issue UI.
 
 ---
 
@@ -223,4 +223,4 @@ Use this to verify the **multi-issue hover UI**: when several findings are on th
 | **Coordinator with null/invalid input** | Optional test command: call `UpdateFindings(null, ...)`, `RefreshProblemWindow(null)`; confirm no throw. |
 | **Simulated exception in callback** | Optional test command that throws in a guarded path; confirm log in Output and no crash. |
 
-If all of the above pass, error handling for **gutter, underline, problem window, and hover** is behaving as intended when third-party or VS code causes (or simulates) errors, **path normalization and buffer-derived path** behave as designed, and the **multiple-vulnerability hover UI** matches the JetBrains-style design.
+If all of the above pass, error handling for **gutter, underline, problem window, and hover** is behaving as intended when third-party or VS code causes (or simulates) errors, **path normalization and buffer-derived path** behave as designed, and the **multiple-vulnerability hover UI** matches the reference-style design.

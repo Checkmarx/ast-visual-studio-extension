@@ -99,7 +99,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         /// <summary>
         /// Determines if a severity level should show an underline
-        /// Similar to JetBrains plugin: only show underlines for actual issues (Malicious, Critical, High, Medium, Low)
+        /// Similar to reference plugin: only show underlines for actual issues (Malicious, Critical, High, Medium, Low)
         /// Do NOT show underlines for Unknown, Ok, Ignored (they only get gutter icons)
         /// </summary>
         private bool ShouldShowUnderline(SeverityLevel severity)
@@ -135,7 +135,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         /// <summary>
         /// Updates the vulnerabilities and triggers a refresh of error tags
-        /// Similar to JetBrains MarkupModel.removeAllHighlighters() + addRangeHighlighter()
+        /// Similar to reference MarkupModel.removeAllHighlighters() + addRangeHighlighter()
         /// </summary>
         public void UpdateVulnerabilities(List<Vulnerability> vulnerabilities)
         {
@@ -164,7 +164,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         /// <summary>
         /// Clears all vulnerabilities and error tags
-        /// Similar to JetBrains MarkupModel.removeAllHighlighters()
+        /// Similar to reference MarkupModel.removeAllHighlighters()
         /// </summary>
         public void ClearVulnerabilities()
         {

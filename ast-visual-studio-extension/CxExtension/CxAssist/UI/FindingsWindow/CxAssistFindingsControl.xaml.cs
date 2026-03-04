@@ -110,7 +110,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             _allFileNodes = new ObservableCollection<FileNode>();
             DataContext = this;
 
-            // Load filter icons and subscribe to coordinator (JetBrains ISSUE_TOPIC-like: window stays in sync when issues change)
+            // Load filter icons and subscribe to coordinator (reference ISSUE_TOPIC-like: window stays in sync when issues change)
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
         }
@@ -119,10 +119,27 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         {
             UpdateThemeState();
             LoadFilterIcons();
+            ApplyStarActionIconsToContextMenu();
             _onIssuesUpdated = OnIssuesUpdated;
             CxAssistDisplayCoordinator.IssuesUpdated += _onIssuesUpdated;
             // Initial refresh from current data
             RefreshFromCoordinator();
+        }
+
+        /// <summary>
+        /// Sets the star-action icon (JetBrains-style) on each context menu item: Fix, View details, Ignore, Ignore all, Copy, Copy Message.
+        /// </summary>
+        private void ApplyStarActionIconsToContextMenu()
+        {
+            var starIcon = AssistIconLoader.LoadStarActionIcon();
+            if (starIcon == null) return;
+            var menu = VulnerabilityContextMenu;
+            if (menu?.Items == null) return;
+            foreach (var item in menu.Items)
+            {
+                if (item is MenuItem mi)
+                    mi.Icon = new Image { Source = starIcon, Width = 16, Height = 16, Stretch = Stretch.Uniform };
+            }
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -426,7 +443,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         #region Context Menu Handlers
 
         /// <summary>
-        /// Show context menu only when right-clicking a vulnerability row, not the file (main) node (JetBrains-style).
+        /// Show context menu only when right-clicking a vulnerability row, not the file (main) node (reference-style).
         /// </summary>
         private void FindingsTreeView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
@@ -660,7 +677,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         /// <summary>
-        /// Copy short message to clipboard (JetBrains "Copy Message": e.g. "High-risk package: validator@13.12").
+        /// Copy short message to clipboard (reference "Copy Message": e.g. "High-risk package: validator@13.12").
         /// </summary>
         private void CopyMessage_Click(object sender, RoutedEventArgs e)
         {

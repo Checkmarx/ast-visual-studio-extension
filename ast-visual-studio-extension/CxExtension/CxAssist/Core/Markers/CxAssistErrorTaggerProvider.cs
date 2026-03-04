@@ -9,7 +9,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 {
     /// <summary>
     /// MEF provider for CxAssist error tagger
-    /// Based on JetBrains EditorFactoryListener pattern adapted for Visual Studio
+    /// Based on reference EditorFactoryListener pattern adapted for Visual Studio
     /// Creates and manages error tagger instances per buffer (not per view).
     /// Exports IErrorTag so VS built-in error layer draws squiggles using IErrorType (CompilerError / syntax error colour).
     /// </summary>
@@ -71,7 +71,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         /// <summary>
         /// Gets the error tagger for a specific buffer
         /// Used by external components to update vulnerability markers
-        /// Similar to JetBrains MarkupModel access pattern
+        /// Similar to reference MarkupModel access pattern
         /// </summary>
         public static CxAssistErrorTagger GetTaggerForBuffer(ITextBuffer buffer)
         {

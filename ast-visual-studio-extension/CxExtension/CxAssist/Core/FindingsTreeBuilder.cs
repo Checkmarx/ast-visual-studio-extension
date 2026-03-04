@@ -11,7 +11,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 {
     /// <summary>
     /// Builds the Findings window tree (FileNode → VulnerabilityNode) from any list of vulnerabilities.
-    /// Used for both mock data and real-time scanner results. Applies JetBrains-style grouping
+    /// Used for both mock data and real-time scanner results. Applies reference-style grouping
     /// (IaC/ASCA by line, OSS/Secrets/Containers one per finding) and severity badges.
     /// </summary>
     public static class FindingsTreeBuilder
@@ -73,7 +73,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                 var nodesToAdd = new List<VulnerabilityNode>();
 
-                // IaC: group by line; multiple issues on same line → one row "N IAC issues detected on this line" (JetBrains-style).
+                // IaC: group by line; multiple issues on same line → one row "N IAC issues detected on this line" (reference-style).
                 // IaC/KICS uses 1-based line numbers; use as-is for display and navigation.
                 foreach (var lineGroup in iacVulns.GroupBy(v => v.LineNumber))
                 {
@@ -178,7 +178,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     });
                 }
 
-                // Sort by line then column (JetBrains order)
+                // Sort by line then column (reference order)
                 foreach (var n in nodesToAdd.OrderBy(n => n.Line).ThenBy(n => n.Column))
                     fileNode.Vulnerabilities.Add(n);
 

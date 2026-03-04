@@ -10,7 +10,7 @@ A short note in simple words: for each part of the POC, what Visual Studio alrea
 Visual Studio can show a small icon in the strip on the left of the code (the “gutter”) when there is an error or warning on that line. It uses a fixed set of icons—for example, a red mark for errors and a yellow one for warnings. We could have used that and gotten one standard icon per line.
 
 **Why we did not use it:**  
-That built-in option only gives you the same error/warning style. You cannot use your own pictures (e.g. different icons for “Critical”, “High”, “Medium”, “Low”) or custom styling (like colours or layout). We wanted different icons for each severity so users can see at a glance how serious the finding is (like in JetBrains). So we built our own.
+That built-in option only gives you the same error/warning style. You cannot use your own pictures (e.g. different icons for “Critical”, “High”, “Medium”, “Low”) or custom styling (like colours or layout). We wanted different icons for each severity so users can see at a glance how serious the finding is (like in reference). So we built our own.
 
 **What we built instead:**  
 We built our own way to show icons in that strip. Our code decides which line gets which icon and uses our own picture files (e.g. skull for malicious, shield for high). The main pieces are: **DevAssistGlyphTag** (stores “this line has this severity”), **DevAssistGlyphTagger** (figures out which lines need an icon), and **DevAssistGlyphFactory** (draws our icon in the gutter).

@@ -10,7 +10,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
     /// <summary>
     /// MEF provider for CxAssist glyph tagger
-    /// Based on JetBrains EditorFactoryListener pattern adapted for Visual Studio
+    /// Based on reference EditorFactoryListener pattern adapted for Visual Studio
     /// Creates and manages tagger instances per buffer (not per view)
     /// IMPORTANT: Uses ITaggerProvider (not IViewTaggerProvider) for glyph tags
     /// </summary>
