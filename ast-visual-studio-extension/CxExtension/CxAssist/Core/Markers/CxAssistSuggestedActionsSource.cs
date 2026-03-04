@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
@@ -66,13 +67,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 var list = tagger.GetVulnerabilitiesForLine(lineNumber);
                 if (list == null || list.Count == 0) return Enumerable.Empty<SuggestedActionSet>();
 
-                // Use first vulnerability for the two Quick Fix actions (same as hover popup when multiple on line)
+                // Use first vulnerability for Quick Fix actions (same as hover popup / context menu when multiple on line)
                 var vulnerability = list[0];
                 var actions = new List<ISuggestedAction>
                 {
                     new FixWithCxOneAssistSuggestedAction(vulnerability),
-                    new ViewDetailsSuggestedAction(vulnerability)
+                    new ViewDetailsSuggestedAction(vulnerability),
+                    new IgnoreThisVulnerabilitySuggestedAction(vulnerability)
                 };
+                if (CxAssistConstants.ShouldShowIgnoreAll(vulnerability.Scanner))
+                    actions.Add(new IgnoreAllOfThisTypeSuggestedAction(vulnerability));
                 return new[] { new SuggestedActionSet(actions) };
             }
             catch (Exception ex)

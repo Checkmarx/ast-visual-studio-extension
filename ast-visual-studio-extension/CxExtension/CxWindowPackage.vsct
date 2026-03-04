@@ -87,6 +87,20 @@
 					<CommandName>View details</CommandName>
 				</Strings>
 			</Button>
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListIgnoreThisId" priority="0x0300" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<Strings>
+					<ButtonText>Ignore this vulnerability</ButtonText>
+					<CommandName>Ignore this vulnerability</CommandName>
+				</Strings>
+			</Button>
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListIgnoreAllId" priority="0x0400" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<Strings>
+					<ButtonText>Ignore all of this type</ButtonText>
+					<CommandName>Ignore all of this type</CommandName>
+				</Strings>
+			</Button>
 		</Buttons>
 
 		<Bitmaps>
@@ -132,6 +146,8 @@
 			<IDSymbol name="CxAssistErrorListGroup" value="0x0201" />
 			<IDSymbol name="CxAssistErrorListFixId" value="0x0210" />
 			<IDSymbol name="CxAssistErrorListViewDetailsId" value="0x0211" />
+			<IDSymbol name="CxAssistErrorListIgnoreThisId" value="0x0212" />
+			<IDSymbol name="CxAssistErrorListIgnoreAllId" value="0x0213" />
 		</GuidSymbol>
 	</Symbols>
 </CommandTable>

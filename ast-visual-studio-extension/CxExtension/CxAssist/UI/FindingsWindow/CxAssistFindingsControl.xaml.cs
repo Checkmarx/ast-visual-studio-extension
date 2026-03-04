@@ -451,6 +451,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             if (treeViewItem?.DataContext is FileNode)
             {
                 e.Handled = true; // Hide context menu when right-click is on file node
+                return;
+            }
+            // Set Ignore menu labels and visibility based on scanner (Ignore all only for OSS and Container)
+            if (treeViewItem?.DataContext is VulnerabilityNode node && IgnoreThisMenuItem != null && IgnoreAllMenuItem != null)
+            {
+                IgnoreThisMenuItem.Header = CxAssistConstants.GetIgnoreThisLabel(node.Scanner);
+                IgnoreAllMenuItem.Header = CxAssistConstants.GetIgnoreAllLabel(node.Scanner);
+                IgnoreAllMenuItem.Visibility = CxAssistConstants.ShouldShowIgnoreAll(node.Scanner) ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -491,12 +499,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             var vulnerability = GetSelectedVulnerability();
             if (vulnerability != null)
             {
-                var result = MessageBox.Show($"Ignore this vulnerability?\n{vulnerability.DisplayText}", 
-                    "Checkmarx CxAssist", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                string label = CxAssistConstants.GetIgnoreThisLabel(vulnerability.Scanner);
+                var result = MessageBox.Show($"{label}?\n{vulnerability.DisplayText}",
+                    CxAssistConstants.DisplayName, MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
                     // TODO: Implement ignore logic
-                    MessageBox.Show("Vulnerability ignored.", "Checkmarx CxAssist", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(CxAssistConstants.GetIgnoreThisSuccessMessage(vulnerability.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
@@ -506,12 +515,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             var vulnerability = GetSelectedVulnerability();
             if (vulnerability != null)
             {
-                var result = MessageBox.Show($"Ignore all vulnerabilities of this type?\n{vulnerability.Description}", 
-                    "Checkmarx CxAssist", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                string label = CxAssistConstants.GetIgnoreAllLabel(vulnerability.Scanner);
+                var result = MessageBox.Show($"{label}?\n{vulnerability.Description}",
+                    CxAssistConstants.DisplayName, MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (result == MessageBoxResult.Yes)
                 {
                     // TODO: Implement ignore all logic
-                    MessageBox.Show("All vulnerabilities of this type ignored.", "Checkmarx CxAssist", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(CxAssistConstants.GetIgnoreAllSuccessMessage(vulnerability.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
