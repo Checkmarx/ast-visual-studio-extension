@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
 using Microsoft.VisualStudio.Shell;
@@ -395,31 +396,26 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         internal static void RunFixWithAssist(Vulnerability v)
         {
-            RunOnUiThread(() => MessageBox.Show($"Fix with {CxAssistConstants.DisplayName}:\n{v?.Title ?? v?.Description ?? "—"}", CxAssistConstants.DisplayName));
+            RunOnUiThread(() =>
+            {
+                string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v);
+                if (!string.IsNullOrEmpty(prompt))
+                    CopilotIntegration.SendPromptToCopilot(prompt, "Fix prompt copied. Paste into GitHub Copilot Chat to get remediation steps.");
+                else
+                    System.Windows.MessageBox.Show($"No fix prompt available for this finding.\n{v?.Title ?? v?.Description ?? "—"}", CxAssistConstants.DisplayName, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            });
         }
 
         internal static void RunViewDetails(Vulnerability v)
         {
-            var url = !string.IsNullOrEmpty(v?.LearnMoreUrl) ? v.LearnMoreUrl : v?.FixLink;
-            if (!string.IsNullOrEmpty(url))
+            RunOnUiThread(() =>
             {
-                RunOnUiThread(() =>
-                {
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"CxAssist QuickInfo View Details: {ex.Message}");
-                        MessageBox.Show($"Could not open link: {url}", CxAssistConstants.DisplayName);
-                    }
-                });
-            }
-            else
-            {
-                RunOnUiThread(() => MessageBox.Show($"View Details:\n{v?.Title ?? ""}\n{v?.Description ?? ""}\nSeverity: {v?.Severity}", CxAssistConstants.DisplayName));
-            }
+                string prompt = ViewDetailsPrompts.BuildForVulnerability(v);
+                if (!string.IsNullOrEmpty(prompt))
+                    CopilotIntegration.SendPromptToCopilot(prompt, "View details prompt copied. Paste into GitHub Copilot Chat to get an explanation.");
+                else
+                    System.Windows.MessageBox.Show($"View Details:\n{v?.Title ?? ""}\n{v?.Description ?? ""}\nSeverity: {v?.Severity}", CxAssistConstants.DisplayName, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            });
         }
 
         internal static void RunIgnoreVulnerability(Vulnerability v)

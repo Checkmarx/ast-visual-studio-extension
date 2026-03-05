@@ -175,6 +175,9 @@
     <Compile Include="CxExtension\CxAssist\Core\CxAssistConstants.cs" />
     <Compile Include="CxExtension\CxAssist\Core\AssistIconLoader.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CopilotIntegration.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Prompts\CxOneAssistFixPrompts.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Prompts\ViewDetailsPrompts.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\SeverityLevel.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\ScannerType.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\Vulnerability.cs" />
