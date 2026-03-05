@@ -1,6 +1,5 @@
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Language.Intellisense;
 using System;
@@ -58,11 +57,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 try
                 {
-                    string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v);
-                    if (!string.IsNullOrEmpty(prompt))
-                        CopilotIntegration.SendPromptToCopilot(prompt, "Fix prompt copied. Paste into GitHub Copilot Chat to get remediation steps.");
-                    else
-                        MessageBox.Show($"Fix with Checkmarx One Assist\nVulnerability: {v.Title}\nID: {v.Id}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                    CxAssistCopilotActions.SendFixWithAssist(v);
                 }
                 catch (Exception ex)
                 {
@@ -124,11 +119,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 try
                 {
-                    string prompt = ViewDetailsPrompts.BuildForVulnerability(v);
-                    if (!string.IsNullOrEmpty(prompt))
-                        CopilotIntegration.SendPromptToCopilot(prompt, "View details prompt copied. Paste into GitHub Copilot Chat to get an explanation.");
-                    else
-                        MessageBox.Show($"{v.Title}\n\n{v.Description}\n\nScanner: {v.Scanner} | Severity: {v.Severity}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                    CxAssistCopilotActions.SendViewDetails(v);
                 }
                 catch (Exception ex)
                 {

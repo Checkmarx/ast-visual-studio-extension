@@ -118,7 +118,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Severity = v.Severity.ToString(),
                         SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
                         Description = v.Title ?? v.Description,
-                        Line = v.LineNumber + 1,
+                        Line = v.LineNumber,
                         Column = v.ColumnNumber,
                         FilePath = v.FilePath,
                         Scanner = ScannerType.ASCA
@@ -137,7 +137,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = v.Title ?? v.Description,
                         PackageName = v.PackageName,
                         PackageVersion = v.PackageVersion,
-                        Line = v.LineNumber + 1,
+                        Line = v.LineNumber,
                         Column = v.ColumnNumber,
                         FilePath = v.FilePath,
                         Scanner = ScannerType.OSS
@@ -154,7 +154,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Severity = v.Severity.ToString(),
                         SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
                         Description = v.Title ?? v.Description,
-                        Line = v.LineNumber + 1,
+                        Line = v.LineNumber,
                         Column = v.ColumnNumber,
                         FilePath = v.FilePath,
                         Scanner = ScannerType.Secrets
@@ -171,7 +171,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Severity = v.Severity.ToString(),
                         SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
                         Description = v.Title ?? v.Description,
-                        Line = v.LineNumber + 1,
+                        Line = v.LineNumber,
                         Column = v.ColumnNumber,
                         FilePath = v.FilePath,
                         Scanner = ScannerType.Containers
