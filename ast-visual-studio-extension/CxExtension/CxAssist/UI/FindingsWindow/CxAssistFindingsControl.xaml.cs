@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 {
@@ -474,24 +475,28 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         private void FixWithCxOneAssist_Click(object sender, RoutedEventArgs e)
         {
-            var vulnerability = GetSelectedVulnerability();
-            if (vulnerability != null)
-            {
-                MessageBox.Show($"Fix with CxOne Assist:\n{vulnerability.DisplayText}", 
-                    "Checkmarx CxAssist", MessageBoxButton.OK, MessageBoxImage.Information);
-                // TODO: Implement actual fix logic
-            }
+            var node = GetSelectedVulnerability();
+            if (node == null) return;
+            var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
+            if (v == null) return;
+            string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v);
+            if (!string.IsNullOrEmpty(prompt))
+                CopilotIntegration.SendPromptToCopilot(prompt, "Fix prompt copied. Paste into GitHub Copilot Chat to get remediation steps.");
+            else
+                MessageBox.Show($"Fix with Checkmarx One Assist:\n{node.DisplayText}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void ViewDetails_Click(object sender, RoutedEventArgs e)
         {
-            var vulnerability = GetSelectedVulnerability();
-            if (vulnerability != null)
-            {
-                MessageBox.Show($"View Details:\n{vulnerability.DisplayText}\n\nSeverity: {vulnerability.Severity}\nFile: {vulnerability.FilePath}\nLine: {vulnerability.Line}, Column: {vulnerability.Column}", 
-                    "Checkmarx CxAssist", MessageBoxButton.OK, MessageBoxImage.Information);
-                // TODO: Implement actual details view
-            }
+            var node = GetSelectedVulnerability();
+            if (node == null) return;
+            var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
+            if (v == null) return;
+            string prompt = ViewDetailsPrompts.BuildForVulnerability(v);
+            if (!string.IsNullOrEmpty(prompt))
+                CopilotIntegration.SendPromptToCopilot(prompt, "View details prompt copied. Paste into GitHub Copilot Chat to get an explanation.");
+            else
+                MessageBox.Show($"View Details:\n{node.DisplayText}\n\nSeverity: {node.Severity}\nFile: {node.FilePath}\nLine: {node.Line}, Column: {node.Column}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void Ignore_Click(object sender, RoutedEventArgs e)

@@ -6,6 +6,7 @@ using EnvDTE;
 using EnvDTE80;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 using System.ComponentModel.Design;
 
 namespace ast_visual_studio_extension.CxExtension.Commands
@@ -128,7 +129,11 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var v = GetSelectedCxAssistVulnerability();
-                if (v != null)
+                if (v == null) return;
+                string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v);
+                if (!string.IsNullOrEmpty(prompt))
+                    CopilotIntegration.SendPromptToCopilot(prompt, "Fix prompt copied. Paste into GitHub Copilot Chat to get remediation steps.");
+                else
                     MessageBox.Show($"Fix with Checkmarx One Assist:\n{v.Title ?? v.Description ?? ""}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
             });
         }
@@ -139,7 +144,11 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 var v = GetSelectedCxAssistVulnerability();
-                if (v != null)
+                if (v == null) return;
+                string prompt = ViewDetailsPrompts.BuildForVulnerability(v);
+                if (!string.IsNullOrEmpty(prompt))
+                    CopilotIntegration.SendPromptToCopilot(prompt, "View details prompt copied. Paste into GitHub Copilot Chat to get an explanation.");
+                else
                     MessageBox.Show($"View details:\n{v.Title ?? v.Description ?? ""}\n\nSeverity: {v.Severity}\nFile: {v.FilePath}\nLine: {v.LineNumber}, Column: {v.ColumnNumber}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
             });
         }
