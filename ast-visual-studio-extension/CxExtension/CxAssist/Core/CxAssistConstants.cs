@@ -137,18 +137,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return scanner == ScannerType.OSS || scanner == ScannerType.Containers;
         }
 
-        /// <summary>Context menu / Error List: "Ignore all [type]" label based on scanner (only shown for OSS and Containers).</summary>
+        /// <summary>Context menu / Error List: "Ignore all of this type" for OSS and Containers (only shown for those scanners).</summary>
         public static string GetIgnoreAllLabel(ScannerType scanner)
         {
-            switch (scanner)
-            {
-                case ScannerType.Secrets: return "Ignore all secrets";
-                case ScannerType.Containers: return "Ignore all container issues";
-                case ScannerType.IaC: return "Ignore all IaC findings";
-                case ScannerType.ASCA: return "Ignore all ASCA violations";
-                case ScannerType.OSS:
-                default: return "Ignore all OSS issues";
-            }
+            return "Ignore all of this type";
         }
 
         /// <summary>Success message after "Ignore this" (e.g. "Vulnerability ignored.").</summary>
