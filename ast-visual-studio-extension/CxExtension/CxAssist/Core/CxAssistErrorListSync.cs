@@ -132,26 +132,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>
         /// Builds Error List entries with same-line grouping as the Findings tree: all scanners
         /// show one entry per line when multiple issues share a line (e.g. "N OSS issues detected on this line").
-        /// Vulnerability.LineNumber is 0-based. Findings tab displays 1-based: Line = LineNumber + 1.
-        /// Error List (ErrorTask.Line) uses 0-based line index; VS displays it as 1-based, so we pass
-        /// LineNumber (0-based) so the Error List column matches "[Ln X, Col Y]" in the Findings tab.
+        /// Vulnerability.LineNumber is 1-based. We convert to 0-based for Error List (ErrorTask.Line);
+        /// VS displays that as 1-based in the UI, so the column matches "[Ln X, Col Y]" in the Findings tab.
         /// </summary>
         private static List<(string DisplayText, int Line, int Column, Vulnerability Vulnerability)> BuildErrorListEntries(List<Vulnerability> list)
         {
             var result = new List<(string, int, int, Vulnerability)>();
             var issuesOnly = list.Where(v => v.Severity != SeverityLevel.Ok && v.Severity != SeverityLevel.Unknown).ToList();
 
-            // Error List expects 0-based line (VS shows 1-based in UI). Match Findings by passing LineNumber as-is.
-            // C# 7.3: inline instead of static local functions
-            int LineForErrorList(int ln) => Math.Max(0, ln);
+            // Error List expects 0-based line (VS shows 1-based in UI). Convert 1-based LineNumber to 0-based.
+            int LineForErrorList(ScannerType scanner, int line1Based) => CxAssistConstants.To0BasedLineForEditor(scanner, line1Based);
             int ColForErrorList(int c) => Math.Max(1, c);
 
-            // IaC: group by line (same as Findings tree). IaC uses 1-based LineNumber → 0-based for Error List.
+            // IaC: group by line (same as Findings tree).
             foreach (var lineGroup in issuesOnly.Where(v => v.Scanner == ScannerType.IaC).GroupBy(v => v.LineNumber))
             {
                 var lineList = lineGroup.ToList();
                 var first = lineList[0];
-                int line0Based = CxAssistConstants.To0BasedLineForEditor(ScannerType.IaC, first.LineNumber);
+                int line0Based = LineForErrorList(ScannerType.IaC, first.LineNumber);
                 if (lineList.Count > 1)
                     result.Add((lineList.Count + CxAssistConstants.MultipleIacIssuesOnLine, line0Based, ColForErrorList(first.ColumnNumber), first));
                 else
@@ -163,7 +161,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 var lineList = lineGroup.ToList();
                 var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
-                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.Scanner, v.LineNumber), ColForErrorList(v.ColumnNumber), v));
             }
 
             // OSS: group by line; multiple on same line → show highest-severity detail only (same as Findings)
@@ -171,7 +169,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 var lineList = lineGroup.ToList();
                 var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
-                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.Scanner, v.LineNumber), ColForErrorList(v.ColumnNumber), v));
             }
 
             // Secrets: group by line; multiple on same line → show highest-severity detail only
@@ -179,7 +177,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 var lineList = lineGroup.ToList();
                 var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
-                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.Scanner, v.LineNumber), ColForErrorList(v.ColumnNumber), v));
             }
 
             // Containers: group by line; multiple on same line → show highest-severity detail only
@@ -187,7 +185,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 var lineList = lineGroup.ToList();
                 var v = lineList.Count > 1 ? lineList.OrderBy(x => x.Severity).First() : lineList[0];
-                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.LineNumber), ColForErrorList(v.ColumnNumber), v));
+                result.Add((GetPrimaryDisplayText(v.Severity, v.Scanner, v.Title ?? v.Description, v.PackageName, v.PackageVersion), LineForErrorList(v.Scanner, v.LineNumber), ColForErrorList(v.ColumnNumber), v));
             }
 
             return result;

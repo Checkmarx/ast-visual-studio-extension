@@ -10,16 +10,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistConstants
     {
-        /// <summary>IaC/KICS uses 1-based line numbers; other scanners use 0-based. Convert to 0-based for editor/taggers.</summary>
+        /// <summary>Vulnerability.LineNumber is 1-based in the model. Convert to 0-based for editor/taggers (ITextSnapshot).</summary>
         public static int To0BasedLineForEditor(ScannerType scanner, int lineNumber)
         {
-            return scanner == ScannerType.IaC ? Math.Max(0, lineNumber - 1) : lineNumber;
+            return Math.Max(0, lineNumber - 1);
         }
 
-        /// <summary>Convert to 1-based line for DTE MoveToLineAndOffset (IaC already 1-based; others add 1).</summary>
+        /// <summary>Convert to 1-based line for DTE MoveToLineAndOffset. Vulnerability.LineNumber is already 1-based.</summary>
         public static int To1BasedLineForDte(ScannerType scanner, int lineNumber)
         {
-            return scanner == ScannerType.IaC ? Math.Max(1, lineNumber) : Math.Max(1, lineNumber + 1);
+            return Math.Max(1, lineNumber);
         }
         /// <summary>Removes "(CVE-...)" and "(Malicious)" from package/title text for display (e.g. "node-ipc (Malicious)@10.1.1" → "node-ipc").</summary>
         public static string StripCveFromDisplayName(string text)
@@ -116,6 +116,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>Container image Quick Info header suffix (reference: "nginx:latest - Critical Severity Image").</summary>
         public const string SeverityImageLabel = "Severity Image";
+
+        // --- Copilot / DevAssist (reusable messages for Fix & View details) ---
+        public const string CopilotFixFallbackMessage = "Fix prompt copied. Paste into GitHub Copilot Chat to get remediation steps.";
+        public const string CopilotViewDetailsFallbackMessage = "View details prompt copied. Paste into GitHub Copilot Chat to get an explanation.";
+        public const string CopilotPromptSentMessage = "Prompt was sent to GitHub Copilot Chat. Check the chat for the response.";
+        public const string CopilotPasteFailedMessage = "Copilot Chat was opened but the prompt could not be sent automatically. The prompt is on your clipboard—click in the chat box, paste (Ctrl+V), then press Enter.";
+        public const string CopilotOpenInstructionsMessage = "Prompt copied to clipboard. Open GitHub Copilot Chat (View → GitHub Copilot Chat, or press Alt+Ctrl+Enter), then paste (Ctrl+V) and press Enter to get assistance.";
+        public const string CopilotGenericFallbackMessage = "Prompt copied to clipboard. Paste into GitHub Copilot Chat.";
 
         /// <summary>Context menu / Error List / Quick Info / Quick Fix: "Ignore this [finding type]" label based on scanner.</summary>
         public static string GetIgnoreThisLabel(ScannerType scanner)

@@ -51,10 +51,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                     Source = iconSource
                 };
 
-                // Set tooltip
+                // Set tooltip with theme-appropriate background (dark in dark theme, light in light theme)
                 if (!string.IsNullOrEmpty(glyphTag.TooltipText))
                 {
-                    image.ToolTip = glyphTag.TooltipText;
+                    image.ToolTip = CreateThemedToolTip(glyphTag.TooltipText);
                 }
 
                 System.Diagnostics.Debug.WriteLine($"CxAssist: Successfully created glyph image for severity: {glyphTag.Severity}");
@@ -67,6 +67,28 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             }
         }
 
+        /// <summary>
+        /// Creates a tooltip with background and text colors matching the current VS theme (dark or light).
+        /// </summary>
+        private static ToolTip CreateThemedToolTip(string text)
+        {
+            bool isDark = AssistIconLoader.IsDarkTheme();
+            var toolTip = new ToolTip
+            {
+                Content = new TextBlock
+                {
+                    Text = text,
+                    Foreground = isDark ? Brushes.White : new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E)),
+                    Padding = new Thickness(6, 4, 6, 4)
+                },
+                Background = isDark ? new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x30)) : new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF)),
+                BorderBrush = isDark ? new SolidColorBrush(Color.FromRgb(0x3F, 0x3F, 0x46)) : new SolidColorBrush(Color.FromRgb(0xE5, 0xE5, 0xE5)),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(0),
+                HasDropShadow = true
+            };
+            return toolTip;
+        }
     }
 
     /// <summary>

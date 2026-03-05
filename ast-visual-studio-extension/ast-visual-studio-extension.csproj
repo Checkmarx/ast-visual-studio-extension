@@ -132,7 +132,6 @@
     <Compile Include="CxWrapper\ReportFormat.cs" />
     <Compile Include="CxExtension\CxWindow.cs" />
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />
-    <Compile Include="CxExtension\Commands\TestGutterIconsDirectCommand.cs" />
     <Compile Include="CxExtension\Commands\TestErrorListCustomizationCommand.cs" />
     <Compile Include="CxExtension\Commands\ErrorListContextMenuCommand.cs" />
     <Compile Include="CxExtension\Commands\ShowFindingsWindowCommand.cs" />
@@ -162,12 +161,9 @@
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSource.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSourceProvider.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoSource.cs" />
-    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoClassifications.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSourceProvider.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSource.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickFixActions.cs" />
-    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistCompilerErrorsForLine.cs" />
-    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistTestHelper.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistMockData.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistDisplayCoordinator.cs" />
     <Compile Include="CxExtension\CxAssist\Core\FindingsTreeBuilder.cs" />
@@ -176,6 +172,7 @@
     <Compile Include="CxExtension\CxAssist\Core\AssistIconLoader.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CopilotIntegration.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistCopilotActions.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Prompts\CxOneAssistFixPrompts.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Prompts\ViewDetailsPrompts.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\SeverityLevel.cs" />

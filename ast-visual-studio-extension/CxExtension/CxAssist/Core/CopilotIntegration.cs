@@ -9,21 +9,14 @@ using EnvDTE80;
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 {
     /// <summary>
-    /// Integrates with GitHub Copilot Chat: opens chat via default VS shortcut (Ctrl+\ then C), pastes the prompt, and submits.
-    /// Aligned with PR #304 (DevAssist/Services/CopilotIntegration.cs): same keyboard shortcut and clipboard + SendKeys flow.
+    /// Reusable: sends a prompt to GitHub Copilot Chat (open via Ctrl+\ then C, new chat, paste, submit).
+    /// Used by <see cref="CxAssistCopilotActions"/> for Fix and View details. Message text comes from <see cref="CxAssistConstants"/>.
     /// </summary>
     internal static class CopilotIntegration
     {
-        /// <summary>Delay in ms after opening Copilot before pasting and submitting (PR #304 uses 1000).</summary>
         private const int PasteAndSubmitDelayMs = 1000;
 
-        /// <summary>
-        /// Opens Copilot Chat, pastes the prompt into the chat input, and submits it (new chat in agent mode when supported).
-        /// Prompt is always copied to clipboard as fallback. If opening or submit fails, user is told to paste manually.
-        /// </summary>
-        /// <param name="prompt">The prompt text to send (fix or view-details).</param>
-        /// <param name="clipboardFallbackMessage">Message when only clipboard is used (e.g. "Prompt copied. Paste into GitHub Copilot Chat.").</param>
-        /// <returns>True if clipboard was set; Copilot may or may not have opened and submitted.</returns>
+        /// <summary>Sends the prompt to Copilot: clipboard, open chat, new chat, paste and submit. Returns true if clipboard was set.</summary>
         public static bool SendPromptToCopilot(string prompt, string clipboardFallbackMessage)
         {
             if (string.IsNullOrWhiteSpace(prompt))
@@ -48,31 +41,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         try
                         {
                             StartNewChatThenPasteAndSubmit();
-                            MessageBox.Show(
-                                "Prompt was sent to GitHub Copilot Chat. Check the chat for the response.",
-                                CxAssistConstants.DisplayName,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Information);
+                            MessageBox.Show(CxAssistConstants.CopilotPromptSentMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                         catch (Exception ex)
                         {
                             CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.PasteAndSubmitPrompt");
-                            MessageBox.Show(
-                                "Copilot Chat was opened but the prompt could not be sent automatically. The prompt is on your clipboard—click in the chat box, paste (Ctrl+V), then press Enter.",
-                                CxAssistConstants.DisplayName,
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Information);
+                            MessageBox.Show(CxAssistConstants.CopilotPasteFailedMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                         }
                     };
                     timer.Start();
                 }
                 else
                 {
-                    MessageBox.Show(
-                        "Prompt copied to clipboard. Open GitHub Copilot Chat (View → GitHub Copilot Chat, or press Alt+Ctrl+Enter), then paste (Ctrl+V) and press Enter to get assistance.",
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    MessageBox.Show(CxAssistConstants.CopilotOpenInstructionsMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
 
                 return true;
@@ -83,7 +64,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 try
                 {
                     Clipboard.SetText(prompt);
-                    MessageBox.Show(clipboardFallbackMessage ?? "Prompt copied to clipboard. Paste into GitHub Copilot Chat.", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(clipboardFallbackMessage ?? CxAssistConstants.CopilotGenericFallbackMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                     return true;
                 }
                 catch
@@ -93,10 +74,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
         }
 
-        /// <summary>
-        /// Starts a new Copilot chat (slash command /new), then pastes from clipboard and submits.
-        /// Ensures each Fix/View details action gets a fresh chat.
-        /// </summary>
         private static void StartNewChatThenPasteAndSubmit()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -107,10 +84,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             System.Windows.Forms.SendKeys.SendWait("^v{ENTER}");
         }
 
-        /// <summary>
-        /// Opens GitHub Copilot Chat using the default Visual Studio shortcut (Ctrl+\ then C), per PR #304.
-        /// Fallback: DTE.ExecuteCommand with known command names.
-        /// </summary>
         private static bool TryOpenCopilotChat()
         {
             try

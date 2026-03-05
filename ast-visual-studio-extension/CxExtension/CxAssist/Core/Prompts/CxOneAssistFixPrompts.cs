@@ -110,7 +110,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts
 
         public static string BuildIACRemediationPrompt(string title, string description, string severity, string fileType, string expectedValue, string actualValue, int? problematicLineNumber)
         {
-            var lineNum = problematicLineNumber.HasValue ? (problematicLineNumber.Value + 1).ToString() : "[unknown]";
+            var lineNum = problematicLineNumber.HasValue ? (problematicLineNumber.Value).ToString() : "[unknown]";
             var sb = new StringBuilder();
             sb.Append("You are the ").Append(AgentName).Append(".\n\n");
             sb.Append("An IaC security issue has been detected.\n\n**Issue:** `").Append(title).Append("`\n**Severity:** `").Append(severity).Append("`\n**File Type:** `").Append(fileType).Append("`\n**Description:** ").Append(description).Append("\n**Expected Value:** ").Append(expectedValue).Append("\n**Actual Value:** ").Append(actualValue).Append("\n**Problematic Line:** ").Append(lineNum).Append("\n\n");
@@ -121,7 +121,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts
 
         public static string BuildASCARemediationPrompt(string ruleName, string description, string severity, string remediationAdvice, int? problematicLineNumber)
         {
-            var lineNum = problematicLineNumber.HasValue ? (problematicLineNumber.Value + 1).ToString() : "[unknown]";
+            var lineNum = problematicLineNumber.HasValue ? (problematicLineNumber.Value).ToString() : "[unknown]";
             var sb = new StringBuilder();
             sb.Append("You are the ").Append(AgentName).Append(".\n\n")
                 .Append("A secure coding issue has been detected.\n\n**Rule:** `").Append(ruleName).Append("`  \n**Severity:** `").Append(severity).Append("`  \n**Description:** ").Append(description).Append("  \n**Recommended Fix:** ").Append(remediationAdvice).Append("  \n**Problematic Line:** ").Append(lineNum).Append("\n\n");

@@ -133,11 +133,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             lock (_lock)
             {
                 if (!_fileToIssues.TryGetValue(key, out var list) || list == null) return null;
-                // IaC uses 1-based LineNumber in the model; Error List passes 0-based, so match accordingly.
+                // Match by 0-based line: Vulnerability.LineNumber is 1-based, convert for comparison.
                 return list.FirstOrDefault(v =>
-                    v.Scanner == ScannerType.IaC
-                        ? v.LineNumber == zeroBasedLine + 1
-                        : v.LineNumber == zeroBasedLine);
+                    CxAssistConstants.To0BasedLineForEditor(v.Scanner, v.LineNumber) == zeroBasedLine);
             }
         }
 

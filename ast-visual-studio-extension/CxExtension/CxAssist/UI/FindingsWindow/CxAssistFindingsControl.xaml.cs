@@ -19,7 +19,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 {
@@ -154,7 +153,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         private void OnIssuesUpdated(IReadOnlyDictionary<string, List<Core.Models.Vulnerability>> issuesByFile)
         {
-            Dispatcher.BeginInvoke(new Action(() => RefreshFromCoordinator()));
+            // Coordinator raises IssuesUpdated from UI thread (callers use SwitchToMainThreadAsync).
+            RefreshFromCoordinator();
         }
 
         /// <summary>
@@ -368,11 +368,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             if (item?.DataContext is VulnerabilityNode vulnerability)
             {
                 e.Handled = true;
-                Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    NavigateToVulnerability(vulnerability);
-                });
+                NavigateToVulnerability(vulnerability);
             }
         }
 
@@ -478,12 +474,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             var node = GetSelectedVulnerability();
             if (node == null) return;
             var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
-            if (v == null) return;
-            string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v);
-            if (!string.IsNullOrEmpty(prompt))
-                CopilotIntegration.SendPromptToCopilot(prompt, "Fix prompt copied. Paste into GitHub Copilot Chat to get remediation steps.");
-            else
-                MessageBox.Show($"Fix with Checkmarx One Assist:\n{node.DisplayText}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+            if (v != null) CxAssistCopilotActions.SendFixWithAssist(v);
         }
 
         private void ViewDetails_Click(object sender, RoutedEventArgs e)
@@ -491,12 +482,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             var node = GetSelectedVulnerability();
             if (node == null) return;
             var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
-            if (v == null) return;
-            string prompt = ViewDetailsPrompts.BuildForVulnerability(v);
-            if (!string.IsNullOrEmpty(prompt))
-                CopilotIntegration.SendPromptToCopilot(prompt, "View details prompt copied. Paste into GitHub Copilot Chat to get an explanation.");
-            else
-                MessageBox.Show($"View Details:\n{node.DisplayText}\n\nSeverity: {node.Severity}\nFile: {node.FilePath}\nLine: {node.Line}, Column: {node.Column}", CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+            if (v != null) CxAssistCopilotActions.SendViewDetails(v);
         }
 
         private void Ignore_Click(object sender, RoutedEventArgs e)
