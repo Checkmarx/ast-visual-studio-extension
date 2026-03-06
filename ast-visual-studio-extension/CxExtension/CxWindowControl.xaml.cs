@@ -100,9 +100,13 @@ namespace ast_visual_studio_extension.CxExtension
             Loaded -= CxWindowControl_Loaded;
             try
             {
-                // Findings tab Settings button opens same Checkmarx settings as Scan Results
                 if (CxAssistFindingsControl != null)
+                {
+                    // Findings tab Settings button opens same Checkmarx settings as Scan Results
                     CxAssistFindingsControl.SettingsClick += OnCxAssistSettingsClick;
+                    // Pass package so CxAssist can persist severity filter state (same as Scan Results)
+                    CxAssistFindingsControl.SetPackage(package);
+                }
             }
             catch (Exception ex)
             {

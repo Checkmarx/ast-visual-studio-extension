@@ -67,7 +67,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             _errorListProvider = new ErrorListProvider(ServiceProvider.GlobalProvider)
             {
-                ProviderName = CxAssistConstants.LogCategory
+                ProviderName = CxAssistConstants.DisplayName
             };
         }
 
