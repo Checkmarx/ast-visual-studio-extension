@@ -81,6 +81,7 @@
 			</Button>
 			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListIgnoreThisId" priority="0x0300" type="Button">
 				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<CommandFlag>TextChanges</CommandFlag>
 				<Strings>
 					<ButtonText>Ignore this vulnerability</ButtonText>
 					<CommandName>Ignore this vulnerability</CommandName>
@@ -88,6 +89,8 @@
 			</Button>
 			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListIgnoreAllId" priority="0x0400" type="Button">
 				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<CommandFlag>DefaultInvisible</CommandFlag>
+				<CommandFlag>DynamicVisibility</CommandFlag>
 				<Strings>
 					<ButtonText>Ignore all of this type</ButtonText>
 					<CommandName>Ignore all of this type</CommandName>
