@@ -387,8 +387,14 @@
 
     </UserControl.Resources>
 
-    <!-- Top-level TabControl for Scan Results and CxAssist Findings; black border under tab strip (same for all tabs) -->
-    <TabControl x:Name="MainTabControl" TabStripPlacement="Top" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent" BorderBrush="#000000" BorderThickness="0,0,0,1">
+    <!-- HR line above tabs, then TabControl (blue selected indicator, border under tab strip) -->
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Height="1" Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" HorizontalAlignment="Stretch"/>
+        <TabControl x:Name="MainTabControl" Grid.Row="1" TabStripPlacement="Top" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0,0,0,1">
         <!-- Custom ItemsPanel with Checkmarx title + tabs in one line -->
         <TabControl.ItemsPanel>
             <ItemsPanelTemplate>
@@ -409,14 +415,14 @@
                         <ControlTemplate TargetType="TabItem">
                             <StackPanel Name="Panel" Cursor="Hand" Orientation="Vertical" Background="Transparent">
                                 <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="10,2,10,2"/>
-                                <TextBlock Name="BottomBar" Background="Transparent" Height="3" />
+                                <Border Name="BottomBar" Background="Transparent" Height="3" />
                             </StackPanel>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter TargetName="Panel" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="BottomBar" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}" />
+                                    <Setter TargetName="BottomBar" Property="Background" Value="#007ACC" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -432,7 +438,7 @@
                     <DataTemplate.Resources>
                         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
                     </DataTemplate.Resources>
-                    <TextBlock Text="Scan Results" VerticalAlignment="Center"/>
+                        <TextBlock Text="Scan Results" VerticalAlignment="Center" FontSize="12"/>
                 </DataTemplate>
             </TabItem.HeaderTemplate>
             <TabItem.Content>
@@ -451,22 +457,22 @@
                         <GenericWPF:XAMLCalculations x:Key="CalculateScrollViewerHeight"/>
                     </Grid.Resources>
 
-        <Border Grid.Row="0" Grid.Column ="0" BorderBrush="#000000" BorderThickness="0 1 0 0" />
-        <Border Grid.Row="0" Grid.Column ="1" BorderBrush="#000000" BorderThickness="0 1 0 0" />
-        <Border Grid.Row="0" Grid.Column ="0" BorderBrush="#000000" BorderThickness="1 0 0 0" />
-        <Border Grid.Row="0" Grid.Column ="2" BorderBrush="#000000" BorderThickness="0 1 0 0" />
-        <Border Grid.Row="0" Grid.Column ="3" BorderBrush="#000000" BorderThickness="0 0 1 0" />
-        <Border Grid.Row="1" Grid.Column ="0" BorderBrush="#000000" BorderThickness="0 1 0 0" />
-        <Border Grid.Row="1" Grid.Column ="1" BorderBrush="#000000" BorderThickness="0 1 0 0" />
-        <Border Grid.Row="1" Grid.Column ="2" BorderBrush="#000000" BorderThickness="0 1 0 0" />
-        <Border Grid.Row="1" Grid.Column ="0" BorderBrush="#000000" BorderThickness="1 0 0 0" />
-        <Border Grid.Row="1" Grid.Column ="0" BorderBrush="#000000" BorderThickness="0 0 0 1" />
-        <Border Grid.Row="1" Grid.Column ="1" BorderBrush="#000000" BorderThickness="0 0 0 1" />
-        <Border Grid.Row="1" Grid.Column ="2" BorderBrush="#000000" BorderThickness="0 0 0 1" />
-        <Border Grid.Row="1" Grid.Column ="2" BorderBrush="#000000" BorderThickness="0 0 1 0" />
+        <Border Grid.Row="0" Grid.Column ="0" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 1 0 0" />
+        <Border Grid.Row="0" Grid.Column ="1" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 1 0 0" />
+        <Border Grid.Row="0" Grid.Column ="0" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="1 0 0 0" />
+        <Border Grid.Row="0" Grid.Column ="2" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 1 0 0" />
+        <Border Grid.Row="0" Grid.Column ="3" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 0 1 0" />
+        <Border Grid.Row="1" Grid.Column ="0" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 1 0 0" />
+        <Border Grid.Row="1" Grid.Column ="1" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 1 0 0" />
+        <Border Grid.Row="1" Grid.Column ="2" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 1 0 0" />
+        <Border Grid.Row="1" Grid.Column ="0" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="1 0 0 0" />
+        <Border Grid.Row="1" Grid.Column ="0" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 0 0 1" />
+        <Border Grid.Row="1" Grid.Column ="1" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 0 0 1" />
+        <Border Grid.Row="1" Grid.Column ="2" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 0 0 1" />
+        <Border Grid.Row="1" Grid.Column ="2" BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" BorderThickness="0 0 1 0" />
 
-        <GridSplitter Grid.Row="1" Grid.Column ="0" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
-        <GridSplitter Grid.Row="1" Grid.Column ="1" Background="Black" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
+        <GridSplitter Grid.Row="1" Grid.Column ="0" Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
+        <GridSplitter Grid.Row="1" Grid.Column ="1" Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}" Width="1" HorizontalAlignment="Right" VerticalAlignment="Stretch"/>
 
         <Grid Grid.ColumnSpan="3" Grid.Row="0" theming:ImageThemingUtilities.ImageBackgroundColor="{Binding Background, ElementName=CxWindow, Converter={StaticResource BrushToColorConverter}}">
             <Grid.RowDefinitions>
@@ -643,7 +649,7 @@
                                             <Setter TargetName="Panel" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="BottomBar" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}" />
+                                            <Setter TargetName="BottomBar" Property="Background" Value="#007ACC" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -752,7 +758,7 @@
                                             <Setter TargetName="Panel" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="BottomBar" Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}" />
+                                            <Setter TargetName="BottomBar" Property="Background" Value="#007ACC" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -856,7 +862,7 @@
                     <DataTemplate.Resources>
                         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
                     </DataTemplate.Resources>
-                    <TextBlock Text="{Binding TabHeaderText, ElementName=CxAssistFindingsControl}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TabHeaderText, ElementName=CxAssistFindingsControl}" VerticalAlignment="Center" FontSize="12"/>
                 </DataTemplate>
             </TabItem.HeaderTemplate>
             <TabItem.Content>
@@ -864,14 +870,14 @@
             </TabItem.Content>
         </TabItem>
 
-        <!-- Tab 3: Ignored Findings (no filters) -->
-        <TabItem x:Name="IgnoredFindingsTab">
+        <!-- Tab 3: Ignored Findings (hidden for now) -->
+        <TabItem x:Name="IgnoredFindingsTab" Visibility="Collapsed">
             <TabItem.HeaderTemplate>
                 <DataTemplate>
                     <DataTemplate.Resources>
                         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
                     </DataTemplate.Resources>
-                    <TextBlock Text="Ignored Findings" VerticalAlignment="Center"/>
+                        <TextBlock Text="Ignored Findings" VerticalAlignment="Center" FontSize="12"/>
                 </DataTemplate>
             </TabItem.HeaderTemplate>
             <TabItem.Content>
@@ -885,5 +891,6 @@
             </TabItem.Content>
         </TabItem>
     </TabControl>
+    </Grid>
 
 </UserControl>

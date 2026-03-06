@@ -325,6 +325,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         Orientation = Orientation.Horizontal,
                         VerticalAlignment = VerticalAlignment.Center
                     };
+                    GetQuickInfoTextBrushes(out _, out var countBrush);
                     foreach (var sev in order)
                         if (counts.TryGetValue(sev, out var c) && c > 0)
                         {
@@ -335,7 +336,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                                 Text = c.ToString(),
                                 FontSize = 10,
                                 FontWeight = FontWeights.Bold,
-                                Foreground = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD)),
+                                Foreground = countBrush,
                                 Margin = new Thickness(2, 0, 8, 0),
                                 VerticalAlignment = VerticalAlignment.Center
                             });
@@ -432,13 +433,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 return ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    GetQuickInfoTextBrushes(out var descBrush, out _);
                     return new TextBlock
                     {
                         Text = description,
                         TextWrapping = TextWrapping.Wrap,
                         LineHeight = 20,
                         LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
-                        Foreground = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0)),
+                        Foreground = descBrush,
                         FontSize = 12,
                         Margin = new Thickness(0, 0, 0, 6)
                     };
@@ -506,8 +508,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 return ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    var brightBrush = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
-                    var greyBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD));
+                    GetQuickInfoTextBrushes(out var brightBrush, out var greyBrush);
                     var text = new TextBlock
                     {
                         FontSize = 12,
@@ -529,8 +530,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
         }
 
+        /// <summary>Theme-aware primary (title/main) and secondary (grey suffix) text brushes for Quick Info. Call from UI thread.</summary>
+        private static void GetQuickInfoTextBrushes(out System.Windows.Media.Brush primary, out System.Windows.Media.Brush secondary)
+        {
+            bool isDark = AssistIconLoader.IsDarkTheme();
+            if (isDark)
+            {
+                primary = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
+                secondary = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD));
+            }
+            else
+            {
+                primary = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
+                secondary = new SolidColorBrush(Color.FromRgb(0x6B, 0x6B, 0x6B));
+            }
+        }
+
         /// <summary>
         /// Creates a thin horizontal line (separator) to show after our Quick Info details.
+        /// Bottom margin adds gap between this line and VS's "Show potential fixes" below.
         /// </summary>
         private static System.Windows.UIElement CreateHorizontalSeparator()
         {
@@ -542,7 +560,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                     return new Border
                     {
                         Height = 1,
-                        Margin = new Thickness(0, 6, 0, 0),
+                        Margin = new Thickness(0, 6, 0, 6),
                         Background = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55))
                     };
                 });
@@ -619,8 +637,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                     Grid.SetColumn(image, 0);
                     grid.Children.Add(image);
                     const double fontSize = 12;
-                    var brightBrush = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
-                    var greyBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD));
+                    GetQuickInfoTextBrushes(out var brightBrush, out var greyBrush);
                     var text = new TextBlock
                     {
                         FontSize = fontSize,
@@ -663,8 +680,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         var image = new Image
                         {
                             Source = packageSource,
-                            Width = 24,
-                            Height = 24,
+                            Width = 16,
+                            Height = 16,
                             Stretch = Stretch.Uniform,
                             VerticalAlignment = VerticalAlignment.Center,
                             Margin = new Thickness(0, 0, 6, 0)
@@ -673,8 +690,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         grid.Children.Add(image);
                     }
                     const double packageTitleFontSize = 12;
-                    var brightBrush = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
-                    var greyBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD));
+                    GetQuickInfoTextBrushes(out var brightBrush, out var greyBrush);
                     var text = new TextBlock
                     {
                         FontSize = packageTitleFontSize,
@@ -726,12 +742,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         Grid.SetColumn(image, 0);
                         grid.Children.Add(image);
                     }
+                    GetQuickInfoTextBrushes(out var titleBrush, out _);
                     var text = new TextBlock
                     {
                         Text = string.IsNullOrEmpty(title) ? severityName : title,
                         FontSize = 12,
                         FontWeight = FontWeights.SemiBold,
-                        Foreground = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0)),
+                        Foreground = titleBrush,
                         VerticalAlignment = VerticalAlignment.Center,
                         TextWrapping = TextWrapping.Wrap
                     };
@@ -775,8 +792,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         Grid.SetColumn(image, 0);
                         grid.Children.Add(image);
                     }
-                    var brightBrush = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
-                    var greyBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD));
+                    GetQuickInfoTextBrushes(out var brightBrush, out var greyBrush);
                     var text = new TextBlock
                     {
                         FontSize = 12,
@@ -828,8 +844,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         Grid.SetColumn(image, 0);
                         grid.Children.Add(image);
                     }
-                    var brightBrush = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
-                    var greyBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD));
+                    GetQuickInfoTextBrushes(out var brightBrush, out var greyBrush);
                     var text = new TextBlock
                     {
                         FontSize = 12,
@@ -883,8 +898,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         Grid.SetColumn(image, 0);
                         grid.Children.Add(image);
                     }
-                    var brightBrush = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0));
-                    var greyBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xAD, 0xAD));
+                    GetQuickInfoTextBrushes(out var brightBrush, out var greyBrush);
                     var text = new TextBlock
                     {
                         FontSize = 12,

@@ -17,8 +17,12 @@ using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Shell.Settings;
 using EnvDTE;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Utils;
+using Microsoft.VisualStudio.Settings;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 {
@@ -102,6 +106,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             }
         }
         private bool _isDarkTheme;
+        private AsyncPackage _package;
+
+        /// <summary>Set the VS package so filter state can be persisted (same store as Scan Results for Critical/High/Medium/Low). Call from CxWindowControl_Loaded.</summary>
+        public void SetPackage(AsyncPackage package)
+        {
+            _package = package;
+            LoadSeverityFilterState();
+        }
 
         public CxAssistFindingsControl()
         {
@@ -119,27 +131,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         {
             UpdateThemeState();
             LoadFilterIcons();
-            ApplyStarActionIconsToContextMenu();
+            LoadSeverityFilterState(); // restore persisted filter state when control loads
             _onIssuesUpdated = OnIssuesUpdated;
             CxAssistDisplayCoordinator.IssuesUpdated += _onIssuesUpdated;
             // Initial refresh from current data
             RefreshFromCoordinator();
-        }
-
-        /// <summary>
-        /// Sets the star-action icon (JetBrains-style) on each context menu item: Fix, View details, Ignore, Ignore all, Copy, Copy Message.
-        /// </summary>
-        private void ApplyStarActionIconsToContextMenu()
-        {
-            var starIcon = AssistIconLoader.LoadStarActionIcon();
-            if (starIcon == null) return;
-            var menu = VulnerabilityContextMenu;
-            if (menu?.Items == null) return;
-            foreach (var item in menu.Items)
-            {
-                if (item is MenuItem mi)
-                    mi.Icon = new Image { Source = starIcon, Width = 16, Height = 16, Stretch = Stretch.Uniform };
-            }
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -527,11 +523,56 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         #region Severity Filter Handlers
 
         /// <summary>
-        /// Handle severity filter button clicks
+        /// Handle severity filter button clicks; persist state (same store as Scan Results for Critical/High/Medium/Low).
         /// </summary>
         private void SeverityFilter_Click(object sender, RoutedEventArgs e)
         {
+            if (_package != null && sender is ToggleButton button)
+                StoreSeverityFilterState(button);
             ApplyFilters();
+        }
+
+        /// <summary>Load severity filter state from settings (shared with Scan Results for Critical/High/Medium/Low).</summary>
+        private void LoadSeverityFilterState()
+        {
+            if (_package == null) return;
+            try
+            {
+                var readOnlyStore = new ShellSettingsManager(_package).GetReadOnlySettingsStore(SettingsScope.UserSettings);
+                // Malicious: CxAssist-only collection
+                MaliciousFilterButton.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.cxAssistSeverityCollection, SettingsUtils.cxAssistMaliciousKey, true);
+                // Critical/High/Medium/Low: same collection as Scan Results
+                CriticalFilterButton.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.severityCollection, Severity.CRITICAL.ToString(), SettingsUtils.severityDefaultValues[Severity.CRITICAL]);
+                HighFilterButton.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.severityCollection, Severity.HIGH.ToString(), SettingsUtils.severityDefaultValues[Severity.HIGH]);
+                MediumFilterButton.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.severityCollection, Severity.MEDIUM.ToString(), SettingsUtils.severityDefaultValues[Severity.MEDIUM]);
+                LowFilterButton.IsChecked = readOnlyStore.GetBoolean(SettingsUtils.severityCollection, Severity.LOW.ToString(), SettingsUtils.severityDefaultValues[Severity.LOW]);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CxAssist LoadSeverityFilterState: {ex.Message}");
+            }
+        }
+
+        /// <summary>Persist the toggled severity filter (Store toggles the value, so call after UI has updated).</summary>
+        private void StoreSeverityFilterState(ToggleButton button)
+        {
+            try
+            {
+                if (button == MaliciousFilterButton)
+                    SettingsUtils.Store(_package, SettingsUtils.cxAssistSeverityCollection, SettingsUtils.cxAssistMaliciousKey, SettingsUtils.cxAssistSeverityDefaultValues);
+                else if (button == CriticalFilterButton)
+                    SettingsUtils.Store(_package, SettingsUtils.severityCollection, Severity.CRITICAL, SettingsUtils.severityDefaultValues);
+                else if (button == HighFilterButton)
+                    SettingsUtils.Store(_package, SettingsUtils.severityCollection, Severity.HIGH, SettingsUtils.severityDefaultValues);
+                else if (button == MediumFilterButton)
+                    SettingsUtils.Store(_package, SettingsUtils.severityCollection, Severity.MEDIUM, SettingsUtils.severityDefaultValues);
+                else if (button == LowFilterButton)
+                    SettingsUtils.Store(_package, SettingsUtils.severityCollection, Severity.LOW, SettingsUtils.severityDefaultValues);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CxAssist StoreSeverityFilterState: {ex.Message}");
+            }
         }
 
         /// <summary>
