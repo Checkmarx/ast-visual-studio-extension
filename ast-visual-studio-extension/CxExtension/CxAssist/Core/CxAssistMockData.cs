@@ -445,8 +445,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "No known vulnerabilities.",
                         Severity = SeverityLevel.Ok,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 65,
-                        EndLineNumber = 69,
+                        LineNumber = 66,
+                        EndLineNumber = 71,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -462,8 +462,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Unknown status.",
                         Severity = SeverityLevel.Unknown,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 70,
-                        EndLineNumber = 75,
+                        LineNumber = 71,
+                        EndLineNumber = 77,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -479,8 +479,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Unknown status.",
                         Severity = SeverityLevel.Unknown,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 76,
-                        EndLineNumber = 81,
+                        LineNumber = 77,
+                        EndLineNumber = 82,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -496,8 +496,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Unknown status.",
                         Severity = SeverityLevel.Unknown,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 24,
-                        EndLineNumber = 28,
+                        LineNumber = 25,
+                        EndLineNumber = 30,
                         ColumnNumber = 12,
                         StartIndex = 12,
                         EndIndex = 25,
@@ -513,8 +513,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Unknown status.",
                         Severity = SeverityLevel.Unknown,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 29,
-                        EndLineNumber = 33,
+                        LineNumber = 30,
+                        EndLineNumber = 34,
                         ColumnNumber = 12,
                         StartIndex = 12,
                         EndIndex = 25,
@@ -530,8 +530,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "No known vulnerabilities.",
                         Severity = SeverityLevel.Ok,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 90,
-                        EndLineNumber = 93,
+                        LineNumber = 91,
+                        EndLineNumber = 95,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -548,7 +548,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Improper Input Validation, Uncontrolled Resource Consumption in Apache Commons Compress TAR parsing.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 94,
+                        LineNumber = 95,
                         ColumnNumber = 8,
                         FilePath = path,
                         PackageName = "org.apache.commons:commons-compress",
@@ -559,11 +559,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         // 0-based StartIndex/EndIndex per line to match test-data pom.xml lines 94–98
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 94, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 95, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 96, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 37 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 98, StartIndex = 8, EndIndex = 20 }    // "        </dependency>"
+                            new VulnerabilityLocation { Line = 95, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 96, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 98, StartIndex = 12, EndIndex = 37 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 99, StartIndex = 8, EndIndex = 20 }    // "        </dependency>"
                         }
                     },
                     new Vulnerability
@@ -573,7 +573,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Allocation of Resources Without Limits or Throttling vulnerability in Apache Commons Compress.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 94,
+                        LineNumber = 95,
                         ColumnNumber = 12,
                         FilePath = path,
                         PackageName = "org.apache.commons:commons-compress",
@@ -583,11 +583,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         RecommendedVersion = "1.23.1",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 94, StartIndex = 8, EndIndex = 20 },
-                            new VulnerabilityLocation { Line = 95, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 95, StartIndex = 8, EndIndex = 20 },
                             new VulnerabilityLocation { Line = 96, StartIndex = 12, EndIndex = 54 },
-                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 37 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 98, StartIndex = 8, EndIndex = 20 }
+                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 98, StartIndex = 12, EndIndex = 37 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 99, StartIndex = 8, EndIndex = 20 }
                         }
                     },
                     new Vulnerability
@@ -597,7 +597,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Loop with Unreachable Exit Condition ('Infinite Loop') vulnerability in Apache Commons Compress.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 94,
+                        LineNumber = 95,
                         ColumnNumber = 12,
                         FilePath = path,
                         PackageName = "org.apache.commons:commons-compress",
@@ -607,11 +607,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         RecommendedVersion = "1.23.1",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 94, StartIndex = 8, EndIndex = 20 },
-                            new VulnerabilityLocation { Line = 95, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 95, StartIndex = 8, EndIndex = 20 },
                             new VulnerabilityLocation { Line = 96, StartIndex = 12, EndIndex = 54 },
-                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 37 },
-                            new VulnerabilityLocation { Line = 98, StartIndex = 8, EndIndex = 20 }
+                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 98, StartIndex = 12, EndIndex = 37 },
+                            new VulnerabilityLocation { Line = 99, StartIndex = 8, EndIndex = 20 }
                         }
                     },
                     new Vulnerability
@@ -621,7 +621,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "No known vulnerabilities.",
                         Severity = SeverityLevel.Ok,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 99,
+                        LineNumber = 100,
                         EndLineNumber = 102,
                         ColumnNumber = 8,
                         StartIndex = 8,
@@ -639,7 +639,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             Description = "Improper Handling of Case Sensitivity in Apache Tomcat's CGI servlet allowing security constraint bypass.",
                             Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -650,10 +650,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-46701",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -663,7 +663,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Improper Input Validation vulnerability in Apache Tomcat Native/OCSP handling.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -674,10 +674,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2026-24734",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -687,7 +687,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Denial of Service via incomplete cleanup in Apache Tomcat WebSocket clients.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -698,10 +698,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2024-23672",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -711,7 +711,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "TOCTOU Race Condition during JSP compilation permitting RCE on case-insensitive file systems.",
                         Severity = SeverityLevel.Critical,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -722,10 +722,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2024-50379",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -735,7 +735,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "HTTP/2 CONTINUATION Flood leading to denial of service in Apache Tomcat.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -746,10 +746,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2024-24549",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -759,7 +759,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Improper Input Validation vulnerability limiting HTTP/0.9 handling in Tomcat.",
                         Severity = SeverityLevel.Unknown,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -770,10 +770,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2026-24733",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -783,7 +783,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Allocation of Resources Without Limits or Throttling via TLS handshake leading to OOM.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -794,10 +794,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2024-38286",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -807,7 +807,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Improper Neutralization of Escape/Meta Sequences vulnerability in Apache Tomcat.",
                         Severity = SeverityLevel.Critical,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -818,10 +818,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-31651",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -831,7 +831,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Uncontrolled Resource Consumption when processing HTTP/2 streams in Apache Tomcat.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -842,10 +842,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2024-34750",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -855,7 +855,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Relative Path Traversal vulnerability in Apache Tomcat allowing possible bypass of protections.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -866,10 +866,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-55752",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -879,7 +879,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Integer Overflow in multipart upload handling could lead to DoS in Apache Tomcat.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -890,10 +890,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-52520",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -903,7 +903,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Improper Resource Shutdown or Release vulnerability in Apache Tomcat multipart handling.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -914,10 +914,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-61795",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -927,7 +927,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Improper Input Validation vulnerability in Apache Tomcat.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -938,10 +938,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-66614",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -951,7 +951,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Unchecked Error Condition vulnerability in Apache Tomcat's authentication flow.",
                         Severity = SeverityLevel.Critical,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -962,10 +962,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2024-52316",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -975,7 +975,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Allocation of Resources Without Limits or Throttling vulnerability in Apache Tomcat.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -986,10 +986,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-48988",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -999,7 +999,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Session Fixation vulnerability via rewrite valve in Apache Tomcat.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -1010,10 +1010,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-55668",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -1023,7 +1023,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Improper Input Validation vulnerability was found in Apache Tomcat causing memory leak.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -1034,10 +1034,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-31650",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -1047,7 +1047,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Authentication Bypass Using an Alternate Path or Channel vulnerability in Apache Tomcat.",
                         Severity = SeverityLevel.Medium,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -1058,10 +1058,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-49125",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     new Vulnerability
@@ -1071,7 +1071,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Description = "Uncontrolled Resource Consumption vulnerability in Apache Tomcat related to HTTP/2 settings.",
                         Severity = SeverityLevel.High,
                         Scanner = ScannerType.OSS,
-                        LineNumber = 103,
+                        LineNumber = 104,
                         ColumnNumber = 8,
                         StartIndex = 8,
                         EndIndex = 21,
@@ -1082,10 +1082,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         CveName = "CVE-2025-53506",
                         Locations = new List<VulnerabilityLocation>
                         {
-                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
-                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
-                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
-                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 104, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 107, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
                         }
                     },
                     // spring-boot-starter-web (OK)

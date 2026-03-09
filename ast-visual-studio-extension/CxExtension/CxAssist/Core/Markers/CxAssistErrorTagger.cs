@@ -140,7 +140,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         /// </summary>
         private static string BuildTooltipText(Vulnerability vulnerability)
         {
-            return string.Empty;
+            return null;
         }
 
         /// <summary>
