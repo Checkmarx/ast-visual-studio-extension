@@ -169,6 +169,7 @@
     <Compile Include="CxExtension\CxAssist\Core\FindingsTreeBuilder.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorListSync.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistConstants.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistScannerConstants.cs" />
     <Compile Include="CxExtension\CxAssist\Core\AssistIconLoader.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CopilotIntegration.cs" />
@@ -198,6 +199,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <None Include="ast-visual-studio-extension-tests\test-data\mock-build.gradle" />
+    <None Include="ast-visual-studio-extension-tests\test-data\mock-packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>

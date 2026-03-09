@@ -37,9 +37,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             var fallbackPath = string.IsNullOrEmpty(defaultFilePath) ? DefaultFilePath : defaultFilePath;
 
-            // Success (Ok) and Unknown: gutter icon only; do not show in problem window
+            // Aligned with JetBrains isProblem: show in Findings tree only for problem severities (not Ok, Unknown, Ignored).
             var issuesOnly = vulnerabilities
-                .Where(v => v.Severity != SeverityLevel.Ok && v.Severity != SeverityLevel.Unknown)
+                .Where(v => CxAssistConstants.IsProblem(v.Severity))
                 .ToList();
             if (issuesOnly.Count == 0)
                 return new ObservableCollection<FileNode>();

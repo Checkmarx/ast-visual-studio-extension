@@ -138,7 +138,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         private static List<(string DisplayText, int Line, int Column, Vulnerability Vulnerability)> BuildErrorListEntries(List<Vulnerability> list)
         {
             var result = new List<(string, int, int, Vulnerability)>();
-            var issuesOnly = list.Where(v => v.Severity != SeverityLevel.Ok && v.Severity != SeverityLevel.Unknown).ToList();
+            // Aligned with JetBrains isProblem: show in Error List / Problems only for problem severities (not Ok, Unknown, Ignored).
+            var issuesOnly = list.Where(v => CxAssistConstants.IsProblem(v.Severity)).ToList();
 
             // Error List expects 0-based line (VS shows 1-based in UI). Convert 1-based LineNumber to 0-based.
             int LineForErrorList(ScannerType scanner, int line1Based) => CxAssistConstants.To0BasedLineForEditor(scanner, line1Based);

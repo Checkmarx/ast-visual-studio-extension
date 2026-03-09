@@ -79,12 +79,39 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         }
 
         /// <summary>
-        /// Gets the snapshot span for the underline: from StartIndex to EndIndex (0-based within line) when set;
-        /// otherwise the full line. Clamps to line bounds.
+        /// Gets the snapshot span for the underline. When Locations is set, use the range for this line from the matching location.
+        /// Otherwise: on the first line use StartIndex/EndIndex when set; on continuation lines use full line (JetBrains: one range highlighter per location line).
         /// </summary>
         private static SnapshotSpan GetUnderlineSpan(ITextSnapshot snapshot, ITextSnapshotLine line, Vulnerability v)
         {
-            if (v.EndIndex > v.StartIndex && v.StartIndex >= 0)
+            int line0Based = line.LineNumber;
+            int line1Based = line0Based + 1;
+
+            // Per-line locations (e.g. pom.xml): use StartIndex/EndIndex for this line when present.
+            if (v.Locations != null && v.Locations.Count > 0)
+            {
+                foreach (var loc in v.Locations)
+                {
+                    if (loc.Line != line1Based) continue;
+                    if (loc.EndIndex > loc.StartIndex && loc.StartIndex >= 0)
+                    {
+                        int startOffset = Math.Min(loc.StartIndex, line.Length);
+                        int length = Math.Min(loc.EndIndex - loc.StartIndex, line.Length - startOffset);
+                        if (length > 0)
+                        {
+                            int startPos = line.Start + startOffset;
+                            return new SnapshotSpan(snapshot, startPos, length);
+                        }
+                    }
+                    return new SnapshotSpan(snapshot, line.Start, line.Length);
+                }
+                return new SnapshotSpan(snapshot, line.Start, line.Length);
+            }
+
+            // Fallback: single LineNumber/EndLineNumber with one StartIndex/EndIndex on first line.
+            int firstLine0Based = CxAssistConstants.To0BasedLineForEditor(v.Scanner, v.LineNumber);
+            bool isFirstLine = (line0Based == firstLine0Based);
+            if (isFirstLine && v.EndIndex > v.StartIndex && v.StartIndex >= 0)
             {
                 int startOffset = Math.Min(v.StartIndex, line.Length);
                 int length = Math.Min(v.EndIndex - v.StartIndex, line.Length - startOffset);
@@ -98,30 +125,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         }
 
         /// <summary>
-        /// Determines if a severity level should show an underline
-        /// Similar to reference plugin: only show underlines for actual issues (Malicious, Critical, High, Medium, Low)
-        /// Do NOT show underlines for Unknown, Ok, Ignored (they only get gutter icons)
+        /// Determines if a severity level should show an underline (squiggle).
+        /// Aligned with JetBrains ScanIssueProcessor: underline only when isProblem(severity) is true
+        /// (not Ok, not Unknown, not Ignored). Gutter icons are shown for all severities.
         /// </summary>
-        private bool ShouldShowUnderline(SeverityLevel severity)
+        private static bool ShouldShowUnderline(SeverityLevel severity)
         {
-            switch (severity)
-            {
-                case SeverityLevel.Malicious:
-                case SeverityLevel.Critical:
-                case SeverityLevel.High:
-                case SeverityLevel.Medium:
-                case SeverityLevel.Low:
-                case SeverityLevel.Info: // Info maps to Low
-                    return true;
-
-                case SeverityLevel.Unknown:
-                case SeverityLevel.Ok:
-                case SeverityLevel.Ignored:
-                    return false;
-
-                default:
-                    return false;
-            }
+            return CxAssistConstants.IsProblem(severity);
         }
 
         /// <summary>
@@ -146,20 +156,52 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         {
             _vulnerabilitiesByLine.Clear();
 
+            var snapshot = _buffer.CurrentSnapshot;
             if (vulnerabilities != null)
             {
+                int lineCount = snapshot.LineCount;
                 foreach (var vulnerability in vulnerabilities)
                 {
-                    int lineNumber = CxAssistConstants.To0BasedLineForEditor(vulnerability.Scanner, vulnerability.LineNumber);
-                    if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
-                        _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
-                    _vulnerabilitiesByLine[lineNumber].Add(vulnerability);
+                    // Per-line locations (e.g. pom.xml): add this vulnerability to each line in Locations; LineNumber = first location for gutter.
+                    if (vulnerability.Locations != null && vulnerability.Locations.Count > 0)
+                    {
+                        foreach (var loc in vulnerability.Locations)
+                        {
+                            if (!CxAssistConstants.IsLineInRange(loc.Line, lineCount))
+                                continue;
+                            int lineNumber = CxAssistConstants.To0BasedLineForEditor(vulnerability.Scanner, loc.Line);
+                            if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
+                                _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
+                            _vulnerabilitiesByLine[lineNumber].Add(vulnerability);
+                        }
+                        continue;
+                    }
+                    // Fallback: LineNumber..EndLineNumber range.
+                    if (!CxAssistConstants.IsLineInRange(vulnerability.LineNumber, lineCount))
+                        continue;
+                    int lastUnderlineLine = GetUnderlineEndLine(vulnerability);
+                    for (int line1Based = vulnerability.LineNumber; line1Based <= lastUnderlineLine; line1Based++)
+                    {
+                        if (!CxAssistConstants.IsLineInRange(line1Based, lineCount))
+                            break;
+                        int lineNumber = CxAssistConstants.To0BasedLineForEditor(vulnerability.Scanner, line1Based);
+                        if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
+                            _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
+                        _vulnerabilitiesByLine[lineNumber].Add(vulnerability);
+                    }
                 }
             }
 
-            var snapshot = _buffer.CurrentSnapshot;
             var entireSpan = new SnapshotSpan(snapshot, 0, snapshot.Length);
             TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(entireSpan));
+        }
+
+        /// <summary>Last 1-based line for underline (multi-line block). When EndLineNumber is set, use it; otherwise single line.</summary>
+        private static int GetUnderlineEndLine(Vulnerability v)
+        {
+            if (v.EndLineNumber > 0 && v.EndLineNumber >= v.LineNumber)
+                return v.EndLineNumber;
+            return v.LineNumber;
         }
 
         /// <summary>

@@ -21,6 +21,28 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         {
             return Math.Max(1, lineNumber);
         }
+
+        /// <summary>
+        /// Whether the severity should be shown as a problem (underline + Error List / Problems view).
+        /// Aligned with JetBrains DevAssistUtils.isProblem: not OK, not UNKNOWN, not IGNORED.
+        /// Gutter icons are shown for all severities; underline and problem list only for "problem" severities.
+        /// </summary>
+        public static bool IsProblem(SeverityLevel severity)
+        {
+            return severity != SeverityLevel.Ok
+                && severity != SeverityLevel.Unknown
+                && severity != SeverityLevel.Ignored;
+        }
+
+        /// <summary>
+        /// Whether the 1-based line number is within the document range.
+        /// Aligned with JetBrains DevAssistUtils.isLineOutOfRange (inverted): valid when lineNumber in [1, lineCount].
+        /// </summary>
+        public static bool IsLineInRange(int lineNumber1Based, int documentLineCount)
+        {
+            return lineNumber1Based >= 1 && lineNumber1Based <= documentLineCount;
+        }
+
         /// <summary>Removes "(CVE-...)" and "(Malicious)" from package/title text for display (e.g. "node-ipc (Malicious)@10.1.1" → "node-ipc").</summary>
         public static string StripCveFromDisplayName(string text)
         {

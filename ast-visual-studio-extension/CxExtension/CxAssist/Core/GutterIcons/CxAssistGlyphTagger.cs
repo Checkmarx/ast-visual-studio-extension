@@ -62,17 +62,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                             var mostSevere = GetMostSevereVulnerability(vulnerabilities);
                             if (mostSevere != null)
                             {
-                                var line = snapshot.GetLineFromLineNumber(lineNumber);
-                                var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
+                            var line = snapshot.GetLineFromLineNumber(lineNumber);
+                            var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
 
-                                // Tooltip shows only the severity that matches the icon (precedence / most severe on line)
-                                var tag = new CxAssistGlyphTag(
-                                    mostSevere.Severity.ToString(),
-                                    mostSevere.Severity.ToString(),
-                                    mostSevere.Id
-                                );
-                                result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
-                            }
+                                    // Tooltip shows only the severity that matches the icon (precedence / most severe on line)
+                                    var tag = new CxAssistGlyphTag(
+                                        mostSevere.Severity.ToString(),
+                                        mostSevere.Severity.ToString(),
+                                        mostSevere.Id
+                                    );
+                                    result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
+                            }   
                         }
                     }
                 }
@@ -98,18 +98,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         {
             _vulnerabilitiesByLine.Clear();
 
+            var snapshot = _buffer.CurrentSnapshot;
             if (vulnerabilities != null)
             {
+                int lineCount = snapshot.LineCount;
                 foreach (var vuln in vulnerabilities)
                 {
-                    int lineNumber = CxAssistConstants.To0BasedLineForEditor(vuln.Scanner, vuln.LineNumber);
+                    // Gutter on first line only: use first location's line when Locations is set, else LineNumber.
+                    int gutterLine1Based = (vuln.Locations != null && vuln.Locations.Count > 0)
+                        ? vuln.Locations[0].Line
+                        : vuln.LineNumber;
+                    if (!CxAssistConstants.IsLineInRange(gutterLine1Based, lineCount))
+                        continue;
+                    int lineNumber = CxAssistConstants.To0BasedLineForEditor(vuln.Scanner, gutterLine1Based);
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
                         _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
                     _vulnerabilitiesByLine[lineNumber].Add(vuln);
                 }
             }
 
-            var snapshot = _buffer.CurrentSnapshot;
             var entireSpan = new SnapshotSpan(snapshot, 0, snapshot.Length);
             TagsChanged?.Invoke(this, new SnapshotSpanEventArgs(entireSpan));
         }

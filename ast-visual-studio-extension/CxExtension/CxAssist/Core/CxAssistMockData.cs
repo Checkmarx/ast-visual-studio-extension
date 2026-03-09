@@ -427,6 +427,706 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             };
         }
 
+            /// <summary>
+            /// Returns mock OSS-style vulnerabilities for pom.xml (mvn) to simulate gutter icons, underlines and problem window entries.
+            /// Dependencies and statuses mirror the sample scan output provided in the issue report.
+            /// </summary>
+            /// <param name="filePath">Optional file path; if null or empty, uses "pom.xml".</param>
+            public static List<Vulnerability> GetPomMockVulnerabilities(string filePath = null)
+            {
+                var path = string.IsNullOrEmpty(filePath) ? "pom.xml" : filePath;
+
+                return new List<Vulnerability>
+                {
+                    new Vulnerability
+                    {
+                        Id = "OSS-mockito",
+                        Title = "org.mockito:mockito-core (OK)",
+                        Description = "No known vulnerabilities.",
+                        Severity = SeverityLevel.Ok,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 65,
+                        EndLineNumber = 69,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.mockito:mockito-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn"
+                    },
+                    new Vulnerability
+                    {
+                        Id = "OSS-cx-integrations-common",
+                        Title = "com.checkmarx:cx-integrations-common (Unknown)",
+                        Description = "Unknown status.",
+                        Severity = SeverityLevel.Unknown,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 70,
+                        EndLineNumber = 75,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "com.checkmarx:cx-integrations-common",
+                        PackageVersion = "0.0.319",
+                        PackageManager = "mvn"
+                    },
+                    new Vulnerability
+                    {
+                        Id = "OSS-cx-interceptors-lib",
+                        Title = "com.checkmarx:cx-interceptors-lib (Unknown)",
+                        Description = "Unknown status.",
+                        Severity = SeverityLevel.Unknown,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 76,
+                        EndLineNumber = 81,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "com.checkmarx:cx-interceptors-lib",
+                        PackageVersion = "0.1.58",
+                        PackageManager = "mvn"
+                    },
+                    new Vulnerability
+                    {
+                        Id = "OSS-httpclient5",
+                        Title = "org.apache.httpcomponents.client5:httpclient5 (Unknown)",
+                        Description = "Unknown status.",
+                        Severity = SeverityLevel.Unknown,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 24,
+                        EndLineNumber = 28,
+                        ColumnNumber = 12,
+                        StartIndex = 12,
+                        EndIndex = 25,
+                        FilePath = path,
+                        PackageName = "org.apache.httpcomponents.client5:httpclient5",
+                        PackageVersion = "5.4.3",
+                        PackageManager = "mvn"
+                    },
+                    new Vulnerability
+                    {
+                        Id = "OSS-httpclient5-fluent",
+                        Title = "org.apache.httpcomponents.client5:httpclient5-fluent (Unknown)",
+                        Description = "Unknown status.",
+                        Severity = SeverityLevel.Unknown,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 29,
+                        EndLineNumber = 33,
+                        ColumnNumber = 12,
+                        StartIndex = 12,
+                        EndIndex = 25,
+                        FilePath = path,
+                        PackageName = "org.apache.httpcomponents.client5:httpclient5-fluent",
+                        PackageVersion = "5.4.3",
+                        PackageManager = "mvn"
+                    },
+                    new Vulnerability
+                    {
+                        Id = "OSS-lombok",
+                        Title = "org.projectlombok:lombok (OK)",
+                        Description = "No known vulnerabilities.",
+                        Severity = SeverityLevel.Ok,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 90,
+                        EndLineNumber = 93,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.projectlombok:lombok",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn"
+                    },
+                    // commons-compress: gutter and popup on first line (94), underline on all lines of block (94–98)
+                    new Vulnerability
+                    {
+                        Id = "CVE-2023-42503",
+                        Title = "org.apache.commons:commons-compress (CVE-2023-42503)",
+                        Description = "Improper Input Validation, Uncontrolled Resource Consumption in Apache Commons Compress TAR parsing.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 94,
+                        ColumnNumber = 8,
+                        FilePath = path,
+                        PackageName = "org.apache.commons:commons-compress",
+                        PackageVersion = "1.23.0",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2023-42503",
+                        RecommendedVersion = "1.23.1",
+                        // 0-based StartIndex/EndIndex per line to match test-data pom.xml lines 94–98
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 94, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 95, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 96, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 37 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 98, StartIndex = 8, EndIndex = 20 }    // "        </dependency>"
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-26308",
+                        Title = "org.apache.commons:commons-compress (CVE-2024-26308)",
+                        Description = "Allocation of Resources Without Limits or Throttling vulnerability in Apache Commons Compress.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 94,
+                        ColumnNumber = 12,
+                        FilePath = path,
+                        PackageName = "org.apache.commons:commons-compress",
+                        PackageVersion = "1.23.0",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-26308",
+                        RecommendedVersion = "1.23.1",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 94, StartIndex = 8, EndIndex = 20 },
+                            new VulnerabilityLocation { Line = 95, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 96, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 37 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 98, StartIndex = 8, EndIndex = 20 }
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-25710",
+                        Title = "org.apache.commons:commons-compress (CVE-2024-25710)",
+                        Description = "Loop with Unreachable Exit Condition ('Infinite Loop') vulnerability in Apache Commons Compress.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 94,
+                        ColumnNumber = 12,
+                        FilePath = path,
+                        PackageName = "org.apache.commons:commons-compress",
+                        PackageVersion = "1.23.0",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-25710",
+                        RecommendedVersion = "1.23.1",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 94, StartIndex = 8, EndIndex = 20 },
+                            new VulnerabilityLocation { Line = 95, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 96, StartIndex = 12, EndIndex = 54 },
+                            new VulnerabilityLocation { Line = 97, StartIndex = 12, EndIndex = 37 },
+                            new VulnerabilityLocation { Line = 98, StartIndex = 8, EndIndex = 20 }
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "OSS-snakeyaml",
+                        Title = "org.yaml:snakeyaml (OK)",
+                        Description = "No known vulnerabilities.",
+                        Severity = SeverityLevel.Ok,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 99,
+                        EndLineNumber = 102,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.yaml:snakeyaml",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn"
+                    },
+                    // tomcat-embed-core: gutter on first line (103), underline on all lines of block (103–107)
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-46701",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-46701)",
+                            Description = "Improper Handling of Case Sensitivity in Apache Tomcat's CGI servlet allowing security constraint bypass.",
+                            Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-46701",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2026-24734",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2026-24734)",
+                        Description = "Improper Input Validation vulnerability in Apache Tomcat Native/OCSP handling.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2026-24734",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-23672",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2024-23672)",
+                        Description = "Denial of Service via incomplete cleanup in Apache Tomcat WebSocket clients.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-23672",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-50379",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2024-50379)",
+                        Description = "TOCTOU Race Condition during JSP compilation permitting RCE on case-insensitive file systems.",
+                        Severity = SeverityLevel.Critical,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-50379",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-24549",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2024-24549)",
+                        Description = "HTTP/2 CONTINUATION Flood leading to denial of service in Apache Tomcat.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-24549",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2026-24733",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2026-24733)",
+                        Description = "Improper Input Validation vulnerability limiting HTTP/0.9 handling in Tomcat.",
+                        Severity = SeverityLevel.Unknown,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2026-24733",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-38286",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2024-38286)",
+                        Description = "Allocation of Resources Without Limits or Throttling via TLS handshake leading to OOM.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-38286",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-31651",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-31651)",
+                        Description = "Improper Neutralization of Escape/Meta Sequences vulnerability in Apache Tomcat.",
+                        Severity = SeverityLevel.Critical,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-31651",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-34750",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2024-34750)",
+                        Description = "Uncontrolled Resource Consumption when processing HTTP/2 streams in Apache Tomcat.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-34750",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-55752",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-55752)",
+                        Description = "Relative Path Traversal vulnerability in Apache Tomcat allowing possible bypass of protections.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-55752",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-52520",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-52520)",
+                        Description = "Integer Overflow in multipart upload handling could lead to DoS in Apache Tomcat.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-52520",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-61795",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-61795)",
+                        Description = "Improper Resource Shutdown or Release vulnerability in Apache Tomcat multipart handling.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-61795",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-66614",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-66614)",
+                        Description = "Improper Input Validation vulnerability in Apache Tomcat.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-66614",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2024-52316",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2024-52316)",
+                        Description = "Unchecked Error Condition vulnerability in Apache Tomcat's authentication flow.",
+                        Severity = SeverityLevel.Critical,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2024-52316",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-48988",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-48988)",
+                        Description = "Allocation of Resources Without Limits or Throttling vulnerability in Apache Tomcat.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-48988",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-55668",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-55668)",
+                        Description = "Session Fixation vulnerability via rewrite valve in Apache Tomcat.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-55668",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-31650",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-31650)",
+                        Description = "Improper Input Validation vulnerability was found in Apache Tomcat causing memory leak.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-31650",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-49125",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-49125)",
+                        Description = "Authentication Bypass Using an Alternate Path or Channel vulnerability in Apache Tomcat.",
+                        Severity = SeverityLevel.Medium,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-49125",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    new Vulnerability
+                    {
+                        Id = "CVE-2025-53506",
+                        Title = "org.apache.tomcat.embed:tomcat-embed-core (CVE-2025-53506)",
+                        Description = "Uncontrolled Resource Consumption vulnerability in Apache Tomcat related to HTTP/2 settings.",
+                        Severity = SeverityLevel.High,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 103,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.apache.tomcat.embed:tomcat-embed-core",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn",
+                        CveName = "CVE-2025-53506",
+                        Locations = new List<VulnerabilityLocation>
+                        {
+                            new VulnerabilityLocation { Line = 103, StartIndex = 8, EndIndex = 20 },   // "        <dependency>"
+                            new VulnerabilityLocation { Line = 104, StartIndex = 12, EndIndex = 54 },  // "org.apache.commons" in <groupId>
+                            new VulnerabilityLocation { Line = 105, StartIndex = 12, EndIndex = 54 },  // "1.23.0" in <version>
+                            new VulnerabilityLocation { Line = 106, StartIndex = 8, EndIndex = 20 },  // "1.23.0" in <version>
+                        }
+                    },
+                    // spring-boot-starter-web (OK)
+                    new Vulnerability
+                    {
+                        Id = "OSS-spring-boot-starter-web",
+                        Title = "org.springframework.boot:spring-boot-starter-web (OK)",
+                        Description = "No known vulnerabilities.",
+                        Severity = SeverityLevel.Ok,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 107,
+                        EndLineNumber = 120,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "org.springframework.boot:spring-boot-starter-web",
+                        PackageVersion = "latest",
+                        PackageManager = "mvn"
+                    },
+                    // jackson-dataformat-smile: gutter on first line (123), underline on all lines of block (123–126)
+                    new Vulnerability
+                    {
+                        Id = "OSS-jackson-dataformat-smile",
+                        Title = "com.fasterxml.jackson.dataformat:jackson-dataformat-smile (OK)",
+                        Description = "No known vulnerabilities.",
+                        Severity = SeverityLevel.Ok,
+                        Scanner = ScannerType.OSS,
+                        LineNumber = 121,
+                        EndLineNumber = 125,
+                        ColumnNumber = 8,
+                        StartIndex = 8,
+                        EndIndex = 21,
+                        FilePath = path,
+                        PackageName = "com.fasterxml.jackson.dataformat:jackson-dataformat-smile",
+                        PackageVersion = "2.18.2",
+                        PackageManager = "mvn"
+                    }
+                };
+            }
+
         /// <summary>
         /// Returns mock Secrets + ASCA vulnerabilities for secrets.py (gutter, underline, problem window, Error List, popup).
         /// Matches Secrets realtime scan shape: generic-api-key (line 5), github-pat (line 7), private-key (lines 17–19), plus ASCA findings.
@@ -510,6 +1210,225 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             });
 
             return list;
+        }
+
+        /// <summary>
+        /// Returns mock vulnerabilities for Gradle build files (build.gradle / build.gradle.kts).
+        /// </summary>
+        public static List<Vulnerability> GetBuildGradleMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "build.gradle" : filePath;
+            return new List<Vulnerability>
+            {
+                new Vulnerability
+                {
+                    Id = "GRADLE-httpclient5",
+                    Title = "org.apache.httpcomponents.client5:httpclient5 (Unknown)",
+                    Description = "Unknown status from mock scan.",
+                    Severity = SeverityLevel.Unknown,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 10,
+                    ColumnNumber = 4,
+                    FilePath = path,
+                    PackageName = "org.apache.httpcomponents.client5:httpclient5",
+                    PackageVersion = "5.4.3",
+                    PackageManager = "gradle"
+                },
+                new Vulnerability
+                {
+                    Id = "GRADLE-lombok",
+                    Title = "org.projectlombok:lombok (OK)",
+                    Description = "No known vulnerabilities.",
+                    Severity = SeverityLevel.Ok,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 14,
+                    ColumnNumber = 4,
+                    FilePath = path,
+                    PackageName = "org.projectlombok:lombok",
+                    PackageVersion = "latest",
+                    PackageManager = "gradle"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Returns mock vulnerabilities for Python requirements-style manifests.
+        /// </summary>
+        public static List<Vulnerability> GetRequirementsMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "requirements.txt" : filePath;
+            return new List<Vulnerability>
+            {
+                new Vulnerability
+                {
+                    Id = "PY-CVE-2024-99999",
+                    Title = "requests (CVE-2024-99999)",
+                    Description = "Mock vulnerability in requests package.",
+                    Severity = SeverityLevel.Medium,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 3,
+                    ColumnNumber = 1,
+                    StartIndex = 0,
+                    EndIndex = 10,
+                    FilePath = path,
+                    PackageName = "requests",
+                    PackageVersion = "2.22.0",
+                    PackageManager = "pip",
+                    CveName = "CVE-2024-99999",
+                    RecommendedVersion = "2.28.0"
+                },
+                new Vulnerability
+                {
+                    Id = "PY-ok-six",
+                    Title = "six (OK)",
+                    Description = "No known vulnerabilities.",
+                    Severity = SeverityLevel.Ok,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 5,
+                    ColumnNumber = 1,
+                    FilePath = path,
+                    PackageName = "six",
+                    PackageVersion = "1.16.0",
+                    PackageManager = "pip"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Returns mock vulnerabilities for NuGet packages.config files.
+        /// </summary>
+        public static List<Vulnerability> GetPackagesConfigMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "packages.config" : filePath;
+            return new List<Vulnerability>
+            {
+                new Vulnerability
+                {
+                    Id = "NUGET-Newtonsoft",
+                    Title = "Newtonsoft.Json (OK)",
+                    Description = "No known vulnerabilities.",
+                    Severity = SeverityLevel.Ok,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 4,
+                    ColumnNumber = 4,
+                    FilePath = path,
+                    PackageName = "Newtonsoft.Json",
+                    PackageVersion = "12.0.3",
+                    PackageManager = "nuget"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Returns mock OSS vulnerabilities for Directory.Packages.props (JetBrains MANIFEST_FILE_PATTERNS).
+        /// </summary>
+        public static List<Vulnerability> GetDirectoryPackagesPropsMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "Directory.Packages.props" : filePath;
+            return new List<Vulnerability>
+            {
+                new Vulnerability
+                {
+                    Id = "DOTNET-Newtonsoft",
+                    Title = "Newtonsoft.Json (OK)",
+                    Description = "No known vulnerabilities.",
+                    Severity = SeverityLevel.Ok,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 1,
+                    ColumnNumber = 1,
+                    FilePath = path,
+                    PackageName = "Newtonsoft.Json",
+                    PackageVersion = "13.0.3",
+                    PackageManager = "nuget"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Returns mock OSS vulnerabilities for go.mod (JetBrains MANIFEST_FILE_PATTERNS).
+        /// </summary>
+        public static List<Vulnerability> GetGoModMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "go.mod" : filePath;
+            return new List<Vulnerability>
+            {
+                new Vulnerability
+                {
+                    Id = "GO-golang.org-x-crypto",
+                    Title = "golang.org/x/crypto (OK)",
+                    Description = "No known vulnerabilities.",
+                    Severity = SeverityLevel.Ok,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 1,
+                    ColumnNumber = 1,
+                    FilePath = path,
+                    PackageName = "golang.org/x/crypto",
+                    PackageVersion = "v0.1.0",
+                    PackageManager = "go"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Returns mock OSS vulnerabilities for .csproj (JetBrains MANIFEST_FILE_PATTERNS).
+        /// </summary>
+        public static List<Vulnerability> GetCsprojMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "project.csproj" : filePath;
+            return new List<Vulnerability>
+            {
+                new Vulnerability
+                {
+                    Id = "DOTNET-MSTest",
+                    Title = "MSTest.TestFramework (OK)",
+                    Description = "No known vulnerabilities.",
+                    Severity = SeverityLevel.Ok,
+                    Scanner = ScannerType.OSS,
+                    LineNumber = 1,
+                    ColumnNumber = 1,
+                    FilePath = path,
+                    PackageName = "MSTest.TestFramework",
+                    PackageVersion = "3.0.0",
+                    PackageManager = "nuget"
+                }
+            };
+        }
+
+        /// <summary>
+        /// Returns mock Container vulnerabilities for docker-compose files (JetBrains CONTAINERS_FILE_PATTERNS).
+        /// </summary>
+        public static List<Vulnerability> GetDockerComposeMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "docker-compose.yml" : filePath;
+            return new List<Vulnerability>
+            {
+                new Vulnerability
+                {
+                    Id = "container-compose-unknown",
+                    Title = "Compose file (Unknown)",
+                    Description = "Container compose file – scan status unknown.",
+                    Severity = SeverityLevel.Unknown,
+                    Scanner = ScannerType.Containers,
+                    LineNumber = 1,
+                    ColumnNumber = 1,
+                    FilePath = path
+                },
+                new Vulnerability
+                {
+                    Id = "a1b2c3d4-compose-no-limits",
+                    Title = "Memory Not Limited",
+                    Description = "Memory limits should be defined for each service.",
+                    Severity = SeverityLevel.Medium,
+                    Scanner = ScannerType.Containers,
+                    LineNumber = 4,
+                    ColumnNumber = 5,
+                    StartIndex = 2,
+                    EndIndex = 12,
+                    FilePath = path,
+                    ExpectedValue = "'deploy.resources.limits.memory' should be defined",
+                    ActualValue = "'deploy' is not defined"
+                }
+            };
         }
 
         /// <summary>

@@ -14,8 +14,10 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
     /// <summary>
-    /// When package.json, secrets.py, IaC (.yaml/.yml), or Dockerfile is opened, loads the corresponding
+    /// When a file matching scanner manifest/container/IAC/Secrets patterns is opened, loads the corresponding
     /// mock data and updates gutter, underline, problem window, Error List, and popup.
+    /// Logic aligned with JetBrains: MANIFEST_FILE_PATTERNS (OSS), CONTAINERS_FILE_PATTERNS + Helm (Containers),
+    /// IAC_SUPPORTED_PATTERNS + IAC_FILE_EXTENSIONS (IAC), and Secrets exclusions.
     /// </summary>
     [Export(typeof(IWpfTextViewCreationListener))]
     [ContentType("code")]
@@ -28,23 +30,55 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             return !string.IsNullOrEmpty(filePath) && filePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Returns mock vulnerabilities for the file based on JetBrains-aligned scanner logic:
+        /// Base: skip node_modules. OSS: manifest files only. Containers: dockerfile*, docker-compose* + Helm.
+        /// IAC: dockerfile, *.tfvars, or extension tf/yaml/yml/json/proto. Secrets: non-manifest (e.g. secrets.py).
+        /// </summary>
         private static List<Vulnerability> GetMockVulnerabilitiesForFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath)) return null;
 
+            // Base check (JetBrains BaseScannerService.shouldScanFile)
+            if (!CxAssistScannerConstants.PassesBaseScanCheck(filePath))
+                return null;
+
             string fileName = Path.GetFileName(filePath);
             if (string.IsNullOrEmpty(fileName)) return null;
 
-            if (fileName.Equals("package.json", StringComparison.OrdinalIgnoreCase))
-                return CxAssistMockData.GetPackageJsonMockVulnerabilities(filePath);
+            var pathNormalized = CxAssistScannerConstants.NormalizePathForMatching(filePath);
+            var fileNameLower = fileName.ToLowerInvariant();
 
-            if (fileName.Equals("secrets.py", StringComparison.OrdinalIgnoreCase))
-                return CxAssistMockData.GetSecretsPyMockVulnerabilities(filePath);
+            // --- OSS: only manifest files (JetBrains OssScannerService.isManifestFilePatternMatching) ---
+            if (CxAssistScannerConstants.IsManifestFile(filePath))
+            {
+                if (fileName.Equals("package.json", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetPackageJsonMockVulnerabilities(filePath);
+                if (fileName.EndsWith("pom.xml", StringComparison.OrdinalIgnoreCase) || fileNameLower.EndsWith(".pom", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetPomMockVulnerabilities(filePath);
+                if (fileName.Equals("build.gradle", StringComparison.OrdinalIgnoreCase) || fileName.Equals("build.gradle.kts", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetBuildGradleMockVulnerabilities(filePath);
+                if (fileName.Equals("requirements.txt", StringComparison.OrdinalIgnoreCase)
+                    || fileName.Equals("Pipfile", StringComparison.OrdinalIgnoreCase)
+                    || fileName.Equals("pyproject.toml", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetRequirementsMockVulnerabilities(filePath);
+                if (fileName.Equals("packages.config", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetPackagesConfigMockVulnerabilities(filePath);
+                if (fileName.Equals("package-lock.json", StringComparison.OrdinalIgnoreCase) || fileName.Equals("yarn.lock", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetPackageJsonMockVulnerabilities(filePath);
+                if (fileName.Equals("Directory.Packages.props", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetDirectoryPackagesPropsMockVulnerabilities(filePath);
+                if (fileName.Equals("go.mod", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetGoModMockVulnerabilities(filePath);
+                if (fileNameLower.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetCsprojMockVulnerabilities(filePath);
+                return null;
+            }
 
-            if (fileName.Equals("Dockerfile", StringComparison.OrdinalIgnoreCase))
-                return CxAssistMockData.GetContainerMockVulnerabilities(filePath);
-
-            if (fileName.Equals("values.yaml", StringComparison.OrdinalIgnoreCase))
+            // --- Containers: dockerfile*, docker-compose* (JetBrains ContainerScannerService) or Helm / values.yaml ---
+            if (CxAssistScannerConstants.IsHelmFile(filePath) ||
+                fileName.Equals("values.yaml", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("values.yml", StringComparison.OrdinalIgnoreCase))
             {
                 var iac = CxAssistMockData.GetIacMockVulnerabilities(filePath);
                 var containerImage = CxAssistMockData.GetContainerImageMockVulnerabilities(filePath);
@@ -53,9 +87,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                 merged.AddRange(containerImage);
                 return merged;
             }
+            if (CxAssistScannerConstants.IsContainersFile(filePath))
+            {
+                if (CxAssistScannerConstants.IsDockerFile(filePath))
+                    return CxAssistMockData.GetContainerMockVulnerabilities(filePath);
+                if (CxAssistScannerConstants.IsDockerComposeFile(filePath))
+                    return CxAssistMockData.GetDockerComposeMockVulnerabilities(filePath);
+                return CxAssistMockData.GetContainerMockVulnerabilities(filePath);
+            }
 
-            if (filePath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".yml", StringComparison.OrdinalIgnoreCase))
+            // --- IAC: tf, yaml, yml, json, proto, dockerfile, *.auto.tfvars, *.terraform.tfvars (JetBrains IacScannerService) ---
+            if (CxAssistScannerConstants.IsIacFile(filePath))
                 return CxAssistMockData.GetIacMockVulnerabilities(filePath);
+
+            // --- Secrets: scan non-manifest files; we only have mock for a specific secrets file (JetBrains: exclude manifest + .vscode) ---
+            if (!CxAssistScannerConstants.IsExcludedForSecrets(filePath) && fileName.Equals("secrets.py", StringComparison.OrdinalIgnoreCase))
+                return CxAssistMockData.GetSecretsPyMockVulnerabilities(filePath);
 
             return null;
         }
