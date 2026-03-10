@@ -95,5 +95,57 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
 
             Assert.Null(ex);
         }
+
+        [Fact]
+        public void TryRun_WithNullContextMessage_DoesNotThrow()
+        {
+            var ex = Record.Exception(() =>
+                CxAssistErrorHandler.TryRun(() => { }, null));
+            Assert.Null(ex);
+        }
+
+        [Fact]
+        public void TryGet_WithNullContextMessage_ReturnsValueWhenFunctionSucceeds()
+        {
+            int value = CxAssistErrorHandler.TryGet(() => 100, null, -1);
+            Assert.Equal(100, value);
+        }
+
+        [Fact]
+        public void TryGet_WithNullContextMessage_ReturnsDefaultWhenFunctionThrows()
+        {
+            string value = CxAssistErrorHandler.TryGet<string>(() => throw new Exception("Test"), null, "default");
+            Assert.Equal("default", value);
+        }
+
+        [Fact]
+        public void TryGet_ReturnsDefaultBool_WhenFunctionThrows()
+        {
+            bool value = CxAssistErrorHandler.TryGet(() => throw new Exception(), "Ctx", false);
+            Assert.False(value);
+        }
+
+        [Fact]
+        public void TryGet_ReturnsNullReferenceType_WhenDefaultIsNull()
+        {
+            string value = CxAssistErrorHandler.TryGet<string>(() => throw new Exception(), "Ctx", null);
+            Assert.Null(value);
+        }
+
+        [Fact]
+        public void TryGet_ReturnsEmptyList_WhenFunctionThrowsAndDefaultEmptyList()
+        {
+            var defaultValue = new List<int>();
+            var result = CxAssistErrorHandler.TryGet<List<int>>(() => throw new Exception(), "Ctx", defaultValue);
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void TryRun_ActionThrowsAggregateException_ReturnsFalse()
+        {
+            bool result = CxAssistErrorHandler.TryRun(() => throw new System.AggregateException("Agg"), "Ctx");
+            Assert.False(result);
+        }
     }
 }
