@@ -148,10 +148,14 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         }
 
         [Fact]
-        public void GetSecretsPyMockVulnerabilities_AllSecretsScanner()
+        public void GetSecretsPyMockVulnerabilities_ContainsSecretsAndAsca()
         {
             var list = CxAssistMockData.GetSecretsPyMockVulnerabilities();
-            Assert.All(list, v => Assert.Equal(ScannerType.Secrets, v.Scanner));
+            var secrets = list.Where(v => v.Scanner == ScannerType.Secrets).ToList();
+            var asca = list.Where(v => v.Scanner == ScannerType.ASCA).ToList();
+            Assert.True(secrets.Count >= 1, "Expected at least one Secrets finding.");
+            Assert.True(asca.Count >= 1, "Expected at least one ASCA finding.");
+            Assert.Equal(list.Count, secrets.Count + asca.Count);
         }
 
         #endregion
