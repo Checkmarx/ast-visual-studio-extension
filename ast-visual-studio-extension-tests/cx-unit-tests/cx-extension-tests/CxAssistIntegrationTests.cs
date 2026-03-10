@@ -207,10 +207,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             var all = CxAssistDisplayCoordinator.GetAllIssuesByFile();
             Assert.Equal(2, all.Count);
 
-            var current = CxAssistDisplayCoordinator.GetCurrentFindings();
-            var fileNodes = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(current);
+            // Build tree from GetAllIssuesByFile snapshot (avoids relying on GetCurrentFindings() when tests run in parallel)
+            var flattened = all.Values.SelectMany(list => list ?? new List<Vulnerability>()).ToList();
+            var fileNodes = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(flattened);
 
-            Assert.True(fileNodes.Count >= 1);
+            Assert.True(fileNodes.Count >= 1, "Tree should have at least one file node from package.json and/or pom.xml (problem-level findings).");
             var fileNames = fileNodes.Select(f => f.FileName).ToList();
             Assert.Contains("package.json", fileNames);
             Assert.Contains("pom.xml", fileNames);
