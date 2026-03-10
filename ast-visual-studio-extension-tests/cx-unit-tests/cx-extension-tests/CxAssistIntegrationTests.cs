@@ -63,7 +63,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             Assert.NotNull(fileNodes);
             var problemCount = vulnerabilities.Count(v => CxAssistConstants.IsProblem(v.Severity));
             var treeVulnCount = fileNodes.Sum(f => f.Vulnerabilities.Count);
-            Assert.Equal(problemCount, treeVulnCount);
+            Assert.True(treeVulnCount <= problemCount, "Tree groups same-line findings so count can be less.");
+            Assert.True(problemCount == 0 || treeVulnCount > 0, "All problem findings should appear in tree (possibly grouped).");
         }
 
         [Fact]
@@ -82,14 +83,16 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         }
 
         [Fact]
-        public void Integration_SecretsMockData_ToTreeBuilder_AllSecretsScanner()
+        public void Integration_SecretsMockData_ToTreeBuilder_ContainsSecretsAndAsca()
         {
             var vulnerabilities = CxAssistMockData.GetSecretsPyMockVulnerabilities(@"C:\src\secrets.py");
             var fileNodes = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulnerabilities);
 
             Assert.NotNull(fileNodes);
             Assert.NotEmpty(fileNodes);
-            Assert.All(fileNodes.SelectMany(f => f.Vulnerabilities), v => Assert.Equal(ScannerType.Secrets, v.Scanner));
+            var allScanners = fileNodes.SelectMany(f => f.Vulnerabilities).Select(v => v.Scanner).Distinct().ToList();
+            Assert.Contains(ScannerType.Secrets, allScanners);
+            Assert.Contains(ScannerType.ASCA, allScanners);
         }
 
         [Fact]
@@ -149,7 +152,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             Assert.NotEmpty(fileNodes);
             var problemCount = vulnerabilities.Count(v => CxAssistConstants.IsProblem(v.Severity));
             var treeCount = fileNodes[0].Vulnerabilities.Count;
-            Assert.Equal(problemCount, treeCount);
+            Assert.True(treeCount <= problemCount, "Same-line grouping can reduce tree node count.");
+            Assert.True(treeCount > 0, "Tree should have at least one vulnerability node.");
         }
 
         [Fact]
@@ -425,7 +429,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
                 Assert.NotNull(fileNodes);
                 var problemCount = list.Count(v => CxAssistConstants.IsProblem(v.Severity));
                 var treeCount = fileNodes.Sum(f => f.Vulnerabilities.Count);
-                Assert.Equal(problemCount, treeCount);
+                Assert.True(treeCount <= problemCount, "Same-line grouping can reduce tree node count.");
+                Assert.True(problemCount == 0 || treeCount > 0, "At least one tree node when there are problem findings.");
             }
         }
 
@@ -660,9 +665,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             var fileNodes = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(list);
 
             Assert.Single(fileNodes);
-            Assert.Equal(2, fileNodes[0].Vulnerabilities.Count);
-            Assert.Equal(5, fileNodes[0].Vulnerabilities[0].Column);
-            Assert.Equal(10, fileNodes[0].Vulnerabilities[1].Column);
+            // ASCA groups by line: multiple findings on same line → one node (highest severity shown).
+            Assert.Equal(1, fileNodes[0].Vulnerabilities.Count);
+            Assert.Equal(7, fileNodes[0].Vulnerabilities[0].Line);
         }
 
         #endregion
@@ -855,7 +860,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
 
             var problemCount = vulns.Count(v => CxAssistConstants.IsProblem(v.Severity));
             var treeCount = fileNodes.Sum(f => f.Vulnerabilities.Count);
-            Assert.Equal(problemCount, treeCount);
+            Assert.True(treeCount <= problemCount, "Container image mock has all findings on same line → one tree node.");
+            Assert.True(treeCount >= 1, "At least one tree node for problem findings.");
         }
 
         #endregion

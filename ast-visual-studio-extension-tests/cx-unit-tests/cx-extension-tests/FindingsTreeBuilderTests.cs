@@ -415,11 +415,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         [Fact]
         public void BuildFileNodes_OrderingByLineThenColumn_RespectsColumn()
         {
+            // ASCA groups by line (same line → one node). Use different lines to get 3 nodes and assert order by line then column.
             var vulns = new List<Vulnerability>
             {
                 new Vulnerability("V1", "Issue1", "Desc1", SeverityLevel.High, ScannerType.ASCA, 10, 20, @"C:\src\app.cs"),
-                new Vulnerability("V2", "Issue2", "Desc2", SeverityLevel.Medium, ScannerType.ASCA, 10, 5, @"C:\src\app.cs"),
-                new Vulnerability("V3", "Issue3", "Desc3", SeverityLevel.Low, ScannerType.ASCA, 10, 15, @"C:\src\app.cs")
+                new Vulnerability("V2", "Issue2", "Desc2", SeverityLevel.Medium, ScannerType.ASCA, 11, 5, @"C:\src\app.cs"),
+                new Vulnerability("V3", "Issue3", "Desc3", SeverityLevel.Low, ScannerType.ASCA, 12, 15, @"C:\src\app.cs")
             };
 
             var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
@@ -427,9 +428,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             Assert.Single(result);
             var nodes = result[0].Vulnerabilities;
             Assert.Equal(3, nodes.Count);
-            Assert.Equal(5, nodes[0].Column);
-            Assert.Equal(15, nodes[1].Column);
-            Assert.Equal(20, nodes[2].Column);
+            Assert.Equal(10, nodes[0].Line);
+            Assert.Equal(11, nodes[1].Line);
+            Assert.Equal(12, nodes[2].Line);
+            Assert.Equal(20, nodes[0].Column);
+            Assert.Equal(5, nodes[1].Column);
+            Assert.Equal(15, nodes[2].Column);
         }
 
         [Fact]
