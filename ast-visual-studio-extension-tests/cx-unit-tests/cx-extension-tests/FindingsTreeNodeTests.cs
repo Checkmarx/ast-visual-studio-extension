@@ -389,7 +389,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         public void PrimaryDisplayText_IacEmptyDescription_StillFormats()
         {
             var node = new VulnerabilityNode { Scanner = ScannerType.IaC, Description = "" };
-            Assert.Equal(" ", node.PrimaryDisplayText);
+            Assert.Equal("", node.PrimaryDisplayText);
         }
 
         [Fact]
