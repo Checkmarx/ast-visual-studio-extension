@@ -75,9 +75,6 @@ namespace ast_visual_studio_extension.CxExtension
 
                 // Test CxAssist Hover Popup is registered in ast_visual_studio_extensionPackage so it appears under Tools.
 
-                // Test Error List Customization Command (POC for AST-133228)
-                await TestErrorListCustomizationCommand.InitializeAsync(this);
-
                 // Show Findings Window Command (POC for AST-133228 - Custom Tool Window)
                 // Command still works programmatically but not visible in menu
                 await ShowFindingsWindowCommand.InitializeAsync(this);

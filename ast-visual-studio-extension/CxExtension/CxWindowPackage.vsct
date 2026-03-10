@@ -120,11 +120,6 @@
 			<IDSymbol name="cxlogo" value="1" />
 		</GuidSymbol>
 
-		<!-- TestErrorListCustomizationCommand - POC for AST-133228, tool command only -->
-		<GuidSymbol name="guidTestErrorListCustomizationCommandSet" value="{a6e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e3e}">
-			<IDSymbol name="TestErrorListCustomizationCommandId" value="0x0109" />
-		</GuidSymbol>
-
 		<!-- ShowFindingsWindowCommand - POC for AST-133228, tool command only -->
 		<GuidSymbol name="guidShowFindingsWindowCommandSet" value="{a6e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e3f}">
 			<IDSymbol name="ShowFindingsWindowCommandId" value="0x0110" />
