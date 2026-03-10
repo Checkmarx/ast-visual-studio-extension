@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Xunit;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 
