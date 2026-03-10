@@ -559,9 +559,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     return new Border
                     {
-                        Height = 1,
-                        Margin = new Thickness(0, 6, 0, 6),
-                        Background = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55))
+                        Height = 0,
+                        Margin = new Thickness(0, 10, 0, 10),
+                        Background = Brushes.Transparent
                     };
                 });
             }
