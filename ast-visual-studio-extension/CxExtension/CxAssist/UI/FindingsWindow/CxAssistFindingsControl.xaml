@@ -6,6 +6,8 @@
              xmlns:local="clr-namespace:ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow"
              xmlns:vsui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.15.0"
+             xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
+             xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
              Background="Transparent">
@@ -108,39 +110,37 @@
             </Setter>
         </Style>
 
-        <!-- Filter Button Style: same margin as Scan Results SeverityFilterStyle (2,5,2,5) -->
+        <!-- Filter Button Style: uniform 18x18 icons, no border, square shape, dark grey background on hover/active -->
         <Style x:Key="FilterButtonStyle" TargetType="ToggleButton">
             <Setter Property="Margin" Value="2,5,2,5"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="3"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="3">
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Hover: grey in dark theme (no blue) for all filters -->
+                            <!-- Hover: light grey background -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background"
                                         Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
-                                <Setter TargetName="Border" Property="BorderBrush"
-                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                             </Trigger>
-                            <!-- Checked (selected): same border as Scan Results -->
+                            <!-- Checked (activated): same light grey as hover -->
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.CommandBarSelectedBrushKey}}"/>
-                                <Setter TargetName="Border" Property="BorderBrush"
-                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
+                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
                             </Trigger>
-                            <!-- Checked + Hover: grey hover when filter is selected -->
+                            <!-- Checked + Hover: same light grey -->
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsChecked" Value="True"/>
@@ -148,8 +148,6 @@
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="Border" Property="Background"
                                         Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
-                                <Setter TargetName="Border" Property="BorderBrush"
-                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -221,12 +219,8 @@
                      BorderBrush="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}"
                     BorderThickness="0,0,0,1"
                     Padding="4,0,4,0"/>
-            <!-- Severity filter icons: same size as Scan Results (Height 35, no extra margin) -->
+            <!-- Severity filter icons: uniform 18x18 icons, consistent font, vertical separators -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Height="35">
-                
-                <!-- Pipe separator between severity and Expand All -->
-                <TextBlock Text="|" VerticalAlignment="Center" Margin="6,0" FontSize="18"
-                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.7"/>
 
                 <!-- Malicious Filter Button -->
                 <ToggleButton x:Name="MaliciousFilterButton"
@@ -235,7 +229,7 @@
                              Click="SeverityFilter_Click"
                              Tag="Malicious"
                              IsChecked="True">
-                    <Image x:Name="MaliciousFilterIcon" Width="22" Height="22" Stretch="Uniform"
+                    <Image x:Name="MaliciousFilterIcon" Width="18" Height="18" Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </ToggleButton>
 
@@ -246,7 +240,7 @@
                              Click="SeverityFilter_Click"
                              Tag="Critical"
                              IsChecked="True">
-                    <Image x:Name="CriticalFilterIcon" Width="22" Height="22" Stretch="Uniform"
+                    <Image x:Name="CriticalFilterIcon" Width="18" Height="18" Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </ToggleButton>
 
@@ -257,7 +251,7 @@
                              Click="SeverityFilter_Click"
                              Tag="High"
                              IsChecked="True">
-                    <Image x:Name="HighFilterIcon" Width="22" Height="22" Stretch="Uniform"
+                    <Image x:Name="HighFilterIcon" Width="18" Height="18" Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </ToggleButton>
 
@@ -268,7 +262,7 @@
                              Click="SeverityFilter_Click"
                              Tag="Medium"
                              IsChecked="True">
-                    <Image x:Name="MediumFilterIcon" Width="22" Height="22" Stretch="Uniform"
+                    <Image x:Name="MediumFilterIcon" Width="18" Height="18" Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </ToggleButton>
 
@@ -279,41 +273,41 @@
                              Click="SeverityFilter_Click"
                              Tag="Low"
                              IsChecked="True">
-                    <Image x:Name="LowFilterIcon" Width="22" Height="22" Stretch="Uniform"
+                    <Image x:Name="LowFilterIcon" Width="18" Height="18" Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </ToggleButton>
 
                 <!-- Pipe separator between severity and Expand All -->
-                <TextBlock Text="|" VerticalAlignment="Center" Margin="6,0" FontSize="18"
-                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.7"/>
+                <Border Width="1" Height="20" VerticalAlignment="Center" Margin="6,0"
+                        Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.6"/>
 
                 <!-- Expand All: same icon as reference plugin (AllIcons.Actions.Expandall) -->
                 <Button x:Name="ExpandAllButton"
                         Click="ExpandAll_Click"
                         ToolTip="Expand All"
                         Style="{StaticResource ToolbarActionButtonStyle}"
-                        Width="28" Height="28" Margin="2,0"
+                        Width="24" Height="24" Margin="2,0"
                         Background="Transparent" BorderThickness="0"
-                        Padding="0">
-                    <Image x:Name="ExpandAllIcon" Width="28" Height="28"
+                        Padding="3">
+                    <Image x:Name="ExpandAllIcon" Width="18" Height="18"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
-                <!-- Collapse All: same icon as reference plugin (AllIcons.Actions.Collapseall) -->
+                <!-- Collapse All -->
                 <Button x:Name="CollapseAllButton"
                         Click="CollapseAll_Click"
                         ToolTip="Collapse All"
                         Style="{StaticResource ToolbarActionButtonStyle}"
-                        Width="28" Height="28" Margin="2,0"
+                        Width="24" Height="24" Margin="2,0"
                         Background="Transparent" BorderThickness="0"
-                        Padding="0">
-                    <Image x:Name="CollapseAllIcon" Width="28" Height="28"
+                        Padding="3">
+                    <Image x:Name="CollapseAllIcon" Width="18" Height="18"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
 
                 <!-- Pipe separator between Collapse All and Settings -->
-                <TextBlock Text="|" VerticalAlignment="Center" Margin="6,0" FontSize="18"
-                           Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.7"/>
+                <Border Width="1" Height="20" VerticalAlignment="Center" Margin="6,0"
+                        Background="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.6"/>
 
                 <!-- Settings Button -->
                 <Button x:Name="SettingsButton"
@@ -321,9 +315,9 @@
                         ToolTip="Open Checkmarx Settings"
                         Style="{StaticResource ToolbarActionButtonStyle}"
                         Width="24" Height="24" Margin="2,0"
-                        Background="Transparent" BorderThickness="0">
-                    <TextBlock Text="⚙" FontSize="14"
-                               Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
+                        Background="Transparent" BorderThickness="0"
+                        Padding="3">
+                    <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Settings}"/>
                 </Button>
             </StackPanel>
         </Grid>
