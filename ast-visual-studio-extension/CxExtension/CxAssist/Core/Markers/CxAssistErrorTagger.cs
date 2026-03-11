@@ -56,15 +56,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         {
                             foreach (var vulnerability in vulnerabilities)
                             {
-                                if (!ShouldShowUnderline(vulnerability.Severity))
-                                    continue;
+                                try
+                                {
+                                    if (!ShouldShowUnderline(vulnerability.Severity))
+                                        continue;
 
-                                var line = snapshot.GetLineFromLineNumber(lineNumber);
-                                SnapshotSpan underlineSpan = GetUnderlineSpan(snapshot, line, vulnerability);
+                                    var line = snapshot.GetLineFromLineNumber(lineNumber);
+                                    SnapshotSpan underlineSpan = GetUnderlineSpan(snapshot, line, vulnerability);
 
-                                var tooltipText = BuildTooltipText(vulnerability);
-                                IErrorTag tag = new ErrorTag("Error", tooltipText);
-                                result.Add(new TagSpan<IErrorTag>(underlineSpan, tag));
+                                    var tooltipText = BuildTooltipText(vulnerability);
+                                    IErrorTag tag = new ErrorTag("Error", tooltipText);
+                                    result.Add(new TagSpan<IErrorTag>(underlineSpan, tag));
+                                }
+                                catch (Exception innerEx)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] Exception highlighting line {lineNumber}: {innerEx.Message}");
+                                }
                             }
                         }
                     }
@@ -80,7 +87,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         /// <summary>
         /// Gets the snapshot span for the underline. When Locations is set, use the range for this line from the matching location.
-        /// Otherwise: on the first line use StartIndex/EndIndex when set; on continuation lines use full line (JetBrains: one range highlighter per location line).
+        /// Otherwise: on the first line use StartIndex/EndIndex when set; on continuation lines use full line.
+        /// Full-line fallback trims leading/trailing whitespace so the squiggle covers only code characters
+        /// (aligned with JetBrains DevAssistUtils.getTextRangeForLine).
         /// </summary>
         private static SnapshotSpan GetUnderlineSpan(ITextSnapshot snapshot, ITextSnapshotLine line, Vulnerability v)
         {
@@ -103,9 +112,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                             return new SnapshotSpan(snapshot, startPos, length);
                         }
                     }
-                    return new SnapshotSpan(snapshot, line.Start, line.Length);
+                    return GetTrimmedLineSpan(snapshot, line);
                 }
-                return new SnapshotSpan(snapshot, line.Start, line.Length);
+                return GetTrimmedLineSpan(snapshot, line);
             }
 
             // Fallback: single LineNumber/EndLineNumber with one StartIndex/EndIndex on first line.
@@ -121,7 +130,30 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                     return new SnapshotSpan(snapshot, startPos, length);
                 }
             }
-            return new SnapshotSpan(snapshot, line.Start, line.Length);
+            return GetTrimmedLineSpan(snapshot, line);
+        }
+
+        /// <summary>
+        /// Returns a SnapshotSpan covering the line text with leading and trailing whitespace trimmed.
+        /// Falls back to the full line if the line is all whitespace.
+        /// </summary>
+        private static SnapshotSpan GetTrimmedLineSpan(ITextSnapshot snapshot, ITextSnapshotLine line)
+        {
+            int lineStart = line.Start.Position;
+            int lineEnd = line.End.Position;
+
+            int trimmedStart = lineStart;
+            while (trimmedStart < lineEnd && char.IsWhiteSpace(snapshot[trimmedStart]))
+                trimmedStart++;
+
+            int trimmedEnd = lineEnd;
+            while (trimmedEnd > trimmedStart && char.IsWhiteSpace(snapshot[trimmedEnd - 1]))
+                trimmedEnd--;
+
+            if (trimmedStart >= trimmedEnd)
+                return new SnapshotSpan(snapshot, lineStart, line.Length);
+
+            return new SnapshotSpan(snapshot, trimmedStart, trimmedEnd - trimmedStart);
         }
 
         /// <summary>

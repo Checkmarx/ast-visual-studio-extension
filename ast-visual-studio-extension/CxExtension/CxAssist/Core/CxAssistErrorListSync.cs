@@ -127,6 +127,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     _errorListProvider.Tasks.Add(task);
                 }
             }
+
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.ERROR_LIST_SYNCED, _errorListProvider.Tasks.Count, issuesByFile.Count));
         }
 
         /// <summary>
@@ -267,7 +269,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             if (string.IsNullOrEmpty(v?.FilePath)) return;
 
             var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
-            if (dte == null) return;
+            if (dte == null)
+                return;
 
             try
             {

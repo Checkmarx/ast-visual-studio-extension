@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
@@ -10,6 +11,78 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistConstants
     {
+        #region Scanner Enable/Disable (aligned with JetBrains GlobalScannerController)
+
+        private static readonly HashSet<ScannerType> _disabledScanners = new HashSet<ScannerType>();
+        private static readonly object _scannerLock = new object();
+
+        /// <summary>
+        /// Whether the given scanner type is enabled (aligned with JetBrains GlobalScannerController.isScannerGloballyEnabled).
+        /// All scanners are enabled by default.
+        /// </summary>
+        public static bool IsScannerEnabled(ScannerType scanner)
+        {
+            lock (_scannerLock)
+            {
+                return !_disabledScanners.Contains(scanner);
+            }
+        }
+
+        /// <summary>Enables or disables a scanner globally. Disabled scanner findings are excluded from decoration.</summary>
+        public static void SetScannerEnabled(ScannerType scanner, bool enabled)
+        {
+            lock (_scannerLock)
+            {
+                if (enabled)
+                    _disabledScanners.Remove(scanner);
+                else
+                    _disabledScanners.Add(scanner);
+            }
+            CxAssistOutputPane.WriteToOutputPane(string.Format(SCANNER_CONFIG_CHANGED, scanner, enabled ? "enabled" : "disabled"));
+        }
+
+        /// <summary>Whether any scanner is currently enabled.</summary>
+        public static bool IsAnyScannerEnabled()
+        {
+            lock (_scannerLock)
+            {
+                return _disabledScanners.Count < Enum.GetValues(typeof(ScannerType)).Length;
+            }
+        }
+
+        #endregion
+
+        #region AI Agent File Skip (aligned with JetBrains DevAssistInspection.isAgentEvent)
+
+        private static readonly string[] AiAgentFileNames = { "Dummy.txt", "AIAssistantInput" };
+        private static readonly string[] AiAgentFilePrefixes = { "/AIAssistantInput" };
+
+        /// <summary>
+        /// Whether the file path belongs to a Copilot/AI assistant temporary file that should be skipped.
+        /// JetBrains skips Dummy.txt and AIAssistantInput-* files generated during remediation or chat prompts.
+        /// </summary>
+        public static bool IsAIAgentFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return false;
+            string fileName = System.IO.Path.GetFileName(filePath);
+            if (string.IsNullOrEmpty(fileName)) return false;
+
+            foreach (var agentName in AiAgentFileNames)
+            {
+                if (fileName.Equals(agentName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            foreach (var prefix in AiAgentFilePrefixes)
+            {
+                string prefixName = prefix.TrimStart('/');
+                if (fileName.StartsWith(prefixName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        #endregion
+
         /// <summary>Vulnerability.LineNumber is 1-based in the model. Convert to 0-based for editor/taggers (ITextSnapshot).</summary>
         public static int To0BasedLineForEditor(ScannerType scanner, int lineNumber)
         {
@@ -102,6 +175,30 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>Log category for debug/trace output (e.g. Debug.WriteLine).</summary>
         public const string LogCategory = "CxAssist";
+
+        #region Output Pane Messages (main lifecycle messages written to VS Output Window)
+
+        public const string UI_DECORATED_SUCCESSFULLY = "UI decorated successfully on file open for file: {0} ({1} findings)";
+        public const string NO_SCANNER_ENABLED_SKIPPING = "No scanner is enabled, skipping restoring gutter icons for file: {0}";
+        public const string AI_AGENT_FILE_SKIPPING = "Received copilot/AI agent event for file: {0}. Skipping file.";
+        public const string SCANNER_CONFIG_CHANGED = "Scanner config changed: {0} is now {1}";
+        public const string DECORATING_UI_FOR_FILE = "Decorating UI using {0} results for file: {1}";
+        public const string NO_VULNERABILITIES_FOR_FILE = "No vulnerabilities found in scan result for file: {0}";
+        public const string FINDINGS_WINDOW_INITIATED = "Checkmarx One Assist Findings window initiated";
+        public const string ICONS_LOADED_FOR_THEME = "Loaded icons for theme: {0}";
+        public const string ICONS_RELOADING_FOR_THEME = "Icons reloading for theme change ({0} -> {1})";
+        public const string REMEDIATION_CALLED = "Remediation called: {0} for issue: {1}";
+        public const string REMEDIATION_STARTED = "{0} remediation started for issue: {1}, for file: {2}";
+        public const string REMEDIATION_SENT_COPILOT = "{0} remediation sent to Copilot for issue: {1}, for file: {2}";
+        public const string REMEDIATION_COMPLETED_CLIPBOARD = "{0} remediation completed (clipboard) for issue: {1}, for file: {2}";
+        public const string VIEW_DETAILS_STARTED = "{0} explanation started for issue: {1}, for file: {2}";
+        public const string VIEW_DETAILS_SENT_COPILOT = "{0} explanation sent to Copilot for issue: {1}, for file: {2}";
+        public const string VIEW_DETAILS_COMPLETED_CLIPBOARD = "{0} explanation completed (clipboard) for issue: {1}, for file: {2}";
+        public const string ERROR_LIST_SYNCED = "Error List synced: {0} tasks for {1} files";
+        public const string FIX_PROMPT_COPIED = "Fix prompt copied to clipboard for issue: {0}";
+        public const string FAILED_COPY_CLIPBOARD = "Failed to copy text to clipboard";
+
+        #endregion
 
         /// <summary>Theme folder name for dark theme icons.</summary>
         public const string ThemeDark = "Dark";

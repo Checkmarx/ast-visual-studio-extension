@@ -330,6 +330,7 @@
                   BorderThickness="0"
                   Background="Transparent"
                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+                  SelectedItemChanged="FindingsTreeView_SelectedItemChanged"
                   ContextMenuOpening="FindingsTreeView_ContextMenuOpening">
 
             <!-- Context Menu (right-click on vulnerability only; hidden on file node). Theme-aware: dark/light like VS; no icon; grey separator. -->
@@ -389,6 +390,7 @@
                     <Border Height="1" Margin="0,2,0,2" VerticalAlignment="Center"
                             Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}"
                             IsHitTestVisible="False"/>
+                    <MenuItem Header="Copy Fix Prompt" Click="CopyFixPrompt_Click"/>
                     <MenuItem Header="Copy" Click="CopyMenuItem_Click"/>
                     <MenuItem Header="Copy Message" Click="CopyMessage_Click"/>
                 </ContextMenu>
@@ -440,9 +442,9 @@
                     </StackPanel>
                 </HierarchicalDataTemplate>
 
-                <!-- Vulnerability Node Template (reference-style: icon, primary text bright, secondary text darker) -->
+                <!-- Vulnerability Node Template (reference-style: icon, primary text bright, secondary text darker; intention bulb on hover like JetBrains IssueTreeRenderer) -->
                 <DataTemplate DataType="{x:Type local:VulnerabilityNode}">
-                    <StackPanel Orientation="Horizontal" Margin="18,2" VerticalAlignment="Center">
+                    <StackPanel x:Name="VulnRowPanel" Orientation="Horizontal" Margin="18,2" VerticalAlignment="Center">
                         <!-- Severity Icon (aligned with reference size) -->
                         <Image Source="{Binding SeverityIcon}" Width="14" Height="14" Margin="0,0,3,0"
                                VerticalAlignment="Center"
@@ -457,7 +459,16 @@
                                    FontSize="13"
                                    Opacity="0.5"
                                    Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"/>
+                        <!-- Intention bulb: visible on hover (aligned with JetBrains IssueTreeRenderer hoveredRow) -->
+                        <imaging:CrispImage x:Name="IntentionBulb" Moniker="{x:Static catalog:KnownMonikers.IntellisenseLightBulb}"
+                                            Width="14" Height="14" Margin="6,0,0,0" VerticalAlignment="Center"
+                                            Visibility="Hidden" ToolTip="Quick actions available"/>
                     </StackPanel>
+                    <DataTemplate.Triggers>
+                        <Trigger SourceName="VulnRowPanel" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="IntentionBulb" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </DataTemplate.Triggers>
                 </DataTemplate>
             </TreeView.Resources>
         </TreeView>

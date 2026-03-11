@@ -8,6 +8,7 @@ using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
@@ -131,12 +132,29 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             if (IsCSharpFile(filePath))
                 return;
 
-            List<Vulnerability> vulnerabilities = GetMockVulnerabilitiesForFile(filePath);
+            // Skip Copilot/AI assistant temporary files (aligned with JetBrains DevAssistInspection.isAgentEvent)
+            if (CxAssistConstants.IsAIAgentFile(filePath))
+            {
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.AI_AGENT_FILE_SKIPPING, filePath));
+                return;
+            }
+
+            // Skip when no scanner is enabled (aligned with JetBrains DevAssistFileListener.restoreGutterIcons)
+            if (!CxAssistConstants.IsAnyScannerEnabled())
+            {
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.NO_SCANNER_ENABLED_SKIPPING, filePath));
+                return;
+            }
+
+            // Restore cached findings if this file was previously scanned (JetBrains: DevAssistFileListener.restoreGutterIcons)
+            List<Vulnerability> cachedVulnerabilities = CxAssistDisplayCoordinator.GetCachedVulnerabilitiesForFile(filePath);
+
+            // Fall back to mock data when no cached findings exist
+            List<Vulnerability> vulnerabilities = cachedVulnerabilities ?? GetMockVulnerabilitiesForFile(filePath);
             if (vulnerabilities == null || vulnerabilities.Count == 0)
                 return;
 
-            System.Diagnostics.Debug.WriteLine($"CxAssist: Mock data file opened ({filePath}), will apply {vulnerabilities.Count} findings");
-
+            var vulnsToApply = vulnerabilities;
             System.Threading.Tasks.Task.Delay(1000).ContinueWith(_ =>
             {
                 try
@@ -168,22 +186,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                         }
 
                         if (glyphTagger == null || errorTagger == null)
-                        {
-                            System.Diagnostics.Debug.WriteLine("CxAssist: Mock data listener – taggers not found");
-                            return;
-                        }
-
-                        vulnerabilities = GetMockVulnerabilitiesForFile(filePath);
-                        if (vulnerabilities == null || vulnerabilities.Count == 0)
                             return;
 
-                        CxAssistDisplayCoordinator.UpdateFindings(buffer, vulnerabilities, filePath);
-                        System.Diagnostics.Debug.WriteLine($"CxAssist: Updated gutter, underline, findings for {filePath} ({vulnerabilities.Count} items)");
+                        // Re-check cached findings (may have been updated while waiting for taggers)
+                        var latestCached = CxAssistDisplayCoordinator.GetCachedVulnerabilitiesForFile(filePath);
+                        var finalVulns = latestCached ?? GetMockVulnerabilitiesForFile(filePath);
+                        if (finalVulns == null || finalVulns.Count == 0)
+                            return;
+
+                        CxAssistDisplayCoordinator.UpdateFindings(buffer, finalVulns, filePath);
+                        CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.UI_DECORATED_SUCCESSFULLY, filePath, finalVulns.Count));
                     });
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"CxAssist: Mock data listener error: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] Exception restoring gutter icons for: {filePath}, {ex.Message}");
                 }
             });
         }

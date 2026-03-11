@@ -67,7 +67,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 var list = tagger.GetVulnerabilitiesForLine(lineNumber);
                 if (list == null || list.Count == 0) return Enumerable.Empty<SuggestedActionSet>();
 
-                // Use first vulnerability for Quick Fix actions (same as hover popup / context menu when multiple on line)
                 var vulnerability = list[0];
                 var actions = new List<ISuggestedAction>
                 {

@@ -18,13 +18,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static void SendFixWithAssist(Vulnerability v)
         {
             if (v == null) return;
+            string issueDesc = v.Title ?? v.Description ?? "unknown";
+            string filePath = v.FilePath ?? "unknown";
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_CALLED, "Fix", issueDesc));
+
             string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v);
             if (string.IsNullOrEmpty(prompt))
             {
                 ShowNoPromptMessage(v?.Title ?? v?.Description ?? "—", isFix: true);
                 return;
             }
-            CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotFixFallbackMessage);
+
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_STARTED, v.Scanner, issueDesc, filePath));
+            bool sent = CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotFixFallbackMessage);
+            if (sent)
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_SENT_COPILOT, v.Scanner, issueDesc, filePath));
+            else
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_COMPLETED_CLIPBOARD, v.Scanner, issueDesc, filePath));
         }
 
         /// <summary>
@@ -36,13 +46,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static void SendViewDetails(Vulnerability v, IReadOnlyList<Vulnerability> sameLineVulns = null)
         {
             if (v == null) return;
+            string issueDesc = v.Title ?? v.Description ?? "unknown";
+            string filePath = v.FilePath ?? "unknown";
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_CALLED, "View details", issueDesc));
+
             string prompt = ViewDetailsPrompts.BuildForVulnerability(v, sameLineVulns);
             if (string.IsNullOrEmpty(prompt))
             {
                 ShowNoPromptMessage($"{v?.Title ?? ""}\n{v?.Description ?? ""}\nSeverity: {v?.Severity}", isFix: false);
                 return;
             }
-            CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotViewDetailsFallbackMessage);
+
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.VIEW_DETAILS_STARTED, v.Scanner, issueDesc, filePath));
+            bool sent = CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotViewDetailsFallbackMessage);
+            if (sent)
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.VIEW_DETAILS_SENT_COPILOT, v.Scanner, issueDesc, filePath));
+            else
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.VIEW_DETAILS_COMPLETED_CLIPBOARD, v.Scanner, issueDesc, filePath));
         }
 
         private static void ShowNoPromptMessage(string detail, bool isFix)
