@@ -101,8 +101,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                 return CxAssistMockData.GetIacMockVulnerabilities(filePath);
 
             // --- Secrets: scan non-manifest files; we only have mock for a specific secrets file (JetBrains: exclude manifest + .vscode) ---
-            if (!CxAssistScannerConstants.IsExcludedForSecrets(filePath) && fileName.Equals("secrets.py", StringComparison.OrdinalIgnoreCase))
-                return CxAssistMockData.GetSecretsPyMockVulnerabilities(filePath);
+            if (!CxAssistScannerConstants.IsExcludedForSecrets(filePath))
+            {
+                if (fileName.Equals("secrets.py", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetSecretsPyMockVulnerabilities(filePath);
+
+                if (fileName.StartsWith("multi_findings_one_line", StringComparison.OrdinalIgnoreCase) &&
+                    fileName.EndsWith(".py", StringComparison.OrdinalIgnoreCase))
+                    return CxAssistMockData.GetMultiFindingsOneLineMockVulnerabilities(filePath);
+            }
 
             return null;
         }

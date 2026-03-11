@@ -1700,5 +1700,49 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             };
         }
 
+        /// <summary>
+        /// Returns mock vulnerabilities for multi_findings_one_line.py (both Secrets and SAST findings).
+        /// Demonstrates integration of secrets detection and code analysis findings on the same file.
+        /// </summary>
+        /// <param name="filePath">Optional file path; if null or empty, uses "multi_findings_one_line.py".</param>
+        public static List<Vulnerability> GetMultiFindingsOneLineMockVulnerabilities(string filePath = null)
+        {
+            var path = string.IsNullOrEmpty(filePath) ? "multi_findings_one_line.py" : filePath;
+            var list = new List<Vulnerability>();
+
+            // --- Secrets finding ---
+            list.Add(new Vulnerability
+            {
+                Id = "hashicorp-tf-password",
+                Title = "hashicorp-tf-password",
+                Description = "Identified a HashiCorp Terraform password field, risking unauthorized infrastructure configuration and security breaches.",
+                Severity = SeverityLevel.High,
+                Scanner = ScannerType.Secrets,
+                LineNumber = 1,
+                ColumnNumber = 27,
+                StartIndex = 26,
+                EndIndex = 46,
+                FilePath = path,
+                SecretType = "HashiCorp Terraform Password"
+            });
+
+            // --- SAST finding (deprecated cryptographic algorithm) ---
+            list.Add(new Vulnerability
+            {
+                Id = "SAST-4038-MD5",
+                Title = "Using Deprecated Cryptographic Algorithms",
+                Description = "Using deprecated cryptographic algorithms, such as MD5 or SHA-1, can lead to security vulnerabilities due to their susceptibility to collision and brute-force attacks. These algorithms are considered weak and may allow attackers to compromise data integrity and gain unauthorized access.",
+                Severity = SeverityLevel.High,
+                Scanner = ScannerType.ASCA,
+                LineNumber = 1,
+                ColumnNumber = 1,
+                FilePath = path,
+                RuleName = "DEPRECATED_CRYPTOGRAPHIC_ALGORITHM",
+                RemediationAdvice = "Consider not using deprecated or weak cryptographic algorithms such as MD5 or SHA-1."
+            });
+
+            return list;
+        }
+
     }
 }
