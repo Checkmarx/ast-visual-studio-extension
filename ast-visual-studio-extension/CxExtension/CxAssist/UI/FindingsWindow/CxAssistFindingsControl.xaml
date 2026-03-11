@@ -113,7 +113,7 @@
         <!-- Filter Button Style: uniform 18x18 icons, no border, square shape, dark grey background on hover/active -->
         <Style x:Key="FilterButtonStyle" TargetType="ToggleButton">
             <Setter Property="Margin" Value="2,5,2,5"/>
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarGradientBeginKey}}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -130,24 +130,24 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Hover: light grey background -->
+                            <!-- Hover -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarMouseOverBackgroundGradientKey}}"/>
                             </Trigger>
-                            <!-- Checked (activated): same light grey as hover -->
+                            <!-- Checked (activated): same as hover -->
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarMouseOverBackgroundGradientKey}}"/>
                             </Trigger>
-                            <!-- Checked + Hover: same light grey -->
+                            <!-- Checked + Hover -->
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsChecked" Value="True"/>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarMouseOverBackgroundGradientKey}}"/>
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -157,19 +157,23 @@
 
         <!-- Toolbar action buttons (Expand All, Collapse All, Settings): grey hover for dark theme, no blue -->
         <Style x:Key="ToolbarActionButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarGradientBeginKey}}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="Transparent" BorderThickness="0" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderThickness="0"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vsui:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarMouseOverBackgroundGradientKey}}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -287,7 +291,6 @@
                         ToolTip="Expand All"
                         Style="{StaticResource ToolbarActionButtonStyle}"
                         Width="24" Height="24" Margin="2,0"
-                        Background="Transparent" BorderThickness="0"
                         Padding="3">
                     <Image x:Name="ExpandAllIcon" Width="18" Height="18"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -299,7 +302,6 @@
                         ToolTip="Collapse All"
                         Style="{StaticResource ToolbarActionButtonStyle}"
                         Width="24" Height="24" Margin="2,0"
-                        Background="Transparent" BorderThickness="0"
                         Padding="3">
                     <Image x:Name="CollapseAllIcon" Width="18" Height="18"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -315,7 +317,6 @@
                         ToolTip="Open Checkmarx Settings"
                         Style="{StaticResource ToolbarActionButtonStyle}"
                         Width="24" Height="24" Margin="2,0"
-                        Background="Transparent" BorderThickness="0"
                         Padding="3">
                     <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Settings}"/>
                 </Button>

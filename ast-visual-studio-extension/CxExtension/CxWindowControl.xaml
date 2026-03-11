@@ -26,7 +26,7 @@
         </Style>
         <Style BasedOn="{StaticResource {x:Type ToggleButton}}" TargetType="{x:Type ToggleButton}" x:Key="SeverityFilterStyle">
             <Setter Property="Margin" Value="2,5,2,5"/>
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarGradientBeginKey}}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="3"/>
@@ -43,24 +43,24 @@
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Hover: light grey background -->
+                            <!-- Hover -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vs:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarMouseOverBackgroundGradientKey}}"/>
                             </Trigger>
-                            <!-- Checked (activated): same light grey as hover -->
+                            <!-- Checked (activated): same as hover -->
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vs:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarMouseOverBackgroundGradientKey}}"/>
                             </Trigger>
-                            <!-- Checked + Hover: same light grey -->
+                            <!-- Checked + Hover -->
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsChecked" Value="True"/>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="Border" Property="Background"
-                                        Value="{DynamicResource {x:Static vs:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                                        Value="{DynamicResource {x:Static vsfx:VsBrushes.CommandBarMouseOverBackgroundGradientKey}}"/>
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
