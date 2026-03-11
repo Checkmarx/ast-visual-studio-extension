@@ -149,26 +149,27 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static void UpdateFindings(ITextBuffer buffer, List<Vulnerability> vulnerabilities, string filePath = null)
         {
             if (buffer == null)
-            {
-                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: buffer is null");
                 return;
-            }
 
-            var list = vulnerabilities ?? new List<Vulnerability>();
+            // Filter out findings from disabled scanners (aligned with JetBrains DevAssistFileListener.getScanIssuesForEnabledScanner)
+            var list = vulnerabilities != null
+                ? vulnerabilities.FindAll(v => CxAssistConstants.IsScannerEnabled(v.Scanner))
+                : new List<Vulnerability>();
+
+            if (vulnerabilities == null || vulnerabilities.Count == 0)
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.NO_VULNERABILITIES_FOR_FILE, filePath ?? "unknown"));
+
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, list.Count, filePath ?? "unknown"));
 
             // 1. Update gutter
             var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
             if (glyphTagger != null)
                 CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
-            else
-                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: glyph tagger not found for buffer");
 
             // 2. Update underline
             var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
             if (errorTagger != null)
                 CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
-            else
-                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: error tagger not found for buffer");
 
             // 3. Store per file and notify (reference ProblemHolderService + ISSUE_TOPIC-like)
             CxAssistErrorHandler.TryRun(() =>
@@ -193,7 +194,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 IssuesUpdated?.Invoke(snapshot);
             }, "Coordinator.StoreCurrentFindings");
 
-            System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] DisplayCoordinator: updated gutter, underline, and per-file findings ({list.Count} for file)");
         }
 
         /// <summary>
@@ -203,6 +203,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static void SetFindingsByFile(IReadOnlyDictionary<string, List<Vulnerability>> issuesByFile)
         {
             if (issuesByFile == null) return;
+
             IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
             lock (_lock)
             {
@@ -220,6 +221,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 snapshot = copy;
             }
             IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
+        /// Returns the cached vulnerabilities for the given file path, or null if none exist.
+        /// Used to restore gutter icons and underlines when a file is reopened (JetBrains: DevAssistFileListener.restoreGutterIcons).
+        /// </summary>
+        public static List<Vulnerability> GetCachedVulnerabilitiesForFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return null;
+            string key = NormalizePath(filePath);
+            if (string.IsNullOrEmpty(key)) return null;
+            lock (_lock)
+            {
+                if (_fileToIssues.TryGetValue(key, out var list) && list != null && list.Count > 0)
+                    return new List<Vulnerability>(list);
+                return null;
+            }
         }
 
         /// <summary>

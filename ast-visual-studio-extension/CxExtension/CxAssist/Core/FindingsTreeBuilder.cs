@@ -53,16 +53,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             foreach (var group in grouped)
             {
                 var filePath = group.Key;
-                var fileName = Path.GetFileName(filePath);
-                if (string.IsNullOrEmpty(fileName)) fileName = filePath;
-
-                var fileIcon = loadFileIcon?.Invoke(filePath);
-                var fileNode = new FileNode
+                FileNode fileNode;
+                try
                 {
-                    FileName = fileName,
-                    FilePath = filePath,
-                    FileIcon = fileIcon
-                };
+                    var fileName = Path.GetFileName(filePath);
+                    if (string.IsNullOrEmpty(fileName)) fileName = filePath;
+
+                    var fileIcon = loadFileIcon?.Invoke(filePath);
+                    fileNode = new FileNode
+                    {
+                        FileName = fileName,
+                        FilePath = filePath,
+                        FileIcon = fileIcon
+                    };
+                }
+                catch (Exception ex)
+                {
+                    CxAssistOutputPane.WriteToOutputPane($"Failed to create file node for: {filePath}, {ex.Message}");
+                    continue;
+                }
 
                 var fileVulns = group.ToList();
                 var iacVulns = fileVulns.Where(v => v.Scanner == ScannerType.IaC).ToList();
@@ -108,21 +117,37 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     }
                 }
 
-                // ASCA: group by line; multiple on same line → show highest-severity detail only (not "N ASCA violations...")
+                // ASCA: group by line; multiple on same line → "N ASCA violations detected on this line" (aligned with JetBrains ProblemDescription)
                 foreach (var lineGroup in ascaVulns.GroupBy(v => v.LineNumber))
                 {
                     var list = lineGroup.ToList();
-                    var v = list.Count > 1 ? list.OrderBy(x => x.Severity).First() : list[0];
-                    nodesToAdd.Add(new VulnerabilityNode
+                    var first = list.OrderBy(x => x.Severity).First();
+                    if (list.Count > 1)
                     {
-                        Severity = v.Severity.ToString(),
-                        SeverityIcon = loadSeverityIcon?.Invoke(v.Severity.ToString()),
-                        Description = v.Title ?? v.Description,
-                        Line = v.LineNumber,
-                        Column = v.ColumnNumber,
-                        FilePath = v.FilePath,
-                        Scanner = ScannerType.ASCA
-                    });
+                        nodesToAdd.Add(new VulnerabilityNode
+                        {
+                            Severity = first.Severity.ToString(),
+                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
+                            Description = list.Count + CxAssistConstants.MultipleAscaViolationsOnLine,
+                            Line = first.LineNumber,
+                            Column = first.ColumnNumber,
+                            FilePath = first.FilePath,
+                            Scanner = ScannerType.ASCA
+                        });
+                    }
+                    else
+                    {
+                        nodesToAdd.Add(new VulnerabilityNode
+                        {
+                            Severity = first.Severity.ToString(),
+                            SeverityIcon = loadSeverityIcon?.Invoke(first.Severity.ToString()),
+                            Description = first.Title ?? first.Description,
+                            Line = first.LineNumber,
+                            Column = first.ColumnNumber,
+                            FilePath = first.FilePath,
+                            Scanner = ScannerType.ASCA
+                        });
+                    }
                 }
 
                 // OSS: group by line; multiple on same line → show highest-severity detail only (not "N OSS issues...")

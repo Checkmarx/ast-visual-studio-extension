@@ -170,6 +170,7 @@
     <Compile Include="CxExtension\CxAssist\Core\CxAssistConstants.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistScannerConstants.cs" />
     <Compile Include="CxExtension\CxAssist\Core\AssistIconLoader.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistOutputPane.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CopilotIntegration.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistCopilotActions.cs" />

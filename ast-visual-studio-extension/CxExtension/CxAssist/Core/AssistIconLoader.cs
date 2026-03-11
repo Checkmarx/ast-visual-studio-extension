@@ -22,6 +22,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>Base resource path for CxAssist icons (theme subfolder appended).</summary>
         public const string IconsBasePath = "CxExtension/Resources/CxAssist/Icons";
 
+        private static bool _popupIconsLogged;
+        private static string _lastKnownTheme;
+
         /// <summary>Returns "Dark" or "Light" based on current VS theme.</summary>
         public static string GetCurrentTheme()
         {
@@ -214,8 +217,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>Loads severity icon (JetBrains-style; prefers SVG, fallback PNG). Use for Quick Info and any UI that can show either.</summary>
         public static ImageSource LoadSeverityIcon(SeverityLevel severity)
         {
+            string currentTheme = GetCurrentTheme();
+
+            // Log theme change (aligned with JetBrains ProblemDescription.reloadIcons: "RTS: Icons reloading completed.")
+            if (_lastKnownTheme != null && !string.Equals(_lastKnownTheme, currentTheme, StringComparison.OrdinalIgnoreCase))
+            {
+                CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.ICONS_RELOADING_FOR_THEME, _lastKnownTheme, currentTheme));
+            }
+            _lastKnownTheme = currentTheme;
+
             var img = LoadSeveritySvgIcon(severity.ToString());
-            if (img != null) return img;
+            if (img != null)
+            {
+                if (!_popupIconsLogged)
+                {
+                    _popupIconsLogged = true;
+                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {string.Format(CxAssistConstants.ICONS_LOADED_FOR_THEME, currentTheme)}");
+                }
+                return img;
+            }
             var png = LoadSeverityPngIcon(severity);
             return png;
         }

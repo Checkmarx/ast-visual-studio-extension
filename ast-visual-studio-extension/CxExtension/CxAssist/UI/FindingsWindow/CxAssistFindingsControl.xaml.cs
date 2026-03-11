@@ -122,7 +122,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             _allFileNodes = new ObservableCollection<FileNode>();
             DataContext = this;
 
-            // Load filter icons and subscribe to coordinator (reference ISSUE_TOPIC-like: window stays in sync when issues change)
+            System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FINDINGS_WINDOW_INITIATED}");
+
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
         }
@@ -288,9 +289,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 ExpandAllIcon.Source = AssistIconLoader.LoadSvgIcon(theme, "expandall");
                 CollapseAllIcon.Source = AssistIconLoader.LoadSvgIcon(theme, "collapseall");
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading filter icons: {ex.Message}");
             }
         }
 
@@ -356,7 +356,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         /// <summary>
-        /// Handle double-click on tree item to navigate to file location
+        /// Handle single-click (selection change) on a vulnerability node to navigate to file location
+        /// (aligned with JetBrains: single click navigates to selected issue).
+        /// </summary>
+        private void FindingsTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is VulnerabilityNode vulnerability)
+            {
+                NavigateToVulnerability(vulnerability);
+            }
+        }
+
+        /// <summary>
+        /// Handle double-click on tree item to navigate to file location (kept for backward compatibility).
         /// </summary>
         private void TreeViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -385,7 +397,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 EnvDTE.Window window = null;
                 string pathToTry = vulnerability.FilePath;
 
-                window = dte.ItemOperations.OpenFile(pathToTry, EnvDTE.Constants.vsViewKindCode);
+                try
+                {
+                    window = dte.ItemOperations.OpenFile(pathToTry, EnvDTE.Constants.vsViewKindCode);
+                }
+                catch (Exception openEx)
+                {
+                    CxAssistOutputPane.WriteToOutputPane($"Error opening file: {pathToTry}, {openEx.Message}");
+                }
                 if (window == null && !Path.IsPathRooted(pathToTry))
                 {
                     try
@@ -425,11 +444,29 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                     int column = Math.Max(1, vulnerability.Column);
                     textDoc.Selection.MoveToLineAndOffset(line, column);
                     textDoc.Selection.SelectLine();
+
+                    // Scroll target line to center of viewport (aligned with JetBrains ScrollType.CENTER)
+                    try
+                    {
+                        var editPoint = textDoc.Selection.ActivePoint.CreateEditPoint();
+                        var panes = window.Document?.ActiveWindow?.Document?.Windows;
+                        if (panes != null)
+                        {
+                            foreach (EnvDTE.Window pane in panes)
+                            {
+                                if (pane.Object is TextPane textPane)
+                                {
+                                    textPane.TryToShow(editPoint, EnvDTE.vsPaneShowHow.vsPaneShowCentered);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch { /* scroll centering is best-effort */ }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"Error navigating to vulnerability: {ex.Message}");
             }
         }
 
@@ -715,7 +752,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         {
             var vuln = GetSelectedVulnerability();
             if (vuln != null)
-                Clipboard.SetText(vuln.DisplayText);
+            {
+                try
+                {
+                    Clipboard.SetText(vuln.DisplayText);
+                    ShowStatusBarNotification("Copied to clipboard.");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                }
+            }
         }
 
         /// <summary>
@@ -725,7 +772,63 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         {
             var vuln = GetSelectedVulnerability();
             if (vuln != null && !string.IsNullOrEmpty(vuln.PrimaryDisplayText))
-                Clipboard.SetText(vuln.PrimaryDisplayText);
+            {
+                try
+                {
+                    Clipboard.SetText(vuln.PrimaryDisplayText);
+                    ShowStatusBarNotification("Message copied to clipboard.");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Copy the fix prompt to clipboard (aligned with JetBrains "Copy Fix" context menu action).
+        /// Builds the scanner-specific remediation prompt and puts it on the clipboard.
+        /// Shows a success notification in the status bar (aligned with JetBrains copyToClipboardWithNotification).
+        /// </summary>
+        private void CopyFixPrompt_Click(object sender, RoutedEventArgs e)
+        {
+            var node = GetSelectedVulnerability();
+            if (node == null) return;
+            var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
+            if (v == null)
+                return;
+            string prompt = Core.Prompts.CxOneAssistFixPrompts.BuildForVulnerability(v);
+            if (!string.IsNullOrEmpty(prompt))
+            {
+                try
+                {
+                    Clipboard.SetText(prompt);
+                    ShowStatusBarNotification("Fix prompt copied to clipboard. Paste into GitHub Copilot Chat to get remediation steps.");
+                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {string.Format(CxAssistConstants.FIX_PROMPT_COPIED, v.Title ?? v.Description ?? "unknown")}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Shows a brief notification in the VS status bar (aligned with JetBrains Utils.showNotification for copy actions).
+        /// </summary>
+        private static void ShowStatusBarNotification(string message)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var dte = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(DTE)) as DTE;
+                if (dte != null)
+                    dte.StatusBar.Text = message;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CxAssist StatusBar notification error: {ex.Message}");
+            }
         }
 
         /// <summary>

@@ -59,20 +59,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                     {
                         if (_vulnerabilitiesByLine.TryGetValue(lineNumber, out var vulnerabilities))
                         {
+                            var line = snapshot.GetLineFromLineNumber(lineNumber);
+
+                            // Skip empty/whitespace-only lines (aligned with JetBrains getPsiElement validation)
+                            if (!HasNonWhitespaceContent(snapshot, line))
+                                continue;
+
                             var mostSevere = GetMostSevereVulnerability(vulnerabilities);
                             if (mostSevere != null)
                             {
-                            var line = snapshot.GetLineFromLineNumber(lineNumber);
-                            var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
-
-                                    // Tooltip shows only the severity that matches the icon (precedence / most severe on line)
-                                    var tag = new CxAssistGlyphTag(
-                                        mostSevere.Severity.ToString(),
-                                        mostSevere.Severity.ToString(),
-                                        mostSevere.Id
-                                    );
-                                    result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
-                            }   
+                                var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
+                                var tag = new CxAssistGlyphTag(
+                                    mostSevere.Severity.ToString(),
+                                    mostSevere.Severity.ToString(),
+                                    mostSevere.Id
+                                );
+                                result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
+                            }
                         }
                     }
                 }
@@ -135,6 +138,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         }
 
         /// <summary>
+        /// Whether the line has at least one non-whitespace character (aligned with JetBrains getPsiElement:
+        /// skip lines with no code content to avoid placing gutter icons on empty lines).
+        /// </summary>
+        private static bool HasNonWhitespaceContent(ITextSnapshot snapshot, ITextSnapshotLine line)
+        {
+            int start = line.Start.Position;
+            int end = line.End.Position;
+            for (int i = start; i < end; i++)
+            {
+                if (!char.IsWhiteSpace(snapshot[i]))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Gets the most severe vulnerability from a list
         /// Based on reference ProblemDecorator.getMostSeverity pattern
         /// </summary>
@@ -143,10 +162,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             if (vulnerabilities == null || vulnerabilities.Count == 0)
                 return null;
 
-            // Order by severity: Critical > High > Medium > Low > Info
-            return vulnerabilities
-                .OrderByDescending(v => GetSeverityPriority(v.Severity))
-                .FirstOrDefault();
+            try
+            {
+                return vulnerabilities
+                    .OrderByDescending(v => GetSeverityPriority(v.Severity))
+                    .FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] Exception retrieving most severe vulnerability: {ex.Message}");
+                return vulnerabilities.FirstOrDefault();
+            }
         }
 
         /// <summary>
