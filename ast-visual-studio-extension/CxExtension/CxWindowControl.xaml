@@ -27,31 +27,60 @@
         <Style BasedOn="{StaticResource {x:Type ToggleButton}}" TargetType="{x:Type ToggleButton}" x:Key="SeverityFilterStyle">
             <Setter Property="Margin" Value="2,5,2,5"/>
             <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="3"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ToggleButton}">
-                        <Border
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        Background="{TemplateBinding Background}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"                  
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Hover: light grey background -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background"
+                                        Value="{DynamicResource {x:Static vs:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                            </Trigger>
+                            <!-- Checked (activated): same light grey as hover -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Border" Property="Background"
+                                        Value="{DynamicResource {x:Static vs:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                            </Trigger>
+                            <!-- Checked + Hover: same light grey -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Border" Property="Background"
+                                        Value="{DynamicResource {x:Static vs:EnvironmentColors.ComboBoxMouseOverBackgroundGradientBrushKey}}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Menu Style: no border for Filter and Group By dropdowns -->
+        <Style TargetType="{x:Type Menu}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Menu}">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="0" Padding="{TemplateBinding Padding}">
+                            <ItemsPresenter/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsChecked" Value="False">
-                    <Setter Property="BorderBrush" Value="Transparent"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <!--Setter Property="Background" Value="#3D26A0DA"/>
-                    <Setter Property="BorderBrush" Value="#FF26A0DA"/-->
-                    <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
         <Style BasedOn="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" TargetType="{x:Type Separator}" x:Key="SeparatorStyle">
             <Setter Property="Margin" Value="6"/>
@@ -497,38 +526,33 @@
                 </StackPanel>
             </ScrollViewer>
             <StackPanel Height="35" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right"  Orientation="Horizontal" >
-                <StackPanel Orientation="Horizontal">
-                    <Separator Style="{StaticResource SeparatorStyle}" />
-                </StackPanel>
-
 
             <ToggleButton ToolTip="Critical" Style="{StaticResource SeverityFilterStyle}" x:Name="CriticalSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="CriticalSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <Image x:Name="CriticalSeverityFilterImage" Width="18" Height="18" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
             <ToggleButton ToolTip="High" Style="{StaticResource SeverityFilterStyle}" x:Name="HighSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="HighSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <Image x:Name="HighSeverityFilterImage" Width="18" Height="18" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
             <ToggleButton ToolTip="Medium" Style="{StaticResource SeverityFilterStyle}" x:Name="MediumSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="MediumSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <Image x:Name="MediumSeverityFilterImage" Width="18" Height="18" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
             <ToggleButton ToolTip="Low" Style="{StaticResource SeverityFilterStyle}" x:Name="LowSeverityFilter" Click="SeverityFilter_Click">
-                <Image x:Name="LowSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <Image x:Name="LowSeverityFilterImage" Width="18" Height="18" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
             </ToggleButton>
                 <ToggleButton ToolTip="Info" Style="{StaticResource SeverityFilterStyle}" x:Name="InfoSeverityFilter" Click="SeverityFilter_Click">
-                    <Image x:Name="InfoSeverityFilterImage" Width="22" Height="22" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Image x:Name="InfoSeverityFilterImage" Width="18" Height="18" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </ToggleButton>
-                <Menu Background="Transparent">
+                <Menu>
                     <MenuItem x:Name="StateFilterMenuItem" ToolTip="Filter results" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
                         <MenuItem.Icon>
                             <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Filter}"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </Menu>
-                <StackPanel Orientation="Horizontal">
-                    <Separator Style="{StaticResource SeparatorStyle}" />
-                </StackPanel>
+                <Border Width="1" Height="20" VerticalAlignment="Center" Margin="6,0"
+                        Background="{DynamicResource {x:Static vs:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.6"/>
 
-                <Menu Background="Transparent">
+                <Menu>
                     <MenuItem ToolTip="Group by" Style="{DynamicResource DefaultMenuItemStyle}" Padding="0" Margin="2,5,2,5">
                         <MenuItem.Icon>
                             <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.GroupBy}"/>
@@ -543,9 +567,8 @@
                     </MenuItem>
                 </Menu>
 
-                <StackPanel Orientation="Horizontal">
-                    <Separator Style="{StaticResource SeparatorStyle}" />
-                </StackPanel>
+                <Border Width="1" Height="20" VerticalAlignment="Center" Margin="6,0"
+                        Background="{DynamicResource {x:Static vs:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.6"/>
 
                 <ToggleButton ToolTip="Reset extension" Style="{StaticResource SeverityFilterStyle}" x:Name="RefreshBtn" Click="RefreshBtn_Click">
                     <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Refresh}"/>
@@ -555,9 +578,8 @@
                     <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Settings}"/>
                 </ToggleButton>
 
-                <StackPanel Orientation="Horizontal" x:Name="ScanningSeparator" Visibility="Visible">
-                    <Separator Style="{StaticResource SeparatorStyle}" />
-                </StackPanel>
+                <Border x:Name="ScanningSeparator" Width="1" Height="20" VerticalAlignment="Center" Margin="6,0" Visibility="Visible"
+                        Background="{DynamicResource {x:Static vs:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.6"/>
 
                 <ToggleButton ToolTip="Start a scan" Style="{StaticResource SeverityFilterStyle}" x:Name="ScanStartBtn" Click="ScanStartBtn_Click" Visibility="Visible">
                     <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Play}"/>

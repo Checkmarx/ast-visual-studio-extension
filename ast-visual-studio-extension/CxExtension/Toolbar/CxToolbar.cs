@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Shell.Settings;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
@@ -47,7 +48,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public Dictionary<Severity, Image> SeverityFilterImages { get; set; }
         public Dictionary<MenuItem, State> StateFilters { get; set; }
         public Dictionary<MenuItem, GroupBy> GroupByOptions { get; set; }
-        public StackPanel ScanningSeparator { get; set; }
+        public FrameworkElement ScanningSeparator { get; set; }
         public ToggleButton ScanStartButton { get; set; }
         public Func<List<State>, Dictionary<MenuItem, State>> CreateStateMenuItems { get; set; }
 
@@ -171,7 +172,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             return this;
         }
 
-        public CxToolbar WithScanButtons(StackPanel scanningSeparator, ToggleButton scanStartButton)
+        public CxToolbar WithScanButtons(FrameworkElement scanningSeparator, ToggleButton scanStartButton)
         {
             ScanStartButton = scanStartButton;
             ScanningSeparator = scanningSeparator;
