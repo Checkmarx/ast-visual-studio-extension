@@ -28,6 +28,8 @@ namespace ast_visual_studio_extension.CxExtension.Utils
                     bitmap.BeginInit();
                     bitmap.UriSource = new Uri(path, UriKind.RelativeOrAbsolute);
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.DecodePixelWidth = 28;
+                    bitmap.DecodePixelHeight = 28;
                     bitmap.EndInit();
                     bitmap.Freeze();
                     return bitmap;

@@ -568,7 +568,7 @@
                 </Menu>
 
                 <Border Width="1" Height="20" VerticalAlignment="Center" Margin="6,0"
-                        Background="{DynamicResource {x:Static vs:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.6"/>
+                        Background="{DynamicResource {x:Static vs:EnvironmentColors.ToolWindowTextBrushKey}}" Opacity="0.4"/>
 
                 <ToggleButton ToolTip="Reset extension" Style="{StaticResource SeverityFilterStyle}" x:Name="RefreshBtn" Click="RefreshBtn_Click">
                     <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Refresh}"/>
@@ -614,7 +614,7 @@
                 </Grid.ColumnDefinitions>
 
                 <WrapPanel Name="ResultTitleWrapPanel" Orientation="Horizontal">
-                    <Image x:Name="ResultSeverityIcon" Stretch="None" />
+                    <Image x:Name="ResultSeverityIcon" Width="28" Height="28" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
                     <TextBlock TextWrapping="WrapWithOverflow" Grid.Column="1" x:Name="ResultTitle" FontSize="15" Margin="7,2,0,0"/>
                 </WrapPanel>
 
