@@ -746,22 +746,26 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         #region Context Menu Handlers
 
         /// <summary>
-        /// Copy selected item details to clipboard (full display text).
+        /// Copy selected item as JSON to clipboard (aligned with JetBrains: ObjectMapper.writeValueAsString).
         /// </summary>
         private void CopyMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            var vuln = GetSelectedVulnerability();
-            if (vuln != null)
+            var node = GetSelectedVulnerability();
+            if (node == null) return;
+            var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
+            try
             {
-                try
-                {
-                    Clipboard.SetText(vuln.DisplayText);
-                    ShowStatusBarNotification("Copied to clipboard.");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
-                }
+                string json;
+                if (v != null)
+                    json = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { v }, Newtonsoft.Json.Formatting.Indented);
+                else
+                    json = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { new { node.Description, node.Severity, node.Scanner, node.Line, node.Column, node.FilePath, node.PackageName, node.PackageVersion } }, Newtonsoft.Json.Formatting.Indented);
+                Clipboard.SetText(json);
+                ShowStatusBarNotification("Copied to clipboard.");
+            }
+            catch
+            {
+                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
             }
         }
 

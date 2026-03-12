@@ -117,6 +117,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 
         public void TextViewCreated(IWpfTextView textView)
         {
+            CxAssistDisplayCoordinator.EnsureThemeChangeHandler();
+
             string filePath = null;
             try
             {

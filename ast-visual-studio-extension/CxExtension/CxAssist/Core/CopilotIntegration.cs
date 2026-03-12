@@ -167,11 +167,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 }
                 Log("Prompt copied to clipboard");
 
-                // Step 2: Open Copilot Chat
+                // Step 2: Pre-check if Copilot is available (aligned with JetBrains CopilotIntegration.isCopilotAvailable)
+                if (!IsCopilotAvailable())
+                {
+                    Log("Copilot not available (pre-check), prompt copied to clipboard");
+                    MessageBox.Show(
+                        CxAssistConstants.CopilotOpenInstructionsMessage,
+                        CxAssistConstants.DisplayName,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return IntegrationResult.CopilotNotAvailable(
+                        CxAssistConstants.CopilotOpenInstructionsMessage);
+                }
+
+                // Step 3: Open Copilot Chat
                 bool opened = TryOpenCopilotChat();
                 if (!opened)
                 {
-                    Log("Copilot Chat not available");
+                    Log("Copilot Chat failed to open");
                     MessageBox.Show(
                         CxAssistConstants.CopilotOpenInstructionsMessage,
                         CxAssistConstants.DisplayName,
@@ -355,6 +368,39 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             return TryExecuteDteCommands(NewThreadCommands);
+        }
+
+        // ==================== Availability Check ====================
+
+        /// <summary>
+        /// Checks if GitHub Copilot is available before attempting to open it.
+        /// Aligned with JetBrains CopilotIntegration.isCopilotAvailable: checks known
+        /// command IDs via DTE.Commands to see if any are registered.
+        /// </summary>
+        public static bool IsCopilotAvailable()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var dte = GetDte();
+                if (dte?.Commands == null) return false;
+
+                foreach (string cmdId in OpenChatCommands)
+                {
+                    try
+                    {
+                        var cmd = dte.Commands.Item(cmdId);
+                        if (cmd != null) return true;
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return false;
         }
 
         // ==================== DTE Helpers ====================
