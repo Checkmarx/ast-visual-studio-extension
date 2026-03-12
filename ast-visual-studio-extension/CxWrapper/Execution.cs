@@ -10,7 +10,9 @@ namespace ast_visual_studio_extension.CxCLI
 {
     internal class Execution
     {
-        private readonly static string executablePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources", "cx.exe");
+        private const string CliExecutableName = "cx.exe";
+        private readonly static string executableDirectory = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources");
+        private readonly static string executablePath = Path.Combine(executableDirectory, CliExecutableName);
 
         public static string ExecuteCommand(List<string> arguments, Func<string, string> lineParser)
         {
@@ -114,7 +116,7 @@ namespace ast_visual_studio_extension.CxCLI
         {
             return new ProcessStartInfo
             {
-                FileName = executablePath,
+                FileName = Path.Combine(executableDirectory, CliExecutableName),
                 Arguments = BuildArguments(arguments),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
