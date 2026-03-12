@@ -21,6 +21,39 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     {
         private static readonly object _lock = new object();
         private static Dictionary<string, List<Vulnerability>> _fileToIssues = new Dictionary<string, List<Vulnerability>>(StringComparer.OrdinalIgnoreCase);
+        private static bool _themeHandlerRegistered;
+
+        /// <summary>
+        /// Subscribes to AssistIconLoader.ThemeChanged so all open taggers re-render
+        /// with the new theme icons (aligned with JetBrains createProblemDescriptorsOnThemeChanged).
+        /// Call once at startup.
+        /// </summary>
+        public static void EnsureThemeChangeHandler()
+        {
+            if (_themeHandlerRegistered) return;
+            _themeHandlerRegistered = true;
+            AssistIconLoader.EnsureThemeChangeSubscription();
+            AssistIconLoader.ThemeChanged += OnThemeChanged;
+        }
+
+        private static void OnThemeChanged()
+        {
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            lock (_lock)
+            {
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+            foreach (var kv in snapshot)
+            {
+                var buffer = GutterIcons.CxAssistGlyphTaggerProvider.GetBufferForFile(kv.Key);
+                if (buffer != null)
+                    UpdateFindings(buffer, kv.Value, kv.Key);
+            }
+            IssuesUpdated?.Invoke(snapshot);
+        }
 
         /// <summary>
         /// Normalizes a file path for use as the per-file map key (same file always maps to the same key).

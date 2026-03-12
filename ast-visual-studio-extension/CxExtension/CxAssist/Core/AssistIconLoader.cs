@@ -24,6 +24,38 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         private static bool _popupIconsLogged;
         private static string _lastKnownTheme;
+        private static bool _themeSubscribed;
+
+        /// <summary>
+        /// Raised when VS theme changes. Subscribers (e.g. CxAssistDisplayCoordinator) should
+        /// re-trigger taggers so gutter icons and Quick Info render with the new theme.
+        /// Aligned with JetBrains DevAssistInspectionMgr.isThemeChanged + ProblemDescription.reloadIcons().
+        /// </summary>
+        public static event Action ThemeChanged;
+
+        /// <summary>
+        /// Subscribes to VSColorTheme.ThemeChanged so icon caches are invalidated and
+        /// taggers re-triggered on theme switch. Call once at startup (e.g. from TextViewCreated).
+        /// </summary>
+        public static void EnsureThemeChangeSubscription()
+        {
+            if (_themeSubscribed) return;
+            _themeSubscribed = true;
+            VSColorTheme.ThemeChanged += OnVsThemeChanged;
+        }
+
+        private static void OnVsThemeChanged(ThemeChangedEventArgs e)
+        {
+            string oldTheme = _lastKnownTheme;
+            string newTheme = GetCurrentTheme();
+            if (string.Equals(oldTheme, newTheme, StringComparison.OrdinalIgnoreCase)) return;
+
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.ICONS_RELOADING_FOR_THEME, oldTheme ?? "unknown", newTheme));
+            _lastKnownTheme = newTheme;
+            _popupIconsLogged = false;
+
+            ThemeChanged?.Invoke();
+        }
 
         /// <summary>Returns "Dark" or "Light" based on current VS theme.</summary>
         public static string GetCurrentTheme()

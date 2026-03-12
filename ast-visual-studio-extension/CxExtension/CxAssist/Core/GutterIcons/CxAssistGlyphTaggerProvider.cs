@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
@@ -118,6 +119,26 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             }
 
             System.Diagnostics.Debug.WriteLine("CxAssist: GetTaggerForBuffer - tagger NOT found (MEF hasn't created it yet)");
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the ITextBuffer for a given file path among tracked buffers (for theme-change re-trigger).
+        /// Returns null if no buffer is tracked for that path.
+        /// </summary>
+        public static ITextBuffer GetBufferForFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || _instance == null) return null;
+            lock (_instance._taggers)
+            {
+                foreach (var buffer in _instance._taggers.Keys)
+                {
+                    string bufferPath = CxAssistDisplayCoordinator.GetFilePathForBuffer(buffer);
+                    if (!string.IsNullOrEmpty(bufferPath) &&
+                        string.Equals(bufferPath, filePath, StringComparison.OrdinalIgnoreCase))
+                        return buffer;
+                }
+            }
             return null;
         }
 
