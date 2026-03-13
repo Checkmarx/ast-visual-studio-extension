@@ -173,6 +173,67 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
+        /// Finds all OSS vulnerabilities for the same package (same PackageName + PackageVersion) across all files.
+        /// Aligned with JetBrains ScanIssue.getVulnerabilities() which returns all CVEs for a package.
+        /// Returns null for non-OSS scanners or when no additional vulnerabilities exist.
+        /// </summary>
+        public static List<Vulnerability> FindAllVulnerabilitiesForPackage(Vulnerability v)
+        {
+            if (v == null || v.Scanner != Models.ScannerType.OSS || string.IsNullOrEmpty(v.PackageName))
+                return null;
+
+            lock (_lock)
+            {
+                var result = new List<Vulnerability>();
+                foreach (var list in _fileToIssues.Values)
+                {
+                    if (list == null) continue;
+                    foreach (var vuln in list)
+                    {
+                        if (vuln.Scanner == Models.ScannerType.OSS
+                            && string.Equals(vuln.PackageName, v.PackageName, StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(vuln.PackageVersion, v.PackageVersion, StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.Add(vuln);
+                        }
+                    }
+                }
+                return result.Count > 0 ? result : null;
+            }
+        }
+
+        /// <summary>
+        /// Finds all vulnerabilities of the same scanner type on the same line in the same file.
+        /// Used for IaC/ASCA where multiple issues can be grouped on a single line
+        /// (aligned with JetBrains IacScanResultAdaptor grouping by filePath:line).
+        /// Returns null when no matching vulnerabilities exist.
+        /// </summary>
+        public static List<Vulnerability> FindAllVulnerabilitiesForLine(Vulnerability v)
+        {
+            if (v == null || string.IsNullOrEmpty(v.FilePath))
+                return null;
+
+            string key;
+            try { key = Path.GetFullPath(v.FilePath); }
+            catch { key = v.FilePath; }
+
+            int zeroBasedLine = CxAssistConstants.To0BasedLineForEditor(v.Scanner, v.LineNumber);
+
+            lock (_lock)
+            {
+                if (!_fileToIssues.TryGetValue(key, out var list) || list == null)
+                    return null;
+
+                var result = list.Where(vuln =>
+                    vuln.Scanner == v.Scanner
+                    && CxAssistConstants.To0BasedLineForEditor(vuln.Scanner, vuln.LineNumber) == zeroBasedLine)
+                    .ToList();
+
+                return result.Count > 0 ? result : null;
+            }
+        }
+
+        /// <summary>
         /// Updates gutter icons, underlines (squiggles), and stored findings for the problem window in one call.
         /// Stores issues per file and raises IssuesUpdated so the findings window can stay in sync (reference-like).
         /// </summary>

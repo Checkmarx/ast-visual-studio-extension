@@ -35,7 +35,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             AddCommand(FixCommandId, OnFixWithAssist);
             AddCommand(ViewDetailsCommandId, OnViewDetails);
             AddCommand(IgnoreThisCommandId, OnIgnoreThis, v => CxAssistConstants.GetIgnoreThisLabel(v.Scanner));
-            AddCommand(IgnoreAllCommandId, OnIgnoreAll, v => CxAssistConstants.GetIgnoreAllLabel(v.Scanner), v => CxAssistConstants.ShouldShowIgnoreAll(v.Scanner));
+            AddCommand(IgnoreAllCommandId, OnIgnoreAll, v => CxAssistConstants.GetIgnoreAllLabel(v.Scanner));
         }
 
         public static ErrorListContextMenuCommand Instance { get; private set; }
@@ -147,16 +147,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                var v = GetSelectedCxAssistVulnerability();
-                if (v == null) return;
-                string label = CxAssistConstants.GetIgnoreThisLabel(v.Scanner);
-                var result = MessageBox.Show(
-                    $"{label}?\n{v.Title ?? v.Description ?? v.Id}",
-                    CxAssistConstants.DisplayName,
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-                if (result == MessageBoxResult.Yes)
-                    MessageBox.Show(CxAssistConstants.GetIgnoreThisSuccessMessage(v.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
             });
         }
 
@@ -165,16 +156,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                var v = GetSelectedCxAssistVulnerability();
-                if (v == null) return;
-                string label = CxAssistConstants.GetIgnoreAllLabel(v.Scanner);
-                var result = MessageBox.Show(
-                    $"{label}?\n{v.Description}",
-                    CxAssistConstants.DisplayName,
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-                if (result == MessageBoxResult.Yes)
-                    MessageBox.Show(CxAssistConstants.GetIgnoreAllSuccessMessage(v.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
             });
         }
     }

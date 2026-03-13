@@ -391,7 +391,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         internal static void RunIgnoreAllOfThisType(Vulnerability v)
         {
-            RunOnUiThread(() => MessageBox.Show($"Ignore all of this type:\n{v?.Title ?? v?.Description ?? "—"}\n(Scanner: {v?.Scanner})", CxAssistConstants.DisplayName));
+            RunOnUiThread(() => MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
         internal static void RunFixWithAssist(Vulnerability v)
@@ -406,7 +406,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         internal static void RunIgnoreVulnerability(Vulnerability v)
         {
-            RunOnUiThread(() => MessageBox.Show($"Ignore vulnerability:\n{v?.Title ?? v?.Description ?? "—"}", CxAssistConstants.DisplayName));
+            RunOnUiThread(() => MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
         internal static void RunOnUiThread(Action action)

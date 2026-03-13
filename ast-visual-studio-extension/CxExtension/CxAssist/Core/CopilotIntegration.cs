@@ -62,10 +62,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>DTE command IDs for opening the Copilot Chat window.</summary>
         private static readonly string[] OpenChatCommands =
         {
-            "GitHub.Copilot.Chat.Show",
-            "View.CopilotChat",
-            "View.GitHubCopilotChat",
-            "Edit.Copilot.Open"
+            "View.GitHub.Copilot.Chat",
+            "Copilot.Open.Output.Window",
+            "GitHub.Copilot.Chat.OpenThreads"
         };
 
         /// <summary>DTE command IDs for starting a new chat thread.</summary>
@@ -184,7 +183,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 bool opened = TryOpenCopilotChat();
                 if (!opened)
                 {
-                    Log("Copilot Chat failed to open");
+                    Log("Copilot Chat failed to open - Copilot may not be installed");
                     MessageBox.Show(
                         CxAssistConstants.CopilotOpenInstructionsMessage,
                         CxAssistConstants.DisplayName,

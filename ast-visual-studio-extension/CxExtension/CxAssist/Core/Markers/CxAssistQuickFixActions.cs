@@ -169,20 +169,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         public void Invoke(CancellationToken cancellationToken)
         {
-            if (_vulnerability == null) return;
-            var v = _vulnerability;
             System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
-                    string label = CxAssistConstants.GetIgnoreThisLabel(v.Scanner);
-                    var result = MessageBox.Show(
-                        $"{label}?\n{v.Title ?? v.Description ?? v.Id}",
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question);
-                    if (result == MessageBoxResult.Yes)
-                        MessageBox.Show(CxAssistConstants.GetIgnoreThisSuccessMessage(v.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
@@ -232,20 +223,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         public void Invoke(CancellationToken cancellationToken)
         {
-            if (_vulnerability == null) return;
-            var v = _vulnerability;
             System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
-                    string label = CxAssistConstants.GetIgnoreAllLabel(v.Scanner);
-                    var result = MessageBox.Show(
-                        $"{label}?\n{v.Description}",
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Warning);
-                    if (result == MessageBoxResult.Yes)
-                        MessageBox.Show(CxAssistConstants.GetIgnoreAllSuccessMessage(v.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {

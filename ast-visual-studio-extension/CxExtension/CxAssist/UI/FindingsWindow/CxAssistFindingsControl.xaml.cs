@@ -473,6 +473,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         #region Context Menu Handlers
 
         /// <summary>
+        /// Selects the tree item on right-click so the context menu operates on the correct node.
+        /// WPF TreeView does not auto-select on right-click; without this, GetSelectedVulnerability() returns the wrong item.
+        /// </summary>
+        private void TreeViewItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TreeViewItem item)
+            {
+                item.IsSelected = true;
+                item.Focus();
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
         /// Show context menu only when right-clicking a vulnerability row, not the file (main) node (reference-style).
         /// </summary>
         private void FindingsTreeView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -480,15 +494,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             var treeViewItem = FindVisualAncestor<TreeViewItem>(e.OriginalSource as DependencyObject);
             if (treeViewItem?.DataContext is FileNode)
             {
-                e.Handled = true; // Hide context menu when right-click is on file node
+                e.Handled = true;
                 return;
             }
-            // Set Ignore menu labels and visibility based on scanner (Ignore all only for OSS and Container)
-            if (treeViewItem?.DataContext is VulnerabilityNode node && IgnoreThisMenuItem != null && IgnoreAllMenuItem != null)
+            if (treeViewItem?.DataContext is VulnerabilityNode)
             {
-                IgnoreThisMenuItem.Header = CxAssistConstants.GetIgnoreThisLabel(node.Scanner);
-                IgnoreAllMenuItem.Header = CxAssistConstants.GetIgnoreAllLabel(node.Scanner);
-                IgnoreAllMenuItem.Visibility = CxAssistConstants.ShouldShowIgnoreAll(node.Scanner) ? Visibility.Visible : Visibility.Collapsed;
+                treeViewItem.IsSelected = true;
+            }
+            else
+            {
+                e.Handled = true;
             }
         }
 
@@ -520,34 +535,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         private void Ignore_Click(object sender, RoutedEventArgs e)
         {
-            var vulnerability = GetSelectedVulnerability();
-            if (vulnerability != null)
-            {
-                string label = CxAssistConstants.GetIgnoreThisLabel(vulnerability.Scanner);
-                var result = MessageBox.Show($"{label}?\n{vulnerability.DisplayText}",
-                    CxAssistConstants.DisplayName, MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (result == MessageBoxResult.Yes)
-                {
-                    // TODO: Implement ignore logic
-                    MessageBox.Show(CxAssistConstants.GetIgnoreThisSuccessMessage(vulnerability.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
+            MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void IgnoreAll_Click(object sender, RoutedEventArgs e)
         {
-            var vulnerability = GetSelectedVulnerability();
-            if (vulnerability != null)
-            {
-                string label = CxAssistConstants.GetIgnoreAllLabel(vulnerability.Scanner);
-                var result = MessageBox.Show($"{label}?\n{vulnerability.Description}",
-                    CxAssistConstants.DisplayName, MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (result == MessageBoxResult.Yes)
-                {
-                    // TODO: Implement ignore all logic
-                    MessageBox.Show(CxAssistConstants.GetIgnoreAllSuccessMessage(vulnerability.Scanner), CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
+            MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private VulnerabilityNode GetSelectedVulnerability()
@@ -746,20 +739,118 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         #region Context Menu Handlers
 
         /// <summary>
-        /// Copy selected item as JSON to clipboard (aligned with JetBrains: ObjectMapper.writeValueAsString).
+        /// Resolves all related vulnerabilities for the selected node.
+        /// For OSS: all CVEs for the same package. For IaC/ASCA: all issues on the same line.
+        /// </summary>
+        private static List<Core.Models.Vulnerability> ResolveAllRelatedVulnerabilities(VulnerabilityNode node)
+        {
+            if (node == null) return null;
+            var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
+            if (v == null) return null;
+
+            List<Core.Models.Vulnerability> allVulns = null;
+            if (v.Scanner == Core.Models.ScannerType.OSS)
+                allVulns = CxAssistDisplayCoordinator.FindAllVulnerabilitiesForPackage(v);
+            else if (v.Scanner == Core.Models.ScannerType.IaC || v.Scanner == Core.Models.ScannerType.ASCA)
+                allVulns = CxAssistDisplayCoordinator.FindAllVulnerabilitiesForLine(v);
+
+            return allVulns ?? new List<Core.Models.Vulnerability> { v };
+        }
+
+        /// <summary>
+        /// Builds a JetBrains-style ScanIssue JSON structure from a list of related vulnerabilities.
+        /// Groups vulnerabilities under a single scan issue with nested vulnerabilities array
+        /// (aligned with JetBrains ObjectMapper.writeValueAsString on ScanIssue).
+        /// </summary>
+        private static object BuildScanIssueForCopy(Core.Models.Vulnerability primary, List<Core.Models.Vulnerability> allVulns)
+        {
+            var locations = primary.Locations != null && primary.Locations.Count > 0
+                ? primary.Locations.Select(l => new { line = l.Line, startIndex = l.StartIndex, endIndex = l.EndIndex }).ToArray()
+                : new[] { new { line = primary.LineNumber, startIndex = primary.StartIndex, endIndex = primary.EndIndex } };
+
+            string severityStr = primary.Severity.ToString();
+            string scanEngine = primary.Scanner.ToString();
+            string title = primary.Scanner == Core.Models.ScannerType.OSS
+                ? (primary.PackageName ?? primary.Title ?? "")
+                : (primary.Title ?? primary.RuleName ?? primary.Description ?? "");
+
+            if (allVulns.Count > 1)
+            {
+                if (primary.Scanner == Core.Models.ScannerType.IaC)
+                    title = allVulns.Count + CxAssistConstants.MultipleIacIssuesOnLine;
+                else if (primary.Scanner == Core.Models.ScannerType.ASCA)
+                    title = allVulns.Count + CxAssistConstants.MultipleAscaViolationsOnLine;
+            }
+
+            var highestSev = allVulns.OrderBy(v => v.Severity).First().Severity.ToString();
+
+            var vulnerabilities = allVulns.Select(v => new
+            {
+                vulnerabilityId = v.Id,
+                cve = v.CveName,
+                description = v.Description,
+                severity = v.Severity.ToString(),
+                remediationAdvise = v.RemediationAdvice,
+                fixVersion = v.RecommendedVersion,
+                actualValue = v.ActualValue,
+                expectedValue = v.ExpectedValue,
+                title = v.Scanner == Core.Models.ScannerType.OSS ? (string)null : (v.Title ?? v.RuleName),
+                similarityId = (string)null
+            }).ToArray();
+
+            string fileType = null;
+            if (primary.Scanner == Core.Models.ScannerType.IaC || primary.Scanner == Core.Models.ScannerType.Containers)
+            {
+                try { fileType = System.IO.Path.GetExtension(primary.FilePath)?.TrimStart('.').ToLowerInvariant(); }
+                catch { /* ignore */ }
+            }
+
+            return new
+            {
+                scanIssueId = (string)null,
+                severity = highestSev,
+                title,
+                description = (string)null,
+                remediationAdvise = primary.RemediationAdvice,
+                packageVersion = primary.PackageVersion,
+                packageManager = primary.PackageManager,
+                cve = (string)null,
+                scanEngine,
+                filePath = primary.FilePath,
+                imageTag = primary.Scanner == Core.Models.ScannerType.Containers ? primary.PackageVersion : null,
+                fileType,
+                secretValue = (string)null,
+                similarityId = (string)null,
+                ruleId = primary.RuleName,
+                problematicLineNumber = (primary.Scanner == Core.Models.ScannerType.IaC || primary.Scanner == Core.Models.ScannerType.ASCA)
+                    ? (int?)primary.LineNumber : null,
+                locations,
+                vulnerabilities
+            };
+        }
+
+        /// <summary>
+        /// Copy selected item as JSON to clipboard (aligned with JetBrains: ObjectMapper.writeValueAsString on ScanIssue).
+        /// Produces a grouped ScanIssue structure with nested vulnerabilities array matching JetBrains format.
         /// </summary>
         private void CopyMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var node = GetSelectedVulnerability();
             if (node == null) return;
-            var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
             try
             {
+                var allVulns = ResolveAllRelatedVulnerabilities(node);
                 string json;
-                if (v != null)
-                    json = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { v }, Newtonsoft.Json.Formatting.Indented);
+                if (allVulns != null && allVulns.Count > 0)
+                {
+                    var primary = allVulns[0];
+                    var scanIssue = BuildScanIssueForCopy(primary, allVulns);
+                    json = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { scanIssue }, Newtonsoft.Json.Formatting.Indented);
+                }
                 else
+                {
                     json = Newtonsoft.Json.JsonConvert.SerializeObject(new[] { new { node.Description, node.Severity, node.Scanner, node.Line, node.Column, node.FilePath, node.PackageName, node.PackageVersion } }, Newtonsoft.Json.Formatting.Indented);
+                }
                 Clipboard.SetText(json);
                 ShowStatusBarNotification("Copied to clipboard.");
             }
@@ -770,29 +861,50 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         /// <summary>
-        /// Copy short message to clipboard (reference "Copy Message": e.g. "High-risk package: validator@13.12").
+        /// Copy short message to clipboard. For grouped rows (multiple IaC/ASCA on same line, multiple OSS CVEs),
+        /// includes summary of all related vulnerabilities. For single findings, copies the primary display text.
         /// </summary>
         private void CopyMessage_Click(object sender, RoutedEventArgs e)
         {
-            var vuln = GetSelectedVulnerability();
-            if (vuln != null && !string.IsNullOrEmpty(vuln.PrimaryDisplayText))
+            var node = GetSelectedVulnerability();
+            if (node == null) return;
+            try
             {
-                try
+                var allVulns = ResolveAllRelatedVulnerabilities(node);
+                string message;
+                if (allVulns != null && allVulns.Count > 1)
                 {
-                    Clipboard.SetText(vuln.PrimaryDisplayText);
+                    var lines = new List<string> { node.PrimaryDisplayText };
+                    for (int i = 0; i < allVulns.Count; i++)
+                    {
+                        var vuln = allVulns[i];
+                        string title = vuln.Title ?? vuln.RuleName ?? vuln.CveName ?? vuln.Description ?? "";
+                        string sev = CxAssistConstants.GetRichSeverityName(vuln.Severity);
+                        lines.Add($"  {i + 1}. [{sev}] {title}");
+                    }
+                    message = string.Join("\n", lines);
+                }
+                else
+                {
+                    message = node.PrimaryDisplayText;
+                }
+
+                if (!string.IsNullOrEmpty(message))
+                {
+                    Clipboard.SetText(message);
                     ShowStatusBarNotification("Message copied to clipboard.");
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
             }
         }
 
         /// <summary>
         /// Copy the fix prompt to clipboard (aligned with JetBrains "Copy Fix" context menu action).
         /// Builds the scanner-specific remediation prompt and puts it on the clipboard.
-        /// Shows a success notification in the status bar (aligned with JetBrains copyToClipboardWithNotification).
+        /// For grouped rows (multiple IaC/ASCA on same line), all related vulnerabilities are included in the prompt.
         /// </summary>
         private void CopyFixPrompt_Click(object sender, RoutedEventArgs e)
         {
@@ -801,7 +913,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
             if (v == null)
                 return;
-            string prompt = Core.Prompts.CxOneAssistFixPrompts.BuildForVulnerability(v);
+
+            List<Core.Models.Vulnerability> sameLineVulns = null;
+            if (v.Scanner == Core.Models.ScannerType.IaC || v.Scanner == Core.Models.ScannerType.ASCA)
+                sameLineVulns = CxAssistDisplayCoordinator.FindAllVulnerabilitiesForLine(v);
+
+            string prompt = Core.Prompts.CxOneAssistFixPrompts.BuildForVulnerability(v, sameLineVulns);
             if (!string.IsNullOrEmpty(prompt))
             {
                 try
