@@ -74,9 +74,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts
 
 A security issue has been detected in `{packageName}@{packageVersion}` (package manager: `{packageManager}`).
 **Severity:** `{severity}`
+
 Your task is to remediate the issue **completely and autonomously** using the internal PackageRemediation tool in {ProductName} MCP. Follow the exact instructions in `fix_instructions` — no assumptions or manual interaction allowed.
 
----
+
 
 Step 1. ANALYSIS (AUTOMATED):
 
@@ -97,7 +98,6 @@ Call the internal PackageRemediation tool with:
 
 Parse the response and extract the `fix_instructions` field. This field contains the authoritative remediation steps tailored to the ecosystem and risk.
 
----
 
 Step 2. EXECUTION (AUTOMATED):
 
@@ -115,7 +115,6 @@ Examples:
 - `src/main.ts:42`: `_.pluck(users, 'id')` → `users.map(u => u.id)`
 - `src/index.ts:78`: // TODO: Verify API migration from old-package to new-package
 
----
 
 Step 3. VERIFICATION:
 
@@ -131,7 +130,6 @@ If any of these validations fail:
 - Attempt to fix the issue if it's obvious
 - Otherwise log the error and annotate the code with a TODO
 
----
 
 Step 4. OUTPUT:
 
@@ -181,7 +179,6 @@ If failed:
 - ""Reason: {{summary of failure}}""
 - ""Unresolved instructions or failing tests listed above""
 
----
 
 Step 5. CONSTRAINTS:
 
@@ -213,7 +210,6 @@ You are the `{AgentName}`.
 
 Your mission is to identify and remediate this secret using secure coding standards. Follow industry best practices, automate safely, and clearly document all actions taken.
 
----
 
 Step 1. SEVERITY INTERPRETATION  
 Severity level: `{severity}`
@@ -222,7 +218,6 @@ Severity level: `{severity}`
 - `High`: Secret may be valid. Treat as sensitive and externalize it securely.  
 - `Medium`: Likely **invalid** (e.g., test or placeholder). Still remove from code and annotate accordingly.
 
----
 
 Step 2. TOOL CALL – Remediation Plan
 
@@ -247,7 +242,6 @@ Call the internal `codeRemediation` {ProductName} MCP tool with:
 - If the tool is **not available**, display:
   `[MCP ERROR] codeRemediation tool is not available. Please check the {ProductName} MCP server.`
 
----
 
 Step 3. ANALYSIS & RISK
 
@@ -255,7 +249,6 @@ Identify the type of secret (API key, token, credential). Explain:
 - Why it's a risk (leakage, unauthorized access, compliance violations)
 - What could happen if misused or left in source
 
----
 
 Step 4. REMEDIATION STRATEGY
 
@@ -264,7 +257,6 @@ Step 4. REMEDIATION STRATEGY
 - If a step cannot be applied automatically, insert a clear TODO
 - Replace secret with environment variable or vault reference
 
----
 
 Step 5. VERIFICATION
 
@@ -273,7 +265,6 @@ If applicable for the language:
 - Ensure changes build and tests pass
 - Fix issues if introduced by secret removal
 
----
 
 Step 6. OUTPUT FORMAT
 
@@ -309,7 +300,6 @@ Generate a structured remediation summary:
 
 ```
 
----
 
 Step 7. CONSTRAINTS
 
@@ -329,7 +319,6 @@ A container security issue has been detected in `{fileType}` with image `{imageN
 **Severity:** `{severity}`  
 Your task is to remediate the issue **completely and autonomously** using the internal imageRemediation tool. Follow the exact instructions in `fix_instructions` — no assumptions or manual interaction allowed.
 
----
 
 Step 1. ANALYSIS (AUTOMATED):
 
@@ -350,7 +339,6 @@ Call the internal imageRemediation tool with:
 
 Parse the response and extract the `fix_instructions` field. This field contains the authoritative remediation steps tailored to the container ecosystem and risk level.
 
----
 
 Step 2. EXECUTION (AUTOMATED):
 
@@ -368,7 +356,6 @@ Examples:
 - `values.yaml`: repository: old-repo → repository: new-repo
 - `Chart.yaml`: version: 1.0.0 → version: 1.1.0
 
----
 
 Step 3. VERIFICATION:
 
@@ -382,7 +369,6 @@ If any of these validations fail:
 - Attempt to fix the issue if it's obvious
 - Otherwise log the error and annotate the code with a TODO
 
----
 
 Step 4. OUTPUT:
 
@@ -430,7 +416,6 @@ If failed:
 - ""Reason: {{summary of failure}}""
 - ""Unresolved instructions or deployment issues listed above""
 
----
 
 Step 5. CONSTRAINTS:
 
@@ -499,7 +484,6 @@ Your task is to remediate this IaC security issue **completely and autonomously*
 
             sb.Append($@"
 
----
 
 Step 1. ANALYSIS (AUTOMATED):
 
@@ -527,7 +511,6 @@ Call the internal `codeRemediation` {ProductName} MCP tool with:
 - If the tool is **not available**, display:
   `[MCP ERROR] codeRemediation tool is not available. Please check the {ProductName} MCP server.`
 
----
 
 Step 2. EXECUTION (AUTOMATED):
 
@@ -540,7 +523,6 @@ Step 2. EXECUTION (AUTOMATED):
   - Record before → after values where applicable.
   - Capture line numbers if known.
 
----
 
 Step 3. VERIFICATION:
 
@@ -555,7 +537,6 @@ If any of these validations fail:
 - Attempt to fix the issue if it's obvious
 - Otherwise log the error and annotate the code with a TODO
 
----
 
 Step 4. OUTPUT:
 
@@ -603,7 +584,6 @@ If failed:
 - ""Reason: {{summary of failure}}""
 - ""Unresolved instructions or security issues listed above""
 
----
 
 Step 5. CONSTRAINTS:
 
@@ -669,7 +649,6 @@ Your task is to remediate this security issue **completely and autonomously** us
 
             sb.Append($@"
 
----
 
 Step 1. ANALYSIS (AUTOMATED):
 
@@ -697,7 +676,6 @@ Call the internal `codeRemediation` {ProductName} MCP tool with:
 - If the tool is **not available**, display:
   `[MCP ERROR] codeRemediation tool is not available. Please check the {ProductName} MCP server.`
 
----
 
 Step 2. EXECUTION (AUTOMATED):
 
@@ -710,7 +688,6 @@ Step 2. EXECUTION (AUTOMATED):
   - Record before → after values where applicable.
   - Capture line numbers if known.
 
----
 
 Step 3. VERIFICATION:
 
@@ -724,7 +701,6 @@ If any of these validations fail:
 - Attempt to fix the issue if it's obvious
 - Otherwise log the error and annotate the code with a TODO
 
----
 
 Step 4. OUTPUT:
 
@@ -776,7 +752,6 @@ If failed:
 - ""Reason: {{summary of failure}}""
 - ""Unresolved instructions or security issues listed above""
 
----
 
 Step 5. CONSTRAINTS:
 

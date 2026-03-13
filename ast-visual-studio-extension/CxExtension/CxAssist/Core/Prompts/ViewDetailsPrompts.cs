@@ -74,13 +74,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts
 
 Your task is to **analyze and explain** the security issue affecting the package `{packageName}@{version}` with status: `{status}`.
 
----
 
 ### ❗ Important Instructions:
 - 👉 **Do not change anything in the code. Just explain the risks and remediation steps.**
 - ❌ **Never include references from {ProductName} competitors.**
 
----
 
 ### 🔍 Package Overview
 
@@ -92,7 +90,6 @@ Your task is to **analyze and explain** the security issue affecting the package
             if (isMalicious)
             {
                 sb.Append($@"
----
 
 ### 🧨 Malicious Package Detected
 
@@ -126,7 +123,6 @@ Then explain:
             else
             {
                 sb.Append($@"
----
 
 ### 🚨 Known Vulnerabilities
 
@@ -155,7 +151,6 @@ Explain each known CVE affecting this package:
             }
 
             sb.Append($@"
----
 
 ### 🛠️ Remediation Guidance
 
@@ -168,7 +163,6 @@ Offer actionable advice:
   - Prefer signed packages
   - Pin versions to prevent shadow updates
 
----
 
 ### ✅ Summary Section
 
@@ -179,7 +173,6 @@ Conclude with:
 - If not, reference {ProductName} attribution (per above rules)
 - Never mention competitor vendors or tools
 
----
 
 ### ✏️ Output Formatting
 
@@ -198,12 +191,10 @@ Conclude with:
 A potential secret has been detected: **""{title}""**  
 Severity: **{severity}**
 
----
 
 ### ❗ Important Instruction:
 👉 **Do not change any code. Just explain the risk, validation level, and recommended actions.**
 
----
 
 ### 🔍 Secret Overview
 
@@ -211,7 +202,6 @@ Severity: **{severity}**
 - **Severity Level:** `{severity}`
 - **Details:** {description ?? ""}
 
----
 
 ### 🧠 Risk Understanding Based on Severity
 
@@ -224,7 +214,6 @@ Severity: **{severity}**
 - **Medium**:  
   The secret was identified as **invalid** or **mock/test value**. While not active, it may confuse developers or be reused insecurely.
 
----
 
 ### 🔐 Why This Matters
 
@@ -233,7 +222,6 @@ Hardcoded secrets pose a serious risk:
 - **Unauthorized access** to APIs, cloud providers, or infrastructure
 - **Exploitation** via replay attacks, privilege escalation, or lateral movement
 
----
 
 ### ✅ Recommended Remediation Steps (for developer action)
 
@@ -243,7 +231,6 @@ Hardcoded secrets pose a serious risk:
 - Implement secret scanning in your CI/CD pipelines
 - Document safe handling procedures in your repo
 
----
 
 ### 📋 Next Steps Checklist (Markdown)
 
@@ -256,7 +243,6 @@ Hardcoded secrets pose a serious risk:
 - [ ] Implement CI/CD secret scanning and policies
 ```
 
----
 
 ### ✏️ Output Format Guidelines
 
@@ -277,13 +263,11 @@ Hardcoded secrets pose a serious risk:
 
 Your task is to **analyze and explain** the container security issue affecting `{fileType}` with image `{imageName}:{imageTag}` and severity: `{severity}`.
 
----
 
 ###  Important Instructions:
 -  **Do not change anything in the code. Just explain the risks and remediation steps.**
 -  **Never include references from {ProductName} competitors.**
 
----
 
 ### 🔍 Container Overview
 
@@ -291,7 +275,6 @@ Your task is to **analyze and explain** the container security issue affecting `
 - **Image:** `{imageName}:{imageTag}`
 - **Severity:** `{severity}`
 
----
 
 ### 🐳 Container Security Issue Analysis
 
@@ -355,7 +338,6 @@ This container image contains known security vulnerabilities.
             }
 
             sb.Append($@"
----
 
 ### 🛠️ Remediation Guidance
 
@@ -371,7 +353,6 @@ Offer actionable advice:
   - Run containers as non-root users
   - Use multi-stage builds to reduce attack surface
 
----
 
 ### ✅ Summary Section
 
@@ -382,7 +363,6 @@ Conclude with:
 - If not, reference {ProductName} attribution (per above rules)
 - Never mention competitor vendors or tools
 
----
 
 ### Output Formatting
 
@@ -406,13 +386,11 @@ Conclude with:
             {
                 sb.Append($@"Your task is to **analyze and explain** the **{vulnerabilities.Count} Infrastructure as Code (IaC) security issues** detected on this line in a `{fileType}` file.
 
----
 
 ### ❗ Important Instructions:
 - 👉 **Do not change anything in the configuration. Just explain the risks and remediation steps.**
 - ❌ **Never include references from {ProductName} competitors.**
 
----
 
 ### 🔍 IaC Security Issues Overview
 
@@ -438,13 +416,11 @@ Explain each IaC issue detected:
             {
                 sb.Append($@"Your task is to **analyze and explain** the Infrastructure as Code (IaC) security issue: **{title}** with severity: `{severity}`.
 
----
 
 ### ❗ Important Instructions:
 - 👉 **Do not change anything in the configuration. Just explain the risks and remediation steps.**
 - ❌ **Never include references from {ProductName} competitors.**
 
----
 
 ### 🔍 IaC Security Issue Overview
 
@@ -458,13 +434,11 @@ Explain each IaC issue detected:
             }
 
             sb.Append($@"
----
 
 ### 🏗️ Infrastructure Security Issue Analysis
 
 **Issue Type:** Infrastructure Configuration Vulnerability
 
----
 
 ### 🚨 Security Risks
 
@@ -481,7 +455,6 @@ This configuration issue can lead to:
 - Unrestricted public access
 - Insecure service configurations
 
----
 
 ### 🛠️ Remediation Guidance
 
@@ -500,7 +473,6 @@ Offer actionable advice based on the file type:
 - Follow cloud provider security guidelines
 - Use secure configuration templates
 
----
 
 ### ✅ Summary Section
 
@@ -510,7 +482,6 @@ Conclude with:
 - Impact on system security posture
 - Long-term security considerations
 
----
 
 ### ✏️ Output Formatting
 
@@ -545,14 +516,12 @@ Conclude with:
                 }
                 sb.Append($@"Please provide a comprehensive explanation of each security issue listed above.
 
----
 
 ### 🔍 Security Issues Overview
 
 **Total Issues:** {vulnerabilities.Count}
 **Highest Risk Level:** {severity}
 
----
 
 ### 📖 Detailed Explanation
 
@@ -560,7 +529,6 @@ For each issue listed above, explain:
 - What the vulnerability means
 - Why it's dangerous in context
 
----
 
 ### ⚠️ Why This Matters
 
@@ -569,7 +537,6 @@ Explain the potential security implications:
 - What data or systems could be compromised?
 - What is the potential business impact?
 
----
 
 ### 🛡️ Security Best Practices
 
@@ -579,7 +546,6 @@ Provide general guidance on:
 - Secure alternatives to recommend
 - Tools and techniques for detection
 
----
 
 ### 📚 Additional Resources
 
@@ -589,7 +555,6 @@ Suggest relevant:
 - Tools for static analysis
 - Training materials
 
----
 
 ### ✏️ Output Format Guidelines
 
@@ -610,20 +575,17 @@ Suggest relevant:
 
 Please provide a comprehensive explanation of this security issue.
 
----
 
 ### 🔍 Security Issue Overview
 
 **Rule Name:** {ruleName}
 **Risk Level:** {severity}
 
----
 
 ### 📖 Detailed Explanation
 
 {description}
 
----
 
 ### ⚠️ Why This Matters
 
@@ -632,7 +594,6 @@ Explain the potential security implications:
 - What data or systems could be compromised?
 - What is the potential business impact?
 
----
 
 ### 🛡️ Security Best Practices
 
@@ -642,7 +603,6 @@ Provide general guidance on:
 - Secure alternatives to recommend
 - Tools and techniques for detection
 
----
 
 ### 📚 Additional Resources
 
@@ -652,7 +612,6 @@ Suggest relevant:
 - Tools for static analysis
 - Training materials
 
----
 
 ### ✏️ Output Format Guidelines
 
