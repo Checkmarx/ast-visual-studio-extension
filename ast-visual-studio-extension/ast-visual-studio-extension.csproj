@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
@@ -132,6 +132,13 @@
     <Compile Include="CxWrapper\ReportFormat.cs" />
     <Compile Include="CxExtension\CxWindow.cs" />
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />
+    <Compile Include="CxExtension\Commands\ErrorListContextMenuCommand.cs" />
+    <Compile Include="CxExtension\Commands\ShowFindingsWindowCommand.cs" />
+    <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\FindingsTreeNode.cs" />
+    <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsWindow.cs" />
+    <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsControl.xaml.cs">
+      <DependentUpon>CxAssistFindingsControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>
     </Compile>
@@ -141,6 +148,37 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>CxWindowPackage.vsct</DependentUpon>
     </Compile>
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphFactory.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTagger.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTaggerProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistTextViewCreationListener.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistMockDataViewCreationListener.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTagger.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTaggerProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoController.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoControllerProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSource.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistAsyncQuickInfoSourceProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoSource.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSourceProvider.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistSuggestedActionsSource.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickFixActions.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistMockData.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistDisplayCoordinator.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\FindingsTreeBuilder.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorListSync.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistConstants.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistScannerConstants.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\AssistIconLoader.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistOutputPane.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CopilotIntegration.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\CxAssistCopilotActions.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Prompts\CxOneAssistFixPrompts.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Prompts\ViewDetailsPrompts.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Models\SeverityLevel.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Models\ScannerType.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\Models\Vulnerability.cs" />
     <Compile Include="CxPreferences\CxPreferencesModule.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -161,11 +199,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <None Include="ast-visual-studio-extension-tests\test-data\mock-build.gradle" />
+    <None Include="ast-visual-studio-extension-tests\test-data\mock-packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="EnvDTE80" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -176,7 +217,9 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationClient" />
     <Reference Include="UIAutomationProvider" />
+    <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
@@ -189,18 +232,23 @@
     <PackageReference Include="Microsoft.TeamFoundationServer.Client">
       <Version>19.225.1</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense" Version="17.9.187" />
+    <PackageReference Include="Microsoft.VisualStudio.Language.StandardClassification" Version="17.9.187" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.12.2069">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0" />
+    <PackageReference Include="MessagePack" Version="2.5.187" />
     <PackageReference Include="log4net" Version="2.0.17" />
     <PackageReference Include="Microsoft.VSSDK.Vsixsigntool" Version="16.2.29116.78" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt">
       <Version>7.5.1</Version>
     </PackageReference>
     <PackageReference Include="System.Json" Version="4.7.1" />
+    <PackageReference Include="SharpVectors" Version="1.8.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="CxExtension\Resources\critical.png">
@@ -292,6 +340,62 @@
     <Resource Include="CxExtension\Resources\medium.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <!-- CxAssist Icons - SVG Light Theme (16x16 gutter icons from reference) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\ignored.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\ok.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\unknown.svg" />
+    <!-- CxAssist Icons - SVG Dark Theme (16x16 gutter icons from reference) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ignored.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ok.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\unknown.svg" />
+    <!-- CxAssist Icons - Expand/Collapse All (from reference IntelliJ platform, same as ast-jetbrains-plugin) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\expandall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\collapseall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\container.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\package.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\star-action.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\expandall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\collapseall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\container.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\package.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\star-action.svg" />
+    <!-- CxAssist Icons - PNG Light Theme (reference tooltip icons for tree view) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\low.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\malicious.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\container.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\package.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\cxone_assist.png" />
+    <!-- CxAssist Icons - PNG Dark Theme (reference tooltip icons for tree view) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\low.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\malicious.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\container.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\package.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\cxone_assist.png" />
+    <!-- CxAssist severity_count (hover popup when multiple findings on same line) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\severity_count\low.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\critical.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\high.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\medium.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\low.png" />
     <Content Include="CxPreferences\Resources\CxPreferencesPackage.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -310,6 +414,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CxExtension\CxWindowControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

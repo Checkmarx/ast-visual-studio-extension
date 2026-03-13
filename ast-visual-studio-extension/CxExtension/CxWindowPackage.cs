@@ -1,4 +1,5 @@
-﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
@@ -36,10 +37,10 @@ namespace ast_visual_studio_extension.CxExtension
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
-    [ProvideMenuResource("Menus1.ctmenu", 1)]
     [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideToolWindow(typeof(CxWindow),Style = VsDockStyle.Tabbed,Orientation = ToolWindowOrientation.Right,Window = EnvDTE.Constants.vsWindowKindOutput,Transient = false)]
+    [ProvideToolWindow(typeof(CxAssist.UI.FindingsWindow.CxAssistFindingsWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Bottom, Window = EnvDTE.Constants.vsWindowKindOutput, Transient = false)]
     [Guid(PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
     {
@@ -47,6 +48,8 @@ namespace ast_visual_studio_extension.CxExtension
         /// CxWindowPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
+
+        private CxAssistErrorListSync _CxAssistErrorListSync;
 
         #region Package Members
 
@@ -69,10 +72,24 @@ namespace ast_visual_studio_extension.CxExtension
 
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
+
+                // Test CxAssist Hover Popup is registered in ast_visual_studio_extensionPackage so it appears under Tools.
+
+                // Show Findings Window Command (POC for AST-133228 - Custom Tool Window)
+                // Command still works programmatically but not visible in menu
+                await ShowFindingsWindowCommand.InitializeAsync(this);
+
+                // Sync CxAssist findings to the built-in Error List when enabled. When disabled, hover shows only one block (like C# symbol hover).
+                _CxAssistErrorListSync = new CxAssistErrorListSync();
+                if (CxAssistConstants.SyncFindingsToBuiltInErrorList)
+                    _CxAssistErrorListSync.Start();
+
+                // Error List context menu: Fix with Checkmarx One Assist, View details (when a CxAssist finding is selected).
+                await ErrorListContextMenuCommand.InitializeAsync(this);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.ToString());
+                //Console.WriteLine(ex.ToString());
             }
         }
         private string GetLogFilePath()
