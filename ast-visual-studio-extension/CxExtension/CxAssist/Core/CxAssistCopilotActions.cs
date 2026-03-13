@@ -14,15 +14,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>
         /// Sends a "Fix with Checkmarx One Assist" prompt to Copilot for the given vulnerability.
         /// Builds a remediation prompt by scanner type and opens Copilot with a new chat. No-op if no prompt is available.
+        /// For IaC/ASCA, automatically resolves all issues on the same line (aligned with JetBrains IacScanResultAdaptor grouping).
         /// </summary>
-        public static void SendFixWithAssist(Vulnerability v)
+        public static void SendFixWithAssist(Vulnerability v, IReadOnlyList<Vulnerability> sameLineVulns = null)
         {
             if (v == null) return;
             string issueDesc = v.Title ?? v.Description ?? "unknown";
             string filePath = v.FilePath ?? "unknown";
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_CALLED, "Fix", issueDesc));
 
-            string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v);
+            if (sameLineVulns == null && (v.Scanner == Models.ScannerType.IaC || v.Scanner == Models.ScannerType.ASCA))
+            {
+                sameLineVulns = CxAssistDisplayCoordinator.FindAllVulnerabilitiesForLine(v);
+            }
+
+            string prompt = CxOneAssistFixPrompts.BuildForVulnerability(v, sameLineVulns);
             if (string.IsNullOrEmpty(prompt))
             {
                 ShowNoPromptMessage(v?.Title ?? v?.Description ?? "—", isFix: true);
@@ -40,17 +46,27 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>
         /// Sends a "View details" prompt to Copilot for the given vulnerability.
         /// Builds an explanation prompt by scanner type and opens Copilot with a new chat. No-op if no prompt is available.
+        /// For OSS findings, automatically resolves all CVEs for the same package (aligned with JetBrains ScanIssue.getVulnerabilities()).
+        /// For IaC/ASCA, automatically resolves all issues on the same line (aligned with JetBrains IacScanResultAdaptor grouping).
         /// </summary>
         /// <param name="v">The vulnerability to explain.</param>
-        /// <param name="sameLineVulns">Optional. For OSS, pass other vulnerabilities on the same line to include CVE list in the prompt.</param>
-        public static void SendViewDetails(Vulnerability v, IReadOnlyList<Vulnerability> sameLineVulns = null)
+        /// <param name="relatedVulns">Optional. Related vulnerabilities (same package for OSS, same line for IaC/ASCA). If null, auto-resolved from coordinator.</param>
+        public static void SendViewDetails(Vulnerability v, IReadOnlyList<Vulnerability> relatedVulns = null)
         {
             if (v == null) return;
             string issueDesc = v.Title ?? v.Description ?? "unknown";
             string filePath = v.FilePath ?? "unknown";
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_CALLED, "View details", issueDesc));
 
-            string prompt = ViewDetailsPrompts.BuildForVulnerability(v, sameLineVulns);
+            if (relatedVulns == null)
+            {
+                if (v.Scanner == Models.ScannerType.OSS)
+                    relatedVulns = CxAssistDisplayCoordinator.FindAllVulnerabilitiesForPackage(v);
+                else if (v.Scanner == Models.ScannerType.IaC || v.Scanner == Models.ScannerType.ASCA)
+                    relatedVulns = CxAssistDisplayCoordinator.FindAllVulnerabilitiesForLine(v);
+            }
+
+            string prompt = ViewDetailsPrompts.BuildForVulnerability(v, relatedVulns);
             if (string.IsNullOrEmpty(prompt))
             {
                 ShowNoPromptMessage($"{v?.Title ?? ""}\n{v?.Description ?? ""}\nSeverity: {v?.Severity}", isFix: false);

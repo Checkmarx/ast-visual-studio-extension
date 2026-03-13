@@ -24,6 +24,7 @@
             <Setter Property="IsExpanded" Value="True"/>
             <Setter Property="Padding" Value="2,2"/>
             <EventSetter Event="MouseDoubleClick" Handler="TreeViewItem_MouseDoubleClick"/>
+            <EventSetter Event="PreviewMouseRightButtonDown" Handler="TreeViewItem_PreviewMouseRightButtonDown"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TreeViewItem">
@@ -390,7 +391,6 @@
                     <Border Height="1" Margin="0,2,0,2" VerticalAlignment="Center"
                             Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}"
                             IsHitTestVisible="False"/>
-                    <MenuItem Header="Copy Fix Prompt" Click="CopyFixPrompt_Click"/>
                     <MenuItem Header="Copy" Click="CopyMenuItem_Click"/>
                     <MenuItem Header="Copy Message" Click="CopyMessage_Click"/>
                 </ContextMenu>

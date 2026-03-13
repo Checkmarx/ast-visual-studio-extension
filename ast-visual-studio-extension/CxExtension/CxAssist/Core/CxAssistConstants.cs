@@ -227,6 +227,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public const string IgnoreThis = "Ignore this vulnerability";
         public const string IgnoreAllOfThisType = "Ignore all of this type";
         public const string CopyMessage = "Copy Message";
+        public const string IgnoreFeatureInProgressMessage = "This feature is currently in progress and will be available in a future release.";
         public const string SecretFindingLabel = "Secret finding";
         public const string SastVulnerabilityLabel = "SAST vulnerability";
         public const string IacVulnerabilityLabel = "IaC vulnerability";
@@ -240,8 +241,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public const string CopilotFixFallbackMessage = "Fix prompt copied. Paste into GitHub Copilot Chat to get remediation steps.";
         public const string CopilotViewDetailsFallbackMessage = "View details prompt copied. Paste into GitHub Copilot Chat to get an explanation.";
         public const string CopilotPromptSentMessage = "Prompt was sent to GitHub Copilot Chat. Check the chat for the response.";
-        public const string CopilotPasteFailedMessage = "Copilot Chat was opened but the prompt could not be sent automatically. The prompt is on your clipboard—click in the chat box, paste (Ctrl+V), then press Enter.";
-        public const string CopilotOpenInstructionsMessage = "Prompt copied to clipboard. Open GitHub Copilot Chat (View → GitHub Copilot Chat, or press Alt+Ctrl+Enter), then paste (Ctrl+V) and press Enter to get assistance.";
+        public const string CopilotPasteFailedMessage = "Prompt copied to clipboard! Paste it into GitHub Copilot Chat (Agent Mode).";
+        public const string CopilotOpenInstructionsMessage = "Prompt copied to clipboard! Paste it into GitHub Copilot Chat (Agent Mode).";
         public const string CopilotGenericFallbackMessage = "Prompt copied to clipboard. Paste into GitHub Copilot Chat.";
 
         /// <summary>Context menu / Error List / Quick Info / Quick Fix: "Ignore this [finding type]" label based on scanner.</summary>
