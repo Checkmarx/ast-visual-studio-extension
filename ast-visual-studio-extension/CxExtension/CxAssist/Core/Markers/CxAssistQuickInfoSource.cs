@@ -396,12 +396,28 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         internal static void RunFixWithAssist(Vulnerability v)
         {
-            RunOnUiThread(() => CxAssistCopilotActions.SendFixWithAssist(v));
+            RunOnUiThread(() =>
+            {
+                // For IaC/ASCA from popup: send ONLY this vulnerability, not all on the line
+                // Pass empty list to prevent auto-resolve in SendFixWithAssist
+                var sameLineVulns = (v.Scanner == Models.ScannerType.IaC || v.Scanner == Models.ScannerType.ASCA)
+                    ? new List<Vulnerability> { v }  // Only this one
+                    : null;  // Other scanners: null (auto-resolve handled in SendFixWithAssist)
+                CxAssistCopilotActions.SendFixWithAssist(v, sameLineVulns);
+            });
         }
 
         internal static void RunViewDetails(Vulnerability v)
         {
-            RunOnUiThread(() => CxAssistCopilotActions.SendViewDetails(v));
+            RunOnUiThread(() =>
+            {
+                // For IaC/ASCA from popup: send ONLY this vulnerability, not all on the line
+                // Pass list with only this vulnerability to prevent auto-resolve in SendViewDetails
+                var relatedVulns = (v.Scanner == Models.ScannerType.IaC || v.Scanner == Models.ScannerType.ASCA)
+                    ? new List<Vulnerability> { v }  // Only this one
+                    : null;  // OSS: null (auto-resolve for same package handled in SendViewDetails)
+                CxAssistCopilotActions.SendViewDetails(v, relatedVulns);
+            });
         }
 
         internal static void RunIgnoreVulnerability(Vulnerability v)
