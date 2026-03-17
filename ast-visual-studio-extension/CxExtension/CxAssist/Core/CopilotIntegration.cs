@@ -59,6 +59,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             public const int PasteSettleMs = 100;
         }
 
+        /// <summary>
+        /// UI Automation properties for GitHub Copilot Chat integration.
+        /// </summary>
+        private static class AutomationProperties
+        {
+            public static readonly string[] ModePickerNames = {
+                "Chat Mode Picker", "Chat mode",
+                "Agent Mode Picker", "Agent mode", "Agent",
+                "Mode"
+            };
+            public const string AgentOptionName = "Agent";
+        }
 
         // ==================== Command ID Constants ====================
 
@@ -198,7 +210,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                 Log("Copilot Chat opened, scheduling automation sequence");
 
-                // Step 3: Schedule the automation sequence after UI renders
+                // Step 4: Schedule the automation sequence after UI renders
                 ScheduleAutomatedPromptEntry(prompt);
 
                 return IntegrationResult.PartialSuccess(
@@ -237,20 +249,53 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         private static void ScheduleAutomatedPromptEntry(string prompt)
         {
-            // Step 1: Wait for Copilot Chat to render, then start new thread
+            // Step 1: Wait for Copilot Chat to render, then attempt to switch to Agent
+            // mode before starting a new thread. Some Copilot behaviors inherit the
+            // current mode when a new thread is created, so switching first can
+            // avoid extra UI navigation.
             ScheduleOnIdle(Timing.CopilotOpenDelayMs, () =>
             {
-                bool newThreadStarted = TryStartNewThread();
-                Log(newThreadStarted
-                    ? "New thread started via DTE command"
-                    : "DTE new-thread commands not available, continuing with current thread");
+                bool agentMode = TrySwitchToAgentMode();
+                Log(agentMode
+                    ? "Switched to Agent mode successfully"
+                    : "Agent mode switch skipped/failed, continuing in current mode");
 
-                int settleDelay = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                int settleAfterAgent = agentMode ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
 
-                // Step 2: Wait for new thread UI to settle, then paste + submit
-                ScheduleOnIdle(settleDelay, () =>
+                // Step 2: After Agent mode (or short delay), start a new thread
+                ScheduleOnIdle(settleAfterAgent, () =>
                 {
-                    PerformPasteAndSubmit();
+                    bool newThreadStarted = TryStartNewThread();
+                    Log(newThreadStarted
+                        ? "New thread started via DTE command"
+                        : "DTE new-thread commands not available, continuing with current thread");
+
+                    // If a new thread was started, try focusing the Copilot input
+                    if (newThreadStarted)
+                    {
+                        try
+                        {
+                            var vsProcess = Process.GetCurrentProcess();
+                            AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                            if (vsWindow != null)
+                            {
+                                bool focused = FocusCopilotInput(vsWindow);
+                                Log("UI Automation: Focused Copilot input after new thread: " + focused);
+                            }
+                        }
+                        catch (Exception exFocus)
+                        {
+                            Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                        }
+                    }
+
+                    int agentDelay = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+
+                    // Step 3: Wait for UI to settle, then paste + submit
+                    ScheduleOnIdle(agentDelay, () =>
+                    {
+                        PerformPasteAndSubmit();
+                    });
                 });
             });
         }
@@ -442,13 +487,588 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         // ==================== Agent Mode Switching ====================
 
         /// <summary>
-        /// Skips Agent mode switching. Prompts will be sent in Chat mode.
+        /// Switches Copilot Chat to Agent mode using direct UI Automation (no keyboard navigation).
+        /// Searches the entire VS main window for the mode picker button by known names,
+        /// then opens the dropdown and selects Agent.
+        ///
+        /// If Agent mode is already active, returns true without attempting to switch.
         /// </summary>
         private static bool TrySwitchToAgentMode()
         {
-            Log("Agent mode switching disabled - sending prompt in Chat mode");
-            return true;
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                Log("Switching to Agent mode via UI Automation...");
+
+                var vsProcess = Process.GetCurrentProcess();
+                AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                if (vsWindow == null)
+                {
+                    Log("UI Automation: Could not get VS main window");
+                    return false;
+                }
+
+                if (IsAgentModeAlreadyActive(vsWindow))
+                {
+                    Log("UI Automation: Agent mode is already active, skipping switch");
+                    return true;
+                }
+
+                AutomationElement modePicker = FindModePickerButton(vsWindow);
+                if (modePicker == null)
+                {
+                    Log("UI Automation: Mode Picker button not found");
+                    ListAvailableElements(vsWindow);
+                    return false;
+                }
+
+                Log("UI Automation: Found Mode Picker, attempting to open dropdown...");
+
+                if (modePicker.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
+                {
+                    Log("UI Automation: Using InvokePattern to open dropdown");
+                    ((InvokePattern)pattern).Invoke();
+                    System.Threading.Thread.Sleep(700);
+                }
+                else
+                {
+                    Log("UI Automation: InvokePattern not supported, using mouse click");
+                    if (!ClickElement(modePicker))
+                    {
+                        Log("UI Automation: Failed to click Mode Picker button");
+                        return false;
+                    }
+                    System.Threading.Thread.Sleep(700);
+                }
+
+                if (SelectAgentDirectly(vsWindow))
+                {
+                    Log("UI Automation: Agent mode selected successfully");
+                    return true;
+                }
+
+                Log("UI Automation: Failed to select Agent option");
+                System.Windows.Forms.SendKeys.SendWait("{ESC}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error: " + ex.Message);
+                return false;
+            }
         }
+
+        /// <summary>
+        /// Finds the Mode Picker button by searching the VS window for known names.
+        /// </summary>
+        private static AutomationElement FindModePickerButton(AutomationElement root)
+        {
+            foreach (string pickerName in AutomationProperties.ModePickerNames)
+            {
+                var picker = root.FindFirst(TreeScope.Descendants,
+                    new PropertyCondition(AutomationElement.NameProperty, pickerName));
+
+                if (picker != null)
+                {
+                    Log("UI Automation: Found Mode Picker button: '" + pickerName + "'");
+                    return picker;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Attempts to read the currently selected mode string from the Mode Picker.
+        /// Tries Value/Text/Selection/SelectionItem patterns then falls back to
+        /// local descendants, parent siblings, and a nearby spatial search.
+        /// Returns null when no candidate is found.
+        /// </summary>
+        private static string GetSelectedMode(AutomationElement modePicker, AutomationElement root)
+        {
+            try
+            {
+                if (modePicker == null) return null;
+
+                // 1) ValuePattern
+                try
+                {
+                    if (modePicker.TryGetCurrentPattern(ValuePattern.Pattern, out object valObj))
+                    {
+                        var vp = (ValuePattern)valObj;
+                        string v = vp.Current.Value?.Trim();
+                        if (!string.IsNullOrEmpty(v)) return v;
+                    }
+                }
+                catch { }
+
+                // 2) TextPattern
+                try
+                {
+                    if (modePicker.TryGetCurrentPattern(TextPattern.Pattern, out object textObj))
+                    {
+                        var tp = (TextPattern)textObj;
+                        string t = tp.DocumentRange.GetText(-1)?.Trim();
+                        if (!string.IsNullOrEmpty(t)) return t;
+                    }
+                }
+                catch { }
+
+                // 3) SelectionPattern
+                try
+                {
+                    if (modePicker.TryGetCurrentPattern(SelectionPattern.Pattern, out object selObj))
+                    {
+                        var sp = (SelectionPattern)selObj;
+                        var sel = sp.Current.GetSelection();
+                        if (sel != null && sel.Length > 0)
+                        {
+                            string nm = sel[0].Current.Name?.Trim();
+                            if (!string.IsNullOrEmpty(nm)) return nm;
+                        }
+                    }
+                }
+                catch { }
+
+                // 4) SelectionItem on descendants (some tree items report selection)
+                try
+                {
+                    var all = modePicker.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                    for (int i = 0; i < all.Count; i++)
+                    {
+                        try
+                        {
+                            var el = all[i];
+                            if (el.TryGetCurrentPattern(SelectionItemPattern.Pattern, out object sipObj))
+                            {
+                                var sip = (SelectionItemPattern)sipObj;
+                                if (sip.Current.IsSelected)
+                                {
+                                    string nm = el.Current.Name?.Trim();
+                                    if (!string.IsNullOrEmpty(nm)) return nm;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                // 5) Fallback: first non-empty named descendant
+                try
+                {
+                    var all = modePicker.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                    for (int i = 0; i < all.Count; i++)
+                    {
+                        try
+                        {
+                            var el = all[i];
+                            string nm = el.Current.Name?.Trim();
+                            if (!string.IsNullOrEmpty(nm)) return nm;
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
+                // 6) Parent siblings
+                try
+                {
+                    var parent = System.Windows.Automation.TreeWalker.ControlViewWalker.GetParent(modePicker);
+                    if (parent != null)
+                    {
+                        var siblings = parent.FindAll(TreeScope.Children, System.Windows.Automation.Condition.TrueCondition);
+                        for (int i = 0; i < siblings.Count; i++)
+                        {
+                            try
+                            {
+                                var s = siblings[i];
+                                string sn = s.Current.Name?.Trim();
+                                if (!string.IsNullOrEmpty(sn)) return sn;
+                            }
+                            catch { }
+                        }
+                    }
+                }
+                catch { }
+
+                // 7) Spatial fallback: nearby elements overlapping the picker's bounds
+                try
+                {
+                    var pickerRect = modePicker.Current.BoundingRectangle;
+                    if (!pickerRect.IsEmpty)
+                    {
+                        var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                        for (int i = 0; i < all.Count; i++)
+                        {
+                            try
+                            {
+                                var el = all[i];
+                                var r = el.Current.BoundingRectangle;
+                                if (r.IsEmpty) continue;
+                                bool intersect = !(r.Right < pickerRect.Left || r.Left > pickerRect.Right || r.Bottom < pickerRect.Top || r.Top > pickerRect.Bottom);
+                                if (intersect)
+                                {
+                                    string nm = el.Current.Name?.Trim();
+                                    if (!string.IsNullOrEmpty(nm)) return nm;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                }
+                catch { }
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Checks if Agent mode is already active by examining the Mode Picker
+        /// button's current display name. If it contains "Agent", the mode is active.
+        /// </summary>
+        private static bool IsAgentModeAlreadyActive(AutomationElement root)
+        {
+            try
+            {
+                AutomationElement modePicker = FindModePickerButton(root);
+                if (modePicker == null)
+                    return false;
+
+                string modePickerName = modePicker.Current.Name ?? "";
+                
+                bool isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                // Prefer a direct read of the selected value via common patterns
+                string selected = GetSelectedMode(modePicker, root);
+                if (!string.IsNullOrEmpty(selected))
+                {
+                    isAgentActive = selected.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+                else
+                {
+                    // Fall back to checking the Mode Picker's own Name text
+                    isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+
+                Log("UI Automation: Mode Picker current name: '" + modePickerName
+                    + "' (Agent active: " + isAgentActive + ")");
+                return isAgentActive;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in IsAgentModeAlreadyActive: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Selects Agent by typing "Agent" to filter the dropdown, then clicking
+        /// the result. Falls back to arrow key navigation if typing doesn't work.
+        /// </summary>
+        private static bool SelectAgentDirectly(AutomationElement root)
+        {
+            try
+            {
+                Log("UI Automation: Typing 'Agent' to search/filter dropdown...");
+                System.Windows.Forms.SendKeys.SendWait("Agent");
+                System.Threading.Thread.Sleep(800);
+
+                Log("UI Automation: Searching for Agent option after typing...");
+                AutomationElement agentElement = FindAgentElement(root);
+
+                if (agentElement != null)
+                {
+                    Log("UI Automation: Found Agent element, clicking it...");
+
+                    if (ClickElement(agentElement))
+                    {
+                        Log("UI Automation: Agent selected via click");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+
+                    if (agentElement.TryGetCurrentPattern(InvokePattern.Pattern, out object invoke))
+                    {
+                        ((InvokePattern)invoke).Invoke();
+                        Log("UI Automation: Agent selected via InvokePattern");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+
+                    if (agentElement.TryGetCurrentPattern(SelectionItemPattern.Pattern, out object selectPattern))
+                    {
+                        ((SelectionItemPattern)selectPattern).Select();
+                        Log("UI Automation: Agent selected via SelectionItemPattern");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+                }
+
+                Log("UI Automation: Agent element not found after typing, trying arrow key navigation...");
+                return SelectAgentViaArrowKeys();
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in SelectAgentDirectly: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Selects Agent mode by pressing Down arrow repeatedly to navigate
+        /// through dropdown options, then pressing Enter to confirm.
+        /// Fallback when typing doesn't filter the dropdown.
+        /// </summary>
+        private static bool SelectAgentViaArrowKeys()
+        {
+            try
+            {
+                Log("UI Automation: Attempting arrow key navigation...");
+
+                for (int i = 0; i < 5; i++)
+                {
+                    System.Windows.Forms.SendKeys.SendWait("{DOWN}");
+                    System.Threading.Thread.Sleep(200);
+
+                    var vsProcess = Process.GetCurrentProcess();
+                    AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                    if (vsWindow != null && IsAgentModeAlreadyActive(vsWindow))
+                    {
+                        Log("UI Automation: Agent mode now active (after " + (i + 1) + " Down presses)");
+                        System.Windows.Forms.SendKeys.SendWait("{ENTER}");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+                }
+
+                Log("UI Automation: Arrow key navigation did not activate Agent mode");
+                System.Windows.Forms.SendKeys.SendWait("{ESC}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in SelectAgentViaArrowKeys: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Searches for the "Agent" mode option (MenuItem or ListItem with name "Agent").
+        /// Excludes items like "Search agents" that contain "agent" but aren't the mode option.
+        /// </summary>
+        private static AutomationElement FindAgentElement(AutomationElement root)
+        {
+            try
+            {
+                var allElements = root.FindAll(TreeScope.Descendants,
+                    System.Windows.Automation.Condition.TrueCondition);
+
+                foreach (AutomationElement el in allElements)
+                {
+                    try
+                    {
+                        string name = el.Current.Name ?? "";
+                        string nameLower = name.ToLowerInvariant();
+
+                        if (nameLower == "agent" || nameLower.StartsWith("agent "))
+                        {
+                            string ctType = el.Current.ControlType.ProgrammaticName ?? "";
+
+                            if (ctType.Contains("MenuItem") || ctType.Contains("ListItem"))
+                            {
+                                Log("UI Automation: Found Agent mode option [" + ctType + "]: '" + name + "'");
+                                return el;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                foreach (AutomationElement el in allElements)
+                {
+                    try
+                    {
+                        string name = el.Current.Name ?? "";
+                        if (string.Equals(name, "agent", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Log("UI Automation: Found Agent element (second pass): '" + name + "'");
+                            return el;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in FindAgentElement: " + ex.Message);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Clicks an element using mouse coordinates from its bounding rectangle.
+        /// </summary>
+        private static bool ClickElement(AutomationElement element)
+        {
+            try
+            {
+                var rect = element.Current.BoundingRectangle;
+                if (rect.IsEmpty || rect.Width == 0 || rect.Height == 0)
+                {
+                    Log("UI Automation: Element has no valid bounding rectangle");
+                    return false;
+                }
+
+                int clickX = (int)(rect.X + rect.Width / 2);
+                int clickY = (int)(rect.Y + rect.Height / 2);
+
+                SetCursorPos(clickX, clickY);
+                System.Threading.Thread.Sleep(100);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, IntPtr.Zero);
+                System.Threading.Thread.Sleep(50);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, IntPtr.Zero);
+
+                Log("UI Automation: Clicked element at (" + clickX + ", " + clickY + ")");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation: Mouse click failed: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Logs elements whose names contain mode-related keywords for debugging.
+        /// </summary>
+        private static void ListAvailableElements(AutomationElement root)
+        {
+            try
+            {
+                var allElements = root.FindAll(TreeScope.Descendants,
+                    System.Windows.Automation.Condition.TrueCondition);
+
+                int count = 0;
+                foreach (AutomationElement el in allElements)
+                {
+                    try
+                    {
+                        string name = el.Current.Name ?? "";
+                        string ctType = el.Current.ControlType.ProgrammaticName ?? "";
+                        string nameLower = name.ToLowerInvariant();
+
+                        if (!string.IsNullOrEmpty(name) && (nameLower.Contains("mode") ||
+                            nameLower.Contains("ask") || nameLower.Contains("edit") ||
+                            nameLower.Contains("debug") || nameLower.Contains("agent")))
+                        {
+                            Log("UI Automation: Available element [" + ctType + "]: '" + name + "'");
+                            count++;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                Log("UI Automation: Total matching elements found: " + count);
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in ListAvailableElements: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to find the Copilot Chat text input area and set keyboard focus to it.
+        /// Uses heuristics: editable controls, document controls, or any focusable
+        /// element whose name looks like a chat prompt. Returns true when focus set.
+        /// </summary>
+        private static bool FocusCopilotInput(AutomationElement root)
+        {
+            try
+            {
+                if (root == null) return false;
+
+                var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                for (int i = 0; i < all.Count; i++)
+                {
+                    try
+                    {
+                        var el = all[i];
+                        if (!el.Current.IsEnabled) continue;
+
+                        string ct = el.Current.ControlType?.ProgrammaticName ?? "";
+                        string name = el.Current.Name ?? "";
+
+                        bool likelyEdit = ct.IndexOf("Edit", StringComparison.OrdinalIgnoreCase) >= 0
+                            || ct.IndexOf("Document", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                        bool nameHint = !string.IsNullOrEmpty(name) && (
+                            name.IndexOf("type", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            name.IndexOf("message", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            name.IndexOf("chat", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            name.IndexOf("prompt", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                        if ((likelyEdit || nameHint) && el.Current.IsKeyboardFocusable)
+                        {
+                            try
+                            {
+                                el.SetFocus();
+                                System.Threading.Thread.Sleep(120);
+                                return true;
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
+
+                // Final fallback: any focusable element
+                for (int i = 0; i < all.Count; i++)
+                {
+                    try
+                    {
+                        var el = all[i];
+                        if (el.Current.IsKeyboardFocusable && el.Current.IsEnabled)
+                        {
+                            try
+                            {
+                                el.SetFocus();
+                                System.Threading.Thread.Sleep(120);
+                                return true;
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation: FocusCopilotInput error: " + ex.Message);
+            }
+            return false;
+        }
+
+        // ==================== Native Mouse Click ====================
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetCursorPos(int X, int Y);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, IntPtr dwExtraInfo);
+
+        private const uint MOUSEEVENTF_LEFTDOWN = 0x02;
+        private const uint MOUSEEVENTF_LEFTUP = 0x04;
 
         // ==================== Clipboard ====================
 
