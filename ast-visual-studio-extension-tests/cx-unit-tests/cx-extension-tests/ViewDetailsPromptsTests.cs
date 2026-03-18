@@ -177,7 +177,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         public void BuildSecretsExplanationPrompt_ContainsRiskBySeverity()
         {
             var result = ViewDetailsPrompts.BuildSecretsExplanationPrompt("api-key", "Found key", "Critical");
-            Assert.Contains("Risk by Severity", result);
+            Assert.Contains("Risk Understanding Based on Severity", result);
             Assert.Contains("Critical", result);
         }
 
@@ -354,7 +354,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             var result = ViewDetailsPrompts.BuildASCAExplanationPrompt("xss", "XSS vulnerability", "High");
             Assert.Contains("xss", result);
             Assert.Contains("XSS vulnerability", result);
-            Assert.Contains("Markdown", result);
+            Assert.Contains("Output Format Guidelines", result);
         }
 
         [Fact]

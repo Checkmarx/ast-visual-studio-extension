@@ -218,7 +218,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
 
             Assert.Contains("sql-injection", result);
             Assert.Contains("High", result);
-            Assert.Contains("41", result);
+            Assert.Contains("42", result);
             Assert.Contains("codeRemediation", result);
         }
 
