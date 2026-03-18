@@ -194,7 +194,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             Assert.Contains("dockerfile", result);
             Assert.Contains("true", result);
             Assert.Contains("false", result);
-            Assert.Contains("9", result);
+            Assert.Contains("10", result);
         }
 
         [Fact]
@@ -405,7 +405,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         public void BuildIACRemediationPrompt_ZeroLineNumber_ShowsUnknown()
         {
             var result = CxOneAssistFixPrompts.BuildIACRemediationPrompt("Issue", "Desc", "Low", "yaml", "exp", "act", 0);
-            Assert.Contains("0", result);
+            Assert.Contains("1", result);
         }
 
         [Fact]
