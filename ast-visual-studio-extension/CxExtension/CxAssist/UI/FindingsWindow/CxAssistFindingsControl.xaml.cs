@@ -286,8 +286,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 HighFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "high.png");
                 MediumFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "medium.png");
                 LowFilterIcon.Source = AssistIconLoader.LoadPngIcon(theme, "low.png");
-                ExpandAllIcon.Source = AssistIconLoader.LoadSvgIcon(theme, "expandall");
-                CollapseAllIcon.Source = AssistIconLoader.LoadSvgIcon(theme, "collapseall");
+                ExpandAllIcon.Source = AssistIconLoader.LoadPngIcon(theme, "expandall.png");
+                CollapseAllIcon.Source = AssistIconLoader.LoadPngIcon(theme, "collapseall.png");
             }
             catch
             {

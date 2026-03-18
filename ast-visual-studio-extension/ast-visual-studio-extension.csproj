@@ -359,13 +359,13 @@
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\ok.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\unknown.svg" />
     <!-- CxAssist Icons - Expand/Collapse All (from reference IntelliJ platform, same as ast-jetbrains-plugin) -->
-    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\expandall.svg" />
-    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\collapseall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\expandall.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\collapseall.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\container.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\package.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\star-action.svg" />
-    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\expandall.svg" />
-    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\collapseall.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\expandall.png" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\collapseall.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\container.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\package.svg" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\star-action.svg" />

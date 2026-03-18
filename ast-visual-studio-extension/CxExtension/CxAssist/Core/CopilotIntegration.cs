@@ -23,6 +23,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     ///   <item>Open Copilot Chat via DTE command or keyboard shortcut</item>
     ///   <item>Start a new chat thread via DTE command (best effort)</item>
     ///   <item>Re-focus Copilot Chat, paste prompt from clipboard, submit via Enter</item>
+
     /// </list>
     ///
     /// <para>
@@ -249,54 +250,74 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         private static void ScheduleAutomatedPromptEntry(string prompt)
         {
-            // Step 1: Wait for Copilot Chat to render, then attempt to switch to Agent
-            // mode before starting a new thread. Some Copilot behaviors inherit the
-            // current mode when a new thread is created, so switching first can
-            // avoid extra UI navigation.
+            // New flow: after Copilot opens, require the user to have Agent mode active.
+            // If Agent mode is not active, show an informational popup and do not
+            // attempt to switch modes automatically. The prompt is already copied
+            // to the clipboard as a guaranteed fallback.
             ScheduleOnIdle(Timing.CopilotOpenDelayMs, () =>
             {
-                bool agentMode = TrySwitchToAgentMode();
-                Log(agentMode
-                    ? "Switched to Agent mode successfully"
-                    : "Agent mode switch skipped/failed, continuing in current mode");
-
-                int settleAfterAgent = agentMode ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
-
-                // Step 2: After Agent mode (or short delay), start a new thread
-                ScheduleOnIdle(settleAfterAgent, () =>
+                try
                 {
-                    bool newThreadStarted = TryStartNewThread();
-                    Log(newThreadStarted
-                        ? "New thread started via DTE command"
-                        : "DTE new-thread commands not available, continuing with current thread");
+                    var vsProcess = Process.GetCurrentProcess();
+                    AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
 
-                    // If a new thread was started, try focusing the Copilot input
-                    if (newThreadStarted)
+                    bool agentActive = false;
+                    if (vsWindow != null)
                     {
-                        try
-                        {
-                            var vsProcess = Process.GetCurrentProcess();
-                            AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
-                            if (vsWindow != null)
-                            {
-                                bool focused = FocusCopilotInput(vsWindow);
-                                Log("UI Automation: Focused Copilot input after new thread: " + focused);
-                            }
-                        }
-                        catch (Exception exFocus)
-                        {
-                            Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
-                        }
+                        agentActive = IsAgentModeAlreadyActive(vsWindow);
                     }
 
-                    int agentDelay = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
-
-                    // Step 3: Wait for UI to settle, then paste + submit
-                    ScheduleOnIdle(agentDelay, () =>
+                    if (!agentActive)
                     {
-                        PerformPasteAndSubmit();
+                        Log("Agent mode not active - prompting user to enable Agent mode and use clipboard fallback");
+                        MessageBox.Show(
+                            "Please select 'Agent' mode in GitHub Copilot Chat. The prompt has been copied to your clipboard — open Copilot Chat, select Agent mode, then paste the prompt to continue.",
+                            CxAssistConstants.DisplayName,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                        return;
+                    }
+
+                    // Agent mode is active — proceed to start a new thread and paste/submit
+                    ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
+                    {
+                        bool newThreadStarted = TryStartNewThread();
+                        Log(newThreadStarted
+                            ? "New thread started via DTE command"
+                            : "DTE new-thread commands not available, continuing with current thread");
+
+                        // If a new thread was started, try focusing the Copilot input
+                        if (newThreadStarted)
+                        {
+                            try
+                            {
+                                var vsProc = Process.GetCurrentProcess();
+                                AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
+                                if (wnd != null)
+                                {
+                                    bool focused = FocusCopilotInput(wnd);
+                                    Log("UI Automation: Focused Copilot input after new thread: " + focused);
+                                }
+                            }
+                            catch (Exception exFocus)
+                            {
+                                Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                            }
+                        }
+
+                        int agentDelay = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+
+                        // Paste + submit
+                        ScheduleOnIdle(agentDelay, () =>
+                        {
+                            PerformPasteAndSubmit();
+                        });
                     });
-                });
+                }
+                catch (Exception ex)
+                {
+                    Log("ScheduleAutomatedPromptEntry error: " + ex.Message);
+                }
             });
         }
 
@@ -482,6 +503,27 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Returns the Visual Studio major version number (e.g. 17 for VS2022).
+        /// Returns -1 if the version cannot be determined.
+        /// </summary>
+        private static int GetVisualStudioMajorVersion()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var dte = GetDte();
+                if (dte?.Version != null)
+                {
+                    var parts = dte.Version.Split('.');
+                    if (parts.Length > 0 && int.TryParse(parts[0], out int major))
+                        return major;
+                }
+            }
+            catch { }
+            return -1;
         }
 
         // ==================== Agent Mode Switching ====================
@@ -752,6 +794,72 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 {
                     // Fall back to checking the Mode Picker's own Name text
                     isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+
+                // Additional heuristics for newer VS versions (e.g., VS2026):
+                // 1) Spatial: sometimes the visible selected text is rendered in a
+                // nearby descendant rather than as the Mode Picker's Name/value.
+                // 2) VS-version-specific: for VS2026 UI changes, expand the spatial
+                // search area and allow matches that are near the picker even if
+                // their bounding rects don't strictly intersect.
+                if (!isAgentActive)
+                {
+                    try
+                    {
+                        var pickerRect = modePicker.Current.BoundingRectangle;
+                        var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+
+                        int vsMajor = GetVisualStudioMajorVersion();
+                        bool isNewVs = vsMajor >= 19; // treat 19+ as VS2026 or newer
+
+                        for (int i = 0; i < all.Count; i++)
+                        {
+                            try
+                            {
+                                var el = all[i];
+                                string name = el.Current.Name ?? "";
+                                if (string.IsNullOrEmpty(name)) continue;
+
+                                if (name.IndexOf("agent", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                                if (name.IndexOf("search agents", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+
+                                var r = el.Current.BoundingRectangle;
+                                if (r.IsEmpty) continue;
+
+                                bool intersect = false;
+                                if (!pickerRect.IsEmpty)
+                                {
+                                    // For newer VS, expand the picker area by 40 pixels to be more forgiving
+                                    var expanded = new System.Windows.Rect(
+                                        pickerRect.X - (isNewVs ? 40 : 0),
+                                        pickerRect.Y - (isNewVs ? 20 : 0),
+                                        pickerRect.Width + (isNewVs ? 80 : 0),
+                                        pickerRect.Height + (isNewVs ? 40 : 0));
+
+                                    intersect = !(r.Right < expanded.Left || r.Left > expanded.Right || r.Bottom < expanded.Top || r.Top > expanded.Bottom);
+                                }
+
+                                if (intersect || !isNewVs)
+                                {
+                                    Log("UI Automation: Heuristic detected Agent text: '" + name + "'");
+                                    if (!el.Current.IsOffscreen)
+                                    {
+                                        isAgentActive = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
+
+                // If VS2026 (or newer) couldn't be positively detected, log the VS major version
+                int detectedVsMajor = GetVisualStudioMajorVersion();
+                if (detectedVsMajor >= 0)
+                {
+                    Log("UI Automation: Detected Visual Studio major version: " + detectedVsMajor);
                 }
 
                 Log("UI Automation: Mode Picker current name: '" + modePickerName
