@@ -533,7 +533,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             }
             catch (Exception ex)
             {
-                UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED + ": " + ex.Message);
+                UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED);
                 throw;
             }
         }
@@ -639,8 +639,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 CheckScanButtonStateByCombos();
                 return;
-            }
-            ;
+            };            ;
             var options = default(TaskHandlerOptions);
             options.Title = string.Format(CxConstants.STATUS_FORMAT_POLLING_SCAN, scanId, CxCLI.CxConstants.SCAN_RUNNING);
             options.ActionsAfterCompletion = CompletionActions.None;
