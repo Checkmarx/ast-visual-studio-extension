@@ -49,6 +49,9 @@
                     <Setter Property="Background" Value="{DynamicResource {x:Static vsfx:VsBrushes.AccentDarkKey}}"/>
                     <Setter Property="BorderBrush" Value="{DynamicResource {x:Static vsfx:VsBrushes.ActiveBorderKey}}"/>
                 </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5"/>
+                </Trigger>
             </Style.Triggers>
         </Style>
         <Style BasedOn="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" TargetType="{x:Type Separator}" x:Key="SeparatorStyle">

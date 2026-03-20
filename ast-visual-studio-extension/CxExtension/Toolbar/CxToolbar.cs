@@ -259,7 +259,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                         StateManagerProvider.GetStateManager().enabledCustemStates.Add(state.name);
                     }
                 }
-             
+
             }
         }
 
@@ -277,7 +277,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public void SeverityFilterClick(ToggleButton severityControl)
         {
             SettingsUtils.Store(Package, SettingsUtils.severityCollection, SeverityFilters[severityControl], SettingsUtils.severityDefaultValues);
-            ResultsTreePanel.Redraw(false);
+            ResultsTreePanel.Redraw(true);
         }
 
         public void RefreshStates()
@@ -317,13 +317,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     );
                 }
             }
-            ResultsTreePanel.Redraw(false);
+            ResultsTreePanel.Redraw(true);
         }
 
         public void GroupByClick(MenuItem groupByControl)
         {
             SettingsUtils.Store(Package, SettingsUtils.groupByCollection, GroupByOptions[groupByControl], SettingsUtils.groupByDefaultValues);
-            ResultsTreePanel.Redraw(false);
+            ResultsTreePanel.Redraw(true);
         }
 
         public async Task ScanStart_ClickAsync()
@@ -331,7 +331,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             ScanStartButton.IsEnabled = false;
-            ScanStartButton.Opacity = 0.5;
 
             EnvDTE.DTE dte = SolutionExplorerUtils.GetDTE();
 
@@ -407,7 +406,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync(EnvDTE.DTE dte)
         {
-            if (ResultsTreePanel.currentResults == null | ResultsTreePanel.currentResults.results == null || ResultsTreePanel.currentResults.results.Any())
+            if (ResultsTreePanel.currentResults == null || ResultsTreePanel.currentResults.results == null || ResultsTreePanel.currentResults.results.Any())
             {
                 return false;
             }
@@ -472,7 +471,6 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public async Task ScanStartedAsync()
         {
             ScanStartButton.IsEnabled = false;
-            ScanStartButton.Opacity = 0.5;
             var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
             var options = default(TaskHandlerOptions);
             options.Title = CxConstants.STATUS_CREATING_SCAN;
@@ -518,10 +516,10 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             const string additionalParamaters = "{0} {1} {2}";
 
             UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN);
-
             try
             {
                 Scan scan = await cxWrapper.ScanCreateAsync(parameters, string.Format(additionalParamaters, CxCLI.CxConstants.FLAG_ASYNC, CxCLI.CxConstants.FLAG_INCREMENTAL, CxCLI.CxConstants.FLAG_RESUBMIT));
+                
 
                 if (scan != null)
                 {
@@ -549,7 +547,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             // Try to get directory from solution or active projects
             string directory = null;
-            
+
             if (!string.IsNullOrEmpty(dte?.Solution?.FullName))
             {
                 // Solution is loaded - get its directory or use the path itself if it's a directory
@@ -588,7 +586,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             // Now search for .sln or .csproj in the directory
             if (!string.IsNullOrEmpty(directory) && System.IO.Directory.Exists(directory))
             {
-                 return FindSolutionFileOrDirectory(directory);
+                return FindSolutionFileOrDirectory(directory);
             }
 
             return null;
@@ -635,14 +633,14 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         private async Task PollScanStartedAsync()
         {
             ScanStartButton.IsEnabled = false;
-            ScanStartButton.Opacity = 0.5;
             var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
             var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
             if (string.IsNullOrWhiteSpace(scanId))
             {
                 CheckScanButtonStateByCombos();
                 return;
-            };
+            }
+            ;
             var options = default(TaskHandlerOptions);
             options.Title = string.Format(CxConstants.STATUS_FORMAT_POLLING_SCAN, scanId, CxCLI.CxConstants.SCAN_RUNNING);
             options.ActionsAfterCompletion = CompletionActions.None;
