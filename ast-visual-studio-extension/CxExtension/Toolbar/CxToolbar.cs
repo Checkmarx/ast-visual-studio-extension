@@ -277,7 +277,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public void SeverityFilterClick(ToggleButton severityControl)
         {
             SettingsUtils.Store(Package, SettingsUtils.severityCollection, SeverityFilters[severityControl], SettingsUtils.severityDefaultValues);
-            ResultsTreePanel.Redraw(true);
+            ResultsTreePanel.Redraw(false);
         }
 
         public void RefreshStates()
@@ -317,13 +317,13 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                     );
                 }
             }
-            ResultsTreePanel.Redraw(true);
+            ResultsTreePanel.Redraw(false);
         }
 
         public void GroupByClick(MenuItem groupByControl)
         {
             SettingsUtils.Store(Package, SettingsUtils.groupByCollection, GroupByOptions[groupByControl], SettingsUtils.groupByDefaultValues);
-            ResultsTreePanel.Redraw(true);
+            ResultsTreePanel.Redraw(false);
         }
 
         public async Task ScanStart_ClickAsync()
@@ -331,6 +331,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             ScanStartButton.IsEnabled = false;
+            ScanStartButton.Opacity = 0.5;
 
             EnvDTE.DTE dte = SolutionExplorerUtils.GetDTE();
 
@@ -471,6 +472,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         public async Task ScanStartedAsync()
         {
             ScanStartButton.IsEnabled = false;
+            ScanStartButton.Opacity = 0.5;
             var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
             var options = default(TaskHandlerOptions);
             options.Title = CxConstants.STATUS_CREATING_SCAN;
@@ -516,16 +518,25 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             const string additionalParamaters = "{0} {1} {2}";
 
             UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN);
-            Scan scan = await cxWrapper.ScanCreateAsync(parameters, string.Format(additionalParamaters, CxCLI.CxConstants.FLAG_ASYNC, CxCLI.CxConstants.FLAG_INCREMENTAL, CxCLI.CxConstants.FLAG_RESUBMIT));
 
-            if (scan != null)
+            try
             {
-                SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, scan.ID);
-                UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_CREATED_SCAN, scan.ID));
+                Scan scan = await cxWrapper.ScanCreateAsync(parameters, string.Format(additionalParamaters, CxCLI.CxConstants.FLAG_ASYNC, CxCLI.CxConstants.FLAG_INCREMENTAL, CxCLI.CxConstants.FLAG_RESUBMIT));
+
+                if (scan != null)
+                {
+                    SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, scan.ID);
+                    UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_CREATED_SCAN, scan.ID));
+                }
+                else
+                {
+                    UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED);
+                UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED + ": " + ex.Message);
+                throw;
             }
         }
 
@@ -624,6 +635,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
         private async Task PollScanStartedAsync()
         {
             ScanStartButton.IsEnabled = false;
+            ScanStartButton.Opacity = 0.5;
             var tsc = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsTaskStatusCenterService)) as IVsTaskStatusCenterService;
             var scanId = SettingsUtils.GetToolbarValue(Package, SettingsUtils.createdScanIdProperty);
             if (string.IsNullOrWhiteSpace(scanId))
