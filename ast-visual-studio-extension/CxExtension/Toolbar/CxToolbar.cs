@@ -639,7 +639,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             {
                 CheckScanButtonStateByCombos();
                 return;
-            };            ;
+            };
             var options = default(TaskHandlerOptions);
             options.Title = string.Format(CxConstants.STATUS_FORMAT_POLLING_SCAN, scanId, CxCLI.CxConstants.SCAN_RUNNING);
             options.ActionsAfterCompletion = CompletionActions.None;
