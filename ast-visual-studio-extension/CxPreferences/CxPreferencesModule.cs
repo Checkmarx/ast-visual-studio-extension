@@ -11,7 +11,6 @@ namespace ast_visual_studio_extension.CxPreferences
     {
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
-        public bool AscaCheckBox { get; set; } = true;
 
         protected override IWin32Window Window
         {
@@ -33,6 +32,9 @@ namespace ast_visual_studio_extension.CxPreferences
             CxPreferencesUI.GetInstance().ThrowEventOnApply();
         }
 
+        internal Microsoft.VisualStudio.Shell.Package GetOwnerPackage()
+            => GetService(typeof(Microsoft.VisualStudio.Shell.Package)) as Microsoft.VisualStudio.Shell.Package;
+
         /// <summary>
         /// Get Checkmarx configuration
         /// </summary>
@@ -42,19 +44,9 @@ namespace ast_visual_studio_extension.CxPreferences
             CxConfig configuration = new CxConfig
             {
                 ApiKey = ApiKey,
-                AdditionalParameters = AdditionalParameters,
-                AscaEnabled = AscaCheckBox // Add the ASCA setting to configuration
+                AdditionalParameters = AdditionalParameters
             };
             return configuration;
-        }
-
-        /// <summary>
-        /// Checks if ASCA scanning is enabled in preferences
-        /// </summary>
-        /// <returns>True if ASCA is enabled, false otherwise</returns>
-        public bool IsAscaEnabled()
-        {
-            return AscaCheckBox;
         }
     }
 }
