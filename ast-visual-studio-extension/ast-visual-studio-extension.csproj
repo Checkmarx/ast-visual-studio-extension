@@ -151,6 +151,15 @@
     <Compile Include="CxPreferences\CxPreferencesUI.Designer.cs">
       <DependentUpon>CxPreferencesUI.cs</DependentUpon>
     </Compile>
+    <Compile Include="CxPreferences\CxOneAssistSettingsModule.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CxPreferences\CxOneAssistSettingsUI.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CxPreferences\CxOneAssistSettingsUI.Designer.cs">
+      <DependentUpon>CxOneAssistSettingsUI.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ast_visual_studio_extensionPackage.cs" />
     <Compile Include="ResourceKeyToColorConverter.cs" />

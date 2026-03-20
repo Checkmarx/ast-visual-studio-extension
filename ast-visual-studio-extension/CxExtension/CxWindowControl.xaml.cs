@@ -45,6 +45,8 @@ namespace ast_visual_studio_extension.CxExtension
 
             // Subscribe OnApply event in checkmarx settings window
             CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
+            // Subscribe to assist settings apply event
+            CxOneAssistSettingsUI.GetInstance().OnApplySettingsEvent += OnAssistSettingsApplied;
 
             // Build CxToolbar
             cxToolbar = CxToolbar.Builder()
@@ -174,8 +176,8 @@ namespace ast_visual_studio_extension.CxExtension
         {
             try
             {
-                var preferences = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
-                bool isAscaEnabled = preferences?.AscaCheckBox ?? false;
+                var assistSettings = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                bool isAscaEnabled = assistSettings?.IsAscaEnabled() ?? false;
 
                 if (isAscaEnabled)
                 {
@@ -194,6 +196,11 @@ namespace ast_visual_studio_extension.CxExtension
             {
                 System.Diagnostics.Debug.WriteLine($"ASCA initialization failed: {ex.Message}");
             }
+        }
+
+        private void OnAssistSettingsApplied()
+        {
+            _ = RegisterAsca();
         }
 
         /// <summary>

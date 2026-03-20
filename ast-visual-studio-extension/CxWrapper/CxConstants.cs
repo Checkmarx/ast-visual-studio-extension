@@ -8,7 +8,7 @@ namespace ast_visual_studio_extension.CxCLI
         public static string JSON_FORMAT_VALUE => "json";
         public static string FILTER_SCANS_FOR_BRANCH => "project-id={0},branch={1},limit=10000,statuses=Completed";
         public static string IDE_SCANS_KEY = "scan.config.plugins.ideScans";
-        public static string ASCA_ENGINE_STARTED_MESSAGE = "AI Secure Coding Assistant Engine started";
+        public static string ASCA_ENGINE_STARTED_MESSAGE = "AI Secure Coding Assistant Engine started.";
 
         /** CLI COMMANDS **/
         public static string CLI_AUTH_CMD => "auth";
