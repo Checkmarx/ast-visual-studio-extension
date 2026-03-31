@@ -24,8 +24,19 @@ namespace ast_visual_studio_extension.CxExtension
 
             InitialPanelIcon.Source = bitmapImage;
 
-            // Subscribe OnApply event in checkmarx settings window
-            CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
+            CxPreferencesUI.AuthStateChanged += OnAuthStateChanged;
+            CheckToolWindowPanel();
+        }
+
+        private void OnAuthStateChanged(bool _)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(CheckToolWindowPanel);
+                return;
+            }
+
+            CheckToolWindowPanel();
         }
 
         /// <summary>
@@ -33,9 +44,9 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         private void CheckToolWindowPanel()
         {
-            if (CxUtils.AreCxCredentialsDefined(package))
+            if (CxPreferencesUI.IsAuthenticated())
             {
-                CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
+                CxPreferencesUI.AuthStateChanged -= OnAuthStateChanged;
                 CxToolbar.redrawExtension = true;
                 Content = new CxWindowControl(package);
             }

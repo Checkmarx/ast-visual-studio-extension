@@ -31,6 +31,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.lblContainersTool = new System.Windows.Forms.Label();
             this.cmbContainersTool = new System.Windows.Forms.ComboBox();
             this.mcpGroupBox = new System.Windows.Forms.GroupBox();
+            this.lblMcpStatus = new System.Windows.Forms.Label();
             this.lblMcpDescription = new System.Windows.Forms.Label();
             this.lnkInstallMcp = new System.Windows.Forms.LinkLabel();
             this.lnkEditMcp = new System.Windows.Forms.LinkLabel();
@@ -226,6 +227,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.spacer6.TabIndex = 15;
 
             // mcpGroupBox
+            this.mcpGroupBox.Controls.Add(this.lblMcpStatus);
             this.mcpGroupBox.Controls.Add(this.lnkEditMcp);
             this.mcpGroupBox.Controls.Add(this.lnkInstallMcp);
             this.mcpGroupBox.Controls.Add(this.lblMcpDescription);
@@ -233,10 +235,19 @@ namespace ast_visual_studio_extension.CxPreferences
             this.mcpGroupBox.Location = new System.Drawing.Point(0, 0);
             this.mcpGroupBox.Name = "mcpGroupBox";
             this.mcpGroupBox.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
-            this.mcpGroupBox.Size = new System.Drawing.Size(100, 82);
+            this.mcpGroupBox.Size = new System.Drawing.Size(100, 108);
             this.mcpGroupBox.TabIndex = 6;
             this.mcpGroupBox.TabStop = false;
             this.mcpGroupBox.Text = "Checkmarx: MCP";
+
+            // lblMcpStatus
+            this.lblMcpStatus.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblMcpStatus.AutoSize = true;
+            this.lblMcpStatus.Location = new System.Drawing.Point(8, 84);
+            this.lblMcpStatus.Name = "lblMcpStatus";
+            this.lblMcpStatus.Size = new System.Drawing.Size(0, 16);
+            this.lblMcpStatus.TabIndex = 3;
 
             // lblMcpDescription
             this.lblMcpDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
@@ -319,6 +330,7 @@ namespace ast_visual_studio_extension.CxPreferences
         private System.Windows.Forms.Label lblContainersTool;
         private System.Windows.Forms.ComboBox cmbContainersTool;
         private System.Windows.Forms.GroupBox mcpGroupBox;
+        private System.Windows.Forms.Label lblMcpStatus;
         private System.Windows.Forms.Label lblMcpDescription;
         private System.Windows.Forms.LinkLabel lnkInstallMcp;
         private System.Windows.Forms.LinkLabel lnkEditMcp;

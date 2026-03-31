@@ -43,10 +43,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel, resultsVulnPanel);
 
-            // Subscribe OnApply event in checkmarx settings window
-            CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
-            // Subscribe to assist settings apply event
-            CxOneAssistSettingsUI.GetInstance().OnApplySettingsEvent += OnAssistSettingsApplied;
+            CxPreferencesUI.AuthStateChanged += OnAuthStateChanged;
 
             // Build CxToolbar
             cxToolbar = CxToolbar.Builder()
@@ -86,6 +83,17 @@ namespace ast_visual_studio_extension.CxExtension
 
             _ = InitializeAsync();
             cxToolbar.Init();
+        }
+
+        private void OnAuthStateChanged(bool _)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(CheckToolWindowPanel);
+                return;
+            }
+
+            CheckToolWindowPanel();
         }
         private async Task InitializeAsync()
         {
@@ -208,9 +216,9 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         private void CheckToolWindowPanel()
         {
-            if (!CxUtils.AreCxCredentialsDefined(package))
+            if (!CxPreferencesUI.IsAuthenticated())
             {
-                CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
+                CxPreferencesUI.AuthStateChanged -= OnAuthStateChanged;
                 Content = new CxInitialPanel(package);
 
                 return;
