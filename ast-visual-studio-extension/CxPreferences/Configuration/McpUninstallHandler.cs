@@ -1,9 +1,12 @@
-using Microsoft.VisualStudio.ExtensionManager;
 using System;
 using System.Diagnostics;
+#if !NO_VS_EXTENSION_MANAGER
+using Microsoft.VisualStudio.ExtensionManager;
+#endif
 
 namespace ast_visual_studio_extension.CxPreferences.Configuration
 {
+#if !NO_VS_EXTENSION_MANAGER
     /// <summary>
     /// Handles MCP cleanup when the Checkmarx extension is uninstalled.
     /// Mirrors McpUninstallHandler (DynamicPluginListener) in the JetBrains plugin.
@@ -45,4 +48,5 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             }
         }
     }
+#endif
 }

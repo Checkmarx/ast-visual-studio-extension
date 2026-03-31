@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ast_visual_studio_extension.CxWrapper.Models
