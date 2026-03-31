@@ -148,8 +148,8 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 if (!Uri.TryCreate(issuer, UriKind.Absolute, out Uri issuerUri))
                     return McpConfigManager.DefaultMcpUrl;
 
-                string host = issuerUri.Host.Replace("iam.", "ast.");
-                return issuerUri.Scheme + "://" + host + "/api/security-mcp/mcp";
+                string authority = issuerUri.Authority.Replace("iam.", "ast.");
+                return issuerUri.Scheme + "://" + authority + "/api/security-mcp/mcp";
             }
             catch
             {

@@ -11,13 +11,13 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         internal const string ServerName = "Checkmarx";
         internal const string DefaultMcpUrl = "https://ast-master-components.dev.cxast.net/api/security-mcp/mcp";
 
-        public string GetMcpConfigPath()
+        public virtual string GetMcpConfigPath()
         {
             string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             return Path.Combine(homeDir, ".mcp.json");
         }
 
-        public bool InstallOrUpdate(string apiKey, string mcpUrl, out string configPath)
+        public virtual bool InstallOrUpdate(string apiKey, string mcpUrl, out string configPath)
         {
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new ArgumentException("API key is required.", nameof(apiKey));
@@ -58,7 +58,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return changed;
         }
 
-        public bool RemoveCheckmarxServer(out string configPath)
+        public virtual bool RemoveCheckmarxServer(out string configPath)
         {
             configPath = GetMcpConfigPath();
             JsonObject root = ReadConfig(configPath);
