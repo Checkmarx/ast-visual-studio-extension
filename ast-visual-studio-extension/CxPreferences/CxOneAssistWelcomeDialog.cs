@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxExtension.Resources;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -7,7 +6,6 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using ast_visual_studio_extension.CxExtension.Utils;
-using ast_visual_studio_extension.CxPreferences.Resources;
 
 namespace ast_visual_studio_extension.CxPreferences
 {
