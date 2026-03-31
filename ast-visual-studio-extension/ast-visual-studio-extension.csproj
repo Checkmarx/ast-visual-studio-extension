@@ -66,6 +66,12 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <!-- When building outside a VS installation (e.g., CI), DevEnvDir is empty and
+       the ExtensionManager private assemblies are unavailable. Guard all code that
+       depends on them with #if !NO_VS_EXTENSION_MANAGER. -->
+  <PropertyGroup Condition="'$(DevEnvDir)' == ''">
+    <DefineConstants>$(DefineConstants);NO_VS_EXTENSION_MANAGER</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="CxExtension\CxInitialPanel.xaml.cs">
       <DependentUpon>CxInitialPanel.xaml</DependentUpon>
@@ -185,12 +191,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <!-- VS private assembly: IVsExtensionManager, SVsExtensionManager, InstallState -->
-    <Reference Include="Microsoft.VisualStudio.ExtensionManager">
+    <!-- VS private assembly: IVsExtensionManager, SVsExtensionManager, InstallState
+         Only available when DevEnvDir points to a VS installation. -->
+    <Reference Include="Microsoft.VisualStudio.ExtensionManager" Condition="'$(DevEnvDir)' != ''">
       <HintPath>$(DevEnvDir)PrivateAssemblies\Microsoft.VisualStudio.ExtensionManager.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.ExtensionEngineContract">
+    <Reference Include="Microsoft.VisualStudio.ExtensionEngineContract" Condition="'$(DevEnvDir)' != ''">
       <HintPath>$(DevEnvDir)PrivateAssemblies\Microsoft.VisualStudio.ExtensionEngineContract.dll</HintPath>
       <Private>False</Private>
     </Reference>
