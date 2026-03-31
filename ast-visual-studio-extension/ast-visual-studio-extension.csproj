@@ -229,6 +229,7 @@
       <Version>7.5.1</Version>
     </PackageReference>
     <PackageReference Include="System.Json" Version="4.7.1" />
+	<PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="CxExtension\Resources\critical.png">
