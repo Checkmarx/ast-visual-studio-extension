@@ -12,8 +12,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         public void Install_WithNullConfig_ReturnsFailure()
         {
             var service = new McpInstallService();
-            var result = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .Invoke(service, new object[] { null, typeof(McpInstallService) });
+            var method = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(CxConfig), typeof(Type) }, null);
+            var result = method.Invoke(service, new object[] { null, typeof(McpInstallService) });
             Assert.False(((McpInstallResult)result).Success);
             Assert.Contains("Missing configuration", ((McpInstallResult)result).Message);
         }
@@ -23,8 +23,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         {
             var service = new McpInstallService();
             var config = new CxConfig { ApiKey = "" };
-            var result = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .Invoke(service, new object[] { config, typeof(McpInstallService) });
+            var method = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(CxConfig), typeof(Type) }, null);
+            var result = method.Invoke(service, new object[] { config, typeof(McpInstallService) });
             Assert.False(((McpInstallResult)result).Success);
             Assert.Contains("Please authenticate", ((McpInstallResult)result).Message);
         }
@@ -168,8 +168,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
             var service = new McpInstallService(mockConfigManager.Object);
             var config = new CxConfig { ApiKey = "valid-key" };
 
-            var result = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .Invoke(service, new object[] { config, typeof(McpInstallServiceTests) });
+            var method = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(CxConfig), typeof(Type) }, null);
+            var result = method.Invoke(service, new object[] { config, typeof(McpInstallServiceTests) });
 
             Assert.False(((McpInstallResult)result).Success);
         }

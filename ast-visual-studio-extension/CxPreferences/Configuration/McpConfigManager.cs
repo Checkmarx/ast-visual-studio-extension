@@ -63,8 +63,8 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             configPath = GetMcpConfigPath();
             JsonObject root = ReadConfig(configPath);
 
-            JsonObject servers = root["servers"] as JsonObject;
-            if (servers == null || servers[ServerName] == null)
+            JsonObject servers = root.ContainsKey("servers") ? root["servers"] as JsonObject : null;
+            if (servers == null || !servers.ContainsKey(ServerName) || servers[ServerName] == null)
                 return false;
 
             servers.Remove(ServerName);

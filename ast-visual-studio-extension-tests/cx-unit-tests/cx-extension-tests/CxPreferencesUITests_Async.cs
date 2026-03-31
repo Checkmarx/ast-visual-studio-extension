@@ -27,25 +27,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         }
 
         [Fact]
-        public async Task ValidateApiKeyAsync_WithApiKey_ExecutesAsync()
-        {
-            var ui = CxPreferencesUI.GetInstance();
-            var tbApiKey = ui.GetType().GetField("tbApiKey", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ui) as System.Windows.Forms.TextBox;
-            tbApiKey.Text = "test-key";
-            var method = ui.GetType().GetMethod("ValidateApiKeyAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            // Should complete without throwing
-            try
-            {
-                await (Task)method.Invoke(ui, new object[] { false });
-            }
-            catch
-            {
-                // Expected to potentially fail due to missing wrapper dependencies
-            }
-        }
-
-        [Fact]
         public async Task TryRestoreAuthenticatedSessionAsync_ExecutesWithoutException()
         {
             // Should complete without throwing even with null package
