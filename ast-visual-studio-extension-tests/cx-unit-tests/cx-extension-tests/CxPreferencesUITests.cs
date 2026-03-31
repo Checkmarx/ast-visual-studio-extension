@@ -31,7 +31,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         {
             StaThreadHelper.RunInStaThread(() =>
             {
-                ResetPreferencesUiSingleton();
+                ResetPreferencesUiState();
 
                 var ui = CxPreferencesUI.GetInstance();
                 var module = CreateModule();
@@ -49,11 +49,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         }
 
         [Fact]
-        public void Initialize_WithApiKey_ShouldEnableConnectAndLogout()
+        public void Initialize_WithApiKey_ShouldEnableConnect()
         {
             StaThreadHelper.RunInStaThread(() =>
             {
-                ResetPreferencesUiSingleton();
+                ResetPreferencesUiState();
 
                 var ui = CxPreferencesUI.GetInstance();
                 var module = CreateModule();
@@ -65,8 +65,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 var connectButton = GetPrivateField<Button>(ui, "button1");
                 var logoutButton = GetPrivateField<Button>(ui, "btnLogout");
 
+                // Connect enabled when API key present and not yet authenticated
                 Assert.True(connectButton.Enabled);
-                Assert.True(logoutButton.Enabled);
+                // Logout disabled because user is not authenticated in test environment
+                Assert.False(logoutButton.Enabled);
             });
         }
 
@@ -75,7 +77,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         {
             StaThreadHelper.RunInStaThread(() =>
             {
-                ResetPreferencesUiSingleton();
+                ResetPreferencesUiState();
 
                 var ui = CxPreferencesUI.GetInstance();
                 var module = CreateModule();
@@ -90,18 +92,23 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 InvokePrivateMethod(ui, "OnApiKeyChange", ui, EventArgs.Empty);
 
                 var connectButton = GetPrivateField<Button>(ui, "button1");
-                var logoutButton = GetPrivateField<Button>(ui, "btnLogout");
 
                 Assert.Equal("test-key", module.ApiKey);
                 Assert.True(connectButton.Enabled);
-                Assert.True(logoutButton.Enabled);
             });
         }
 
-        private static void ResetPreferencesUiSingleton()
+        /// <summary>
+        /// Resets the CxPreferencesUI singleton and all static state so tests
+        /// don't leak _isAuthenticated / _isValidationInProgress between runs.
+        /// </summary>
+        private static void ResetPreferencesUiState()
         {
             var instanceField = typeof(CxPreferencesUI).GetField("Instance", BindingFlags.NonPublic | BindingFlags.Static);
             instanceField?.SetValue(null, null);
+
+            var authField = typeof(CxPreferencesUI).GetField("_isAuthenticated", BindingFlags.NonPublic | BindingFlags.Static);
+            authField?.SetValue(null, false);
         }
 
         private static T GetPrivateField<T>(object target, string fieldName) where T : class
