@@ -1,5 +1,4 @@
 using ast_visual_studio_extension.CxPreferences.Configuration;
-using Moq;
 using System;
 using System.IO;
 using System.Json;
@@ -9,6 +8,18 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
 {
     public class McpConfigManagerTests
     {
+        /// <summary>
+        /// Test-only subclass that redirects GetMcpConfigPath to a caller-supplied path,
+        /// so tests operate on a temp file instead of the real ~/.mcp.json.
+        /// No Moq or InternalsVisibleTo("DynamicProxyGenAssembly2") needed.
+        /// </summary>
+        private class TestableConfigManager : McpConfigManager
+        {
+            private readonly string _configPath;
+            public TestableConfigManager(string configPath) { _configPath = configPath; }
+            public override string GetMcpConfigPath() => _configPath;
+        }
+
         [Fact]
         public void InstallOrUpdate_ThrowsIfApiKeyMissing()
         {
@@ -20,13 +31,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void InstallOrUpdate_WritesConfigAndReturnsChanged()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{}");
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),"{}");
+                var mgr = new TestableConfigManager(tempFile);
 
                 var changed = mgr.InstallOrUpdate("key", "url", out string configPath);
                 Assert.True(changed);
@@ -43,13 +52,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void RemoveCheckmarxServer_ReturnsFalseIfNoServer()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{\"servers\":{}}\n");
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),"{\"servers\":{}}\n");
+                var mgr = new TestableConfigManager(tempFile);
 
                 var result = mgr.RemoveCheckmarxServer(out string configPath);
                 Assert.False(result);
@@ -63,13 +70,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void RemoveCheckmarxServer_RemovesServerIfExists()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{\"servers\":{\"Checkmarx\":{}}}\n");
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),"{\"servers\":{\"Checkmarx\":{}}}\n");
+                var mgr = new TestableConfigManager(tempFile);
 
                 var result = mgr.RemoveCheckmarxServer(out string configPath);
                 Assert.True(result);
@@ -115,14 +120,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void InstallOrUpdate_WithExistingConfig_UpdatesIfChanged()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
                 string initialJson = "{\"servers\":{\"Checkmarx\":{\"command\":\"old\"}}}";
-                File.WriteAllText(tempFile, initialJson);
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),initialJson);
+                var mgr = new TestableConfigManager(tempFile);
 
                 var changed = mgr.InstallOrUpdate("newkey", "https://new-url.com", out string configPath);
                 Assert.True(changed); // new key+url differs from old config
@@ -136,13 +139,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void InstallOrUpdate_CreatesInputsArray()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{}");
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),"{}");
+                var mgr = new TestableConfigManager(tempFile);
 
                 var changed = mgr.InstallOrUpdate("key", "url", out string configPath);
                 Assert.True(changed);
@@ -159,13 +160,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void RemoveCheckmarxServer_WithoutServersKey_ReturnsFalse()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{}");
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),"{}");
+                var mgr = new TestableConfigManager(tempFile);
 
                 var result = mgr.RemoveCheckmarxServer(out string configPath);
                 Assert.False(result);
@@ -212,13 +211,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void InstallOrUpdate_WithNullUrl_UsesDefaultUrl()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{}");
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),"{}");
+                var mgr = new TestableConfigManager(tempFile);
 
                 mgr.InstallOrUpdate("key", null, out string configPath);
                 string json = File.ReadAllText(configPath);
@@ -233,13 +230,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void InstallOrUpdate_WithEmptyUrl_UsesDefaultUrl()
         {
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{}");
-                var mockMgr = new Mock<McpConfigManager>() { CallBase = true };
-                mockMgr.Setup(m => m.GetMcpConfigPath()).Returns(tempFile);
-                var mgr = mockMgr.Object;
+                File.WriteAllText(Path.GetFullPath(tempFile),"{}");
+                var mgr = new TestableConfigManager(tempFile);
 
                 mgr.InstallOrUpdate("key", "", out string configPath);
                 string json = File.ReadAllText(configPath);
@@ -255,14 +250,14 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         public void ReadConfig_WithMalformedJson_ReturnsEmptyObject()
         {
             var method = typeof(McpConfigManager).GetMethod("ReadConfig", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "{this is not valid json!!!");
+                File.WriteAllText(Path.GetFullPath(tempFile),"{this is not valid json!!!");
                 var result = (JsonObject)method.Invoke(null, new object[] { tempFile });
 
                 Assert.NotNull(result);
-                Assert.Empty(result);
+                Assert.Equal(0, result.Count);
             }
             finally
             {
@@ -274,14 +269,14 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         public void ReadConfig_WithEmptyFile_ReturnsEmptyObject()
         {
             var method = typeof(McpConfigManager).GetMethod("ReadConfig", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            string tempFile = Path.GetTempFileName();
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                File.WriteAllText(tempFile, "");
+                File.WriteAllText(Path.GetFullPath(tempFile),"");
                 var result = (JsonObject)method.Invoke(null, new object[] { tempFile });
 
                 Assert.NotNull(result);
-                Assert.Empty(result);
+                Assert.Equal(0, result.Count);
             }
             finally
             {
@@ -296,7 +291,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
             var result = (JsonObject)method.Invoke(null, new object[] { "/nonexistent/path/file.json" });
 
             Assert.NotNull(result);
-            Assert.Empty(result);
+            Assert.Equal(0, result.Count);
         }
     }
 }
