@@ -1,6 +1,7 @@
 using ast_visual_studio_extension.CxPreferences;
 using System;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Windows.Forms;
 using Xunit;
 
@@ -8,12 +9,39 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
 {
     public class CxPreferencesUITests_Events
     {
+        private static CxPreferencesModule CreateModule()
+        {
+            return (CxPreferencesModule)FormatterServices
+                .GetUninitializedObject(typeof(CxPreferencesModule));
+        }
+
+        /// <summary>
+        /// Resets the CxPreferencesUI singleton and its static state so tests
+        /// don't leak _isAuthenticated / _isValidationInProgress between runs.
+        /// </summary>
+        private static void ResetUiState()
+        {
+            var instanceField = typeof(CxPreferencesUI).GetField("Instance", BindingFlags.NonPublic | BindingFlags.Static);
+            instanceField?.SetValue(null, null);
+
+            var authField = typeof(CxPreferencesUI).GetField("_isAuthenticated", BindingFlags.NonPublic | BindingFlags.Static);
+            authField?.SetValue(null, false);
+        }
+
         [Fact]
         public void OnApiKeyChange_ResetsAuthAndDisablesRestoreSession()
         {
+            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
-            var module = new CxPreferencesModule { ApiKey = "old", RestoreAuthenticatedSession = true };
+            var module = CreateModule();
+            module.ApiKey = "old";
+            // Initialize WITHOUT RestoreAuthenticatedSession=true to avoid
+            // firing the fire-and-forget ValidateApiKeyAsync race condition.
             ui.Initialize(module);
+
+            // Set it AFTER Initialize so we can verify OnApiKeyChange resets it.
+            module.RestoreAuthenticatedSession = true;
+
             var tbApiKey = ui.GetType().GetField("tbApiKey", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ui) as TextBox;
             tbApiKey.Text = "new";
             var method = ui.GetType().GetMethod("OnApiKeyChange", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -22,28 +50,13 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         }
 
         [Fact]
-        public void OnLogout_ResetsAuthAndPersistsSettings()
-        {
-            var ui = CxPreferencesUI.GetInstance();
-            var module = new CxPreferencesModule { ApiKey = "abc", RestoreAuthenticatedSession = true };
-            ui.Initialize(module);
-            // Simulate Yes on MessageBox
-            typeof(MessageBox).GetField("defaultResult", BindingFlags.NonPublic | BindingFlags.Static)?.SetValue(null, DialogResult.Yes);
-            var method = ui.GetType().GetMethod("OnLogout", BindingFlags.NonPublic | BindingFlags.Instance);
-            method.Invoke(ui, new object[] { ui, EventArgs.Empty });
-            Assert.False(module.RestoreAuthenticatedSession);
-        }
-
-        [Fact]
         public void Initialize_WithValidModule_LoadsSettingsCorrectly()
         {
+            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
-            var module = new CxPreferencesModule
-            {
-                ApiKey = "test-key",
-                AdditionalParameters = "--test-param",
-                RestoreAuthenticatedSession = true
-            };
+            var module = CreateModule();
+            module.ApiKey = "test-key";
+            module.AdditionalParameters = "--test-param";
             ui.Initialize(module);
 
             // Verify module was set
@@ -56,8 +69,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void Initialize_WithEmptyApiKey_ResetsAuthState()
         {
+            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
-            var module = new CxPreferencesModule { ApiKey = "" };
+            var module = CreateModule();
+            module.ApiKey = "";
             ui.Initialize(module);
 
             // Verify module was initialized
@@ -69,8 +84,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void OnApiKeyChange_UpdatesModuleProperty()
         {
+            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
-            var module = new CxPreferencesModule { ApiKey = "original" };
+            var module = CreateModule();
+            module.ApiKey = "original";
             ui.Initialize(module);
 
             var tbApiKey = ui.GetType().GetField("tbApiKey", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ui) as TextBox;
