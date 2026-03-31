@@ -112,7 +112,7 @@
 
         /************ AUTHENTICATION ************/
         public static string AUTH_VALIDATE_IN_PROGRESS => "Validating...";
-        public static string AUTH_VALIDATE_SUCCESS => "You are Connected to Checkmarx";
+        public static string AUTH_VALIDATE_SUCCESS => "You are connected to Checkmarx One";
         public static string AUTH_VALIDATE_FAIL_TEMPLATE => "Failed authentication: {0}";
         public static string AUTH_VALIDATE_CLEAR_FAIL_REASON => "Please check your API key and try again.";
         public static string AUTH_VALIDATE_ERROR => "Error in authentication";
