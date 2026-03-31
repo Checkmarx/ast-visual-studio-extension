@@ -1,0 +1,29 @@
+using ast_visual_studio_extension.CxPreferences;
+using System.Reflection;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
+{
+    public class CxPreferencesUITests_Async
+    {
+        [Fact]
+        public async Task ValidateApiKeyAsync_WithEmptyApiKey_DoesNotAuthenticate()
+        {
+            var ui = CxPreferencesUI.GetInstance();
+            var tbApiKey = ui.GetType().GetField("tbApiKey", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ui) as System.Windows.Forms.TextBox;
+            tbApiKey.Text = string.Empty;
+            var method = ui.GetType().GetMethod("ValidateApiKeyAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            await (Task)method.Invoke(ui, new object[] { true });
+            Assert.False(CxPreferencesUI.IsAuthenticated());
+        }
+
+        [Fact]
+        public async Task CompleteAuthenticationSetupAsync_WithNullConfig_DoesNotThrow()
+        {
+            var ui = CxPreferencesUI.GetInstance();
+            var method = ui.GetType().GetMethod("CompleteAuthenticationSetupAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            await (Task)method.Invoke(ui, new object[] { null, false });
+        }
+    }
+}
