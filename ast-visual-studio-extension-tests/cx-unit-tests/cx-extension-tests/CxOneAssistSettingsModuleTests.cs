@@ -1,14 +1,38 @@
 using ast_visual_studio_extension.CxPreferences;
+using System.Runtime.Serialization;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
 {
     public class CxOneAssistSettingsModuleTests
     {
+        /// <summary>
+        /// Creates a CxOneAssistSettingsModule without invoking the DialogPage
+        /// base constructor, which requires a running VS Shell environment.
+        /// Field-initializer defaults are applied manually.
+        /// </summary>
+        private static CxOneAssistSettingsModule CreateModule()
+        {
+            var module = (CxOneAssistSettingsModule)FormatterServices
+                .GetUninitializedObject(typeof(CxOneAssistSettingsModule));
+            module.AscaCheckBox = true;
+            module.OssRealtimeCheckBox = true;
+            module.SecretDetectionRealtimeCheckBox = true;
+            module.ContainersRealtimeCheckBox = true;
+            module.IacRealtimeCheckBox = true;
+            module.ContainersTool = "docker";
+            module.UserPrefAscaRealtime = true;
+            module.UserPrefOssRealtime = true;
+            module.UserPrefSecretDetectionRealtime = true;
+            module.UserPrefContainersRealtime = true;
+            module.UserPrefIacRealtime = true;
+            return module;
+        }
+
         [Fact]
         public void EnableAllRealtimeScanners_ShouldEnableAll()
         {
-            var module = new CxOneAssistSettingsModule();
+            var module = CreateModule();
             module.EnableAllRealtimeScanners();
             Assert.True(module.AscaCheckBox);
             Assert.True(module.OssRealtimeCheckBox);
@@ -20,7 +44,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void DisableAllRealtimeScanners_ShouldDisableAll()
         {
-            var module = new CxOneAssistSettingsModule();
+            var module = CreateModule();
             module.DisableAllRealtimeScanners();
             Assert.False(module.AscaCheckBox);
             Assert.False(module.OssRealtimeCheckBox);
@@ -32,7 +56,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void SaveAndApplyUserPreferences_ShouldRestoreSettings()
         {
-            var module = new CxOneAssistSettingsModule();
+            var module = CreateModule();
             module.AscaCheckBox = false;
             module.OssRealtimeCheckBox = true;
             module.SecretDetectionRealtimeCheckBox = false;
@@ -54,7 +78,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void AutoEnableRealtimeScanners_ShouldRespectUserPreferences()
         {
-            var module = new CxOneAssistSettingsModule();
+            var module = CreateModule();
             module.AscaCheckBox = false;
             module.OssRealtimeCheckBox = false;
             module.SecretDetectionRealtimeCheckBox = false;
@@ -74,7 +98,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
         [Fact]
         public void DisableRealtimeScannersPreservingPreferences_ShouldDisableAllAndPreserve()
         {
-            var module = new CxOneAssistSettingsModule();
+            var module = CreateModule();
             module.AscaCheckBox = true;
             module.OssRealtimeCheckBox = false;
             module.SecretDetectionRealtimeCheckBox = true;

@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Windows.Forms;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
@@ -9,6 +10,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
 {
     public class CxPreferencesUITests
     {
+        private static CxPreferencesModule CreateModule()
+        {
+            return (CxPreferencesModule)FormatterServices
+                .GetUninitializedObject(typeof(CxPreferencesModule));
+        }
+
         [Fact]
         public void AuthMessages_ShouldMatchCentralizedConstants()
         {
@@ -27,11 +34,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 ResetPreferencesUiSingleton();
 
                 var ui = CxPreferencesUI.GetInstance();
-                var module = new CxPreferencesModule
-                {
-                    ApiKey = string.Empty,
-                    AdditionalParameters = string.Empty
-                };
+                var module = CreateModule();
+                module.ApiKey = string.Empty;
+                module.AdditionalParameters = string.Empty;
 
                 ui.Initialize(module);
 
@@ -51,11 +56,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 ResetPreferencesUiSingleton();
 
                 var ui = CxPreferencesUI.GetInstance();
-                var module = new CxPreferencesModule
-                {
-                    ApiKey = "abc123",
-                    AdditionalParameters = string.Empty
-                };
+                var module = CreateModule();
+                module.ApiKey = "abc123";
+                module.AdditionalParameters = string.Empty;
 
                 ui.Initialize(module);
 
@@ -75,11 +78,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
                 ResetPreferencesUiSingleton();
 
                 var ui = CxPreferencesUI.GetInstance();
-                var module = new CxPreferencesModule
-                {
-                    ApiKey = string.Empty,
-                    AdditionalParameters = string.Empty
-                };
+                var module = CreateModule();
+                module.ApiKey = string.Empty;
+                module.AdditionalParameters = string.Empty;
 
                 ui.Initialize(module);
 
