@@ -11,6 +11,7 @@ namespace ast_visual_studio_extension.CxPreferences
     {
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
+        public bool RestoreAuthenticatedSession { get; set; }
 
         protected override IWin32Window Window
         {
@@ -29,7 +30,6 @@ namespace ast_visual_studio_extension.CxPreferences
         protected override void OnApply(PageApplyEventArgs e)
         {
             base.OnApply(e);
-            CxPreferencesUI.GetInstance().ThrowEventOnApply();
         }
 
         internal Microsoft.VisualStudio.Shell.Package GetOwnerPackage()

@@ -1,4 +1,5 @@
 ﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxPreferences;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;
@@ -17,8 +18,9 @@ namespace ast_visual_studio_extension.CxExtension
             Caption = CxConstants.EXTENSION_TITLE;
 
             AsyncPackage package = context as AsyncPackage;
+            _ = CxPreferencesUI.TryRestoreAuthenticatedSessionAsync(package);
 
-            if (CxUtils.AreCxCredentialsDefined(package))
+            if (CxPreferencesUI.IsAuthenticated())
             {
                 Content = new CxWindowControl(package);
             }

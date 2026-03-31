@@ -33,6 +33,9 @@
         public static string ICON_FLAG => "Flag.png";
         public static string ICON_COMMENT => "Comment.png";
         public static string ICON_CX_LOGO_INITIAL_PANEL => "checkmarx-80.png";
+        public static string ICON_CX_LOGO_ICO => "checkmarx-80.ico";
+        public static string ICON_WELCOME_SCANNER => "welcomePageScanner.png";
+        public static string ICON_CX_AI_ERROR => "cxAIError.png";
 
         /************ PROJECT FOLDERS ************/
         public static string FOLDER_RESOURCES => "Resources";

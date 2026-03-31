@@ -861,6 +861,30 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
+        /// Check tenant settings for AI MCP Server enabled.
+        /// Mirrors the aiMcpServerEnabled() method in the VSCode extension JS wrapper:
+        /// runs "utils tenant", looks up key "scan.config.plugins.aiMcpServer",
+        /// and returns true only when the value is exactly "true".
+        /// </summary>
+        /// <returns>true if the tenant has AI MCP Server enabled; false if disabled or key is absent.</returns>
+        public bool AiMcpServerEnabled()
+        {
+            logger.Info(CxConstants.LOG_RUNNING_AI_MCP_SERVER_ENABLED_CMD);
+
+            List<TenantSetting> tenantSettings = TenantSettings();
+            string value = tenantSettings.Find(s => s.Key.Equals(CxConstants.AI_MCP_SERVER_KEY))?.Value;
+            return bool.TryParse(value, out bool result) && result;
+        }
+
+        /// <summary>
+        /// Async version of AiMcpServerEnabled.
+        /// </summary>
+        public async Task<bool> AiMcpServerEnabledAsync()
+        {
+            return await Task.Run(() => AiMcpServerEnabled());
+        }
+
+        /// <summary>
         /// Core telemetry AI event method - matches JavaWrapper signature exactly.
         /// Executes telemetry AI command to collect telemetry data for user interactions related to AI features.
         /// </summary>

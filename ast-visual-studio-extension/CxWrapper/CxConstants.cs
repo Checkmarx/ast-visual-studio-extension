@@ -8,6 +8,7 @@ namespace ast_visual_studio_extension.CxCLI
         public static string JSON_FORMAT_VALUE => "json";
         public static string FILTER_SCANS_FOR_BRANCH => "project-id={0},branch={1},limit=10000,statuses=Completed";
         public static string IDE_SCANS_KEY = "scan.config.plugins.ideScans";
+        public static string AI_MCP_SERVER_KEY = "scan.config.plugins.aiMcpServer";
         public static string ASCA_ENGINE_STARTED_MESSAGE = "AI Secure Coding Assistant Engine started.";
 
         /** CLI COMMANDS **/
@@ -115,6 +116,7 @@ namespace ast_visual_studio_extension.CxCLI
         public static string LOG_RUNNING_SCAN_CANCEL_CMD => "Executing 'scan cancel' command using the CLI...";
         public static string LOG_RUNNING_PROJECT_SHOW_CMD => "Retrieving details for project id: {0}...";
         public static string LOG_RUNNING_TENANT_SETTINGS_CMD => "Getting tenant settings...";
+        public static string LOG_RUNNING_AI_MCP_SERVER_ENABLED_CMD => "Checking AI MCP Server enabled status...";
         public static string LOG_CLI_COMMAND_EXECUTING => "Executing CLI command: {0}";
         public static string LOG_CLI_COMMAND_COMPLETED => "CLI command completed with result length: {0}";
         public static string LOG_CLI_COMMAND_ERROR => "CLI command failed: {0}";
