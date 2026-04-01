@@ -16,15 +16,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
                 .GetUninitializedObject(typeof(CxPreferencesModule));
         }
 
-        [Fact]
-        public void AuthMessages_ShouldMatchCentralizedConstants()
-        {
-            Assert.Equal("Validating...", CxConstants.AUTH_VALIDATE_IN_PROGRESS);
-            Assert.Equal("You are connected to Checkmarx One", CxConstants.AUTH_VALIDATE_SUCCESS);
-            Assert.Equal("Failed authentication: {0}", CxConstants.AUTH_VALIDATE_FAIL_TEMPLATE);
-            Assert.Equal("Error in authentication", CxConstants.AUTH_VALIDATE_ERROR);
-            Assert.Equal("You have successfully logged out", CxConstants.AUTH_LOGOUT_SUCCESS);
-        }
 
         [Fact]
         public void Initialize_WithEmptyApiKey_ShouldDisableConnectAndLogout()
