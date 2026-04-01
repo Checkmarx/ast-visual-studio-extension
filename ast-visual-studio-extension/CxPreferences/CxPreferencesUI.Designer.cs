@@ -81,7 +81,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(36, 26);
+            this.label4.Location = new System.Drawing.Point(25, 26);
             this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(53, 16);
@@ -99,7 +99,7 @@ namespace ast_visual_studio_extension.CxPreferences
             this.groupBox3.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.groupBox3.Size = new System.Drawing.Size(1138, 105);
+            this.groupBox3.Size = new System.Drawing.Size(1138, 70);
             this.groupBox3.TabIndex = 10;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Additional Settings";
@@ -107,7 +107,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // AdditionalParametersHelPage
             // 
             this.AdditionalParametersHelPage.AutoSize = true;
-            this.AdditionalParametersHelPage.Location = new System.Drawing.Point(204, 66);
+            this.AdditionalParametersHelPage.Location = new System.Drawing.Point(204, 46);
             this.AdditionalParametersHelPage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.AdditionalParametersHelPage.Name = "AdditionalParametersHelPage";
             this.AdditionalParametersHelPage.Size = new System.Drawing.Size(287, 16);
@@ -130,7 +130,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(36, 26);
+            this.label5.Location = new System.Drawing.Point(25, 26);
             this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(139, 16);
@@ -139,7 +139,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // 
             // button1
             //
-            this.button1.Location = new System.Drawing.Point(8, 57);
+            this.button1.Location = new System.Drawing.Point(25, 57);
             this.button1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(185, 27);
@@ -149,11 +149,11 @@ namespace ast_visual_studio_extension.CxPreferences
             this.button1.Click += new System.EventHandler(this.OnValidateConnection);
             // 
             // btnLogout
-            // 
-            this.btnLogout.Location = new System.Drawing.Point(201, 57);
+            //
+            this.btnLogout.Location = new System.Drawing.Point(218, 57);
             this.btnLogout.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnLogout.Name = "btnLogout";
-            this.btnLogout.Size = new System.Drawing.Size(112, 27);
+            this.btnLogout.Size = new System.Drawing.Size(135, 27);
             this.btnLogout.TabIndex = 9;
             this.btnLogout.Text = "Log out";
             this.btnLogout.UseVisualStyleBackColor = true;
@@ -165,7 +165,7 @@ namespace ast_visual_studio_extension.CxPreferences
             | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblValidationResult.AutoSize = false;
-            this.lblValidationResult.Location = new System.Drawing.Point(8, 91);
+            this.lblValidationResult.Location = new System.Drawing.Point(25, 91);
             this.lblValidationResult.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.lblValidationResult.Name = "lblValidationResult";
             this.lblValidationResult.Size = new System.Drawing.Size(1099, 15);

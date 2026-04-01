@@ -1,3 +1,7 @@
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+
 namespace ast_visual_studio_extension.CxPreferences
 {
     partial class CxOneAssistSettingsUI
@@ -219,68 +223,62 @@ namespace ast_visual_studio_extension.CxPreferences
             this.cmbContainersTool.Size = new System.Drawing.Size(20, 24);
             this.cmbContainersTool.TabIndex = 1;
             this.cmbContainersTool.SelectedIndexChanged += new System.EventHandler(this.CmbContainersTool_SelectedIndexChanged);
-
-            // spacer6
             this.spacer6.Dock = System.Windows.Forms.DockStyle.Top;
-            this.spacer6.Name = "spacer6";
-            this.spacer6.Size = new System.Drawing.Size(100, 8);
-            this.spacer6.TabIndex = 15;
+            this.spacer6.Height = 8;
 
-            // mcpGroupBox
-            this.mcpGroupBox.Controls.Add(this.lblMcpStatus);
-            this.mcpGroupBox.Controls.Add(this.lnkEditMcp);
-            this.mcpGroupBox.Controls.Add(this.lnkInstallMcp);
-            this.mcpGroupBox.Controls.Add(this.lblMcpDescription);
-            this.mcpGroupBox.Dock = System.Windows.Forms.DockStyle.Top;
-            this.mcpGroupBox.Location = new System.Drawing.Point(0, 0);
-            this.mcpGroupBox.Name = "mcpGroupBox";
-            this.mcpGroupBox.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
-            this.mcpGroupBox.Size = new System.Drawing.Size(100, 108);
-            this.mcpGroupBox.TabIndex = 6;
-            this.mcpGroupBox.TabStop = false;
+            // --- MCP Group (FIXED SECTION) ---
             this.mcpGroupBox.Text = "Checkmarx: MCP";
+            this.mcpGroupBox.Dock = System.Windows.Forms.DockStyle.Top;
+            this.mcpGroupBox.AutoSize = true;
+            this.mcpGroupBox.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            this.mcpGroupBox.Padding = new Padding(8, 4, 8, 8);
 
-            // lblMcpStatus
-            this.lblMcpStatus.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblMcpStatus.AutoSize = true;
-            this.lblMcpStatus.Location = new System.Drawing.Point(8, 84);
-            this.lblMcpStatus.Name = "lblMcpStatus";
-            this.lblMcpStatus.Size = new System.Drawing.Size(0, 16);
-            this.lblMcpStatus.TabIndex = 3;
+            TableLayoutPanel mcpLayout = new TableLayoutPanel();
+            mcpLayout.ColumnCount = 1;
+            mcpLayout.RowCount = 4;
+            mcpLayout.Dock = DockStyle.Top;
+            mcpLayout.AutoSize = true;
+            // CRITICAL: Force column to 100% width
+            mcpLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
-            // lblMcpDescription
-            this.lblMcpDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.lblMcpDescription.AutoSize = true;
-            this.lblMcpDescription.Location = new System.Drawing.Point(8, 20);
-            this.lblMcpDescription.Name = "lblMcpDescription";
-            this.lblMcpDescription.Size = new System.Drawing.Size(200, 18);
-            this.lblMcpDescription.TabIndex = 0;
             this.lblMcpDescription.Text = "The Model Context Protocol (MCP) provides advanced contextual analysis for secure coding.";
+            this.lblMcpDescription.Dock = DockStyle.Fill;
+            this.lblMcpDescription.Margin = new Padding(0, 0, 5, 5);
 
-            // lnkInstallMcp
             this.lnkInstallMcp.AutoSize = true;
-            this.lnkInstallMcp.Location = new System.Drawing.Point(8, 42);
-            this.lnkInstallMcp.Name = "lnkInstallMcp";
-            this.lnkInstallMcp.TabIndex = 1;
-            this.lnkInstallMcp.TabStop = true;
             this.lnkInstallMcp.Text = "Install MCP";
-            this.lnkInstallMcp.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LnkInstallMcp_LinkClicked);
+            this.lnkInstallMcp.LinkClicked += new LinkLabelLinkClickedEventHandler(this.LnkInstallMcp_LinkClicked);
 
-            // lnkEditMcp
             this.lnkEditMcp.AutoSize = true;
-            this.lnkEditMcp.Location = new System.Drawing.Point(8, 62);
-            this.lnkEditMcp.Name = "lnkEditMcp";
-            this.lnkEditMcp.TabIndex = 2;
-            this.lnkEditMcp.TabStop = true;
             this.lnkEditMcp.Text = "Edit in mcp.json";
-            this.lnkEditMcp.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LnkEditMcp_LinkClicked);
+            this.lnkEditMcp.LinkClicked += new LinkLabelLinkClickedEventHandler(this.LnkEditMcp_LinkClicked);
 
-            // CxOneAssistSettingsUI
+            this.lblMcpStatus.AutoSize = true;
+            this.lblMcpStatus.Text = "";
+
+            mcpLayout.Controls.Add(this.lblMcpDescription, 0, 0);
+            mcpLayout.Controls.Add(this.lnkInstallMcp, 0, 1);
+            mcpLayout.Controls.Add(this.lnkEditMcp, 0, 2);
+            mcpLayout.Controls.Add(this.lblMcpStatus, 0, 3);
+            this.mcpGroupBox.Controls.Add(mcpLayout);
+
+            // Responsive Wrapping Logic: Updates MaximumSize when the container resizes
+            this.mcpGroupBox.Layout += (s, e) => {
+                int paddingWidth = 25;
+                int targetWidth = mcpGroupBox.DisplayRectangle.Width - paddingWidth;
+                if (targetWidth > 0 && lblMcpDescription.MaximumSize.Width != targetWidth)
+                {
+                    lblMcpDescription.MaximumSize = new Size(targetWidth, 0);
+                }
+            };
+
+            // --- Main Control Setup ---
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
-            // Dock=Top: last added appears at top, so add in reverse visual order
+            this.AutoSize = true;
+            this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             this.Controls.Add(this.mcpGroupBox);
             this.Controls.Add(this.spacer6);
             this.Controls.Add(this.containersToolGroupBox);
@@ -294,21 +292,15 @@ namespace ast_visual_studio_extension.CxPreferences
             this.Controls.Add(this.ossGroupBox);
             this.Controls.Add(this.spacer1);
             this.Controls.Add(this.ascaGroupBox);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "CxOneAssistSettingsUI";
             this.Size = new System.Drawing.Size(400, 620);
+
             this.ascaGroupBox.ResumeLayout(false);
-            this.ascaGroupBox.PerformLayout();
             this.ossGroupBox.ResumeLayout(false);
-            this.ossGroupBox.PerformLayout();
             this.secretsGroupBox.ResumeLayout(false);
-            this.secretsGroupBox.PerformLayout();
             this.containersGroupBox.ResumeLayout(false);
-            this.containersGroupBox.PerformLayout();
             this.iacGroupBox.ResumeLayout(false);
-            this.iacGroupBox.PerformLayout();
             this.containersToolGroupBox.ResumeLayout(false);
-            this.containersToolGroupBox.PerformLayout();
             this.mcpGroupBox.ResumeLayout(false);
             this.mcpGroupBox.PerformLayout();
             this.ResumeLayout(false);
