@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Json;
 using System.Text;
 using Newtonsoft.Json.Linq;
 
@@ -27,26 +26,26 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
             configPath = GetMcpConfigPath();
 
-            JsonObject root = ReadConfig(configPath);
+            JObject root = ReadConfig(configPath);
 
-            // Ensure 'inputs' key exists and is a JsonArray
-            if (!root.ContainsKey("inputs") || !(root["inputs"] is JsonArray))
-                root["inputs"] = new JsonArray();
+            // Ensure 'inputs' key exists and is a JArray
+            if (!root.ContainsKey("inputs") || !(root["inputs"] is JArray))
+                root["inputs"] = new JArray();
 
-            // Ensure 'servers' key exists and is a JsonObject
-            JsonObject servers = null;
-            if (root.ContainsKey("servers") && root["servers"] is JsonObject)
+            // Ensure 'servers' key exists and is a JObject
+            JObject servers = null;
+            if (root.ContainsKey("servers") && root["servers"] is JObject)
             {
-                servers = root["servers"] as JsonObject;
+                servers = root["servers"] as JObject;
             }
             else
             {
-                servers = new JsonObject();
+                servers = new JObject();
                 root["servers"] = servers;
             }
 
-            JsonObject desiredServer = BuildCheckmarxServer(apiKey, mcpUrl);
-            servers.TryGetValue(ServerName, out JsonValue existingServer);
+            JObject desiredServer = BuildCheckmarxServer(apiKey, mcpUrl);
+            JToken existingServer = servers[ServerName];
 
             bool changed = existingServer == null || existingServer.ToString() != desiredServer.ToString();
             if (changed)
@@ -61,9 +60,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         internal bool RemoveCheckmarxServer(out string configPath)
         {
             configPath = GetMcpConfigPath();
-            JsonObject root = ReadConfig(configPath);
+            JObject root = ReadConfig(configPath);
 
-            JsonObject servers = root.ContainsKey("servers") ? root["servers"] as JsonObject : null;
+            JObject servers = root.ContainsKey("servers") ? root["servers"] as JObject : null;
             if (servers == null || !servers.ContainsKey(ServerName) || servers[ServerName] == null)
                 return false;
 
@@ -72,12 +71,12 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return true;
         }
 
-        private static JsonObject BuildCheckmarxServer(string apiKey, string mcpUrl)
+        private static JObject BuildCheckmarxServer(string apiKey, string mcpUrl)
         {
-            return new JsonObject
+            return new JObject
             {
                 ["command"] = "npx",
-                ["args"] = new JsonArray
+                ["args"] = new JArray
                 {
                     "mcp-remote",
                     mcpUrl,
@@ -92,39 +91,36 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             };
         }
 
-        private static JsonObject ReadConfig(string configPath)
+        private static JObject ReadConfig(string configPath)
         {
             if (!File.Exists(configPath))
-                return new JsonObject();
+                return new JObject();
 
             string json = File.ReadAllText(configPath);
             if (string.IsNullOrWhiteSpace(json))
-                return new JsonObject();
+                return new JObject();
 
             try
             {
-                JsonValue parsed = JsonValue.Parse(StripJsonComments(json));
-                JsonObject root = parsed as JsonObject;
-                return root ?? new JsonObject();
+                JToken parsed = JToken.Parse(StripJsonComments(json));
+                JObject root = parsed as JObject;
+                return root ?? new JObject();
             }
-            catch (JsonException)
+            catch (Newtonsoft.Json.JsonException)
             {
                 // Keep install resilient when file is malformed: start from a fresh root object.
-                return new JsonObject();
+                return new JObject();
             }
         }
 
-        private static void WriteConfig(string configPath, JsonObject root)
+        private static void WriteConfig(string configPath, JObject root)
         {
             string directory = Path.GetDirectoryName(configPath);
             if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
             // Format JSON with proper indentation
-            string jsonString = root.ToString();
-            JToken parsed = JToken.Parse(jsonString);
-            string formattedJson = parsed.ToString(Newtonsoft.Json.Formatting.Indented);
-
+            string formattedJson = root.ToString(Newtonsoft.Json.Formatting.Indented);
             File.WriteAllText(configPath, formattedJson);
         }
 
