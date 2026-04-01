@@ -57,7 +57,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return changed;
         }
 
-        internal bool RemoveCheckmarxServer(out string configPath)
+        internal virtual bool RemoveCheckmarxServer(out string configPath)
         {
             configPath = GetMcpConfigPath();
             JObject root = ReadConfig(configPath);
