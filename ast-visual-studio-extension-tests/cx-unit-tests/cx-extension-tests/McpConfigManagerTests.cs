@@ -1,7 +1,7 @@
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using System;
 using System.IO;
-using System.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
@@ -190,7 +190,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         public void BuildCheckmarxServer_ContainsRequiredFields()
         {
             var method = typeof(McpConfigManager).GetMethod("BuildCheckmarxServer", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            var server = (JsonObject)method.Invoke(null, new object[] { "test-api-key", "https://test-url.com" });
+            var server = (JObject)method.Invoke(null, new object[] { "test-api-key", "https://test-url.com" });
 
             Assert.NotNull(server);
             Assert.True(server.ContainsKey("command"));
@@ -254,10 +254,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             try
             {
                 File.WriteAllText(Path.GetFullPath(tempFile),"{this is not valid json!!!");
-                var result = (JsonObject)method.Invoke(null, new object[] { tempFile });
+                var result = (JObject)method.Invoke(null, new object[] { tempFile });
 
                 Assert.NotNull(result);
-                Assert.Equal(0, result.Count);
+                Assert.Empty(result);
             }
             finally
             {
@@ -273,10 +273,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             try
             {
                 File.WriteAllText(Path.GetFullPath(tempFile),"");
-                var result = (JsonObject)method.Invoke(null, new object[] { tempFile });
+                var result = (JObject)method.Invoke(null, new object[] { tempFile });
 
                 Assert.NotNull(result);
-                Assert.Equal(0, result.Count);
+                Assert.Empty(result);
             }
             finally
             {
@@ -291,7 +291,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             var result = (JsonObject)method.Invoke(null, new object[] { "/nonexistent/path/file.json" });
 
             Assert.NotNull(result);
-            Assert.Equal(0, result.Count);
+            Assert.Empty(result);
         }
     }
 }
