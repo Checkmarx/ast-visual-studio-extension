@@ -43,8 +43,7 @@ namespace ast_visual_studio_extension.CxExtension
 
             ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel, resultsVulnPanel);
 
-            // Subscribe OnApply event in checkmarx settings window
-            CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
+            CxPreferencesUI.AuthStateChanged += OnAuthStateChanged;
 
             // Build CxToolbar
             cxToolbar = CxToolbar.Builder()
@@ -84,6 +83,17 @@ namespace ast_visual_studio_extension.CxExtension
 
             _ = InitializeAsync();
             cxToolbar.Init();
+        }
+
+        private void OnAuthStateChanged(bool _)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(CheckToolWindowPanel);
+                return;
+            }
+
+            CheckToolWindowPanel();
         }
         private async Task InitializeAsync()
         {
@@ -174,8 +184,8 @@ namespace ast_visual_studio_extension.CxExtension
         {
             try
             {
-                var preferences = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
-                bool isAscaEnabled = preferences?.AscaCheckBox ?? false;
+                var assistSettings = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                bool isAscaEnabled = assistSettings?.IsAscaEnabled() ?? false;
 
                 if (isAscaEnabled)
                 {
@@ -196,14 +206,19 @@ namespace ast_visual_studio_extension.CxExtension
             }
         }
 
+        private void OnAssistSettingsApplied()
+        {
+            _ = RegisterAsca();
+        }
+
         /// <summary>
         /// Check if panel should be redraw after applying new checkmarx settings
         /// </summary>
         private void CheckToolWindowPanel()
         {
-            if (!CxUtils.AreCxCredentialsDefined(package))
+            if (!CxPreferencesUI.IsAuthenticated())
             {
-                CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
+                CxPreferencesUI.AuthStateChanged -= OnAuthStateChanged;
                 Content = new CxInitialPanel(package);
 
                 return;
