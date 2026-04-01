@@ -149,15 +149,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
 
             foreach (var testCase in testCases)
             {
-                try
-                {
-                    var result = (string)method.Invoke(null, new object[] { testCase });
-                    Assert.NotNull(result);
-                }
-                catch
-                {
-                    // Some edge cases may fail, which is acceptable
-                }
+                var result = (string)method.Invoke(null, new object[] { testCase });
+                Assert.NotNull(result);
             }
         }
 
