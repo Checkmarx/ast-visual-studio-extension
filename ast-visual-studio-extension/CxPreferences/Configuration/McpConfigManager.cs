@@ -58,7 +58,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return changed;
         }
 
-        public virtual bool RemoveCheckmarxServer(out string configPath)
+        internal bool RemoveCheckmarxServer(out string configPath)
         {
             configPath = GetMcpConfigPath();
             JsonObject root = ReadConfig(configPath);
@@ -107,7 +107,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 JsonObject root = parsed as JsonObject;
                 return root ?? new JsonObject();
             }
-            catch
+            catch (JsonException)
             {
                 // Keep install resilient when file is malformed: start from a fresh root object.
                 return new JsonObject();
