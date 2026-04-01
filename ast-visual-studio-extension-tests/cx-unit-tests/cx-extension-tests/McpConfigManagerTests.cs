@@ -202,7 +202,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         public void BuildCheckmarxServer_ContainsAuthorizationHeader()
         {
             var method = typeof(McpConfigManager).GetMethod("BuildCheckmarxServer", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            var server = (JsonObject)method.Invoke(null, new object[] { "my-secret-key", "https://test-url.com" });
+            var server = (JObject)method.Invoke(null, new object[] { "my-secret-key", "https://test-url.com" });
 
             string serverJson = server.ToString();
             Assert.Contains("Authorization:my-secret-key", serverJson);
@@ -288,7 +288,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         public void ReadConfig_WithNonexistentFile_ReturnsEmptyObject()
         {
             var method = typeof(McpConfigManager).GetMethod("ReadConfig", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            var result = (JsonObject)method.Invoke(null, new object[] { "/nonexistent/path/file.json" });
+            var result = (JObject)method.Invoke(null, new object[] { "/nonexistent/path/file.json" });
 
             Assert.NotNull(result);
             Assert.Empty(result);
