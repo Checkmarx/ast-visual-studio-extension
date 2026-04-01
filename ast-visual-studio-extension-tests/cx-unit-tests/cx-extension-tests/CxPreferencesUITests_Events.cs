@@ -7,8 +7,17 @@ using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
 {
-    public class CxPreferencesUITests_Events
+    public class CxPreferencesUITests_Events : IDisposable
     {
+        public CxPreferencesUITests_Events()
+        {
+            ResetUiState();
+        }
+
+        public void Dispose()
+        {
+            ResetUiState();
+        }
         private static CxPreferencesModule CreateModule()
         {
             return (CxPreferencesModule)FormatterServices
@@ -31,7 +40,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         [Fact]
         public void OnApiKeyChange_ResetsAuthAndDisablesRestoreSession()
         {
-            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
             var module = CreateModule();
             module.ApiKey = "old";
@@ -52,7 +60,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         [Fact]
         public void Initialize_WithValidModule_LoadsSettingsCorrectly()
         {
-            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
             var module = CreateModule();
             module.ApiKey = "test-key";
@@ -69,7 +76,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         [Fact]
         public void Initialize_WithEmptyApiKey_ResetsAuthState()
         {
-            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
             var module = CreateModule();
             module.ApiKey = "";
@@ -84,7 +90,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         [Fact]
         public void OnApiKeyChange_UpdatesModuleProperty()
         {
-            ResetUiState();
             var ui = CxPreferencesUI.GetInstance();
             var module = CreateModule();
             module.ApiKey = "original";

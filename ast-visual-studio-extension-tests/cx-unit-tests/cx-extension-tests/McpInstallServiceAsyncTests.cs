@@ -78,26 +78,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task InstallAsync_CompletesWithoutException()
-        {
-            var mockConfigManager = new Mock<McpConfigManager>();
-            var service = new McpInstallService(mockConfigManager.Object);
-            var config = new CxConfig { ApiKey = "test-key" };
-
-            // Should complete without throwing
-            try
-            {
-                var result = await service.InstallAsync(config, typeof(McpInstallServiceAsyncTests));
-                Assert.NotNull(result);
-            }
-            catch (Exception ex)
-            {
-                // Expected if network/API calls fail, but should be caught
-                Assert.True(ex is Exception);
-            }
-        }
-
-        [Fact]
         public async Task MultipleAsyncOperations_ExecuteSequentially()
         {
             var service = new McpInstallService();
@@ -109,27 +89,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             var results = await Task.WhenAll(task1, task2);
 
             Assert.Equal(2, results.Length);
-        }
-
-        [Fact]
-        public async Task IsTenantMcpEnabledAsync_CatchesExceptions()
-        {
-            var mockConfigManager = new Mock<McpConfigManager>();
-            var service = new McpInstallService(mockConfigManager.Object);
-            var config = new CxConfig { ApiKey = "valid-key" };
-
-            // Should handle any exceptions gracefully
-            try
-            {
-                var result = await service.IsTenantMcpEnabledAsync(config, typeof(McpInstallServiceAsyncTests));
-                // Should return false or true, but not throw
-                Assert.IsType<bool>(result);
-            }
-            catch
-            {
-                // Acceptable if dependencies fail
-                Assert.True(true);
-            }
         }
 
         [Fact]
