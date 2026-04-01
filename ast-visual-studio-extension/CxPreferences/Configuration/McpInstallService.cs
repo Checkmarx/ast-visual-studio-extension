@@ -49,9 +49,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 wrapper.AuthValidate();
                 return IsTenantMcpEnabled(wrapper, out _);
             }
-            catch
+            catch (Exception ex) when (ex is not OutOfMemoryException)
             {
-                return true;
+                return true; // fail-open, but avoid catching critical system exceptions
             }
         }
 
@@ -191,7 +191,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             {
                 return wrapper.AiMcpServerEnabled();
             }
-            catch
+            catch (Exception ex) when (ex is not OutOfMemoryException)
             {
                 checkFailed = true;
                 return true; // fail-open: don't block install on API errors
