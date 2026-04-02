@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
 using EnvDTE;
 using EnvDTE80;
@@ -8,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Timers;
 using System.Threading.Tasks;
-using CxWrapper = ast_visual_studio_extension.CxCLI.CxWrapper;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 {
@@ -19,7 +17,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
     /// </summary>
     public abstract class BaseRealtimeScannerService : IRealtimeScannerService
     {
-        protected readonly CxWrapper _cxWrapper;
+        protected readonly ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
         private readonly Timer _debounceTimer;
         private const int DEBOUNCE_DELAY = 2000;
         private bool _isSubscribed = false;
@@ -47,7 +45,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         /// </summary>
         protected abstract Task<int> ScanAndDisplayAsync(string tempFilePath, Document document);
 
-        protected BaseRealtimeScannerService(CxWrapper cxWrapper)
+        protected BaseRealtimeScannerService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;
             _debounceTimer = new Timer(DEBOUNCE_DELAY);

@@ -4,7 +4,6 @@ using EnvDTE;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using CxWrapper = ast_visual_studio_extension.CxCLI.CxWrapper;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
 {
@@ -25,7 +24,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
 
         protected override string ScannerName => "Secrets";
 
-        private SecretsService(CxWrapper cxWrapper) : base(cxWrapper)
+        private SecretsService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
         }
 
@@ -55,7 +54,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static SecretsService GetInstance(CxWrapper cxWrapper)
+        public static SecretsService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
         {
             if (_instance != null) return _instance;
             lock (_lock)
