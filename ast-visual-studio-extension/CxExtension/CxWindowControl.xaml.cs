@@ -17,7 +17,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System;
-using ast_visual_studio_extension.CxExtension.Services;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -29,7 +29,7 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
-        private ASCAService _ascaService;
+        private RealtimeScannerOrchestrator _realtimeOrchestrator;
 
         public CxWindowControl(AsyncPackage package)
         {
@@ -103,7 +103,7 @@ namespace ast_visual_studio_extension.CxExtension
             StateManager stateManager = StateManagerProvider.GetStateManager();
             cxToolbar.RefreshStates();
 
-            await RegisterAsca();
+            await RegisterRealtimeScanners(cxWrapper);
         }
 
         private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
@@ -180,35 +180,32 @@ namespace ast_visual_studio_extension.CxExtension
         }
 
 
-        private async Task RegisterAsca()
+        private async Task RegisterRealtimeScanners(CxCLI.CxWrapper cxWrapper)
         {
             try
             {
-                var assistSettings = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
-                bool isAscaEnabled = assistSettings?.IsAscaEnabled() ?? false;
+                // Unregister previous if re-registering on settings change
+                if (_realtimeOrchestrator != null)
+                    await _realtimeOrchestrator.UnregisterAllAsync();
 
-                if (isAscaEnabled)
-                {
-                    var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
-                    if (cxWrapper == null)
-                    {
-                        Debug.WriteLine("ASCA registration failed: CxWrapper is null");
-                        return;
+                var assistSettings = package.GetDialogPage(typeof(CxOneAssistSettingsModule))
+                                     as CxOneAssistSettingsModule;
+                if (cxWrapper == null || assistSettings == null) return;
 
-                    }
-                    _ascaService = ASCAService.GetInstance(cxWrapper);
-                    await _ascaService.InitializeASCAAsync();
-                }
+                _realtimeOrchestrator = new RealtimeScannerOrchestrator();
+                await _realtimeOrchestrator.InitializeAsync(cxWrapper, assistSettings);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"ASCA initialization failed: {ex.Message}");
+                Debug.WriteLine($"Realtime scanner initialization failed: {ex.Message}");
             }
         }
 
         private void OnAssistSettingsApplied()
         {
-            _ = RegisterAsca();
+            var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
+            if (cxWrapper != null)
+                _ = RegisterRealtimeScanners(cxWrapper);
         }
 
         /// <summary>
