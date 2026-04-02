@@ -4,7 +4,7 @@ using EnvDTE;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Task;
+using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
 {
