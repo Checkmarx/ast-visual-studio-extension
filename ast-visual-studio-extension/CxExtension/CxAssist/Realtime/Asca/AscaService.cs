@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using EnvDTE;
 using System;
 using System.Collections.Generic;
@@ -42,15 +43,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
 
         /// <summary>
         /// Invokes the ASCA realtime scan CLI command.
-        /// Results will be mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
+        /// Maps results to Result objects for display in the findings panel.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
         {
             var results = await _cxWrapper.ScanAscaAsync(tempFilePath, ascaLatestVersion: false);
             if (results?.ScanDetails == null || results.ScanDetails.Count == 0) return 0;
 
-            // TODO: Map results to Vulnerability and call CxAssistDisplayCoordinator.UpdateFindings
-            return results.ScanDetails.Count;
+            var mappedResults = VulnerabilityMapper.FromAsca(results.ScanDetails, document.FullName);
+            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
+            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, document.FullName);
+            return mappedResults.Count;
         }
 
         /// <summary>

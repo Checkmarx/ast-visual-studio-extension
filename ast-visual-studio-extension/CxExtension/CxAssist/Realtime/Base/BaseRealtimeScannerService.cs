@@ -122,7 +122,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         {
             if (!_isSubscribed) return;
 
-            var document = _uiManager.GetActiveDocument();
+            var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
+            var document = dte?.ActiveDocument;
             if (document == null) return;
 
             try

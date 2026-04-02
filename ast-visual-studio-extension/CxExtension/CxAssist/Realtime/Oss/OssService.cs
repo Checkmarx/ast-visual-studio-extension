@@ -5,6 +5,7 @@ using EnvDTE;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
@@ -49,7 +50,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
 
         /// <summary>
         /// Invokes the OSS realtime scan CLI command.
-        /// Results will be mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
+        /// Maps results to Result objects for display in the findings panel.
         /// Copies companion lock files (package-lock.json, yarn.lock) alongside the temp file.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
@@ -60,8 +61,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
             var results = await _cxWrapper.OssRealtimeScanAsync(tempFilePath);
             if (results?.Packages == null || results.Packages.Count == 0) return 0;
 
-            // TODO: Map results to Vulnerability and call CxAssistDisplayCoordinator.UpdateFindings
-            return results.Packages.Count;
+            var mappedResults = VulnerabilityMapper.FromOss(results.Packages, document.FullName);
+            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
+            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, document.FullName);
+            return mappedResults.Count;
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using EnvDTE;
 using System;
 using System.Collections.Generic;
@@ -47,15 +48,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
 
         /// <summary>
         /// Invokes the IaC realtime scan CLI command.
-        /// Results will be mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
+        /// Maps results to Result objects for display in the findings panel.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
         {
             var results = await _cxWrapper.IacRealtimeScanAsync(tempFilePath);
             if (results?.Results == null || results.Results.Count == 0) return 0;
 
-            // TODO: Map results to Vulnerability and call CxAssistDisplayCoordinator.UpdateFindings
-            return results.Results.Count;
+            var mappedResults = VulnerabilityMapper.FromIac(results.Results, document.FullName);
+            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
+            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, document.FullName);
+            return mappedResults.Count;
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using EnvDTE;
 using System;
 using System.Collections.Generic;
@@ -43,7 +44,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
 
         /// <summary>
         /// Invokes the Containers realtime scan CLI command.
-        /// Results will be mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
+        /// Maps results to Result objects for display in the findings panel.
         /// Silently skips if Docker/Podman is not available.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
@@ -60,8 +61,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
                 ignoredFilePath: null, engine: _containersTool);
             if (results?.Images == null || results.Images.Count == 0) return 0;
 
-            // TODO: Map results to Vulnerability and call CxAssistDisplayCoordinator.UpdateFindings
-            return results.Images.Count;
+            var mappedResults = VulnerabilityMapper.FromContainers(results.Images, document.FullName);
+            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
+            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, document.FullName);
+            return mappedResults.Count;
         }
 
         /// <summary>
