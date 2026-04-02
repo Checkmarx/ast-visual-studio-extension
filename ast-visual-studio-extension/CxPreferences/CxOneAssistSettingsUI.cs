@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxExtension.Services;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using System;
 using System.Drawing;
@@ -18,7 +17,6 @@ namespace ast_visual_studio_extension.CxPreferences
         public delegate void EventHandler();
         public event EventHandler OnApplySettingsEvent = delegate { };
         private static CxOneAssistSettingsUI Instance;
-        private static ASCAService _ascaService;
         private bool _isMcpInstallInProgress;
         private CancellationTokenSource _mcpStatusDismissCts;
         private bool _isAuthEventSubscribed;
@@ -151,7 +149,7 @@ namespace ast_visual_studio_extension.CxPreferences
             lnkEditMcp.Enabled = enabled;
         }
 
-        private async void AscaCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void AscaCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (!CxPreferencesUI.IsAuthenticated())
                 return;
@@ -162,21 +160,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 cxOneAssistSettingsModule.AscaCheckBox = isChecked;
                 cxOneAssistSettingsModule.PersistSettings();
 
-                if (isChecked)
-                {
-                    var parentModule = new CxPreferencesModule();
-                    CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(parentModule.GetCxConfig(), GetType());
-                    _ascaService = ASCAService.GetInstance(cxWrapper);
-                    await _ascaService.InitializeASCAAsync();
-                }
-                else
-                {
-                    // If ASCA is disabled, dispose the service if it exists
-                    if (_ascaService != null)
-                    {
-                        await _ascaService.UnregisterTextChangeEventsAsync();
-                    }
-                }
+                // CxWindowControl.OnAssistSettingsApplied() will handle orchestrator updates
+                ThrowEventOnApply();
             }
             catch (Exception ex)
             {

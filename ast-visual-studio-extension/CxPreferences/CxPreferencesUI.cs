@@ -1,5 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Services;
-using ast_visual_studio_extension.CxExtension.Utils;
+﻿using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
@@ -21,7 +20,6 @@ namespace ast_visual_studio_extension.CxPreferences
         public event EventHandler OnApplySettingsEvent = delegate { };
 
         private static CxPreferencesUI Instance;
-        private static ASCAService _ascaService;
         private static bool _isAuthenticated;
         internal static event Action<bool> AuthStateChanged;
         private static int _restoreAuthInProgress;
