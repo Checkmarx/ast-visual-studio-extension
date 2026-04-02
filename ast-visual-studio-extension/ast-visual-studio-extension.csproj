@@ -95,6 +95,12 @@
     <Compile Include="CxExtension\CxAssist\Realtime\Containers\ContainersService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Oss\OssService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\RealtimeScannerOrchestrator.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\SeverityMapper.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\UniqueIdGenerator.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\TempFileManager.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\CompanionFileManager.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\AscaResultGrouper.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\FileFilterStrategy.cs" />
     <Compile Include="CxExtension\Toolbar\BranchesCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ComboboxBase.cs" />
     <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />

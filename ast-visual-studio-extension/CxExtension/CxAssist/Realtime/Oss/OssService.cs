@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using EnvDTE;
 using System;
 using System.Collections.Generic;
@@ -78,47 +79,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         }
 
         /// <summary>
-        /// Copies companion lock file (package-lock.json, yarn.lock, pom.xml.lock) to temp directory.
+        /// Copies companion lock files to temp directory using centralized manager.
+        ///
+        /// CRITICAL: Lock files are essential for accurate OSS scanning.
+        /// Different package managers use different lock file formats:
+        /// - NPM: package-lock.json, npm-shrinkwrap.json
+        /// - Yarn: yarn.lock
+        /// - Maven: pom.xml.lock
+        /// - .NET: package.lock.json, packages.lock.json
+        ///
+        /// Lock files are optional but when present, they MUST be copied.
+        /// Without them, OSS scanning provides incomplete results.
         /// </summary>
         private void CopyCompanionLockFile(string originalFilePath, string tempDir)
         {
-            var dir = Path.GetDirectoryName(originalFilePath);
-            var fileName = Path.GetFileName(originalFilePath);
-
-            if (fileName.Equals("package.json", StringComparison.OrdinalIgnoreCase))
-            {
-                foreach (var lockName in new[] { "package-lock.json", "yarn.lock" })
-                {
-                    var lockPath = Path.Combine(dir, lockName);
-                    if (File.Exists(lockPath))
-                    {
-                        try
-                        {
-                            File.Copy(lockPath, Path.Combine(tempDir, lockName), overwrite: true);
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Failed to copy lock file: {ex.Message}");
-                        }
-                        break;
-                    }
-                }
-            }
-            else if (fileName.Equals("pom.xml", StringComparison.OrdinalIgnoreCase))
-            {
-                var lockPath = Path.Combine(dir, "pom.xml.lock");
-                if (File.Exists(lockPath))
-                {
-                    try
-                    {
-                        File.Copy(lockPath, Path.Combine(tempDir, "pom.xml.lock"), overwrite: true);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Failed to copy lock file: {ex.Message}");
-                    }
-                }
-            }
+            CompanionFileManager.CopyCompanionLockFiles(originalFilePath, tempDir);
         }
     }
 }
