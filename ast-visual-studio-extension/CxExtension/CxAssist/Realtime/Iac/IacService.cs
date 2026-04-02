@@ -46,23 +46,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         }
 
         /// <summary>
-        /// Invokes the IaC realtime scan CLI command and displays results.
+        /// Invokes the IaC realtime scan CLI command.
+        /// Results will be mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
         {
             var results = await _cxWrapper.IacRealtimeScanAsync(tempFilePath);
             if (results?.Results == null || results.Results.Count == 0) return 0;
 
-            await ((IacUIManager)_uiManager).DisplayDiagnosticsAsync(results.Results, document.FullName);
+            // TODO: Map results to Vulnerability and call CxAssistDisplayCoordinator.UpdateFindings
             return results.Results.Count;
-        }
-
-        /// <summary>
-        /// Creates the IaC UI manager.
-        /// </summary>
-        protected override BaseRealtimeScannerUIManager CreateUIManager()
-        {
-            return new IacUIManager();
         }
 
         /// <summary>

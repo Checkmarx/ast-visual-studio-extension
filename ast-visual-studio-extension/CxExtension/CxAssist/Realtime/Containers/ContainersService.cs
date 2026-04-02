@@ -42,7 +42,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         }
 
         /// <summary>
-        /// Invokes the Containers realtime scan CLI command and displays results.
+        /// Invokes the Containers realtime scan CLI command.
+        /// Results will be mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
+        /// Silently skips if Docker/Podman is not available.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
         {
@@ -58,16 +60,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
                 ignoredFilePath: null, engine: _containersTool);
             if (results?.Images == null || results.Images.Count == 0) return 0;
 
-            await ((ContainersUIManager)_uiManager).DisplayDiagnosticsAsync(results.Images, document.FullName);
+            // TODO: Map results to Vulnerability and call CxAssistDisplayCoordinator.UpdateFindings
             return results.Images.Count;
-        }
-
-        /// <summary>
-        /// Creates the Containers UI manager.
-        /// </summary>
-        protected override BaseRealtimeScannerUIManager CreateUIManager()
-        {
-            return new ContainersUIManager();
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
 using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Diagnostics;
@@ -18,7 +19,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
     public abstract class BaseRealtimeScannerService : IRealtimeScannerService
     {
         protected readonly CxWrapper _cxWrapper;
-        protected readonly BaseRealtimeScannerUIManager _uiManager;
         private readonly Timer _debounceTimer;
         private const int DEBOUNCE_DELAY = 2000;
         private bool _isSubscribed = false;
@@ -39,22 +39,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         public abstract bool ShouldScanFile(string filePath);
 
         /// <summary>
-        /// Performs the actual scan and displays results via the UI manager.
+        /// Performs the actual scan and returns the result count.
         /// Called after debounce timer fires and the temp file is written.
         /// Subclasses must implement the specific scanner invocation.
+        /// Results are mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
         /// </summary>
         protected abstract Task<int> ScanAndDisplayAsync(string tempFilePath, Document document);
-
-        /// <summary>
-        /// Creates the UI manager singleton for this scanner.
-        /// Each subclass creates its own *UIManager instance.
-        /// </summary>
-        protected abstract BaseRealtimeScannerUIManager CreateUIManager();
 
         protected BaseRealtimeScannerService(CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;
-            _uiManager = CreateUIManager();
             _debounceTimer = new Timer(DEBOUNCE_DELAY);
             _debounceTimer.Elapsed += OnDebounceTimerElapsed;
             _debounceTimer.AutoReset = false;
@@ -71,7 +65,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 _isInitialized = true;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RegisterTextChangeEvents();
-                _uiManager.WriteToOutputPane($"{ScannerName} scanner initialized");
+                Debug.WriteLine($"{ScannerName} scanner initialized");
             }
             catch (Exception ex)
             {
@@ -89,7 +83,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             try
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                await _uiManager.ClearAllMarkersAndTasksAsync();
                 if (!_isSubscribed || _textEditorEvents == null) return;
                 _textEditorEvents.LineChanged -= OnTextChanged;
                 _textEditorEvents = null;
@@ -108,14 +101,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             ThreadHelper.ThrowIfNotOnUIThread();
             if (_isSubscribed) return;
 
-            var dte = _uiManager.GetDTE();
+            var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
             if (dte != null && _textEditorEvents == null)
             {
                 _textEditorEvents = dte.Events.TextEditorEvents;
                 _textEditorEvents.LineChanged += OnTextChanged;
                 _isSubscribed = true;
 
-                var document = _uiManager.GetActiveDocument();
+                var document = dte.ActiveDocument;
                 if (document == null) return;
                 var textDocument = (TextDocument)document.Object("TextDocument");
                 if (textDocument == null) return;
@@ -157,7 +150,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             string tempFilePath = null;
             try
             {
-                var document = _uiManager.GetActiveDocument();
+                var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
+                var document = dte?.ActiveDocument;
                 if (document == null) return;
 
                 if (!ShouldScanFile(document.FullName)) return;
@@ -173,7 +167,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 tempFilePath = Path.Combine(Path.GetTempPath(), $"{fileNameWithoutExt}_{timestamp}{extension}");
 
                 File.WriteAllText(tempFilePath, content);
-                _uiManager.WriteToOutputPane($"Starting {ScannerName} scan on: {document.FullName}");
+                Debug.WriteLine($"{ScannerName}: Starting scan on: {document.FullName}");
 
                 await ScanAndDisplayAsync(tempFilePath, document);
             }
