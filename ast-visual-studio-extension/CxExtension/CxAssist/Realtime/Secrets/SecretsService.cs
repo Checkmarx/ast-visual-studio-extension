@@ -25,7 +25,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
 
         protected override string ScannerName => "Secrets";
 
-        private SecretsService(CxWrapper cxWrapper) : base(cxWrapper)
+        private SecretsService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
         }
 
@@ -42,9 +42,26 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// <summary>
         /// Invokes the Secrets realtime scan CLI command.
         /// Maps results to Result objects for display in the findings panel.
+        /// Validates that file content is not empty before scanning.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
         {
+            // Validate file is not empty (prevent scanning blank files)
+            try
+            {
+                var fileContent = System.IO.File.ReadAllText(tempFilePath);
+                if (string.IsNullOrWhiteSpace(fileContent))
+                {
+                    ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "file content is empty");
+                    return 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                ScanMetricsLogger.LogScanError(ScannerName, document.FullName, ex);
+                return 0;
+            }
+
             var results = await _cxWrapper.SecretsRealtimeScanAsync(tempFilePath);
             if (results?.Secrets == null || results.Secrets.Count == 0) return 0;
 
@@ -57,7 +74,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static SecretsService GetInstance(CxWrapper cxWrapper)
+        public static SecretsService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
         {
             if (_instance != null) return _instance;
             lock (_lock)

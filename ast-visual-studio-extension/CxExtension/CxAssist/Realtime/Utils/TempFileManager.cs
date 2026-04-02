@@ -242,7 +242,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 using (var sha256 = SHA256.Create())
                 {
                     var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(content));
-                    var hexString = Convert.ToHexString(hash);
+                    var hexString = BitConverter.ToString(hash).Replace("-", "").ToLower();
                     return hexString.Substring(0, Math.Min(HASH_SUFFIX_LENGTH, hexString.Length));
                 }
             }

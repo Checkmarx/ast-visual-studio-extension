@@ -143,7 +143,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 using (var sha256 = SHA256.Create())
                 {
                     var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-                    var hexString = Convert.ToHexString(hashedBytes);
+                    var hexString = BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
                     // Return first 16 chars for readability (still 64-bit collision resistance)
                     return hexString.Length > HASH_LENGTH ? hexString.Substring(0, HASH_LENGTH) : hexString;
                 }

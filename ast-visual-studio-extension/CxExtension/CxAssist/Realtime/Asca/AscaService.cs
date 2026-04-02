@@ -27,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
 
         protected override string ScannerName => "ASCA";
 
-        private AscaService(CxWrapper cxWrapper) : base(cxWrapper)
+        private AscaService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
         }
 
@@ -59,7 +59,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static AscaService GetInstance(CxWrapper cxWrapper)
+        public static AscaService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
         {
             if (_instance != null) return _instance;
             lock (_lock)

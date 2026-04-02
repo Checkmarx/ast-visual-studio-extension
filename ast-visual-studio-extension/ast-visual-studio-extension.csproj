@@ -102,6 +102,7 @@
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\AscaResultGrouper.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\FileFilterStrategy.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\VulnerabilityMapper.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\ScanMetricsLogger.cs" />
     <Compile Include="CxExtension\Toolbar\BranchesCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ComboboxBase.cs" />
     <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />

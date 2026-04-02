@@ -26,18 +26,28 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
 
         protected override string ScannerName => "Containers";
 
-        private ContainersService(CxWrapper cxWrapper, string containersTool = "docker") : base(cxWrapper)
+        private ContainersService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker") : base(cxWrapper)
         {
             _containersTool = containersTool ?? "docker";
         }
 
         /// <summary>
         /// Containers scanner only scans Dockerfile and docker-compose files.
+        /// Excludes Helm chart files (chart.yml, chart.yaml) in /helm/ paths.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath)) return false;
             var fileName = System.IO.Path.GetFileName(filePath);
+
+            // Exclude Helm chart files
+            if (fileName.Equals("chart.yml", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("chart.yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                if (filePath.Contains("\\helm\\") || filePath.Contains("/helm/"))
+                    return false;
+            }
+
             return ContainerFileNames.Contains(fileName) ||
                    fileName.StartsWith("dockerfile", StringComparison.OrdinalIgnoreCase);
         }
@@ -50,8 +60,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
         {
             // Check if Docker/Podman is available first
-            bool engineExists = await _cxWrapper.CheckEngineExistAsync(_containersTool);
-            if (!engineExists)
+            string engineCheckResult = await _cxWrapper.CheckEngineExistAsync(_containersTool);
+            if (string.IsNullOrEmpty(engineCheckResult) || !bool.TryParse(engineCheckResult, out bool engineExists) || !engineExists)
             {
                 // Silently skip if container tool is not available
                 return 0;
@@ -70,7 +80,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static ContainersService GetInstance(CxWrapper cxWrapper, string containersTool = "docker")
+        public static ContainersService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker")
         {
             if (_instance != null) return _instance;
             lock (_lock)

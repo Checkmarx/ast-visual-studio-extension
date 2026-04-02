@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Timers;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 {
@@ -18,7 +19,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
     /// </summary>
     public abstract class BaseRealtimeScannerService : IRealtimeScannerService
     {
-        protected readonly CxWrapper _cxWrapper;
+        protected readonly ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
         private readonly Timer _debounceTimer;
         private const int DEBOUNCE_DELAY = 2000;
         private bool _isSubscribed = false;
@@ -46,7 +47,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         /// </summary>
         protected abstract Task<int> ScanAndDisplayAsync(string tempFilePath, Document document);
 
-        protected BaseRealtimeScannerService(CxWrapper cxWrapper)
+        protected BaseRealtimeScannerService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;
             _debounceTimer = new Timer(DEBOUNCE_DELAY);
@@ -149,13 +150,27 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             _debounceTimer.Stop();
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             string tempFilePath = null;
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
                 var document = dte?.ActiveDocument;
                 if (document == null) return;
 
-                if (!ShouldScanFile(document.FullName)) return;
+                // Check for /node_modules/ exclusion (applies to all scanners)
+                if (document.FullName.Contains("\\node_modules\\") || document.FullName.Contains("/node_modules/"))
+                {
+                    Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "in node_modules directory");
+                    return;
+                }
+
+                if (!ShouldScanFile(document.FullName))
+                {
+                    Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "file type not applicable");
+                    return;
+                }
+
+                Utils.ScanMetricsLogger.LogScanStart(ScannerName, document.FullName);
 
                 var textDocument = (TextDocument)document.Object("TextDocument");
                 if (textDocument?.StartPoint == null || textDocument?.EndPoint == null) return;
@@ -168,13 +183,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 tempFilePath = Path.Combine(Path.GetTempPath(), $"{fileNameWithoutExt}_{timestamp}{extension}");
 
                 File.WriteAllText(tempFilePath, content);
-                Debug.WriteLine($"{ScannerName}: Starting scan on: {document.FullName}");
-
-                await ScanAndDisplayAsync(tempFilePath, document);
+                var scanResult = await ScanAndDisplayAsync(tempFilePath, document);
+                stopwatch.Stop();
+                Utils.ScanMetricsLogger.LogScanComplete(ScannerName, document.FullName, scanResult, stopwatch.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{ScannerName} - Failed to process document: {ex.Message}");
+                stopwatch.Stop();
+                Utils.ScanMetricsLogger.LogScanError(ScannerName, tempFilePath, ex);
             }
             finally
             {
@@ -183,11 +199,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                     try
                     {
                         File.Delete(tempFilePath);
-                        Debug.WriteLine($"{ScannerName}: Temporary file deleted: {tempFilePath}");
+                        Utils.ScanMetricsLogger.LogTempFileOperation("delete", tempFilePath, true);
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"{ScannerName}: Failed to delete temporary file: {ex.Message}");
+                        Utils.ScanMetricsLogger.LogTempFileOperation("delete", tempFilePath, false);
                     }
                 }
             }

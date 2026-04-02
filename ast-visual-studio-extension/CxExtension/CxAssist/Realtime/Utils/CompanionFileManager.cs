@@ -135,24 +135,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             {
                 var targetPath = Path.Combine(targetDir, lockFileName);
                 File.Copy(sourcePath, targetPath, overwrite: true);
-
-                System.Diagnostics.Debug.WriteLine(
-                    $"CompanionFileManager: Copied lock file: {lockFileName}");
+                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, true);
             }
             catch (IOException ioEx)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"CompanionFileManager: IO error copying {lockFileName}: {ioEx.Message}");
+                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, false, $"IO error: {ioEx.Message}");
             }
             catch (UnauthorizedAccessException authEx)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"CompanionFileManager: Permission denied copying {lockFileName}: {authEx.Message}");
+                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, false, $"Permission denied: {authEx.Message}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"CompanionFileManager: Error copying {lockFileName}: {ex.Message}");
+                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, false, $"Error: {ex.Message}");
             }
         }
 
