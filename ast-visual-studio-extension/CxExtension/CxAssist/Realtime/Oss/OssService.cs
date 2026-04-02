@@ -47,7 +47,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         }
 
         /// <summary>
-        /// Invokes the OSS realtime scan CLI command and displays results.
+        /// Invokes the OSS realtime scan CLI command.
+        /// Results will be mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
         /// Copies companion lock files (package-lock.json, yarn.lock) alongside the temp file.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
@@ -58,16 +59,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
             var results = await _cxWrapper.OssRealtimeScanAsync(tempFilePath);
             if (results?.Packages == null || results.Packages.Count == 0) return 0;
 
-            await ((OssUIManager)_uiManager).DisplayDiagnosticsAsync(results.Packages, document.FullName);
+            // TODO: Map results to Vulnerability and call CxAssistDisplayCoordinator.UpdateFindings
             return results.Packages.Count;
-        }
-
-        /// <summary>
-        /// Creates the OSS UI manager.
-        /// </summary>
-        protected override BaseRealtimeScannerUIManager CreateUIManager()
-        {
-            return new OssUIManager();
         }
 
         /// <summary>
