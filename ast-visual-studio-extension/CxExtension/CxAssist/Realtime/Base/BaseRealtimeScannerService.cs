@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Timers;
 using System.Threading.Tasks;
+using CxWrapper = ast_visual_studio_extension.CxCLI.CxWrapper;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 {

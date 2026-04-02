@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxWrapper.Models;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 {
