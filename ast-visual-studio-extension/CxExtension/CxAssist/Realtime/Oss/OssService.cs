@@ -32,7 +32,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
 
         protected override string ScannerName => "OSS";
 
-        private OssService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
+        private OssService(CxWrapper cxWrapper) : base(cxWrapper)
         {
         }
 
@@ -67,7 +67,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static OssService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
+        public static OssService GetInstance(CxWrapper cxWrapper)
         {
             if (_instance != null) return _instance;
             lock (_lock)

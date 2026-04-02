@@ -27,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         /// Reads the settings module to determine which scanners are enabled,
         /// creates instances, and calls InitializeAsync on each.
         /// </summary>
-        public async Task InitializeAsync(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, CxOneAssistSettingsModule settings)
+        public async Task InitializeAsync(CxWrapper cxWrapper, CxOneAssistSettingsModule settings)
         {
             if (cxWrapper == null || settings == null) return;
 

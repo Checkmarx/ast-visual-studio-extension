@@ -28,7 +28,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
 
         protected override string ScannerName => "IaC";
 
-        private IacService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
+        private IacService(CxWrapper cxWrapper) : base(cxWrapper)
         {
         }
 
@@ -61,7 +61,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static IacService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
+        public static IacService GetInstance(CxWrapper cxWrapper)
         {
             if (_instance != null) return _instance;
             lock (_lock)

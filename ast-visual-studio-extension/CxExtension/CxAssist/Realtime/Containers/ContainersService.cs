@@ -25,7 +25,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
 
         protected override string ScannerName => "Containers";
 
-        private ContainersService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker") : base(cxWrapper)
+        private ContainersService(CxWrapper cxWrapper, string containersTool = "docker") : base(cxWrapper)
         {
             _containersTool = containersTool ?? "docker";
         }
@@ -67,7 +67,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static ContainersService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker")
+        public static ContainersService GetInstance(CxWrapper cxWrapper, string containersTool = "docker")
         {
             if (_instance != null) return _instance;
             lock (_lock)
