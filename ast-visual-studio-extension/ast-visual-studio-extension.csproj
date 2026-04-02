@@ -87,8 +87,14 @@
     <Compile Include="CxExtension\Panels\ResultInfoPanel.cs" />
     <Compile Include="CxExtension\Panels\ResultsTreePanel.cs" />
     <Compile Include="CxExtension\Panels\ResultVulnerabilitiesPanel.cs" />
-    <Compile Include="CxExtension\Services\ASCAService.cs" />
-    <Compile Include="CxExtension\Services\ASCAUIManager.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Interfaces\IRealtimeScannerService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Base\BaseRealtimeScannerService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Asca\AscaService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Secrets\SecretsService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Iac\IacService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Containers\ContainersService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Oss\OssService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\RealtimeScannerOrchestrator.cs" />
     <Compile Include="CxExtension\Toolbar\BranchesCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ComboboxBase.cs" />
     <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />
