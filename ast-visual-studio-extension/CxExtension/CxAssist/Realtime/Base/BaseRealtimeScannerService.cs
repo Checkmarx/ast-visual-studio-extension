@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
+using ast_visual_studio_extension.CxExtension.Utils;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
@@ -23,7 +24,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
     public abstract class BaseRealtimeScannerService : IRealtimeScannerService
     {
         protected readonly ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
-        private readonly Timer _debounceTimer;
+        private readonly System.Timers.Timer _debounceTimer;
         private const int DEBOUNCE_DELAY = 2000;
         private const int SCAN_TIMEOUT_MS = 60000; // 60 second timeout for CLI scans
         private const long MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB max file size
