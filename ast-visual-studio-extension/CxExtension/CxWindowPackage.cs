@@ -1,4 +1,5 @@
 ﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.Core;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using log4net;
 using log4net.Appender;
@@ -57,6 +58,9 @@ namespace ast_visual_studio_extension.CxExtension
         private McpUninstallHandler _mcpUninstallHandler;
 #endif
 
+        // Keeps the solution event handler alive so the event subscription is not garbage-collected
+        private SolutionEventHandler _solutionEventHandler;
+
         #region Package Members
 
         /// <summary>
@@ -78,6 +82,15 @@ namespace ast_visual_studio_extension.CxExtension
 
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
+
+                // Register solution event handler to auto-initialize scanners on solution open
+                var solution = await GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
+                if (solution != null)
+                {
+                    _solutionEventHandler = new SolutionEventHandler(this, solution);
+                    _solutionEventHandler.Register();
+                    Debug.WriteLine("CxWindowPackage: Solution event handler registered");
+                }
 
 #if !NO_VS_EXTENSION_MANAGER
                 // Register MCP cleanup handler for when the extension is uninstalled

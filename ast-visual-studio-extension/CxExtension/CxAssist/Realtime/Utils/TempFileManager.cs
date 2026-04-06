@@ -202,7 +202,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         ///
         /// Security: Prevents attacks like "../../../etc/passwd"
         /// </summary>
-        private static string SanitizeFilename(string fileName, int maxLength)
+        internal static string SanitizeFilename(string fileName, int maxLength)
         {
             if (string.IsNullOrEmpty(fileName))
                 return "file";
@@ -232,7 +232,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// Falls back to simple hashCode if SHA-256 unavailable.
         /// Returns first 8 chars of hex for readability in filenames.
         /// </summary>
-        private static string GetContentHash(string content)
+        internal static string GetContentHash(string content)
         {
             if (string.IsNullOrEmpty(content))
                 return "empty";

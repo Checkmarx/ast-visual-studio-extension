@@ -77,6 +77,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// 4. Log success/failure for each attempt
         ///
         /// Error handling: Non-fatal. Logs failures but continues processing.
+        /// Supports both filename matching (e.g., "package.json") and extension matching (e.g., ".csproj").
         /// </summary>
         /// <param name="manifestPath">Full path to manifest file</param>
         /// <param name="tempDir">Target temp directory to copy lock files to</param>
@@ -97,12 +98,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 return;
             }
 
-            // Get lock files for this manifest type
+            // Get lock files for this manifest type (try by filename first, then by extension)
             if (!LockFilesByManifest.TryGetValue(fileName, out var lockFiles))
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"CompanionFileManager: No lock files defined for {fileName}");
-                return;
+                // Try matching by extension (e.g., ".csproj" instead of "MyProject.csproj")
+                var fileExtension = Path.GetExtension(fileName);
+                if (!LockFilesByManifest.TryGetValue(fileExtension, out lockFiles))
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"CompanionFileManager: No lock files defined for {fileName}");
+                    return;
+                }
             }
 
             // Copy each lock file if it exists

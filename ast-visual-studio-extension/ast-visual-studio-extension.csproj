@@ -103,12 +103,15 @@
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\FileFilterStrategy.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\VulnerabilityMapper.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\ScanMetricsLogger.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\ManifestFileWatcher.cs" />
+    <Compile Include="CxExtension\Core\SolutionEventHandler.cs" />
     <Compile Include="CxExtension\Toolbar\BranchesCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ComboboxBase.cs" />
     <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ScansCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\CxToolbar.cs" />
     <Compile Include="CxExtension\Utils\OutputPaneUtils.cs" />
+    <Compile Include="CxExtension\Utils\OutputPaneWriter.cs" />
     <Compile Include="CxExtension\Utils\RepositoryInformation.cs" />
     <Compile Include="CxExtension\Utils\InfobarService.cs" />
     <Compile Include="CxExtension\Utils\ResultUtils.cs" />

@@ -4,6 +4,7 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using EnvDTE;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
@@ -32,24 +33,37 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         }
 
         /// <summary>
-        /// Containers scanner only scans Dockerfile and docker-compose files.
-        /// Excludes Helm chart files (chart.yml, chart.yaml) in /helm/ paths.
+        /// Unregisters the scanner and resets the singleton.
+        /// Allows re-registration to create a fresh instance with proper event wiring.
+        /// </summary>
+        public override async Task UnregisterAsync()
+        {
+            await base.UnregisterAsync();
+            lock (_lock)
+            {
+                _instance = null;
+            }
+        }
+
+        /// <summary>
+        /// Containers scanner scans Dockerfile, docker-compose, and Helm chart YAML files.
+        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return false;
-            var fileName = System.IO.Path.GetFileName(filePath);
+            return new Utils.ContainersFileFilterStrategy().ShouldScanFile(filePath);
+        }
 
-            // Exclude Helm chart files
-            if (fileName.Equals("chart.yml", StringComparison.OrdinalIgnoreCase) ||
-                fileName.Equals("chart.yaml", StringComparison.OrdinalIgnoreCase))
-            {
-                if (filePath.Contains("\\helm\\") || filePath.Contains("/helm/"))
-                    return false;
-            }
-
-            return ContainerFileNames.Contains(fileName) ||
-                   fileName.StartsWith("dockerfile", StringComparison.OrdinalIgnoreCase);
+        /// <summary>
+        /// Containers scanner uses a directory-based temp strategy with content hash.
+        /// Creates: %TEMP%/Cx-container-realtime-scanner/{contentHash}/{originalFileName}
+        /// Note: Helm file detection requires path inspection (not available here), so isHelmFile defaults to false.
+        /// </summary>
+        protected override string CreateTempFilePath(string originalFileName, string content)
+        {
+            var hash = Utils.TempFileManager.GetContentHash(content);
+            var tempDir = Utils.TempFileManager.CreateContainersTempDir(hash, isHelmFile: false);
+            return Path.Combine(tempDir, originalFileName);
         }
 
         /// <summary>

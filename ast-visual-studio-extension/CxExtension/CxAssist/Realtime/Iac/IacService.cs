@@ -4,6 +4,7 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using EnvDTE;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
@@ -34,16 +35,36 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         }
 
         /// <summary>
-        /// IaC scanner scans IaC-related file types.
+        /// Unregisters the scanner and resets the singleton.
+        /// Allows re-registration to create a fresh instance with proper event wiring.
+        /// </summary>
+        public override async Task UnregisterAsync()
+        {
+            await base.UnregisterAsync();
+            lock (_lock)
+            {
+                _instance = null;
+            }
+        }
+
+        /// <summary>
+        /// IaC scanner scans IaC-related file types including Terraform variable files.
+        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return false;
+            return new Utils.IacFileFilterStrategy().ShouldScanFile(filePath);
+        }
 
-            var fileName = System.IO.Path.GetFileName(filePath);
-            var ext = System.IO.Path.GetExtension(filePath);
-
-            return IacExtensions.Contains(ext) || IacFileNames.Contains(fileName);
+        /// <summary>
+        /// IaC scanner uses a directory-based temp strategy with content hash.
+        /// Creates: %TEMP%/Cx-iac-realtime-scanner/{contentHash}/{originalFileName}
+        /// </summary>
+        protected override string CreateTempFilePath(string originalFileName, string content)
+        {
+            var hash = Utils.TempFileManager.GetContentHash(content);
+            var tempDir = Utils.TempFileManager.CreateIacTempDir(hash);
+            return Path.Combine(tempDir, originalFileName);
         }
 
         /// <summary>

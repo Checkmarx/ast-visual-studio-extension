@@ -92,21 +92,21 @@ namespace ast_visual_studio_extension.CxCLI
             if (string.IsNullOrWhiteSpace(fileSource))
             {
                 arguments = new List<string>
-        {
-            CxConstants.CLI_SCAN_CMD,
-            CxConstants.CLI_ASCA_CMD,
-            CxConstants.FLAG_ASCA_LATEST_VERSION
-        };
+                {
+                    CxConstants.CLI_SCAN_CMD,
+                    CxConstants.CLI_ASCA_CMD,
+                    CxConstants.FLAG_ASCA_LATEST_VERSION
+                };
             }
             else
             {
                 arguments = new List<string>
-        {
-            CxConstants.CLI_SCAN_CMD,
-            CxConstants.CLI_ASCA_CMD,
-            CxConstants.FLAG_FILE_SOURCE,
-            fileSource
-        };
+                {
+                    CxConstants.CLI_SCAN_CMD,
+                    CxConstants.CLI_ASCA_CMD,
+                    CxConstants.FLAG_FILE_SOURCE,
+                    fileSource
+                };
 
                 if (ascaLatestVersion)
                 {
@@ -117,6 +117,13 @@ namespace ast_visual_studio_extension.CxCLI
             // Note: --agent flag is automatically added by ExecuteCliCommand
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no ASCA issues found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new CxAsca(null, false, "No issues found", new List<CxAscaDetail>(), null);
+            }
+
             return JsonConvert.DeserializeObject<CxAsca>(result);
         }
 
@@ -154,6 +161,13 @@ namespace ast_visual_studio_extension.CxCLI
             }
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no packages/vulnerabilities found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new OssRealtimeResults(new List<OssRealtimeScanPackage>());
+            }
+
             return JsonConvert.DeserializeObject<OssRealtimeResults>(result);
         }
 
@@ -195,6 +209,12 @@ namespace ast_visual_studio_extension.CxCLI
             }
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no secrets found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new SecretsRealtimeResults(new List<Secret>());
+            }
 
             return JsonConvert.DeserializeObject<SecretsRealtimeResults>(result);
         }
@@ -244,6 +264,12 @@ namespace ast_visual_studio_extension.CxCLI
             }
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no IaC issues found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new IacRealtimeResults(new List<IacIssue>());
+            }
 
             return JsonConvert.DeserializeObject<IacRealtimeResults>(result);
         }
@@ -393,6 +419,12 @@ namespace ast_visual_studio_extension.CxCLI
             }
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no container issues found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+            }
 
             return JsonConvert.DeserializeObject<ContainersRealtimeResults>(result);
         }

@@ -201,6 +201,30 @@ namespace ast_visual_studio_extension.CxExtension
             }
         }
 
+        /// <summary>
+        /// Public method to register realtime scanners if authenticated.
+        /// Called by SolutionEventHandler on solution open.
+        /// </summary>
+        public async Task RegisterRealtimeScannersIfAuthenticatedAsync()
+        {
+            if (!CxPreferencesUI.IsAuthenticated())
+                return;
+
+            var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
+            if (cxWrapper != null)
+                await RegisterRealtimeScanners(cxWrapper);
+        }
+
+        /// <summary>
+        /// Public method to unregister realtime scanners.
+        /// Called by SolutionEventHandler on solution close.
+        /// </summary>
+        public async Task UnregisterRealtimeScannersAsync()
+        {
+            if (_realtimeOrchestrator != null)
+                await _realtimeOrchestrator.UnregisterAllAsync();
+        }
+
         private void OnAssistSettingsApplied()
         {
             var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());

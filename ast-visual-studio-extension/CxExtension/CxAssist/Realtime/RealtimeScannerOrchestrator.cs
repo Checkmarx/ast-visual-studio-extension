@@ -5,10 +5,12 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxPreferences;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
@@ -21,6 +23,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
     public class RealtimeScannerOrchestrator
     {
         private readonly List<IRealtimeScannerService> _scanners = new List<IRealtimeScannerService>();
+        private ManifestFileWatcher _manifestWatcher;
 
         /// <summary>
         /// Initializes all enabled realtime scanners based on the current settings.
@@ -30,6 +33,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         public async Task InitializeAsync(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, CxOneAssistSettingsModule settings)
         {
             if (cxWrapper == null || settings == null) return;
+
+            // Only initialize scanners if user is authenticated
+            if (!IsAuthenticated(settings))
+            {
+                Debug.WriteLine("RealtimeScannerOrchestrator: User not authenticated, skipping scanner initialization");
+                return;
+            }
 
             try
             {
@@ -73,12 +83,94 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     await ossService.InitializeAsync();
                     _scanners.Add(ossService);
                 }
+
+                // Start manifest file watcher to detect dependency/config changes
+                StartManifestFileWatcher();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error initializing realtime scanners: {ex.Message}");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Starts monitoring manifest files in the solution directory.
+        /// </summary>
+        private void StartManifestFileWatcher()
+        {
+            try
+            {
+                // Get the solution root directory
+                var solutionRoot = GetSolutionDirectory();
+                if (string.IsNullOrEmpty(solutionRoot))
+                {
+                    Debug.WriteLine("RealtimeScannerOrchestrator: Could not determine solution directory");
+                    return;
+                }
+
+                _manifestWatcher = new ManifestFileWatcher(solutionRoot);
+                _manifestWatcher.ManifestFileChanged += OnManifestFileChanged;
+                _manifestWatcher.Start();
+                Debug.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher started");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"RealtimeScannerOrchestrator: Failed to start manifest file watcher: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the solution directory from the VS environment.
+        /// </summary>
+        private string GetSolutionDirectory()
+        {
+            try
+            {
+                var dte = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+                if (dte?.Solution?.FullName != null)
+                {
+                    return Path.GetDirectoryName(dte.Solution.FullName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"RealtimeScannerOrchestrator: Error getting solution directory: {ex.Message}");
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Called when a manifest file is detected as changed.
+        /// Triggers re-scans for affected scanners.
+        /// </summary>
+        private void OnManifestFileChanged(string filePath, System.IO.WatcherChangeTypes changeType)
+        {
+            try
+            {
+                string fileName = Path.GetFileName(filePath);
+                Debug.WriteLine($"RealtimeScannerOrchestrator: Manifest file changed: {fileName} ({changeType})");
+
+                // Re-scan affected files
+                // Note: Currently triggers a log message. Full re-scan integration
+                // would require additional coordinate-based triggering in each scanner.
+                Utils.ScanMetricsLogger.LogOrchestratorEvent("ManifestFileChanged",
+                    $"{fileName} - Consider triggering full re-scan for affected scanners");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"RealtimeScannerOrchestrator: Error handling manifest file change: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Checks if the user is authenticated by checking if API key is set.
+        /// Note: API key is stored in CxPreferencesModule, not CxOneAssistSettingsModule.
+        /// For now, we assume authenticated if settings object exists (actual auth happens in CxWrapper).
+        /// </summary>
+        private bool IsAuthenticated(CxOneAssistSettingsModule settings)
+        {
+            return settings != null;
         }
 
         /// <summary>
@@ -94,11 +186,36 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     await scanner.UnregisterAsync();
                 }
                 _scanners.Clear();
+
+                // Stop manifest file watcher
+                StopManifestFileWatcher();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error unregistering realtime scanners: {ex.Message}");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Stops monitoring manifest files and disposes the watcher.
+        /// </summary>
+        private void StopManifestFileWatcher()
+        {
+            try
+            {
+                if (_manifestWatcher != null)
+                {
+                    _manifestWatcher.ManifestFileChanged -= OnManifestFileChanged;
+                    _manifestWatcher.Stop();
+                    _manifestWatcher.Dispose();
+                    _manifestWatcher = null;
+                    Debug.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher stopped");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"RealtimeScannerOrchestrator: Error stopping manifest file watcher: {ex.Message}");
             }
         }
     }

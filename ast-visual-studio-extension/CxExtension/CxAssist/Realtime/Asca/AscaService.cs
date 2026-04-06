@@ -32,13 +32,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
         }
 
         /// <summary>
+        /// Unregisters the scanner and resets the singleton.
+        /// Allows re-registration to create a fresh instance with proper event wiring.
+        /// </summary>
+        public override async Task UnregisterAsync()
+        {
+            await base.UnregisterAsync();
+            lock (_lock)
+            {
+                _instance = null;
+            }
+        }
+
+        /// <summary>
         /// ASCA scanner only scans supported source code file types.
+        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return false;
-            var ext = System.IO.Path.GetExtension(filePath);
-            return AscaExtensions.Contains(ext);
+            return new Utils.AscaFileFilterStrategy().ShouldScanFile(filePath);
         }
 
         /// <summary>

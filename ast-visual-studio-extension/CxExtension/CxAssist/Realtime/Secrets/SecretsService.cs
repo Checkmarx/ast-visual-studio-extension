@@ -4,6 +4,7 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using EnvDTE;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
@@ -30,13 +31,35 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         }
 
         /// <summary>
-        /// Secrets scanner scans all files EXCEPT manifest files.
+        /// Unregisters the scanner and resets the singleton.
+        /// Allows re-registration to create a fresh instance with proper event wiring.
+        /// </summary>
+        public override async Task UnregisterAsync()
+        {
+            await base.UnregisterAsync();
+            lock (_lock)
+            {
+                _instance = null;
+            }
+        }
+
+        /// <summary>
+        /// Secrets scanner scans all files EXCEPT manifest files and lock files.
+        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return false;
-            var fileName = System.IO.Path.GetFileName(filePath);
-            return !ExcludedFileNames.Contains(fileName);
+            return new Utils.SecretsFileFilterStrategy().ShouldScanFile(filePath);
+        }
+
+        /// <summary>
+        /// Secrets scanner uses a directory-based temp strategy with content hash + UUID.
+        /// Creates: %TEMP%/Cx-secrets-realtime-scanner/{hash}_{uuid}_{timestamp}/{originalFileName}
+        /// </summary>
+        protected override string CreateTempFilePath(string originalFileName, string content)
+        {
+            var tempDir = Utils.TempFileManager.CreateSecretsTempDir(content);
+            return Path.Combine(tempDir, originalFileName);
         }
 
         /// <summary>

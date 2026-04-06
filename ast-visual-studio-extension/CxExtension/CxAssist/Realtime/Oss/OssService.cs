@@ -38,14 +38,37 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         }
 
         /// <summary>
-        /// OSS scanner only scans dependency manifest files.
+        /// Unregisters the scanner and resets the singleton.
+        /// Allows re-registration to create a fresh instance with proper event wiring.
+        /// </summary>
+        public override async Task UnregisterAsync()
+        {
+            await base.UnregisterAsync();
+            lock (_lock)
+            {
+                _instance = null;
+            }
+        }
+
+        /// <summary>
+        /// OSS scanner scans dependency manifest files and additional package manager files.
+        /// Uses FileFilterStrategy for consistent, enhanced filtering rules including Pipfile, setup.py, etc.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return false;
-            var name = Path.GetFileName(filePath);
-            var ext = Path.GetExtension(filePath);
-            return ManifestFileNames.Contains(name) || ManifestExtensions.Contains(ext);
+            return new Utils.OssFileFilterStrategy().ShouldScanFile(filePath);
+        }
+
+        /// <summary>
+        /// OSS scanner uses a directory-based temp strategy with content hash.
+        /// Creates: %TEMP%/Cx-oss-realtime-scanner/{contentHash}/{originalFileName}
+        /// Also copies companion lock files into the same directory (e.g., package-lock.json, yarn.lock).
+        /// </summary>
+        protected override string CreateTempFilePath(string originalFileName, string content)
+        {
+            var hash = Utils.TempFileManager.GetContentHash(content);
+            var tempDir = Utils.TempFileManager.CreateOssTempDir(hash);
+            return Path.Combine(tempDir, originalFileName);
         }
 
         /// <summary>
