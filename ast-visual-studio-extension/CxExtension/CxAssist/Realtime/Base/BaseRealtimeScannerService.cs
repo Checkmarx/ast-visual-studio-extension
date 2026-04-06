@@ -219,7 +219,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (textDocument == null) return;
                 _lastDocumentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
 
-                Debug.WriteLine($"{ScannerName}: Successfully registered for text change and document lifecycle events.");
+                Debug.WriteLine($"✓ {ScannerName} scanner: Successfully registered for text change and document lifecycle events.");
+                OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: Monitoring enabled");
             }
         }
 
@@ -386,10 +387,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
                 if (!ShouldScanFile(document.FullName))
                 {
+                    Debug.WriteLine($"{ScannerName}: Skipping {Path.GetFileName(document.FullName)} - file type not applicable");
                     Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "file type not applicable");
                     return;
                 }
 
+                Debug.WriteLine($"{ScannerName}: Starting scan on {Path.GetFileName(document.FullName)}");
                 Utils.ScanMetricsLogger.LogScanStart(ScannerName, document.FullName);
 
                 var textDocument = (TextDocument)document.Object("TextDocument");
@@ -400,6 +403,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 // Skip empty files (no need to scan blank content)
                 if (string.IsNullOrWhiteSpace(content))
                 {
+                    Debug.WriteLine($"{ScannerName}: Skipping {Path.GetFileName(document.FullName)} - content is empty");
                     Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "file content is empty");
                     return;
                 }
@@ -419,6 +423,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 File.WriteAllText(tempFilePath, content);
                 var scanResult = await ScanAndDisplayAsync(tempFilePath, document);
                 stopwatch.Stop();
+                Debug.WriteLine($"{ScannerName}: Scan completed in {stopwatch.ElapsedMilliseconds}ms - {scanResult} issue(s) found");
                 Utils.ScanMetricsLogger.LogScanComplete(ScannerName, document.FullName, scanResult, stopwatch.ElapsedMilliseconds);
             }
             catch (Exception ex)
