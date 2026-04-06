@@ -100,7 +100,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             {
                 Utils.ScanMetricsLogger.LogScanError(ScannerName, filePath,
                     new Exception($"Scan timeout after {SCAN_TIMEOUT_MS / 1000} seconds"));
-                Utils.OutputPaneWriter.WriteError($"{ScannerName}: Scan timeout after {SCAN_TIMEOUT_MS / 1000}s");
+                OutputPaneWriter.WriteError($"{ScannerName}: Scan timeout after {SCAN_TIMEOUT_MS / 1000}s");
                 return null;
             }
             catch (Exception ex)
@@ -136,7 +136,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         protected BaseRealtimeScannerService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;
-            _debounceTimer = new Timer(DEBOUNCE_DELAY);
+            _debounceTimer = new System.Timers.Timer(DEBOUNCE_DELAY);
             _debounceTimer.Elapsed += OnDebounceTimerElapsed;
             _debounceTimer.AutoReset = false;
         }
