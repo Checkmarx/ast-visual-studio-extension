@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(find /c/CxOnePlugins/Repo/ast-visual-studio-extension/ast-visual-studio-extension/CxExtension/CxAssist/Realtime/Utils -name \"*.cs\" ! -path \"*/obj/*\" -exec basename {} \\\\;)",
-      "mcp__claude_ai_Excalidraw__create_view",
-      "mcp__claude_ai_Atlassian__createIssueLink"
-    ]
-  }
-}
