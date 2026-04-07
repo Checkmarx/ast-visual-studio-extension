@@ -117,7 +117,7 @@ jobs:
       product_name: Visual Studio
       release_version: ${{ inputs.tag }}
       cli_release_version: ${{ needs.release.outputs.CLI_VERSION }}
-      release_author: "Phoenix Team"
+      release_author: "Sypher Team"
       release_url: https://github.com/Checkmarx/ast-visual-studio-extension/releases/tag/${{ inputs.tag }}
       jira_product_name: VISUAL_STUDIO
     secrets: inherit
