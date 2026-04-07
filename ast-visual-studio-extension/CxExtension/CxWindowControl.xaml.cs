@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
@@ -29,7 +29,6 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
-        private RealtimeScannerOrchestrator _realtimeOrchestrator;
 
         public CxWindowControl(AsyncPackage package)
         {
@@ -180,57 +179,21 @@ namespace ast_visual_studio_extension.CxExtension
         }
 
 
-        private async Task RegisterRealtimeScanners(CxCLI.CxWrapper cxWrapper)
-        {
-            try
-            {
-                // Unregister previous if re-registering on settings change
-                if (_realtimeOrchestrator != null)
-                    await _realtimeOrchestrator.UnregisterAllAsync();
-
-                var assistSettings = package.GetDialogPage(typeof(CxOneAssistSettingsModule))
-                                     as CxOneAssistSettingsModule;
-                if (cxWrapper == null || assistSettings == null) return;
-
-                _realtimeOrchestrator = new RealtimeScannerOrchestrator();
-                await _realtimeOrchestrator.InitializeAsync(cxWrapper, assistSettings);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Realtime scanner initialization failed: {ex.Message}");
-            }
-        }
+        private Task RegisterRealtimeScanners(CxCLI.CxWrapper cxWrapper) =>
+            RealtimeScannerHost.RegisterAsync(package, cxWrapper, GetType());
 
         /// <summary>
         /// Public method to register realtime scanners if authenticated.
         /// Called by SolutionEventHandler on solution open.
         /// </summary>
-        public async Task RegisterRealtimeScannersIfAuthenticatedAsync()
-        {
-            if (!CxPreferencesUI.IsAuthenticated())
-                return;
-
-            var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
-            if (cxWrapper != null)
-                await RegisterRealtimeScanners(cxWrapper);
-        }
+        public Task RegisterRealtimeScannersIfAuthenticatedAsync() =>
+            RealtimeScannerHost.RegisterFromPackageAsync(package, GetType());
 
         /// <summary>
         /// Public method to unregister realtime scanners.
         /// Called by SolutionEventHandler on solution close.
         /// </summary>
-        public async Task UnregisterRealtimeScannersAsync()
-        {
-            if (_realtimeOrchestrator != null)
-                await _realtimeOrchestrator.UnregisterAllAsync();
-        }
-
-        private void OnAssistSettingsApplied()
-        {
-            var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
-            if (cxWrapper != null)
-                _ = RegisterRealtimeScanners(cxWrapper);
-        }
+        public Task UnregisterRealtimeScannersAsync() => RealtimeScannerHost.UnregisterAsync();
 
         /// <summary>
         /// Check if panel should be redraw after applying new checkmarx settings
@@ -240,6 +203,7 @@ namespace ast_visual_studio_extension.CxExtension
             if (!CxPreferencesUI.IsAuthenticated())
             {
                 CxPreferencesUI.AuthStateChanged -= OnAuthStateChanged;
+                _ = UnregisterRealtimeScannersOnLogoutAsync();
                 Content = new CxInitialPanel(package);
 
                 return;
@@ -259,6 +223,21 @@ namespace ast_visual_studio_extension.CxExtension
             CxToolbar.redrawExtension = true;
             cxToolbar.Init();
 
+        }
+
+        /// <summary>
+        /// JetBrains parity: GlobalScannerController.syncAll stops scanners when not authenticated.
+        /// </summary>
+        private async Task UnregisterRealtimeScannersOnLogoutAsync()
+        {
+            try
+            {
+                await UnregisterRealtimeScannersAsync();
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"Realtime scanners: unregister on logout failed: {ex.Message}");
+            }
         }
 
         /// <summary>

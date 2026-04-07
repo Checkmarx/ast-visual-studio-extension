@@ -14,12 +14,21 @@ namespace ast_visual_studio_extension.CxCLI
 
         public static string ExecuteCommand(List<string> arguments, Func<string, string> lineParser)
         {
-            return InitProcess(arguments, lineParser);
+            return InitProcess(arguments, lineParser, throwOnNonZeroExit: true, out _);
+        }
+
+        /// <summary>
+        /// Runs the CLI and returns stdout (or stderr if stdout empty) without throwing when exit code is non-zero.
+        /// Use for realtime commands that may still print parseable JSON on partial failure.
+        /// </summary>
+        public static string ExecuteCommand(List<string> arguments, Func<string, string> lineParser, out int exitCode)
+        {
+            return InitProcess(arguments, lineParser, throwOnNonZeroExit: false, out exitCode);
         }
 
         public static string ExecuteCommand(List<string> arguments, string directory, string file)
         {
-            InitProcess(arguments, CheckValidJSONString);
+            InitProcess(arguments, CheckValidJSONString, throwOnNonZeroExit: true, out _);
 
             return File.ReadAllText(Path.Combine(directory, file));
         }
@@ -46,7 +55,7 @@ namespace ast_visual_studio_extension.CxCLI
             return isValidJsonString ? line : string.Empty;
         }
 
-        private static string InitProcess(List<string> arguments, Func<string, string> lineParser)
+        private static string InitProcess(List<string> arguments, Func<string, string> lineParser, bool throwOnNonZeroExit, out int exitCode)
         {
             string outputData = string.Empty;
             string errorData = string.Empty;
@@ -84,12 +93,16 @@ namespace ast_visual_studio_extension.CxCLI
                 process.BeginErrorReadLine();
                 process.WaitForExit();
 
+                exitCode = process.ExitCode;
+
                 // Raise event with collected output
                 OnProcessCompleted?.Invoke(cliOutput);
 
-                if (process.ExitCode != 0)
+                string combinedForMessage = string.IsNullOrEmpty(errorData) ? outputData.Trim() : errorData.Trim();
+
+                if (exitCode != 0 && throwOnNonZeroExit)
                 {
-                    throw new CxException(process.ExitCode, string.IsNullOrEmpty(errorData) ? outputData.Trim() : errorData.Trim());
+                    throw new CxException(exitCode, combinedForMessage);
                 }
 
                 return !string.IsNullOrEmpty(outputData) ? outputData.Trim() : errorData.Trim();

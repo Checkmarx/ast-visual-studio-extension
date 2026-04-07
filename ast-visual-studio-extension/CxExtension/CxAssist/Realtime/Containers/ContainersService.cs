@@ -1,7 +1,8 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
-using EnvDTE;
+using ast_visual_studio_extension.CxExtension.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,13 +58,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         /// <summary>
         /// Containers scanner uses a directory-based temp strategy with content hash.
         /// Creates: %TEMP%/Cx-container-realtime-scanner/{contentHash}/{originalFileName}
-        /// Note: Helm file detection requires path inspection (not available here), so isHelmFile defaults to false.
+        /// Helm chart YAML uses a <c>helm</c> subdirectory under temp (aligned with JetBrains).
         /// </summary>
-        protected override string CreateTempFilePath(string originalFileName, string content)
+        protected override string CreateTempFilePath(string originalFileName, string content, string fullSourcePath = null)
         {
             var hash = Utils.TempFileManager.GetContentHash(content);
-            var tempDir = Utils.TempFileManager.CreateContainersTempDir(hash, isHelmFile: false);
+            var isHelm = IsHelmChartPath(fullSourcePath);
+            var tempDir = Utils.TempFileManager.CreateContainersTempDir(hash, isHelmFile: isHelm);
             return Path.Combine(tempDir, originalFileName);
+        }
+
+        private static bool IsHelmChartPath(string fullPath)
+        {
+            if (string.IsNullOrEmpty(fullPath))
+                return false;
+            return fullPath.IndexOf("\\helm\\", StringComparison.OrdinalIgnoreCase) >= 0
+                || fullPath.IndexOf("/helm/", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         /// <summary>
@@ -71,23 +81,47 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         /// Maps results to Result objects for display in the findings panel.
         /// Silently skips if Docker/Podman is not available.
         /// </summary>
-        protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
+        protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
             // Check if Docker/Podman is available first
-            string engineCheckResult = await _cxWrapper.CheckEngineExistAsync(_containersTool);
-            if (string.IsNullOrEmpty(engineCheckResult) || !bool.TryParse(engineCheckResult, out bool engineExists) || !engineExists)
+            bool engineExists = await _cxWrapper.CheckEngineExistAsync(_containersTool);
+            if (!engineExists)
             {
                 // Silently skip if container tool is not available
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no container engine available - {sourceFilePath}");
                 return 0;
             }
 
-            var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath,
-                ignoredFilePath: null, engine: _containersTool);
-            if (results?.Images == null || results.Images.Count == 0) return 0;
+            // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
+            var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
 
-            var mappedResults = VulnerabilityMapper.FromContainers(results.Images, document.FullName);
+            // Log raw JSON response
+            if (results != null)
+            {
+                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
+            }
+
+            if (results?.Images == null || results.Images.Count == 0)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                return 0;
+            }
+
+            int imageCount = results.Images.Count;
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({imageCount} issues found)");
+
+            // Log individual images like JetBrains does
+            for (int i = 0; i < imageCount; i++)
+            {
+                var image = results.Images[i];
+                int vulnCount = image.Vulnerabilities?.Count ?? 0;
+                OutputPaneWriter.WriteLine($"Image {i + 1}: {image.ImageName ?? "Unknown"} - {vulnCount} vulnerabilities");
+            }
+
+            var mappedResults = VulnerabilityMapper.FromContainers(results.Images, sourceFilePath);
             // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, document.FullName);
+            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
             return mappedResults.Count;
         }
 

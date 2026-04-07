@@ -6,10 +6,10 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
+using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -34,12 +34,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         {
             if (cxWrapper == null || settings == null) return;
 
-            // Only initialize scanners if user is authenticated
-            if (!IsAuthenticated(settings))
-            {
-                Debug.WriteLine("RealtimeScannerOrchestrator: User not authenticated, skipping scanner initialization");
+            if (!ShouldInitializeRealtimeScanners(settings))
                 return;
-            }
 
             try
             {
@@ -84,12 +80,29 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     _scanners.Add(ossService);
                 }
 
+                var solutionRoot = GetSolutionDirectory();
+
                 // Start manifest file watcher to detect dependency/config changes
-                StartManifestFileWatcher();
+                StartManifestFileWatcher(solutionRoot);
+
+                // OSS full manifest sweep runs from OssService.InitializeAsync (JetBrains: OssScannerCommand.scanAllManifestFilesInFolder).
+
+                try
+                {
+                    cxWrapper.LogUserEventTelemetryFireAndForget(
+                        "AssistRealtime",
+                        "OrchestratorInitialized",
+                        _scanners.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        "Info");
+                }
+                catch
+                {
+                    // Telemetry must not break initialization
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error initializing realtime scanners: {ex.Message}");
+                OutputPaneWriter.WriteError($"Error initializing realtime scanners: {ex.Message}");
                 throw;
             }
         }
@@ -97,26 +110,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         /// <summary>
         /// Starts monitoring manifest files in the solution directory.
         /// </summary>
-        private void StartManifestFileWatcher()
+        private void StartManifestFileWatcher(string solutionRoot)
         {
             try
             {
-                // Get the solution root directory
-                var solutionRoot = GetSolutionDirectory();
                 if (string.IsNullOrEmpty(solutionRoot))
                 {
-                    Debug.WriteLine("RealtimeScannerOrchestrator: Could not determine solution directory");
+                    OutputPaneWriter.WriteWarning("RealtimeScannerOrchestrator: Could not determine solution directory");
                     return;
                 }
 
                 _manifestWatcher = new ManifestFileWatcher(solutionRoot);
                 _manifestWatcher.ManifestFileChanged += OnManifestFileChanged;
                 _manifestWatcher.Start();
-                Debug.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher started");
+                OutputPaneWriter.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher started");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"RealtimeScannerOrchestrator: Failed to start manifest file watcher: {ex.Message}");
+                OutputPaneWriter.WriteError($"RealtimeScannerOrchestrator: Failed to start manifest file watcher: {ex.Message}");
             }
         }
 
@@ -127,16 +138,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         {
             try
             {
-                var dte = Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
-                if (dte?.Solution?.FullName != null)
+                var dir = RealtimeSolutionScanner.TryGetSolutionDirectory();
+                if (string.IsNullOrEmpty(dir))
                 {
-                    return Path.GetDirectoryName(dte.Solution.FullName);
+                    OutputPaneWriter.WriteDebug(
+                        "RealtimeScannerOrchestrator: No solution file path yet (save the solution or open a .sln)");
                 }
+                return dir;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"RealtimeScannerOrchestrator: Error getting solution directory: {ex.Message}");
+                OutputPaneWriter.WriteError($"RealtimeScannerOrchestrator: Error getting solution directory: {ex.Message}");
             }
+
             return null;
         }
 
@@ -149,28 +163,58 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             try
             {
                 string fileName = Path.GetFileName(filePath);
-                Debug.WriteLine($"RealtimeScannerOrchestrator: Manifest file changed: {fileName} ({changeType})");
+                OutputPaneWriter.WriteLine($"RealtimeScannerOrchestrator: Manifest file changed: {fileName} ({changeType})");
 
-                // Re-scan affected files
-                // Note: Currently triggers a log message. Full re-scan integration
-                // would require additional coordinate-based triggering in each scanner.
-                Utils.ScanMetricsLogger.LogOrchestratorEvent("ManifestFileChanged",
-                    $"{fileName} - Consider triggering full re-scan for affected scanners");
+                foreach (var scanner in _scanners)
+                {
+                    try
+                    {
+                        if (scanner.ShouldScanFile(filePath))
+                            _ = scanner.ScanExternalFileAsync(filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        OutputPaneWriter.WriteDebug($"RealtimeScannerOrchestrator: rescan dispatch for {fileName}: {ex.Message}");
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"RealtimeScannerOrchestrator: Error handling manifest file change: {ex.Message}");
+                OutputPaneWriter.WriteError($"RealtimeScannerOrchestrator: Error handling manifest file change: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Checks if the user is authenticated by checking if API key is set.
-        /// Note: API key is stored in CxPreferencesModule, not CxOneAssistSettingsModule.
-        /// For now, we assume authenticated if settings object exists (actual auth happens in CxWrapper).
+        /// JetBrains parity: <c>DevAssistUtils.isScannerActive</c> / <c>GlobalScannerController.isScannerGloballyEnabled</c>
+        /// (authenticated, MCP enabled, at least one Assist license flag, then per-engine toggles).
         /// </summary>
-        private bool IsAuthenticated(CxOneAssistSettingsModule settings)
+        private bool ShouldInitializeRealtimeScanners(CxOneAssistSettingsModule settings)
         {
-            return settings != null;
+            if (settings == null)
+            {
+                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: No Assist settings module, skipping scanner initialization");
+                return false;
+            }
+
+            if (!CxPreferencesUI.IsAuthenticated())
+            {
+                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: User not authenticated, skipping scanner initialization");
+                return false;
+            }
+
+            if (!settings.McpEnabled)
+            {
+                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: MCP disabled for tenant, skipping realtime scanners");
+                return false;
+            }
+
+            if (!settings.DevAssistLicenseEnabled && !settings.OneAssistLicenseEnabled)
+            {
+                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: No Assist license entitlement, skipping realtime scanners");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -192,7 +236,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error unregistering realtime scanners: {ex.Message}");
+                OutputPaneWriter.WriteError($"Error unregistering realtime scanners: {ex.Message}");
                 throw;
             }
         }
@@ -210,12 +254,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     _manifestWatcher.Stop();
                     _manifestWatcher.Dispose();
                     _manifestWatcher = null;
-                    Debug.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher stopped");
+                    OutputPaneWriter.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher stopped");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"RealtimeScannerOrchestrator: Error stopping manifest file watcher: {ex.Message}");
+                OutputPaneWriter.WriteError($"RealtimeScannerOrchestrator: Error stopping manifest file watcher: {ex.Message}");
             }
         }
     }

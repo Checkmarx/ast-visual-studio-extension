@@ -25,5 +25,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces
         /// Called when the scanner is disabled via settings or on extension shutdown.
         /// </summary>
         Task UnregisterAsync();
+
+        /// <summary>
+        /// Scans a file on disk (startup sweep, manifest watcher) without requiring an open document.
+        /// </summary>
+        Task ScanExternalFileAsync(string filePath);
     }
 }

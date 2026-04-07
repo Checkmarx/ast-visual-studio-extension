@@ -1,5 +1,7 @@
-﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.Commands;
 using ast_visual_studio_extension.CxExtension.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime;
+using ast_visual_studio_extension.CxPreferences;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using log4net;
 using log4net.Appender;
@@ -91,6 +93,17 @@ namespace ast_visual_studio_extension.CxExtension
                     _solutionEventHandler.Register();
                     Debug.WriteLine("CxWindowPackage: Solution event handler registered");
                 }
+
+                // JetBrains GlobalScannerController.settingsApplied → syncAll: resync realtime when Assist prefs change (no tool window required).
+                CxOneAssistSettingsModule.RealtimeAssistSettingsChanged += OnRealtimeAssistSettingsApplied;
+
+                // Restore API session early so solution-open realtime registration sees authenticated state
+                // without opening the Checkmarx tool window first.
+                await CxPreferencesUI.TryRestoreAuthenticatedSessionAsync(this);
+
+                // If a solution was already open before this package finished loading, solution events will not
+                // fire again — retry realtime registration now that auth (and Assist settings) may be restored.
+                await RealtimeScannerHost.RegisterFromPackageAsync(this, typeof(CxWindowPackage));
 
 #if !NO_VS_EXTENSION_MANAGER
                 // Register MCP cleanup handler for when the extension is uninstalled
@@ -188,6 +201,42 @@ namespace ast_visual_studio_extension.CxExtension
         protected override Task<object> InitializeToolWindowAsync(Type toolWindowType, int id, CancellationToken cancellationToken)
         {
             return Task.FromResult(this as object);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                try
+                {
+                    this.JoinableTaskFactory.Run(async () =>
+                    {
+                        await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+                        CxOneAssistSettingsModule.RealtimeAssistSettingsChanged -= OnRealtimeAssistSettingsApplied;
+                        _solutionEventHandler?.Unregister();
+                        await RealtimeScannerHost.UnregisterAsync();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"CxWindowPackage.Dispose: {ex.Message}");
+                }
+#if !NO_VS_EXTENSION_MANAGER
+                _mcpUninstallHandler = null;
+#endif
+                _solutionEventHandler = null;
+            }
+
+            base.Dispose(disposing);
+        }
+
+        private void OnRealtimeAssistSettingsApplied(object sender, EventArgs e)
+        {
+            _ = JoinableTaskFactory.RunAsync(async () =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+                await RealtimeScannerHost.RegisterFromPackageAsync(this, typeof(CxWindowPackage));
+            });
         }
 
         #endregion

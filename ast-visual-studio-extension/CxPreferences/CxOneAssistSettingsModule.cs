@@ -11,6 +11,12 @@ namespace ast_visual_studio_extension.CxPreferences
     [Guid("e2527bed-dc52-4188-9e62-c8037a3fc797")]
     public class CxOneAssistSettingsModule : DialogPage
     {
+        /// <summary>
+        /// Fired after Assist realtime-related settings are persisted (checkboxes, Apply, welcome dialog).
+        /// JetBrains parity: GlobalScannerController settingsApplied / syncAll.
+        /// </summary>
+        public static event EventHandler RealtimeAssistSettingsChanged;
+
         public bool AscaCheckBox { get; set; } = true;
         public bool OssRealtimeCheckBox { get; set; } = true;
         public bool SecretDetectionRealtimeCheckBox { get; set; } = true;
@@ -22,6 +28,14 @@ namespace ast_visual_studio_extension.CxPreferences
         public bool McpEnabled { get; set; } = false;
         public bool McpStatusChecked { get; set; } = false;
         public bool WelcomeShown { get; set; } = false;
+
+        /// <summary>
+        /// Product entitlement flags (cached during authentication). JetBrains: GlobalSettingsState DevAssist/OneAssist license.
+        /// Default true until auth flow sets them from the tenant.
+        /// </summary>
+        public bool DevAssistLicenseEnabled { get; set; } = true;
+
+        public bool OneAssistLicenseEnabled { get; set; } = true;
 
         // Preserve user scanner preferences across MCP enable/disable transitions
         public bool UserPreferencesSet { get; set; } = false;
@@ -48,15 +62,16 @@ namespace ast_visual_studio_extension.CxPreferences
         protected override void OnApply(PageApplyEventArgs e)
         {
             base.OnApply(e);
-            SaveSettingsToStorage();
+            PersistSettings();
         }
 
         /// <summary>
-        /// Explicitly persist all module settings to the registry
+        /// Explicitly persist all module settings to the registry and notify listeners to resync realtime scanners.
         /// </summary>
         public void PersistSettings()
         {
             SaveSettingsToStorage();
+            RealtimeAssistSettingsChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

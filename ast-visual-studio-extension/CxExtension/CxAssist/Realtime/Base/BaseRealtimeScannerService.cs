@@ -1,14 +1,16 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
 using EnvDTE;
 using EnvDTE80;
+using log4net;
 using Microsoft.VisualStudio.Shell;
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Timers;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -18,46 +20,51 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 {
     /// <summary>
     /// Abstract base class for all realtime scanner services (ASCA, Secrets, IaC, Containers, OSS).
-    /// Provides shared debounce logic, DTE event wiring, and temp file lifecycle management.
-    /// Subclasses implement the specific file filter (ShouldScanFile) and scan logic (ScanAndDisplayAsync).
+    /// Provides per-file debounced scheduling, optional content fingerprint skip, DTE event wiring,
+    /// and temp file lifecycle management.
     /// </summary>
     public abstract class BaseRealtimeScannerService : IRealtimeScannerService
     {
         protected readonly ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
-        private readonly System.Timers.Timer _debounceTimer;
-        private const int DEBOUNCE_DELAY = 2000;
-        private const int SCAN_TIMEOUT_MS = 60000; // 60 second timeout for CLI scans
-        private const long MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB max file size
+        protected readonly ILog _logger;
+        private readonly RealtimeFileScanScheduler _debounceScheduler;
+        private const int SCAN_TIMEOUT_MS = 60000;
+        private const long MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
         private bool _isSubscribed = false;
         private bool _isInitialized = false;
         private string _lastDocumentContent = string.Empty;
-        private int _currentDocumentVersion = 0; // Track document changes for result freshness
-        private DateTime _lastResultTimestamp = DateTime.MinValue; // Track result display timestamps
+        /// <summary>
+        /// Document path that <see cref="_lastDocumentContent"/> refers to. When the user switches tabs or opens a file,
+        /// <see cref="OnTextChanged"/> must not treat the new buffer as an "edit" vs the previous file's snapshot.
+        /// </summary>
+        private string _lineChangeBaselinePath;
+        private int _currentDocumentVersion = 0;
+        private DateTime _lastResultTimestamp = DateTime.MinValue;
         private TextEditorEvents _textEditorEvents;
+        /// <summary>
+        /// Must be retained for the lifetime of the subscription. If this reference is dropped, COM will not
+        /// deliver <see cref="DocumentEvents.DocumentOpened"/> / <see cref="DocumentEvents.DocumentClosing"/> (VS extensibility requirement).
+        /// </summary>
+        private DocumentEvents _documentEvents;
 
-        // AI assistant temp files that should be skipped (Copilot, GitHub Copilot, etc.)
+        /// <summary>
+        /// Last successful scan content fingerprint per normalized path (skip redundant rescans when unchanged).
+        /// </summary>
+        private readonly ConcurrentDictionary<string, string> _lastScannedContentFingerprint =
+            new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         private static readonly string[] AiAgentFilePaths = { "Dummy.txt", "AIAssistantInput" };
 
-        /// <summary>
-        /// Gets the human-readable name of this scanner (e.g., "ASCA", "Secrets", "IaC").
-        /// Used for logging and output pane messages.
-        /// </summary>
         protected abstract string ScannerName { get; }
 
-        /// <summary>
-        /// Determines whether this scanner should process the given file path.
-        /// Subclasses override to implement scanner-specific file filtering.
-        /// </summary>
         public abstract bool ShouldScanFile(string filePath);
 
         /// <summary>
         /// Creates the temporary file/directory path for scanning.
-        /// Can be overridden by subclasses to use scanner-specific strategies (e.g., TempFileManager).
-        /// Default: creates a flat temp file in system temp directory.
         /// </summary>
-        protected virtual string CreateTempFilePath(string originalFileName, string content)
+        /// <param name="fullSourcePath">Full path of the source file (used by Containers for Helm layout).</param>
+        protected virtual string CreateTempFilePath(string originalFileName, string content, string fullSourcePath = null)
         {
-            // Default strategy: flat file in system temp directory with timestamp
             var sanitizedFileName = Utils.TempFileManager.SanitizeFilename(originalFileName, 255);
             var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(sanitizedFileName);
@@ -66,31 +73,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         }
 
         /// <summary>
-        /// Performs the actual scan and returns the result count.
-        /// Called after debounce timer fires and the temp file is written.
-        /// Subclasses must implement the specific scanner invocation.
-        /// Results are mapped to Vulnerability objects and passed to CxAssistDisplayCoordinator.
+        /// Performs the scan CLI call and maps results. <paramref name="sourceFilePath"/> is the original file path.
         /// </summary>
-        protected abstract Task<int> ScanAndDisplayAsync(string tempFilePath, Document document);
+        protected abstract Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath);
 
-        /// <summary>
-        /// Wraps an async scan operation with timeout and file size validation.
-        /// Prevents UI freezes from long-running scans and handles large files.
-        /// </summary>
         protected async Task<T> ExecuteScanWithTimeoutAsync<T>(
             Func<CancellationToken, Task<T>> scanOperation,
             string filePath) where T : class
         {
             try
             {
-                // Validate file size before scanning
                 if (!ValidateFileSize(filePath))
                 {
-                    Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, filePath, "file size exceeds 100MB limit");
+                    OutputPaneWriter.WriteLine($"{ScannerName} scanner: Skipping {Path.GetFileName(filePath)} - file size exceeds 100MB limit");
                     return null;
                 }
 
-                // Create cancellation token with 60 second timeout
                 using (var cts = new CancellationTokenSource(SCAN_TIMEOUT_MS))
                 {
                     return await scanOperation(cts.Token);
@@ -98,22 +96,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
             catch (OperationCanceledException)
             {
-                Utils.ScanMetricsLogger.LogScanError(ScannerName, filePath,
-                    new Exception($"Scan timeout after {SCAN_TIMEOUT_MS / 1000} seconds"));
+                _logger.Error($"{ScannerName} scanner: Scan timeout after {SCAN_TIMEOUT_MS / 1000} seconds on {Path.GetFileName(filePath)}");
                 OutputPaneWriter.WriteError($"{ScannerName}: Scan timeout after {SCAN_TIMEOUT_MS / 1000}s");
                 return null;
             }
             catch (Exception ex)
             {
-                Utils.ScanMetricsLogger.LogScanError(ScannerName, filePath, ex);
+                _logger.Error($"{ScannerName} scanner: Scan error on {Path.GetFileName(filePath)}: {ex.Message}", ex);
                 throw;
             }
         }
 
-        /// <summary>
-        /// Validates that a file does not exceed maximum size limit.
-        /// Prevents CLI timeouts and out-of-memory issues on large files.
-        /// </summary>
         private bool ValidateFileSize(string filePath)
         {
             try
@@ -121,29 +114,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 var fileInfo = new FileInfo(filePath);
                 if (fileInfo.Length > MAX_FILE_SIZE_BYTES)
                 {
-                    Debug.WriteLine($"{ScannerName}: File {filePath} exceeds max size of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB ({fileInfo.Length / (1024 * 1024)}MB)");
+                    OutputPaneWriter.WriteLine($"{ScannerName}: File {filePath} exceeds max size of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB ({fileInfo.Length / (1024 * 1024)}MB)");
                     return false;
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{ScannerName}: Error validating file size: {ex.Message}");
-                return true; // Allow scan if we can't determine size
+                OutputPaneWriter.WriteWarning($"{ScannerName}: Error validating file size: {ex.Message}");
+                return true;
             }
         }
 
         protected BaseRealtimeScannerService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
         {
             _cxWrapper = cxWrapper;
-            _debounceTimer = new System.Timers.Timer(DEBOUNCE_DELAY);
-            _debounceTimer.Elapsed += OnDebounceTimerElapsed;
-            _debounceTimer.AutoReset = false;
+            _logger = LogManager.GetLogger(GetType());
+            _debounceScheduler = new RealtimeFileScanScheduler(ThreadHelper.JoinableTaskFactory);
         }
 
-        /// <summary>
-        /// Initializes the scanner: registers text-change events and writes startup message.
-        /// </summary>
         public virtual async Task InitializeAsync()
         {
             if (_isInitialized) return;
@@ -151,38 +140,37 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             {
                 _isInitialized = true;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                RegisterTextChangeEvents();
-                Debug.WriteLine($"{ScannerName} scanner initialized");
+                RegisterDteRealtimeEvents();
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner initialized");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Failed to initialize {ScannerName} scanner: {ex.Message}");
+                OutputPaneWriter.WriteError($"Failed to initialize {ScannerName} scanner: {ex.Message}");
                 _isInitialized = false;
                 throw;
             }
         }
 
-        /// <summary>
-        /// Tears down the scanner: unregisters event listeners and clears UI.
-        /// </summary>
         public virtual async Task UnregisterAsync()
         {
             try
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                if (!_isSubscribed || _textEditorEvents == null) return;
+                _debounceScheduler?.Dispose();
 
-                // Unsubscribe from text changes
-                _textEditorEvents.LineChanged -= OnTextChanged;
-                _textEditorEvents = null;
+                if (!_isSubscribed) return;
 
-                // Unsubscribe from document lifecycle
-                var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
-                if (dte != null)
+                if (_textEditorEvents != null)
                 {
-                    var documentEvents = dte.Events.DocumentEvents;
-                    documentEvents.DocumentOpened -= OnDocumentOpened;
-                    documentEvents.DocumentClosing -= OnDocumentClosing;
+                    _textEditorEvents.LineChanged -= OnTextChanged;
+                    _textEditorEvents = null;
+                }
+
+                if (_documentEvents != null)
+                {
+                    _documentEvents.DocumentOpened -= OnDocumentOpened;
+                    _documentEvents.DocumentClosing -= OnDocumentClosing;
+                    _documentEvents = null;
                 }
 
                 _isSubscribed = false;
@@ -190,37 +178,118 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error unregistering {ScannerName} events: {ex.Message}");
+                OutputPaneWriter.WriteError($"Error unregistering {ScannerName} events: {ex.Message}");
                 throw;
             }
         }
 
-        private void RegisterTextChangeEvents()
+        /// <summary>
+        /// Scans a file on disk (startup sweep, manifest watcher). Does not require an open editor.
+        /// </summary>
+        public virtual async Task ScanExternalFileAsync(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return;
+
+            try
+            {
+                if (!ValidateFileSize(filePath))
+                    return;
+
+                var content = File.ReadAllText(filePath);
+                await RunScanCoreAsync(filePath, content, bypassContentFingerprint: false).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn($"{ScannerName} scanner: ScanExternalFileAsync failed for {filePath}: {ex.Message}", ex);
+            }
+        }
+
+        protected bool IsResultFresh(DateTime resultTimestamp, int scanDocumentVersion)
+        {
+            if (resultTimestamp <= _lastResultTimestamp)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName}: Discarding stale result (timestamp {resultTimestamp} <= {_lastResultTimestamp})");
+                return false;
+            }
+
+            if (scanDocumentVersion != _currentDocumentVersion)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName}: Discarding result (document edited: version {scanDocumentVersion} != {_currentDocumentVersion})");
+                return false;
+            }
+
+            _lastResultTimestamp = resultTimestamp;
+            return true;
+        }
+
+        /// <summary>
+        /// Wires DTE subscriptions for realtime scans: active editor line changes and solution-wide document open/close.
+        /// </summary>
+        private void RegisterDteRealtimeEvents()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (_isSubscribed) return;
 
             var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
-            if (dte != null && _textEditorEvents == null)
+            if (dte == null) return;
+
+            RegisterTextEditorEvents(dte);
+            RegisterDocumentEvents(dte);
+
+            _isSubscribed = true;
+
+            var document = dte.ActiveDocument;
+            if (document != null)
+                TrySyncLineChangeBaseline(document);
+
+            OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: text editor + document events registered.");
+            OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: Monitoring enabled");
+        }
+
+        /// <summary>
+        /// Debounced scan when the user edits the <em>active</em> document (<see cref="TextEditorEvents.LineChanged"/>).
+        /// </summary>
+        private void RegisterTextEditorEvents(DTE2 dte)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (_textEditorEvents != null) return;
+
+            _textEditorEvents = dte.Events.TextEditorEvents;
+            _textEditorEvents.LineChanged += OnTextChanged;
+        }
+
+        /// <summary>
+        /// Instant scan on open and cancel pending work on close (<see cref="DocumentEvents"/> for all documents).
+        /// The <see cref="_documentEvents"/> field must be held for the lifetime of the subscription (COM).
+        /// </summary>
+        private void RegisterDocumentEvents(DTE2 dte)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (_documentEvents != null) return;
+
+            // Events2 + null document = all documents.
+            _documentEvents = ((Events2)dte.Events).get_DocumentEvents(null);
+            _documentEvents.DocumentOpened += OnDocumentOpened;
+            _documentEvents.DocumentClosing += OnDocumentClosing;
+        }
+
+        /// <summary>
+        /// Aligns line-change detection with the given document so we do not treat a tab switch as an edit.
+        /// </summary>
+        private void TrySyncLineChangeBaseline(Document document)
+        {
+            try
             {
-                _textEditorEvents = dte.Events.TextEditorEvents;
-                _textEditorEvents.LineChanged += OnTextChanged;
-
-                // Register document open/close handlers for instant scan on file open
-                var documentEvents = dte.Events.DocumentEvents;
-                documentEvents.DocumentOpened += OnDocumentOpened;
-                documentEvents.DocumentClosing += OnDocumentClosing;
-
-                _isSubscribed = true;
-
-                var document = dte.ActiveDocument;
-                if (document == null) return;
                 var textDocument = (TextDocument)document.Object("TextDocument");
-                if (textDocument == null) return;
+                if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
+                    return;
+                _lineChangeBaselinePath = document.FullName;
                 _lastDocumentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
-
-                Debug.WriteLine($"✓ {ScannerName} scanner: Successfully registered for text change and document lifecycle events.");
-                OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: Monitoring enabled");
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug($"{ScannerName}: TrySyncLineChangeBaseline failed: {ex.Message}");
             }
         }
 
@@ -238,92 +307,107 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (textDocument == null) return;
 
                 var currentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+                var path = document.FullName;
+
+                // Tab switch / newly opened file: rebaseline without scheduling a scan (DocumentOpened handles open).
+                if (_lineChangeBaselinePath == null || !PathsEqual(path, _lineChangeBaselinePath))
+                {
+                    _lineChangeBaselinePath = path;
+                    _lastDocumentContent = currentContent;
+                    return;
+                }
+
                 if (_lastDocumentContent == currentContent) return;
 
                 _lastDocumentContent = currentContent;
-                _currentDocumentVersion++; // Increment version on each edit (for result freshness tracking)
-                _debounceTimer.Stop();
-                _debounceTimer.Start();
+                _currentDocumentVersion++;
+
+                _debounceScheduler.Schedule(path, async ct => await ExecuteDebouncedScanAsync(path, ct));
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{ScannerName} - Exception: {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName} - Exception: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// Validates that a result is fresh (not stale from a previous scan).
-        /// Checks if result timestamp is newer than last displayed result,
-        /// and if document version matches (no edits since scan started).
-        /// </summary>
-        protected bool IsResultFresh(DateTime resultTimestamp, int scanDocumentVersion)
+        private async Task ExecuteDebouncedScanAsync(string expectedPath, CancellationToken ct)
         {
-            // Check 1: Result timestamp should be newer than last displayed result
-            if (resultTimestamp <= _lastResultTimestamp)
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(ct);
+            if (ct.IsCancellationRequested) return;
+
+            var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
+            var document = dte?.ActiveDocument;
+            if (document == null) return;
+
+            if (!PathsEqual(document.FullName, expectedPath))
+                return;
+
+            if (AiAgentFilePaths.Any(p => document.FullName.Contains(p)))
+                return;
+
+            if (document.FullName.Contains("\\node_modules\\") || document.FullName.Contains("/node_modules/"))
             {
-                Debug.WriteLine($"{ScannerName}: Discarding stale result (timestamp {resultTimestamp} <= {_lastResultTimestamp})");
-                return false;
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: file not eligible (base filter) - {document.FullName}");
+                return;
             }
 
-            // Check 2: Document version should match (no edits since scan started)
-            if (scanDocumentVersion != _currentDocumentVersion)
+            if (!ShouldScanFile(document.FullName))
             {
-                Debug.WriteLine($"{ScannerName}: Discarding result (document edited: version {scanDocumentVersion} != {_currentDocumentVersion})");
-                return false;
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: unsupported file - {document.FullName}");
+                return;
             }
 
-            // Result is fresh - update last timestamp
-            _lastResultTimestamp = resultTimestamp;
-            return true;
+            var textDocument = (TextDocument)document.Object("TextDocument");
+            if (textDocument?.StartPoint == null || textDocument?.EndPoint == null) return;
+
+            var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+            if (string.IsNullOrWhiteSpace(content))
+                return;
+
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: starting scan - {document.FullName}");
+            var sw = Stopwatch.StartNew();
+            var count = await RunScanCoreAsync(document.FullName, content, bypassContentFingerprint: false);
+            sw.Stop();
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {document.FullName} ({count} issues, {sw.ElapsedMilliseconds}ms)");
         }
 
-        /// <summary>
-        /// Called when a document is opened in the editor.
-        /// Triggers an instant scan (no debounce) if the file matches this scanner.
-        /// </summary>
         private void OnDocumentOpened(Document document)
         {
             if (!_isSubscribed || document == null) return;
 
             try
             {
-                // Check if this file should be scanned
                 if (!ShouldScanFile(document.FullName))
                     return;
 
-                Debug.WriteLine($"{ScannerName}: File opened: {document.Name}, triggering instant scan");
+                // Drop debounced work queued from a spurious LineChanged during tab switch; avoid scanning twice with InstantScan.
+                _debounceScheduler?.CancelPending(document.FullName);
+                TrySyncLineChangeBaseline(document);
+
+                OutputPaneWriter.WriteDebug($"{ScannerName}: File opened: {document.Name}, triggering instant scan");
                 _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () => await InstantScanAsync(document));
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{ScannerName}: Error in OnDocumentOpened: {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName}: Error in OnDocumentOpened: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// Called when a document is about to be closed.
-        /// Cancels any pending debounce timers and cleanup.
-        /// </summary>
         private void OnDocumentClosing(Document document)
         {
             if (!_isSubscribed || document == null) return;
 
             try
             {
-                Debug.WriteLine($"{ScannerName}: File closing: {document.Name}");
-                // Cancel pending debounce for this file
-                _debounceTimer.Stop();
+                OutputPaneWriter.WriteDebug($"{ScannerName}: File closing: {document.Name}");
+                _debounceScheduler?.CancelPending(document.FullName);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{ScannerName}: Error in OnDocumentClosing: {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName}: Error in OnDocumentClosing: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// Performs an instant scan without debounce delay.
-        /// Called when a document is opened.
-        /// </summary>
         private async Task InstantScanAsync(Document document)
         {
             try
@@ -338,130 +422,133 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (string.IsNullOrWhiteSpace(content))
                     return;
 
-                var originalFileName = Path.GetFileName(document.FullName);
-                var tempFilePath = CreateTempFilePath(originalFileName, content);
+                var sw = Stopwatch.StartNew();
+                var count = await RunScanCoreAsync(document.FullName, content, bypassContentFingerprint: true);
+                sw.Stop();
 
-                var tempDir = Path.GetDirectoryName(tempFilePath);
-                if (!Directory.Exists(tempDir))
-                    Directory.CreateDirectory(tempDir);
-
-                File.WriteAllText(tempFilePath, content);
-
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                int issueCount = await ScanAndDisplayAsync(tempFilePath, document);
-                stopwatch.Stop();
-
-                Utils.ScanMetricsLogger.LogScanComplete(ScannerName, document.FullName, issueCount, stopwatch.ElapsedMilliseconds);
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: Scan completed - {Path.GetFileName(document.FullName)} ({sw.ElapsedMilliseconds}ms, {count} issue(s) found)");
             }
             catch (Exception ex)
             {
-                Utils.ScanMetricsLogger.LogScanError(ScannerName, document.FullName, ex);
+                _logger.Error($"{ScannerName} scanner: Scan error on {Path.GetFileName(document.FullName)}: {ex.Message}", ex);
             }
         }
 
-        private async void OnDebounceTimerElapsed(object sender, ElapsedEventArgs e)
+        private async Task<int> RunScanCoreAsync(string sourceFilePath, string content, bool bypassContentFingerprint)
         {
-            _debounceTimer.Stop();
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (string.IsNullOrWhiteSpace(content))
+                return 0;
+
+            var key = NormalizePathKey(sourceFilePath);
+            if (!bypassContentFingerprint)
+            {
+                var fp = Utils.TempFileManager.GetContentHash(content);
+                if (_lastScannedContentFingerprint.TryGetValue(key, out var prev) && prev == fp)
+                {
+                    OutputPaneWriter.WriteDebug($"{ScannerName}: skip scan (unchanged content) - {sourceFilePath}");
+                    return 0;
+                }
+            }
+
             string tempFilePath = null;
-            var stopwatch = Stopwatch.StartNew();
             try
             {
-                var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
-                var document = dte?.ActiveDocument;
-                if (document == null) return;
+                var originalFileName = Path.GetFileName(sourceFilePath);
+                tempFilePath = CreateTempFilePath(originalFileName, content, sourceFilePath);
 
-                // Skip AI assistant temp files (Copilot, etc.)
-                if (AiAgentFilePaths.Any(p => document.FullName.Contains(p)))
-                {
-                    Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "AI assistant temp file");
-                    return;
-                }
-
-                // Check for /node_modules/ exclusion (applies to all scanners)
-                if (document.FullName.Contains("\\node_modules\\") || document.FullName.Contains("/node_modules/"))
-                {
-                    Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "in node_modules directory");
-                    return;
-                }
-
-                if (!ShouldScanFile(document.FullName))
-                {
-                    Debug.WriteLine($"{ScannerName}: Skipping {Path.GetFileName(document.FullName)} - file type not applicable");
-                    Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "file type not applicable");
-                    return;
-                }
-
-                Debug.WriteLine($"{ScannerName}: Starting scan on {Path.GetFileName(document.FullName)}");
-                Utils.ScanMetricsLogger.LogScanStart(ScannerName, document.FullName);
-
-                var textDocument = (TextDocument)document.Object("TextDocument");
-                if (textDocument?.StartPoint == null || textDocument?.EndPoint == null) return;
-
-                var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
-
-                // Skip empty files (no need to scan blank content)
-                if (string.IsNullOrWhiteSpace(content))
-                {
-                    Debug.WriteLine($"{ScannerName}: Skipping {Path.GetFileName(document.FullName)} - content is empty");
-                    Utils.ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "file content is empty");
-                    return;
-                }
-
-                var originalFileName = Path.GetFileName(document.FullName);
-
-                // Create temp file using scanner-specific strategy (can be overridden by subclasses)
-                tempFilePath = CreateTempFilePath(originalFileName, content);
-
-                // Ensure directory exists if CreateTempFilePath created a directory-based path
                 var tempDir = Path.GetDirectoryName(tempFilePath);
-                if (!Directory.Exists(tempDir))
-                {
+                if (!string.IsNullOrEmpty(tempDir) && !Directory.Exists(tempDir))
                     Directory.CreateDirectory(tempDir);
-                }
 
                 File.WriteAllText(tempFilePath, content);
-                var scanResult = await ScanAndDisplayAsync(tempFilePath, document);
-                stopwatch.Stop();
-                Debug.WriteLine($"{ScannerName}: Scan completed in {stopwatch.ElapsedMilliseconds}ms - {scanResult} issue(s) found");
-                Utils.ScanMetricsLogger.LogScanComplete(ScannerName, document.FullName, scanResult, stopwatch.ElapsedMilliseconds);
+
+                await RealtimeScanProgressIndicator.PushScanAsync(ScannerName, sourceFilePath);
+                try
+                {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    var count = await ScanAndDisplayAsync(tempFilePath, sourceFilePath);
+                    sw.Stop();
+                    ScanMetricsLogger.LogRealtimeScanCompleted(ScannerName, sourceFilePath, sw.ElapsedMilliseconds, count);
+                    LogRealtimeDetectionTelemetry(count);
+
+                    var fpDone = Utils.TempFileManager.GetContentHash(content);
+                    _lastScannedContentFingerprint[key] = fpDone;
+
+                    return count;
+                }
+                finally
+                {
+                    await RealtimeScanProgressIndicator.PopScanAsync();
+                }
             }
             catch (Exception ex)
             {
-                stopwatch.Stop();
-                Utils.ScanMetricsLogger.LogScanError(ScannerName, tempFilePath, ex);
+                _logger.Error($"{ScannerName} scanner: Scan error - {ex.Message}", ex);
+                return 0;
             }
             finally
             {
-                if (tempFilePath != null)
-                {
-                    try
-                    {
-                        var tempDir = Path.GetDirectoryName(tempFilePath);
-                        // Check if the temp file is in a scanner-specific subdirectory (not directly in %TEMP%)
-                        var isSubDir = !string.Equals(
-                            tempDir?.TrimEnd(Path.DirectorySeparatorChar),
-                            Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar),
-                            StringComparison.OrdinalIgnoreCase);
+                CleanupTempArtifacts(tempFilePath);
+            }
+        }
 
-                        if (isSubDir && Directory.Exists(tempDir))
-                        {
-                            // Directory-based scanners (Secrets, IaC, Containers, OSS): delete the whole temp directory
-                            Utils.TempFileManager.DeleteTempDirectory(tempDir);
-                            Utils.ScanMetricsLogger.LogTempFileOperation("delete-dir", tempDir, true);
-                        }
-                        else if (File.Exists(tempFilePath))
-                        {
-                            // Flat-file scanners (ASCA): delete just the file
-                            File.Delete(tempFilePath);
-                            Utils.ScanMetricsLogger.LogTempFileOperation("delete", tempFilePath, true);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        Utils.ScanMetricsLogger.LogTempFileOperation("delete", tempFilePath, false);
-                    }
-                }
+        private void CleanupTempArtifacts(string tempFilePath)
+        {
+            if (string.IsNullOrEmpty(tempFilePath)) return;
+
+            try
+            {
+                var tempDir = Path.GetDirectoryName(tempFilePath);
+                var isSubDir = !string.Equals(
+                    tempDir?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (isSubDir && Directory.Exists(tempDir))
+                    Utils.TempFileManager.DeleteTempDirectory(tempDir);
+                else if (File.Exists(tempFilePath))
+                    File.Delete(tempFilePath);
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"{ScannerName} scanner: error cleaning up temp: {ex.Message}");
+            }
+        }
+
+        protected void LogRealtimeDetectionTelemetry(int issueCount)
+        {
+            if (issueCount <= 0) return;
+            try
+            {
+                _cxWrapper.LogDetectionTelemetryFireAndForget($"Realtime{ScannerName}", "IssuesFound", issueCount);
+            }
+            catch
+            {
+                // Telemetry must never break scanning.
+            }
+        }
+
+        private static bool PathsEqual(string a, string b)
+        {
+            try
+            {
+                return string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return string.Equals(a?.Trim(), b?.Trim(), StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private static string NormalizePathKey(string path)
+        {
+            try
+            {
+                return Path.GetFullPath(path);
+            }
+            catch
+            {
+                return path ?? string.Empty;
             }
         }
     }

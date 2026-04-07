@@ -69,7 +69,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             if (!Directory.Exists(_solutionDirectory))
             {
                 string msg = $"Solution directory does not exist: {_solutionDirectory}";
-                Debug.WriteLine($"ManifestFileWatcher: {msg}");
+                OutputPaneWriter.WriteLine($"ManifestFileWatcher: {msg}");
                 OutputPaneWriter.WriteWarning($"ManifestFileWatcher: {msg}");
                 return;
             }
@@ -94,12 +94,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
                 _watcher.EnableRaisingEvents = true;
                 string startMsg = $"Started monitoring manifest files in: {_solutionDirectory}";
-                Debug.WriteLine($"ManifestFileWatcher: {startMsg}");
+                OutputPaneWriter.WriteLine($"ManifestFileWatcher: {startMsg}");
                 OutputPaneWriter.WriteLine($"ManifestFileWatcher: {startMsg}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ManifestFileWatcher: Failed to start: {ex.Message}");
+                OutputPaneWriter.WriteError($"ManifestFileWatcher: Failed to start: {ex.Message}");
                 OutputPaneWriter.WriteError($"ManifestFileWatcher: Failed to start: {ex.Message}");
             }
         }
@@ -112,7 +112,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             if (_watcher != null)
             {
                 _watcher.EnableRaisingEvents = false;
-                Debug.WriteLine("ManifestFileWatcher: Stopped monitoring");
+                OutputPaneWriter.WriteLine("ManifestFileWatcher: Stopped monitoring");
                 OutputPaneWriter.WriteLine("ManifestFileWatcher: Stopped monitoring");
             }
         }
@@ -121,7 +121,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (IsManifestFile(e.FullPath))
             {
-                Debug.WriteLine($"ManifestFileWatcher: Manifest file created: {e.Name}");
+                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file created: {e.Name}");
                 OutputPaneWriter.WriteTrace($"Manifest file created: {e.Name}");
                 ManifestFileChanged?.Invoke(e.FullPath, WatcherChangeTypes.Created);
             }
@@ -131,7 +131,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (IsManifestFile(e.FullPath))
             {
-                Debug.WriteLine($"ManifestFileWatcher: Manifest file modified: {e.Name}");
+                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file modified: {e.Name}");
                 OutputPaneWriter.WriteTrace($"Manifest file modified: {e.Name}");
                 ManifestFileChanged?.Invoke(e.FullPath, WatcherChangeTypes.Changed);
             }
@@ -141,7 +141,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (IsManifestFile(e.FullPath))
             {
-                Debug.WriteLine($"ManifestFileWatcher: Manifest file deleted: {e.Name}");
+                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file deleted: {e.Name}");
                 OutputPaneWriter.WriteTrace($"Manifest file deleted: {e.Name}");
                 ManifestFileChanged?.Invoke(e.FullPath, WatcherChangeTypes.Deleted);
             }
@@ -154,7 +154,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
             if (oldIsManifest || newIsManifest)
             {
-                Debug.WriteLine($"ManifestFileWatcher: Manifest file renamed: {e.OldName} -> {e.Name}");
+                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file renamed: {e.OldName} -> {e.Name}");
                 OutputPaneWriter.WriteTrace($"Manifest file renamed: {e.OldName} -> {e.Name}");
                 // Fire for both old and new (if applicable)
                 if (oldIsManifest)
@@ -169,7 +169,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             Exception ex = e.GetException();
             if (ex != null)
             {
-                Debug.WriteLine($"ManifestFileWatcher: Error: {ex.Message}");
+                OutputPaneWriter.WriteError($"ManifestFileWatcher: Error: {ex.Message}");
                 OutputPaneWriter.WriteError($"ManifestFileWatcher: {ex.Message}");
             }
         }

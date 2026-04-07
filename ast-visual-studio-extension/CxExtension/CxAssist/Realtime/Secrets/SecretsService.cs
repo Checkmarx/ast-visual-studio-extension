@@ -1,7 +1,8 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
-using EnvDTE;
+using ast_visual_studio_extension.CxExtension.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,7 +57,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// Secrets scanner uses a directory-based temp strategy with content hash + UUID.
         /// Creates: %TEMP%/Cx-secrets-realtime-scanner/{hash}_{uuid}_{timestamp}/{originalFileName}
         /// </summary>
-        protected override string CreateTempFilePath(string originalFileName, string content)
+        protected override string CreateTempFilePath(string originalFileName, string content, string fullSourcePath = null)
         {
             var tempDir = Utils.TempFileManager.CreateSecretsTempDir(content);
             return Path.Combine(tempDir, originalFileName);
@@ -67,7 +68,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// Maps results to Result objects for display in the findings panel.
         /// Validates that file content is not empty before scanning.
         /// </summary>
-        protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
+        protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
             // Validate file is not empty (prevent scanning blank files)
             try
@@ -75,22 +76,46 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
                 var fileContent = System.IO.File.ReadAllText(tempFilePath);
                 if (string.IsNullOrWhiteSpace(fileContent))
                 {
-                    ScanMetricsLogger.LogScanSkipped(ScannerName, document.FullName, "file content is empty");
+                    OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no content found - {sourceFilePath}");
                     return 0;
                 }
             }
             catch (Exception ex)
             {
-                ScanMetricsLogger.LogScanError(ScannerName, document.FullName, ex);
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: scan error - {ex.Message}");
                 return 0;
             }
 
             var results = await _cxWrapper.SecretsRealtimeScanAsync(tempFilePath);
-            if (results?.Secrets == null || results.Secrets.Count == 0) return 0;
 
-            var mappedResults = VulnerabilityMapper.FromSecrets(results.Secrets, document.FullName);
+            // Log raw JSON response
+            if (results != null)
+            {
+                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
+            }
+
+            if (results?.Secrets == null || results.Secrets.Count == 0)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                return 0;
+            }
+
+            int secretCount = results.Secrets.Count;
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({secretCount} secrets found)");
+
+            // Log individual secrets like JetBrains does
+            for (int i = 0; i < secretCount; i++)
+            {
+                var secret = results.Secrets[i];
+                var severity = secret.Severity ?? "UNKNOWN";
+                var title = secret.Title ?? "Unknown Secret";
+                OutputPaneWriter.WriteLine($"Secret {i + 1}: {title} [{severity}]");
+            }
+
+            var mappedResults = VulnerabilityMapper.FromSecrets(results.Secrets, sourceFilePath);
             // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, document.FullName);
+            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
             return mappedResults.Count;
         }
 

@@ -195,35 +195,52 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// <summary>
         /// Sanitizes filename to prevent directory traversal and invalid characters.
         ///
-        /// Removes:
-        /// - Path separators (\ /)
-        /// - Dots (to prevent relative path references)
-        /// - Limits length to max filename length
+        /// Removes path separators and invalid characters from the filename stem only.
+        /// Preserves the final file extension (e.g. Program.cs → stem sanitized + ".cs").
+        /// Replacing every "." in the name was stripping extensions and broke ASCA CLI ("file must have an extension").
         ///
-        /// Security: Prevents attacks like "../../../etc/passwd"
+        /// Security: Blocks directory traversal in the stem; limits length.
         /// </summary>
         internal static string SanitizeFilename(string fileName, int maxLength)
         {
             if (string.IsNullOrEmpty(fileName))
-                return "file";
+                return "file.dat";
 
-            // Remove path separators and dots
-            var sanitized = fileName
+            var baseName = Path.GetFileName(fileName.Trim());
+            if (string.IsNullOrEmpty(baseName))
+                return "file.dat";
+
+            var ext = Path.GetExtension(baseName);
+            var stem = Path.GetFileNameWithoutExtension(baseName);
+
+            // Dot-only names like ".editorconfig" — API leaves empty stem
+            if (string.IsNullOrEmpty(stem))
+                stem = "file";
+
+            var sanitizedStem = stem
                 .Replace(Path.DirectorySeparatorChar, '_')
-                .Replace(Path.AltDirectorySeparatorChar, '_')
-                .Replace(".", "_");
+                .Replace(Path.AltDirectorySeparatorChar, '_');
 
-            // Remove invalid filename characters
             foreach (var invalidChar in Path.GetInvalidFileNameChars())
+                sanitizedStem = sanitizedStem.Replace(invalidChar, '_');
+
+            sanitizedStem = sanitizedStem.Replace("..", "_");
+
+            if (string.IsNullOrEmpty(ext))
+                ext = ".dat";
+
+            var result = sanitizedStem + ext;
+            if (result.Length > maxLength)
             {
-                sanitized = sanitized.Replace(invalidChar, '_');
+                int maxStem = maxLength - ext.Length;
+                if (maxStem < 1)
+                    maxStem = 1;
+                if (sanitizedStem.Length > maxStem)
+                    sanitizedStem = sanitizedStem.Substring(0, maxStem);
+                result = sanitizedStem + ext;
             }
 
-            // Limit length
-            if (sanitized.Length > maxLength)
-                sanitized = sanitized.Substring(0, maxLength);
-
-            return sanitized;
+            return result;
         }
 
         /// <summary>

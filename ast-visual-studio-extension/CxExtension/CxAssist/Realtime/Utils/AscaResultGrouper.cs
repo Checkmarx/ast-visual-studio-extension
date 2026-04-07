@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxWrapper.Models;
+using ast_visual_studio_extension.CxExtension.Utils;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 {
@@ -95,14 +96,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                     .OrderBy(g => g.Line)                                  // Order groups by line
                     .ToList();
 
-                System.Diagnostics.Debug.WriteLine(
+                OutputPaneWriter.WriteDebug(
                     $"AscaResultGrouper: Grouped {scanDetails.Count} details into {grouped.Count} groups");
 
                 return grouped;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"AscaResultGrouper: Error grouping results: {ex.Message}");
+                OutputPaneWriter.WriteError($"AscaResultGrouper: Error grouping results: {ex.Message}");
                 return new List<AscaIssueGroup>();
             }
         }

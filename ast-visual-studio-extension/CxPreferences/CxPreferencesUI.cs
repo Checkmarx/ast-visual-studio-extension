@@ -1,8 +1,9 @@
-﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Drawing;
 using System.Threading.Tasks;
@@ -335,6 +336,22 @@ namespace ast_visual_studio_extension.CxPreferences
                 });
 
                 SetAuthState(true);
+
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, typeof(CxPreferencesUI));
+                if (hadAssist)
+                {
+                    var oneAssistRestore = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                    if (oneAssistRestore != null)
+                    {
+                        var installService = new McpInstallService();
+                        if (oneAssistRestore.McpEnabled)
+                            await installService.InstallSilentlyAsync(config, typeof(CxPreferencesUI));
+
+                        oneAssistRestore.PersistSettings();
+                        CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+                    }
+                }
             }
             catch
             {
@@ -348,6 +365,38 @@ namespace ast_visual_studio_extension.CxPreferences
             }
         }
 
+        /// <summary>
+        /// Tenant license flags + MCP enabled (tenant check). Does not install MCP or persist.
+        /// </summary>
+        /// <returns>false if Assist settings page is missing (MCP silent-install only path).</returns>
+        private static async Task<bool> ApplyAssistTenantLicenseAndMcpFlagsAsync(AsyncPackage package, CxConfig config, Type ownerType)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+            if (oneAssistModule == null)
+            {
+                var silentInstallService = new McpInstallService();
+                await silentInstallService.InstallSilentlyAsync(config, ownerType);
+                return false;
+            }
+
+            List<TenantSetting> tenantSettings = await Task.Run(() =>
+            {
+                var w = new CxCLI.CxWrapper(config, ownerType);
+                return w.TenantSettings();
+            });
+            AssistEntitlementSync.ApplyFromSettings(tenantSettings, oneAssistModule);
+
+            var installService = new McpInstallService();
+            bool mcpEnabled = await installService.IsTenantMcpEnabledAsync(config, ownerType);
+
+            oneAssistModule.McpEnabled = mcpEnabled;
+            oneAssistModule.McpStatusChecked = true;
+
+            return true;
+        }
+
         private async Task CompleteAuthenticationSetupAsync(CxConfig config, bool showWelcomeDialog)
         {
             if (config == null || string.IsNullOrWhiteSpace(config.ApiKey))
@@ -355,24 +404,24 @@ namespace ast_visual_studio_extension.CxPreferences
 
             try
             {
-                CxOneAssistSettingsModule oneAssistModule = GetOneAssistSettingsModule();
-                if (oneAssistModule == null)
-                {
-                    var silentInstallService = new McpInstallService();
-                    await silentInstallService.InstallSilentlyAsync(config, GetType());
+                var package = cxPreferencesModule?.GetOwnerPackage() as AsyncPackage;
+                if (package == null)
                     return;
-                }
+
+                bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, GetType());
+                if (!hadAssist)
+                    return;
+
+                var oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                if (oneAssistModule == null)
+                    return;
 
                 var installService = new McpInstallService();
-                bool mcpEnabled = await installService.IsTenantMcpEnabledAsync(config, GetType());
-
-                oneAssistModule.McpEnabled = mcpEnabled;
-                oneAssistModule.McpStatusChecked = true;
 
                 if (showWelcomeDialog)
                 {
                     // Fresh login: reset to a known good state, then let user override via welcome dialog.
-                    if (mcpEnabled)
+                    if (oneAssistModule.McpEnabled)
                     {
                         oneAssistModule.EnableAllRealtimeScanners();
                         oneAssistModule.SaveCurrentSettingsAsUserPreferences();
@@ -383,16 +432,16 @@ namespace ast_visual_studio_extension.CxPreferences
                     }
                     oneAssistModule.PersistSettings();
                 }
-                // On session restore (showWelcomeDialog=false): trust registry values, don't touch scanners.
 
-                if (mcpEnabled)
+                if (oneAssistModule.McpEnabled)
                     await installService.InstallSilentlyAsync(config, GetType());
 
                 if (showWelcomeDialog)
-                    ShowOneAssistWelcomeDialog(oneAssistModule, mcpEnabled);
+                    ShowOneAssistWelcomeDialog(oneAssistModule, oneAssistModule.McpEnabled);
 
-                // Ensure Assist page always reflects final module state
-                // (including user's welcome-dialog choice).
+                if (!showWelcomeDialog)
+                    oneAssistModule.PersistSettings();
+
                 CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
             }
             catch (Exception ex)

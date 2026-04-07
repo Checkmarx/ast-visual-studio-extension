@@ -1,9 +1,10 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Diagnostics;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.Core
 {
@@ -134,27 +135,14 @@ namespace ast_visual_studio_extension.CxExtension.Core
         #endregion
 
         /// <summary>
-        /// Asynchronously registers realtime scanners by calling the findings window control.
-        /// If the window hasn't been opened yet, scanners will register when user opens findings window.
+        /// Registers realtime scanners via <see cref="RealtimeScannerHost"/> (no tool window required).
         /// </summary>
-        private async System.Threading.Tasks.Task RegisterRealtimeScannersAsync()
+        private async Task RegisterRealtimeScannersAsync()
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             try
             {
-                // Get the CxWindowControl if the findings window is already open
-                var cxWindow = await _package.FindToolWindowAsync(typeof(CxWindow), 0, create: false, cancellationToken: CancellationToken.None) as CxWindow;
-                if (cxWindow?.Content is CxWindowControl control)
-                {
-                    // Window is open, call RegisterRealtimeScanners
-                    await control.RegisterRealtimeScannersIfAuthenticatedAsync();
-                    Debug.WriteLine("SolutionEventHandler: Realtime scanners registered from open window");
-                }
-                else
-                {
-                    // Window not open yet. Scanners will register when user opens findings window.
-                    Debug.WriteLine("SolutionEventHandler: Findings window not yet open, scanners will register on window open");
-                }
+                await RealtimeScannerHost.RegisterFromPackageAsync(_package, typeof(SolutionEventHandler));
+                Debug.WriteLine("SolutionEventHandler: Realtime scanners registration attempted");
             }
             catch (Exception ex)
             {
@@ -163,19 +151,14 @@ namespace ast_visual_studio_extension.CxExtension.Core
         }
 
         /// <summary>
-        /// Asynchronously unregisters realtime scanners and cleans up resources.
+        /// Unregisters realtime scanners and cleans up resources.
         /// </summary>
-        private async System.Threading.Tasks.Task UnregisterRealtimeScannersAsync()
+        private async Task UnregisterRealtimeScannersAsync()
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             try
             {
-                var cxWindow = await _package.FindToolWindowAsync(typeof(CxWindow), 0, create: false, cancellationToken: CancellationToken.None) as CxWindow;
-                if (cxWindow?.Content is CxWindowControl control)
-                {
-                    await control.UnregisterRealtimeScannersAsync();
-                    Debug.WriteLine("SolutionEventHandler: Realtime scanners unregistered");
-                }
+                await RealtimeScannerHost.UnregisterAsync();
+                Debug.WriteLine("SolutionEventHandler: Realtime scanners unregistered");
             }
             catch (Exception ex)
             {

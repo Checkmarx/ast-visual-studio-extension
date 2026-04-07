@@ -14,8 +14,6 @@ namespace ast_visual_studio_extension.CxPreferences
     {
         internal CxOneAssistSettingsModule cxOneAssistSettingsModule;
 
-        public delegate void EventHandler();
-        public event EventHandler OnApplySettingsEvent = delegate { };
         private static CxOneAssistSettingsUI Instance;
         private bool _isMcpInstallInProgress;
         private CancellationTokenSource _mcpStatusDismissCts;
@@ -38,11 +36,6 @@ namespace ast_visual_studio_extension.CxPreferences
             }
 
             return Instance;
-        }
-
-        public void ThrowEventOnApply()
-        {
-            OnApplySettingsEvent();
         }
 
         public void Initialize(CxOneAssistSettingsModule settingsModule)
@@ -159,9 +152,6 @@ namespace ast_visual_studio_extension.CxPreferences
                 bool isChecked = ascaCheckBox.Checked;
                 cxOneAssistSettingsModule.AscaCheckBox = isChecked;
                 cxOneAssistSettingsModule.PersistSettings();
-
-                // CxWindowControl.OnAssistSettingsApplied() will handle orchestrator updates
-                ThrowEventOnApply();
             }
             catch (Exception ex)
             {

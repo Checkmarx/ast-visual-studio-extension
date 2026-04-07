@@ -3,6 +3,7 @@ using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -48,6 +49,27 @@ namespace ast_visual_studio_extension.CxCLI
                 logger.Info($"Executing CLI command: {commandLine}");
                 var result = Execution.ExecuteCommand(WithConfigArguments(arguments), resultHandler);
                 return result;
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"CLI command failed: {ex.Message}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs cx.exe and returns captured stdout (fallback: stderr) with process exit code, without throwing on non-zero exit.
+        /// </summary>
+        private string ExecuteCliCommand(List<string> arguments, Func<string, string> resultHandler, out int exitCode)
+        {
+            try
+            {
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
+                string commandLine = $"cx.exe {string.Join(" ", arguments)}";
+                logger.Info($"Executing CLI command: {commandLine}");
+                return Execution.ExecuteCommand(WithConfigArguments(arguments), resultHandler, out exitCode);
             }
             catch (Exception ex)
             {
@@ -210,12 +232,27 @@ namespace ast_visual_studio_extension.CxCLI
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
 
-            // Handle empty array response from CLI (when no secrets found)
-            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            // Handle empty response
+            if (string.IsNullOrWhiteSpace(result))
             {
                 return new SecretsRealtimeResults(new List<Secret>());
             }
 
+            // CLI returns array of secrets directly, not wrapped in object
+            string trimmed = result.Trim();
+            if (trimmed == "[]")
+            {
+                return new SecretsRealtimeResults(new List<Secret>());
+            }
+
+            // Check if result starts with '[' (array) - CLI returns array directly
+            if (trimmed.StartsWith("["))
+            {
+                var secrets = JsonConvert.DeserializeObject<List<Secret>>(result);
+                return new SecretsRealtimeResults(secrets ?? new List<Secret>());
+            }
+
+            // Otherwise try to deserialize as object (backward compatibility)
             return JsonConvert.DeserializeObject<SecretsRealtimeResults>(result);
         }
 
@@ -271,6 +308,14 @@ namespace ast_visual_studio_extension.CxCLI
                 return new IacRealtimeResults(new List<IacIssue>());
             }
 
+            // CLI returns a JSON array at root; model uses { "Results": [...] } for object-shaped responses.
+            string trimmed = result.TrimStart();
+            if (trimmed.Length > 0 && trimmed[0] == '[')
+            {
+                var issues = JsonConvert.DeserializeObject<List<IacIssue>>(result);
+                return new IacRealtimeResults(issues ?? new List<IacIssue>());
+            }
+
             return JsonConvert.DeserializeObject<IacRealtimeResults>(result);
         }
 
@@ -316,11 +361,18 @@ namespace ast_visual_studio_extension.CxCLI
         /// Check if a container engine is installed asynchronously
         /// </summary>
         /// <param name="engineName">The name of the container engine to check (e.g., "docker", "podman")</param>
-        /// <returns>The engine name if it is installed and accessible</returns>
-        /// <exception cref="CxException">Thrown when the engine is not installed or not accessible from the system PATH</exception>
-        public async Task<string> CheckEngineExistAsync(string engineName)
+        /// <returns>True if the engine is installed and accessible, false otherwise</returns>
+        public async Task<bool> CheckEngineExistAsync(string engineName)
         {
-            return await Task.Run(() => CheckEngineExist(engineName));
+            try
+            {
+                await Task.Run(() => CheckEngineExist(engineName));
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -389,14 +441,17 @@ namespace ast_visual_studio_extension.CxCLI
         /// Perform Containers realtime scan to detect vulnerabilities in container images.
         /// Executes 'cx scan containers-realtime -s {sourcePath}' command.
         /// </summary>
+        /// <remarks>
+        /// The CLI does not support <c>--engine</c> for <c>containers-realtime</c> (only <c>iac-realtime</c> does).
+        /// Callers should use <see cref="CheckEngineExistAsync"/> with the user&apos;s container tool if a runtime must exist before scanning.
+        /// </remarks>
         /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
         /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
-        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
         /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
-        public ContainersRealtimeResults ContainersRealtimeScan(string sourcePath, string ignoredFilePath = null, string engine = null)
+        public ContainersRealtimeResults ContainersRealtimeScan(string sourcePath, string ignoredFilePath = null)
         {
             logger.Info(CxConstants.LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD);
-            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}, Engine: {engine ?? "default"}");
+            logger.Info($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
 
             List<string> arguments = new List<string>
             {
@@ -412,21 +467,80 @@ namespace ast_visual_studio_extension.CxCLI
                 arguments.Add(ignoredFilePath);
             }
 
-            if (!string.IsNullOrEmpty(engine))
+            // Do not use CheckValidJSONString: it parses each stdout line in isolation. The CLI can emit
+            // pretty-printed or multi-line JSON; line-by-line validation drops the payload and breaks the scan.
+            // Do not use the throwing ExecuteCliCommand path: Execution.InitProcess throws CxException on any
+            // non-zero exit, but containers-realtime may exit non-zero while still emitting JSON (or stderr-only diagnostics).
+            string result = ExecuteCliCommand(arguments, line => line, out int exitCode);
+
+            if (exitCode != 0)
             {
-                arguments.Add(CxConstants.FLAG_ENGINE);
-                arguments.Add(engine);
+                logger.Warn($"scan containers-realtime process exited with code {exitCode}. Attempting to parse output.");
             }
 
-            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+            if (TryDeserializeContainersRealtime(result, out var deserialized))
+                return deserialized;
 
-            // Handle empty array response from CLI (when no container issues found)
-            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            if (exitCode != 0)
+                logger.Warn("containers-realtime: could not parse CLI output after non-zero exit; returning empty results.");
+
+            return new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+        }
+
+        /// <summary>
+        /// Parses CLI JSON into <see cref="ContainersRealtimeResults"/>; returns true if empty payload or valid JSON.
+        /// </summary>
+        private static bool TryDeserializeContainersRealtime(string result, out ContainersRealtimeResults deserialized)
+        {
+            deserialized = null;
+            if (string.IsNullOrWhiteSpace(result))
             {
-                return new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+                deserialized = new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+                return true;
             }
 
-            return JsonConvert.DeserializeObject<ContainersRealtimeResults>(result);
+            // CLI may print non-JSON lines before the payload; find first { or [
+            string payload = IsolateContainersJsonPayload(result);
+
+            if (IsEmptyContainersRealtimeCliOutput(payload))
+            {
+                deserialized = new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+                return true;
+            }
+
+            try
+            {
+                string trimmed = payload.TrimStart();
+                if (trimmed.Length > 0 && trimmed[0] == '[')
+                {
+                    var images = JsonConvert.DeserializeObject<List<ContainersRealtimeImage>>(payload);
+                    deserialized = new ContainersRealtimeResults(images ?? new List<ContainersRealtimeImage>());
+                    return true;
+                }
+
+                deserialized = JsonConvert.DeserializeObject<ContainersRealtimeResults>(payload);
+                return deserialized != null;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns the substring starting at the first <c>{</c> or <c>[</c> so optional log prefixes do not break JSON parsing.
+        /// </summary>
+        private static string IsolateContainersJsonPayload(string raw)
+        {
+            var s = raw.Trim();
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (c == '{' || c == '[')
+                    return s.Substring(i);
+            }
+
+            return s;
         }
 
         /// <summary>
@@ -434,11 +548,40 @@ namespace ast_visual_studio_extension.CxCLI
         /// </summary>
         /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
         /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
-        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
         /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
-        public async Task<ContainersRealtimeResults> ContainersRealtimeScanAsync(string sourcePath, string ignoredFilePath = null, string engine = null)
+        public async Task<ContainersRealtimeResults> ContainersRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
         {
-            return await Task.Run(() => ContainersRealtimeScan(sourcePath, ignoredFilePath, engine));
+            return await Task.Run(() => ContainersRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Detects empty/no-findings payloads from <c>cx scan containers-realtime</c> (bare <c>[]</c>, empty object,
+        /// or <c>{"Images":[]}</c> / camelCase <c>images</c>).
+        /// </summary>
+        private static bool IsEmptyContainersRealtimeCliOutput(string result)
+        {
+            var trimmed = (result ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed == "[]" || trimmed == "{}")
+                return true;
+
+            try
+            {
+                var token = JToken.Parse(trimmed);
+                if (token.Type == JTokenType.Array)
+                    return !token.HasValues;
+
+                if (token.Type == JTokenType.Object)
+                {
+                    var images = token["Images"] ?? token["images"];
+                    return images is JArray arr && arr.Count == 0;
+                }
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+
+            return false;
         }
 
         /// <summary>

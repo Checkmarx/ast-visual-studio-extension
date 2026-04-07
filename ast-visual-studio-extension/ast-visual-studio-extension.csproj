@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
@@ -94,16 +94,22 @@
     <Compile Include="CxExtension\CxAssist\Realtime\Iac\IacService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Containers\ContainersService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Oss\OssService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\RealtimeScannerHost.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\RealtimeScannerOrchestrator.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\SeverityMapper.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\UniqueIdGenerator.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\TempFileManager.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\CompanionFileManager.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\AscaResultGrouper.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\DevAssistSecretsExclusion.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\OssManifestSweepPolicy.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\FileFilterStrategy.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\VulnerabilityMapper.cs" />
-    <Compile Include="CxExtension\CxAssist\Realtime\Utils\ScanMetricsLogger.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\ManifestFileWatcher.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\RealtimeFileScanScheduler.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\RealtimeSolutionScanner.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\RealtimeScanProgressIndicator.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Utils\ScanMetricsLogger.cs" />
     <Compile Include="CxExtension\Core\SolutionEventHandler.cs" />
     <Compile Include="CxExtension\Toolbar\BranchesCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ComboboxBase.cs" />
@@ -189,6 +195,7 @@
     </Compile>
     <Compile Include="CxPreferences\Configuration\McpConfigManager.cs" />
     <Compile Include="CxPreferences\Configuration\McpInstallResult.cs" />
+    <Compile Include="CxPreferences\Configuration\AssistEntitlementSync.cs" />
     <Compile Include="CxPreferences\Configuration\McpInstallService.cs" />
     <Compile Include="CxPreferences\Configuration\McpUninstallHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

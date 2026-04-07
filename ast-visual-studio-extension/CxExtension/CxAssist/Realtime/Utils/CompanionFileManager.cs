@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using ast_visual_studio_extension.CxExtension.Utils;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 {
@@ -85,7 +86,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (string.IsNullOrEmpty(manifestPath) || string.IsNullOrEmpty(tempDir))
             {
-                System.Diagnostics.Debug.WriteLine("CompanionFileManager: Invalid parameters");
+                OutputPaneWriter.WriteWarning("CompanionFileManager: Invalid parameters");
                 return;
             }
 
@@ -94,7 +95,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
             if (string.IsNullOrEmpty(originalDir))
             {
-                System.Diagnostics.Debug.WriteLine($"CompanionFileManager: Invalid manifest path: {manifestPath}");
+                OutputPaneWriter.WriteWarning($"CompanionFileManager: Invalid manifest path: {manifestPath}");
                 return;
             }
 
@@ -105,7 +106,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 var fileExtension = Path.GetExtension(fileName);
                 if (!LockFilesByManifest.TryGetValue(fileExtension, out lockFiles))
                 {
-                    System.Diagnostics.Debug.WriteLine(
+                    OutputPaneWriter.WriteDebug(
                         $"CompanionFileManager: No lock files defined for {fileName}");
                     return;
                 }
@@ -132,7 +133,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
             if (!File.Exists(sourcePath))
             {
-                System.Diagnostics.Debug.WriteLine(
+                OutputPaneWriter.WriteDebug(
                     $"CompanionFileManager: Lock file not found: {sourcePath}");
                 return;
             }
@@ -141,19 +142,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             {
                 var targetPath = Path.Combine(targetDir, lockFileName);
                 File.Copy(sourcePath, targetPath, overwrite: true);
-                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, true);
+                OutputPaneWriter.WriteLine($"CompanionFileManager: Copied lock file - {lockFileName}");
             }
             catch (IOException ioEx)
             {
-                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, false, $"IO error: {ioEx.Message}");
+                OutputPaneWriter.WriteWarning($"CompanionFileManager: Failed to copy {lockFileName} - IO error: {ioEx.Message}");
             }
             catch (UnauthorizedAccessException authEx)
             {
-                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, false, $"Permission denied: {authEx.Message}");
+                OutputPaneWriter.WriteWarning($"CompanionFileManager: Failed to copy {lockFileName} - Permission denied: {authEx.Message}");
             }
             catch (Exception ex)
             {
-                ScanMetricsLogger.LogCompanionFileOperation("copy", lockFileName, false, $"Error: {ex.Message}");
+                OutputPaneWriter.WriteError($"CompanionFileManager: Failed to copy {lockFileName} - Error: {ex.Message}");
             }
         }
 

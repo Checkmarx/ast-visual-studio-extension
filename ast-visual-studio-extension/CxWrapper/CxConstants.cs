@@ -9,6 +9,10 @@ namespace ast_visual_studio_extension.CxCLI
         public static string FILTER_SCANS_FOR_BRANCH => "project-id={0},branch={1},limit=10000,statuses=Completed";
         public static string IDE_SCANS_KEY = "scan.config.plugins.ideScans";
         public static string AI_MCP_SERVER_KEY = "scan.config.plugins.aiMcpServer";
+        /// <summary>Tenant flag for DevAssist product entitlement (utils tenant JSON). Absent key → entitled (fail-open). Align with product/backend when keys are finalized.</summary>
+        public static string DEV_ASSIST_LICENSE_KEY = "scan.config.plugins.devAssistLicense";
+        /// <summary>Tenant flag for One Assist product entitlement (utils tenant JSON). Absent key → entitled (fail-open). Align with product/backend when keys are finalized.</summary>
+        public static string ONE_ASSIST_LICENSE_KEY = "scan.config.plugins.oneAssistLicense";
         public static string ASCA_ENGINE_STARTED_MESSAGE = "AI Secure Coding Assistant Engine started.";
 
         /** CLI COMMANDS **/

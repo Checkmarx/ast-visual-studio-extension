@@ -1,11 +1,13 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
-using EnvDTE;
+using ast_visual_studio_extension.CxExtension.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
@@ -38,6 +40,43 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         }
 
         /// <summary>
+        /// JetBrains parity: <c>OssScannerCommand.initializeScanner</c> → <c>scanAllManifestFilesInFolder</c> when OSS starts.
+        /// Registers editor events via base, then may queue one background sweep per solution per session — not on every
+        /// orchestrator re-init when only other scanners (e.g. ASCA) change.
+        /// </summary>
+        public override async Task InitializeAsync()
+        {
+            await base.InitializeAsync();
+
+            string solutionRoot = RealtimeSolutionScanner.TryGetSolutionDirectory();
+            if (string.IsNullOrEmpty(solutionRoot))
+            {
+                OutputPaneWriter.WriteDebug("OSS scanner: manifest folder sweep skipped — no solution directory (save the solution or open a .sln)");
+                return;
+            }
+
+            if (!OssManifestSweepPolicy.ShouldScheduleFullManifestSweep(solutionRoot))
+            {
+                OutputPaneWriter.WriteDebug(
+                    $"OSS scanner: manifest folder sweep skipped — already completed for this solution in this session ({solutionRoot})");
+                return;
+            }
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ScanAllManifestsInSolutionAsync(solutionRoot).ConfigureAwait(false);
+                    OssManifestSweepPolicy.MarkSweepCompleted(solutionRoot);
+                }
+                catch (Exception ex)
+                {
+                    OutputPaneWriter.WriteWarning($"OSS scanner: manifest folder sweep failed: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
         /// Unregisters the scanner and resets the singleton.
         /// Allows re-registration to create a fresh instance with proper event wiring.
         /// </summary>
@@ -64,7 +103,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// Creates: %TEMP%/Cx-oss-realtime-scanner/{contentHash}/{originalFileName}
         /// Also copies companion lock files into the same directory (e.g., package-lock.json, yarn.lock).
         /// </summary>
-        protected override string CreateTempFilePath(string originalFileName, string content)
+        protected override string CreateTempFilePath(string originalFileName, string content, string fullSourcePath = null)
         {
             var hash = Utils.TempFileManager.GetContentHash(content);
             var tempDir = Utils.TempFileManager.CreateOssTempDir(hash);
@@ -76,18 +115,71 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// Maps results to Result objects for display in the findings panel.
         /// Copies companion lock files (package-lock.json, yarn.lock) alongside the temp file.
         /// </summary>
-        protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, Document document)
+        protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
             // Copy companion lock file (package-lock.json / yarn.lock) alongside temp file
-            CopyCompanionLockFile(document.FullName, Path.GetDirectoryName(tempFilePath));
+            CopyCompanionLockFile(sourceFilePath, Path.GetDirectoryName(tempFilePath));
 
             var results = await _cxWrapper.OssRealtimeScanAsync(tempFilePath);
-            if (results?.Packages == null || results.Packages.Count == 0) return 0;
 
-            var mappedResults = VulnerabilityMapper.FromOss(results.Packages, document.FullName);
+            // Log raw JSON response
+            if (results != null)
+            {
+                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
+            }
+
+            if (results?.Packages == null || results.Packages.Count == 0)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                return 0;
+            }
+
+            int packageCount = results.Packages.Count;
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({packageCount} issues found)");
+
+            // Log individual packages like JetBrains does
+            for (int i = 0; i < packageCount; i++)
+            {
+                var package = results.Packages[i];
+                var name = package.PackageName ?? "Unknown";
+                var version = package.PackageVersion ?? "Unknown";
+                OutputPaneWriter.WriteLine($"Package {i + 1}: {name}@{version}");
+            }
+
+            var mappedResults = VulnerabilityMapper.FromOss(results.Packages, sourceFilePath);
             // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, document.FullName);
+            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
             return mappedResults.Count;
+        }
+
+        /// <summary>
+        /// Scans every dependency manifest under the solution directory.
+        /// Invoked from <see cref="InitializeAsync"/> (JetBrains: <c>scanAllManifestFilesInFolder</c> on scanner start).
+        /// Runs with limited parallelism so the IDE stays responsive.
+        /// </summary>
+        public async Task ScanAllManifestsInSolutionAsync(string solutionRoot)
+        {
+            if (string.IsNullOrEmpty(solutionRoot) || !Directory.Exists(solutionRoot))
+                return;
+
+            var paths = RealtimeSolutionScanner.EnumerateFiles(solutionRoot).Where(ShouldScanFile).ToList();
+            OutputPaneWriter.WriteLine($"OSS scanner: startup manifest sweep — {paths.Count} file(s)");
+
+            var semaphore = new SemaphoreSlim(2);
+            var tasks = paths.Select(async path =>
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    await ScanExternalFileAsync(path).ConfigureAwait(false);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         /// <summary>

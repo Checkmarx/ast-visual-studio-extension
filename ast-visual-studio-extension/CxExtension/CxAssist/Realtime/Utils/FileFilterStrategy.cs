@@ -12,7 +12,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     ///
     /// Each scanner has unique file filtering requirements:
     /// - ASCA: Inclusion-based (only specific extensions)
-    /// - Secrets: Exclusion-based (all except manifests)
+    /// - Secrets: Exclusion-based (JetBrains MANIFEST_FILE_PATTERNS + ignore sidecars; not suppressed for IaC/container paths)
     /// - IaC: Pattern-based (glob patterns)
     /// - Containers: Pattern-based with special Helm handling
     /// - OSS: Manifest-based (exact manifest files only)
@@ -79,24 +79,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     }
 
     /// <summary>
-    /// Secrets Scanner: Exclusion-based filtering
-    /// Scans all files EXCEPT dependency manifests.
+    /// Secrets Scanner: JetBrains-aligned exclusion filtering
+    /// (<c>SecretsScannerService.isExcludedFileForSecretsScanning</c> + <c>MANIFEST_FILE_PATTERNS</c>).
+    /// Scans text files except listed dependency manifests and Checkmarx ignore sidecars; does not exclude
+    /// Dockerfile / compose / Terraform / Helm — those may run Secrets together with IaC and Containers.
     /// </summary>
     public class SecretsFileFilterStrategy : IFileFilterStrategy
     {
-        private static readonly HashSet<string> ExcludedFileNames = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "package.json", "pom.xml", "requirements.txt", "go.mod", "packages.config",
-            "build.gradle", "Gemfile", "composer.json", ".checkmarxIgnored",
-            ".checkmarxIgnoredTempList", "yarn.lock", "package-lock.json",
-            "pom.xml.lock", "go.sum"
-        };
-
-        private static readonly HashSet<string> ExcludedExtensions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".csproj", ".vbproj", ".fsproj", ".lock", ".sum"
-        };
-
         private static readonly HashSet<string> ExcludedPaths = new(StringComparer.OrdinalIgnoreCase)
         {
             "/node_modules/",
@@ -110,21 +99,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             if (string.IsNullOrEmpty(filePath))
                 return false;
 
-            // Exclude binary and configuration directories
             if (ExcludedPaths.Any(excluded => filePath.Contains(excluded)))
                 return false;
 
-            var fileName = Path.GetFileName(filePath);
-            var ext = Path.GetExtension(filePath);
+            if (DevAssistSecretsExclusion.IsCheckmarxIgnoreSidecarPath(filePath))
+                return false;
 
-            // Exclude manifests and ignore files
-            return !ExcludedFileNames.Contains(fileName) &&
-                   !ExcludedExtensions.Contains(ext);
+            if (DevAssistSecretsExclusion.MatchesManifestDependencyPattern(filePath))
+                return false;
+
+            return true;
         }
 
         public string GetFilterDescription()
         {
-            return "Secrets: All files except manifests and lock files";
+            return "Secrets: all files except JetBrains MANIFEST_FILE_PATTERNS + .vscode ignore sidecars (node_modules/.git out)";
         }
     }
 
