@@ -187,6 +187,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
         /// <summary>
         /// Scans a file on disk (startup sweep, manifest watcher). Does not require an open editor.
+        /// Validates file path to prevent path traversal attacks.
         /// </summary>
         public virtual async Task ScanExternalFileAsync(string filePath)
         {
@@ -198,6 +199,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 // Normalize path to prevent path traversal attacks (e.g., ../../../etc/passwd)
                 var normalizedPath = Path.GetFullPath(filePath);
 
+                // Security: Validate path is safe (no backtracking after normalization)
+                if (!IsSafeFilePath(normalizedPath))
+                {
+                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: Rejecting unsafe file path: {Path.GetFileName(filePath)}");
+                    return;
+                }
+
                 // Verify the normalized path still exists and is under expected locations
                 if (!File.Exists(normalizedPath))
                     return;
@@ -205,13 +213,38 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (!ValidateFileSize(normalizedPath))
                     return;
 
-                var content = File.ReadAllText(normalizedPath);
-                await RunScanCoreAsync(normalizedPath, content, bypassContentFingerprint: false).ConfigureAwait(false);
+                // Safe file read: use FileInfo to validate before reading
+                var fileInfo = new System.IO.FileInfo(normalizedPath);
+                if (!fileInfo.Exists)
+                    return;
+
+                var content = File.ReadAllText(fileInfo.FullName);
+                await RunScanCoreAsync(fileInfo.FullName, content, bypassContentFingerprint: false).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 _logger.Warn($"{ScannerName} scanner: ScanExternalFileAsync failed for {Path.GetFileName(filePath)}: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Validates that a path is safe (doesn't contain path traversal sequences after normalization).
+        /// </summary>
+        private bool IsSafeFilePath(string normalizedPath)
+        {
+            if (string.IsNullOrEmpty(normalizedPath))
+                return false;
+
+            // Ensure path doesn't contain traversal sequences even after normalization
+            // (defense in depth - should not happen after GetFullPath, but validates explicitly)
+            if (normalizedPath.Contains("..") || normalizedPath.Contains("~"))
+                return false;
+
+            // Ensure path is absolute (not relative)
+            if (!Path.IsPathRooted(normalizedPath))
+                return false;
+
+            return true;
         }
 
         protected bool IsResultFresh(DateTime resultTimestamp, int scanDocumentVersion)

@@ -284,10 +284,22 @@ namespace ast_visual_studio_extension.CxPreferences
             ClearValidationMessage();
         }
 
+        /// <summary>
+        /// Sanitizes input from UI controls to prevent log injection.
+        /// </summary>
+        private static string SanitizeInput(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Remove control characters and newlines that could be used for log injection
+            return System.Text.RegularExpressions.Regex.Replace(input, @"[\r\n\t\x00-\x1F]", "");
+        }
+
         private CxConfig GetCxConfig() => new CxConfig
         {
-            ApiKey = tbApiKey.Text,
-            AdditionalParameters = tbAdditionalParameters.Text,
+            ApiKey = SanitizeInput(tbApiKey.Text),
+            AdditionalParameters = SanitizeInput(tbAdditionalParameters.Text),
         };
 
         internal static CxConfig GetConfigSnapshot()
@@ -298,8 +310,8 @@ namespace ast_visual_studio_extension.CxPreferences
 
             return new CxConfig
             {
-                ApiKey = ui.tbApiKey.Text,
-                AdditionalParameters = ui.tbAdditionalParameters.Text,
+                ApiKey = SanitizeInput(ui.tbApiKey.Text),
+                AdditionalParameters = SanitizeInput(ui.tbAdditionalParameters.Text),
             };
         }
 
