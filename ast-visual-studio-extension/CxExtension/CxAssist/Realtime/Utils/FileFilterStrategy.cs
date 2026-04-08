@@ -181,9 +181,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 return false;
 
             var fileName = Path.GetFileName(filePath);
+            var lowerFileName = fileName.ToLowerInvariant();
 
-            // Dockerfile variants: dockerfile, dockerfile-*, dockerfile.*
-            if (fileName.StartsWith("dockerfile", StringComparison.OrdinalIgnoreCase))
+            // Dockerfile variants: Dockerfile, dockerfile, dockerfile-*, dockerfile.prod, etc. (but not dockerfile.md)
+            // Match: Dockerfile, dockerfile-prod, dockerfile.prod (with extensions like .windows, .linux, .prod)
+            if (lowerFileName == "dockerfile" ||
+                lowerFileName.StartsWith("dockerfile-", StringComparison.OrdinalIgnoreCase) ||
+                (lowerFileName.StartsWith("dockerfile.", StringComparison.OrdinalIgnoreCase) &&
+                 !lowerFileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase) &&
+                 !lowerFileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)))
                 return true;
 
             // Docker Compose variants: docker-compose.yml, docker-compose.yaml, docker-compose-*.yml, docker-compose-*.yaml

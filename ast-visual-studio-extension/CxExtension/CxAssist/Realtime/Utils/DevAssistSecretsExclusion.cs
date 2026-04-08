@@ -13,6 +13,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     {
         /// <summary>
         /// JetBrains MANIFEST_FILE_PATTERNS (glob → filename/extension checks).
+        /// Includes primary manifest files and their lock files.
         /// </summary>
         public static bool MatchesManifestDependencyPattern(string filePath)
         {
@@ -22,6 +23,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             var fileName = Path.GetFileName(filePath);
             var ext = Path.GetExtension(filePath);
 
+            // Primary manifest files
             if (string.Equals(fileName, "Directory.Packages.props", StringComparison.OrdinalIgnoreCase))
                 return true;
             if (string.Equals(fileName, "packages.config", StringComparison.OrdinalIgnoreCase))
@@ -35,6 +37,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             if (string.Equals(fileName, "go.mod", StringComparison.OrdinalIgnoreCase))
                 return true;
             if (string.Equals(ext, ".csproj", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Lock files
+            if (string.Equals(fileName, "package-lock.json", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(fileName, "yarn.lock", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(fileName, "go.sum", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             return false;

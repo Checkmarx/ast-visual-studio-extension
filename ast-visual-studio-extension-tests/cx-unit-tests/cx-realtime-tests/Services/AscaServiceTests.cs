@@ -1,4 +1,6 @@
+using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Moq;
 using Xunit;
 
@@ -6,11 +8,16 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
 {
     public class AscaServiceTests
     {
-        private readonly Mock<ast_visual_studio_extension.CxCLI.CxWrapper> _mockWrapper;
+        private readonly Mock<CxWrapper> _mockWrapper;
 
         public AscaServiceTests()
         {
-            _mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
+            // CxWrapper requires CxConfig and Type in constructor
+            var mockConfig = new Mock<CxConfig>();
+            _mockWrapper = new Mock<CxWrapper>(
+                MockBehavior.Loose,
+                mockConfig.Object,
+                typeof(AscaServiceTests));
         }
 
         [Fact]
