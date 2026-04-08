@@ -259,7 +259,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
                         StateManagerProvider.GetStateManager().enabledCustemStates.Add(state.name);
                     }
                 }
-             
+
             }
         }
 
@@ -406,7 +406,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
         private static async Task<bool> ASTProjectMatchesWorkspaceProjectAsync(EnvDTE.DTE dte)
         {
-            if (ResultsTreePanel.currentResults == null | ResultsTreePanel.currentResults.results == null || ResultsTreePanel.currentResults.results.Any())
+            if (ResultsTreePanel.currentResults == null || ResultsTreePanel.currentResults.results == null || ResultsTreePanel.currentResults.results.Any())
             {
                 return false;
             }
@@ -516,16 +516,25 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             const string additionalParamaters = "{0} {1} {2}";
 
             UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN);
-            Scan scan = await cxWrapper.ScanCreateAsync(parameters, string.Format(additionalParamaters, CxCLI.CxConstants.FLAG_ASYNC, CxCLI.CxConstants.FLAG_INCREMENTAL, CxCLI.CxConstants.FLAG_RESUBMIT));
-
-            if (scan != null)
+            try
             {
-                SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, scan.ID);
-                UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_CREATED_SCAN, scan.ID));
+                Scan scan = await cxWrapper.ScanCreateAsync(parameters, string.Format(additionalParamaters, CxCLI.CxConstants.FLAG_ASYNC, CxCLI.CxConstants.FLAG_INCREMENTAL, CxCLI.CxConstants.FLAG_RESUBMIT));
+                
+
+                if (scan != null)
+                {
+                    SettingsUtils.StoreToolbarValue(Package, SettingsUtils.toolbarCollection, SettingsUtils.createdScanIdProperty, scan.ID);
+                    UpdateStatusBar(string.Format(CxConstants.STATUS_FORMAT_CREATED_SCAN, scan.ID));
+                }
+                else
+                {
+                    UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED);
+                }
             }
-            else
+            catch (Exception ex)
             {
                 UpdateStatusBar(CxConstants.STATUS_CREATING_SCAN_FAILED);
+                throw;
             }
         }
 
@@ -538,7 +547,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
 
             // Try to get directory from solution or active projects
             string directory = null;
-            
+
             if (!string.IsNullOrEmpty(dte?.Solution?.FullName))
             {
                 // Solution is loaded - get its directory or use the path itself if it's a directory
@@ -577,7 +586,7 @@ namespace ast_visual_studio_extension.CxExtension.Toolbar
             // Now search for .sln or .csproj in the directory
             if (!string.IsNullOrEmpty(directory) && System.IO.Directory.Exists(directory))
             {
-                 return FindSolutionFileOrDirectory(directory);
+                return FindSolutionFileOrDirectory(directory);
             }
 
             return null;
