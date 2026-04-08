@@ -65,7 +65,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Infr
         [Fact]
         public void ScannerRegistration_Factory_CanBeInvoked()
         {
-            var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
+            // CxWrapper requires CxConfig and Type in constructor; pass them to mock
+            var mockConfig = new ast_visual_studio_extension.CxCLI.CxConfig { ApiKey = "test" };
+            var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>(mockConfig, typeof(ScannerRegistrationTests));
             var settings = CreateMockSettings();
 
             var registration = new ScannerRegistration(

@@ -46,8 +46,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// <returns>Absolute path to temp file</returns>
         public static string CreateAscaTempFile(string originalFileName, string content)
         {
-            var sanitized = SanitizeFilename(originalFileName, MAX_FILENAME_LENGTH);
-            var tempFile = Path.Combine(Path.GetTempPath(), $"{ASCA_TEMP_PREFIX}{sanitized}");
+            var tempBasePath = Path.GetTempPath();
+            // Reserve space for prefix and ensure full path stays under MAX_PATH (260)
+            // MAX_PATH = 260; subtract tempBasePath length and prefix length
+            var maxFileNameLength = Math.Min(MAX_FILENAME_LENGTH, 260 - tempBasePath.Length - ASCA_TEMP_PREFIX.Length - 1);
+            var sanitized = SanitizeFilename(originalFileName, maxFileNameLength);
+            var tempFile = Path.Combine(tempBasePath, $"{ASCA_TEMP_PREFIX}{sanitized}");
 
             try
             {
