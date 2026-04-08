@@ -247,9 +247,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// Computes SHA-256 hash of content for collision detection and organization.
         ///
         /// Falls back to simple hashCode if SHA-256 unavailable.
-        /// Returns first 8 chars of hex for readability in filenames.
+        /// Returns first N chars of hex for readability in filenames (default 8).
         /// </summary>
-        internal static string GetContentHash(string content)
+        /// <param name="content">Content to hash</param>
+        /// <param name="length">Number of hex characters to return (default HASH_SUFFIX_LENGTH = 8)</param>
+        internal static string GetContentHash(string content, int length = HASH_SUFFIX_LENGTH)
         {
             if (string.IsNullOrEmpty(content))
                 return "empty";
@@ -260,7 +262,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 {
                     var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(content));
                     var hexString = BitConverter.ToString(hash).Replace("-", "").ToLower();
-                    return hexString.Substring(0, Math.Min(HASH_SUFFIX_LENGTH, hexString.Length));
+                    return hexString.Substring(0, Math.Min(length, hexString.Length));
                 }
             }
             catch (Exception ex)

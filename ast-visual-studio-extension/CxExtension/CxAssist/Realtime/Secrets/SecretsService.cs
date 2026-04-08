@@ -14,16 +14,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
     /// Realtime Secrets scanner service.
     /// Scans all files EXCEPT manifest files for hardcoded secrets (API keys, tokens, passwords, etc.).
     /// </summary>
-    public class SecretsService : BaseRealtimeScannerService
+    public class SecretsService : SingletonScannerBase<SecretsService>
     {
-        private static volatile SecretsService _instance;
-        private static readonly object _lock = new object();
-
-        private static readonly HashSet<string> ExcludedFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "package.json", "pom.xml", "requirements.txt", "go.mod", "packages.config",
-            "build.gradle", "Gemfile", "composer.json"
-        };
+        private static readonly IFileFilterStrategy _fileFilter = new SecretsFileFilterStrategy();
 
         protected override string ScannerName => "Secrets";
 
@@ -38,19 +31,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         public override async Task UnregisterAsync()
         {
             await base.UnregisterAsync();
-            lock (_lock)
-            {
-                _instance = null;
-            }
+            ResetInstance();
         }
 
         /// <summary>
         /// Secrets scanner scans all files EXCEPT manifest files and lock files.
-        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
+        /// Uses cached FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            return new Utils.SecretsFileFilterStrategy().ShouldScanFile(filePath);
+            return _fileFilter.ShouldScanFile(filePath);
         }
 
         /// <summary>
@@ -123,14 +113,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// Gets or creates the singleton instance.
         /// </summary>
         public static SecretsService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
-        {
-            if (_instance != null) return _instance;
-            lock (_lock)
-            {
-                if (_instance == null)
-                    _instance = new SecretsService(cxWrapper);
-            }
-            return _instance;
-        }
+            => GetOrCreate(() => new SecretsService(cxWrapper));
     }
 }

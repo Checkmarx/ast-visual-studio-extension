@@ -8,13 +8,15 @@ using System.Threading.Tasks;
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 {
     /// <summary>
-    /// Shows Visual Studio status bar progress (marquee) while a realtime CLI scan runs — similar in spirit to JetBrains scan progress.
+    /// Shows Visual Studio status bar progress with animated progress bar.
+    /// Displays: "Checkmarx is Scanning File : filename.ext" with animated bar underneath
     /// </summary>
     internal static class RealtimeScanProgressIndicator
     {
         private static readonly object ProgressLock = new object();
         private static int _depth;
         private static uint _progressCookie;
+        private static string _currentFileName = string.Empty;
 
         internal static async Task PushScanAsync(string scannerName, string sourceFilePath)
         {
@@ -25,24 +27,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             lock (ProgressLock)
             {
                 _depth++;
-                string label = _depth > 1
-                    ? $"Checkmarx realtime: {_depth} scans…"
-                    : $"Checkmarx {scannerName}: {fileName}…";
+                _currentFileName = fileName;
 
                 var statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
                 if (statusBar == null)
                 {
-                    TrySetTextFallback(label);
+                    TrySetTextFallback($"Checkmarx is Scanning File : {fileName}");
                     return;
                 }
 
                 try
                 {
-                    statusBar.Progress(ref _progressCookie, 1, label, 0, 0);
+                    // Show animated progress bar with label in same call
+                    // This prevents the gap between text and bar
+                    string label = $"Checkmarx is Scanning File : {fileName}";
+                    statusBar.Progress(ref _progressCookie, 1, label, 1, 1);
                 }
                 catch
                 {
-                    TrySetTextFallback(label);
+                    TrySetTextFallback($"Checkmarx is Scanning File : {fileName}");
                 }
             }
         }
@@ -60,9 +63,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 if (statusBar == null)
                 {
                     if (_depth == 0)
+                    {
                         TrySetTextFallback(string.Empty);
+                        ResetProgress();
+                    }
                     else
-                        TrySetTextFallback($"Checkmarx realtime: {_depth} scans…");
+                    {
+                        TrySetTextFallback($"Checkmarx is Scanning File : {_currentFileName}");
+                    }
                     return;
                 }
 
@@ -70,20 +78,34 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 {
                     if (_depth == 0)
                     {
+                        // Clear the progress bar when all scans complete
                         statusBar.Progress(ref _progressCookie, 0, string.Empty, 0, 0);
+                        ResetProgress();
                     }
                     else
                     {
-                        string label = $"Checkmarx realtime: {_depth} scans…";
-                        statusBar.Progress(ref _progressCookie, 1, label, 0, 0);
+                        // Show progress for next scan
+                        string label = $"Checkmarx is Scanning File : {_currentFileName}";
+                        statusBar.Progress(ref _progressCookie, 1, label, 1, 1);
                     }
                 }
                 catch
                 {
                     if (_depth == 0)
+                    {
                         TrySetTextFallback(string.Empty);
+                        ResetProgress();
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Resets progress state when all scans complete.
+        /// </summary>
+        private static void ResetProgress()
+        {
+            _currentFileName = string.Empty;
         }
 
         private static void TrySetTextFallback(string message)

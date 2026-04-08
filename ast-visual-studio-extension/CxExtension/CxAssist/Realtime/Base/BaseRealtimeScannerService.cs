@@ -6,8 +6,10 @@ using EnvDTE;
 using EnvDTE80;
 using log4net;
 using Microsoft.VisualStudio.Shell;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -193,15 +195,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             try
             {
-                if (!ValidateFileSize(filePath))
+                // Normalize path to prevent path traversal attacks (e.g., ../../../etc/passwd)
+                var normalizedPath = Path.GetFullPath(filePath);
+
+                // Verify the normalized path still exists and is under expected locations
+                if (!File.Exists(normalizedPath))
                     return;
 
-                var content = File.ReadAllText(filePath);
-                await RunScanCoreAsync(filePath, content, bypassContentFingerprint: false).ConfigureAwait(false);
+                if (!ValidateFileSize(normalizedPath))
+                    return;
+
+                var content = File.ReadAllText(normalizedPath);
+                await RunScanCoreAsync(normalizedPath, content, bypassContentFingerprint: false).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                _logger.Warn($"{ScannerName} scanner: ScanExternalFileAsync failed for {filePath}: {ex.Message}", ex);
+                _logger.Warn($"{ScannerName} scanner: ScanExternalFileAsync failed for {Path.GetFileName(filePath)}: {ex.Message}", ex);
             }
         }
 
@@ -513,6 +522,33 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             {
                 OutputPaneWriter.WriteWarning($"{ScannerName} scanner: error cleaning up temp: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Generic logging helper for ScanAndDisplayAsync implementations.
+        /// Logs raw JSON, handles null/empty results, and formats individual items.
+        /// Reduces boilerplate across all five scanner types.
+        /// </summary>
+        protected void LogScanResults<TItem>(
+            object rawResult,
+            IList<TItem> items,
+            string itemLabel,
+            string sourceFilePath,
+            Func<TItem, string> describeItem)
+        {
+            if (rawResult != null)
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - "
+                    + JsonConvert.SerializeObject(rawResult, Formatting.Indented));
+
+            if (items == null || items.Count == 0)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                return;
+            }
+
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({items.Count} {itemLabel} found)");
+            for (int i = 0; i < items.Count; i++)
+                OutputPaneWriter.WriteLine($"{itemLabel} {i + 1}: {describeItem(items[i])}");
         }
 
         protected void LogRealtimeDetectionTelemetry(int issueCount)

@@ -12,19 +12,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
     /// <summary>
     /// ASCA (AI Secure Coding Assistant) realtime scanner service.
     /// Scans source code files for security best practice violations.
-    /// Supports: .java, .cs, .go, .py, .js, .jsx, .ts, .tsx, .cpp, .c, .h
+    /// Supports: .java, .cs, .go, .py, .js, .jsx
     /// </summary>
-    public class AscaService : BaseRealtimeScannerService
+    public class AscaService : SingletonScannerBase<AscaService>
     {
-        private static volatile AscaService _instance;
-        private static readonly object _lock = new object();
-
-        private static readonly HashSet<string> AscaExtensions =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ".java", ".cs", ".go", ".py", ".js", ".jsx", ".ts", ".tsx",
-                ".cpp", ".c", ".h", ".cc", ".cxx", ".hh", ".hpp"
-            };
+        private static readonly IFileFilterStrategy _fileFilter = new AscaFileFilterStrategy();
 
         protected override string ScannerName => "ASCA";
 
@@ -39,19 +31,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
         public override async Task UnregisterAsync()
         {
             await base.UnregisterAsync();
-            lock (_lock)
-            {
-                _instance = null;
-            }
+            ResetInstance();
         }
 
         /// <summary>
         /// ASCA scanner only scans supported source code file types.
-        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
+        /// Uses cached FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            return new Utils.AscaFileFilterStrategy().ShouldScanFile(filePath);
+            return _fileFilter.ShouldScanFile(filePath);
         }
 
         /// <summary>
@@ -97,14 +86,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
         /// Gets or creates the singleton instance.
         /// </summary>
         public static AscaService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
-        {
-            if (_instance != null) return _instance;
-            lock (_lock)
-            {
-                if (_instance == null)
-                    _instance = new AscaService(cxWrapper);
-            }
-            return _instance;
-        }
+            => GetOrCreate(() => new AscaService(cxWrapper));
     }
 }

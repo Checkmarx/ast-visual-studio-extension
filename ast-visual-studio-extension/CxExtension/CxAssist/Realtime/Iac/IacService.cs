@@ -14,20 +14,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
     /// Infrastructure as Code (IaC) realtime scanner service.
     /// Scans Terraform, YAML, JSON, Dockerfile, and related IaC configuration files.
     /// </summary>
-    public class IacService : BaseRealtimeScannerService
+    public class IacService : SingletonScannerBase<IacService>
     {
-        private static volatile IacService _instance;
-        private static readonly object _lock = new object();
-
-        private static readonly HashSet<string> IacExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ".tf", ".yaml", ".yml", ".json", ".hcl", ".bicep", ".arm", ".tmpl"
-        };
-
-        private static readonly HashSet<string> IacFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "dockerfile", "docker-compose.yml", "docker-compose.yaml", "buildspec.yml", "buildspec.yaml"
-        };
+        private static readonly IFileFilterStrategy _fileFilter = new IacFileFilterStrategy();
 
         protected override string ScannerName => "IaC";
 
@@ -42,19 +31,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         public override async Task UnregisterAsync()
         {
             await base.UnregisterAsync();
-            lock (_lock)
-            {
-                _instance = null;
-            }
+            ResetInstance();
         }
 
         /// <summary>
         /// IaC scanner scans IaC-related file types including Terraform variable files.
-        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
+        /// Uses cached FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            return new Utils.IacFileFilterStrategy().ShouldScanFile(filePath);
+            return _fileFilter.ShouldScanFile(filePath);
         }
 
         /// <summary>
@@ -111,14 +97,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         /// Gets or creates the singleton instance.
         /// </summary>
         public static IacService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
-        {
-            if (_instance != null) return _instance;
-            lock (_lock)
-            {
-                if (_instance == null)
-                    _instance = new IacService(cxWrapper);
-            }
-            return _instance;
-        }
+            => GetOrCreate(() => new IacService(cxWrapper));
     }
 }

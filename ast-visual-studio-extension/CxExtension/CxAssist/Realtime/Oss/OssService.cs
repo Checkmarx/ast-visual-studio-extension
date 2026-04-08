@@ -17,21 +17,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
     /// Scans dependency manifest files (package.json, pom.xml, requirements.txt, etc.)
     /// for known vulnerabilities and malicious packages.
     /// </summary>
-    public class OssService : BaseRealtimeScannerService
+    public class OssService : SingletonScannerBase<OssService>
     {
-        private static volatile OssService _instance;
-        private static readonly object _lock = new object();
-
-        private static readonly HashSet<string> ManifestFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "package.json", "pom.xml", "requirements.txt", "go.mod", "packages.config",
-            "build.gradle", "Gemfile", "composer.json"
-        };
-
-        private static readonly HashSet<string> ManifestExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ".csproj", ".vbproj", ".fsproj"
-        };
+        private static readonly IFileFilterStrategy _fileFilter = new OssFileFilterStrategy();
 
         protected override string ScannerName => "OSS";
 
@@ -83,19 +71,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         public override async Task UnregisterAsync()
         {
             await base.UnregisterAsync();
-            lock (_lock)
-            {
-                _instance = null;
-            }
+            ResetInstance();
         }
 
         /// <summary>
         /// OSS scanner scans dependency manifest files and additional package manager files.
-        /// Uses FileFilterStrategy for consistent, enhanced filtering rules including Pipfile, setup.py, etc.
+        /// Uses cached FileFilterStrategy for consistent, enhanced filtering rules including Pipfile, setup.py, etc.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            return new Utils.OssFileFilterStrategy().ShouldScanFile(filePath);
+            return _fileFilter.ShouldScanFile(filePath);
         }
 
         /// <summary>
@@ -186,15 +171,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// Gets or creates the singleton instance.
         /// </summary>
         public static OssService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
-        {
-            if (_instance != null) return _instance;
-            lock (_lock)
-            {
-                if (_instance == null)
-                    _instance = new OssService(cxWrapper);
-            }
-            return _instance;
-        }
+            => GetOrCreate(() => new OssService(cxWrapper));
 
         /// <summary>
         /// Copies companion lock files to temp directory using centralized manager.

@@ -35,14 +35,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
     /// <summary>
     /// ASCA Scanner: Inclusion-based filtering
-    /// Only scans files with supported source code extensions.
+    /// Only scans files with supported source code extensions (aligned with JetBrains DevAssistConstants).
+    /// Supported: Java, C#, Go, Python, JavaScript, JSX
     /// </summary>
     public class AscaFileFilterStrategy : IFileFilterStrategy
     {
         private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            ".java", ".cs", ".go", ".py", ".js", ".jsx", ".ts", ".tsx",
-            ".cpp", ".c", ".h", ".cc", ".cxx", ".hh", ".hpp"
+            ".java", ".cs", ".go", ".py", ".js", ".jsx"
         };
 
         private static readonly HashSet<string> ExcludedPaths = new(StringComparer.OrdinalIgnoreCase)
@@ -74,7 +74,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         public string GetFilterDescription()
         {
-            return "ASCA: C#, Java, Go, Python, JavaScript/TypeScript, C/C++";
+            return "ASCA: Java, C#, Go, Python, JavaScript, JSX";
         }
     }
 
@@ -119,13 +119,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
     /// <summary>
     /// IaC Scanner: Pattern-based filtering
-    /// Scans Infrastructure-as-Code files (Terraform, YAML, JSON, Dockerfile, etc.)
+    /// Scans Infrastructure-as-Code files aligned with JetBrains DevAssistConstants.IAC_FILE_EXTENSIONS.
+    /// Supported: Terraform, YAML, JSON, Protobuf, Dockerfile (and variants)
     /// </summary>
     public class IacFileFilterStrategy : IFileFilterStrategy
     {
         private static readonly HashSet<string> IacExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            ".tf", ".yaml", ".yml", ".json", ".hcl", ".bicep", ".arm", ".tmpl"
+            ".tf", ".yaml", ".yml", ".json", ".proto"
         };
 
         private static readonly HashSet<string> IacFileNames = new(StringComparer.OrdinalIgnoreCase)
@@ -163,21 +164,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         public string GetFilterDescription()
         {
-            return "IaC: Terraform, YAML, JSON, Dockerfile, CloudFormation, Bicep";
+            return "IaC: Terraform, YAML, JSON, Protobuf, Dockerfile variants";
         }
     }
 
     /// <summary>
     /// Containers Scanner: Pattern-based filtering with Helm support
-    /// Scans Dockerfile, docker-compose, and Helm chart files.
+    /// Aligned with JetBrains DevAssistConstants.CONTAINERS_FILE_PATTERNS.
+    /// Scans: Dockerfile variants, docker-compose variants, and Helm chart files.
     /// </summary>
     public class ContainersFileFilterStrategy : IFileFilterStrategy
     {
-        private static readonly HashSet<string> ContainerFileNames = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "dockerfile", "docker-compose.yml", "docker-compose.yaml"
-        };
-
         public bool ShouldScanFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath))
@@ -185,20 +182,26 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
             var fileName = Path.GetFileName(filePath);
 
-            // Container files
-            if (ContainerFileNames.Contains(fileName))
+            // Dockerfile variants: dockerfile, dockerfile-*, dockerfile.*
+            if (fileName.StartsWith("dockerfile", StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            // Dockerfile variants: Dockerfile, Dockerfile.dev, Dockerfile-prod, etc.
-            if (fileName.StartsWith("dockerfile", StringComparison.OrdinalIgnoreCase))
+            // Docker Compose variants: docker-compose.yml, docker-compose.yaml, docker-compose-*.yml, docker-compose-*.yaml
+            if (fileName.Equals("docker-compose.yml", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("docker-compose.yaml", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Docker Compose with suffix variants: docker-compose-prod.yml, docker-compose-staging.yaml, etc.
+            if (fileName.StartsWith("docker-compose-", StringComparison.OrdinalIgnoreCase) &&
+                (fileName.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) ||
+                 fileName.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase)))
                 return true;
 
             // Helm charts: YAML files in /helm/ directory (exclude chart.yml, chart.yaml)
             if (filePath.Contains("/helm/") || filePath.Contains("\\helm\\"))
             {
-                var helmFileName = Path.GetFileName(filePath);
-                var isChartConfig = helmFileName.Equals("chart.yml", StringComparison.OrdinalIgnoreCase) ||
-                                    helmFileName.Equals("chart.yaml", StringComparison.OrdinalIgnoreCase);
+                var isChartConfig = fileName.Equals("chart.yml", StringComparison.OrdinalIgnoreCase) ||
+                                    fileName.Equals("chart.yaml", StringComparison.OrdinalIgnoreCase);
 
                 if (!isChartConfig && (filePath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) ||
                                         filePath.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)))
@@ -210,26 +213,26 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         public string GetFilterDescription()
         {
-            return "Containers: Dockerfile, docker-compose, Helm charts";
+            return "Containers: Dockerfile variants, docker-compose variants, Helm charts";
         }
     }
 
     /// <summary>
     /// OSS Scanner: Manifest-based filtering
-    /// Only scans dependency manifest files (package.json, pom.xml, requirements.txt, etc.)
+    /// Aligned with JetBrains DevAssistConstants.MANIFEST_FILE_PATTERNS.
+    /// Only scans dependency manifest files: Directory.Packages.props, packages.config, pom.xml,
+    /// package.json, requirements.txt, go.mod, *.csproj
     /// </summary>
     public class OssFileFilterStrategy : IFileFilterStrategy
     {
         private static readonly HashSet<string> ManifestFileNames = new(StringComparer.OrdinalIgnoreCase)
         {
-            "package.json", "pom.xml", "requirements.txt", "go.mod", "packages.config",
-            "build.gradle", "Gemfile", "composer.json", "Pipfile",
-            "setup.py", "pubspec.yaml", "Cargo.toml", "mix.exs"
+            "directory.packages.props", "packages.config", "pom.xml", "package.json", "requirements.txt", "go.mod"
         };
 
         private static readonly HashSet<string> ManifestExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            ".csproj", ".vbproj", ".fsproj"
+            ".csproj"
         };
 
         public bool ShouldScanFile(string filePath)
@@ -245,7 +248,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         public string GetFilterDescription()
         {
-            return "OSS: Dependency manifests (package.json, pom.xml, go.mod, *.csproj, etc.)";
+            return "OSS: Dependency manifests (Directory.Packages.props, packages.config, pom.xml, package.json, requirements.txt, go.mod, *.csproj)";
         }
     }
 

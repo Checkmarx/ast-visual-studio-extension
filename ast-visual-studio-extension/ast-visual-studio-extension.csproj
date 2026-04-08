@@ -89,6 +89,7 @@
     <Compile Include="CxExtension\Panels\ResultVulnerabilitiesPanel.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Interfaces\IRealtimeScannerService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Base\BaseRealtimeScannerService.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Base\SingletonScannerBase.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Asca\AscaService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Secrets\SecretsService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Iac\IacService.cs" />
@@ -96,6 +97,8 @@
     <Compile Include="CxExtension\CxAssist\Realtime\Oss\OssService.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\RealtimeScannerHost.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\RealtimeScannerOrchestrator.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\ScannerRegistration.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\ScannerRegistry.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\SeverityMapper.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\UniqueIdGenerator.cs" />
     <Compile Include="CxExtension\CxAssist\Realtime\Utils\TempFileManager.cs" />

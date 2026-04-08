@@ -1,0 +1,113 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca;
+using Moq;
+using Xunit;
+
+namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Services
+{
+    public class AscaServiceTests
+    {
+        private readonly Mock<ast_visual_studio_extension.CxCLI.CxWrapper> _mockWrapper;
+
+        public AscaServiceTests()
+        {
+            _mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
+        }
+
+        [Fact]
+        public void AscaService_GetInstance_ReturnsServiceInstance()
+        {
+            // Get first instance
+            var service1 = AscaService.GetInstance(_mockWrapper.Object);
+
+            Assert.NotNull(service1);
+        }
+
+        [Fact]
+        public void AscaService_GetInstance_ReturnsSingletonInstance()
+        {
+            var service1 = AscaService.GetInstance(_mockWrapper.Object);
+            var service2 = AscaService.GetInstance(_mockWrapper.Object);
+
+            Assert.Same(service1, service2);
+        }
+
+        [Theory]
+        [InlineData("test.cs")]
+        [InlineData("test.java")]
+        [InlineData("test.go")]
+        [InlineData("test.py")]
+        [InlineData("test.js")]
+        [InlineData("test.jsx")]
+        public void AscaService_ShouldScanFile_WithValidExtension_ReturnsTrue(string filePath)
+        {
+            var service = AscaService.GetInstance(_mockWrapper.Object);
+
+            Assert.True(service.ShouldScanFile(filePath));
+        }
+
+        [Theory]
+        [InlineData("test.txt")]
+        [InlineData("test.cpp")]
+        [InlineData("test.xml")]
+        [InlineData("test.yml")]
+        public void AscaService_ShouldScanFile_WithInvalidExtension_ReturnsFalse(string filePath)
+        {
+            var service = AscaService.GetInstance(_mockWrapper.Object);
+
+            Assert.False(service.ShouldScanFile(filePath));
+        }
+
+        [Theory]
+        [InlineData("C:\\node_modules\\app.js")]
+        [InlineData("C:\\venv\\script.py")]
+        [InlineData("C:\\dist\\bundle.js")]
+        public void AscaService_ShouldScanFile_InExcludedPath_ReturnsFalse(string filePath)
+        {
+            var service = AscaService.GetInstance(_mockWrapper.Object);
+
+            Assert.False(service.ShouldScanFile(filePath));
+        }
+
+        [Fact]
+        public void AscaService_ShouldScanFile_WithNull_ReturnsFalse()
+        {
+            var service = AscaService.GetInstance(_mockWrapper.Object);
+
+            Assert.False(service.ShouldScanFile(null));
+        }
+
+        [Fact]
+        public void AscaService_ShouldScanFile_WithEmpty_ReturnsFalse()
+        {
+            var service = AscaService.GetInstance(_mockWrapper.Object);
+
+            Assert.False(service.ShouldScanFile(string.Empty));
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task AscaService_UnregisterAsync_AllowsReinitialization()
+        {
+            var service1 = AscaService.GetInstance(_mockWrapper.Object);
+            await service1.UnregisterAsync();
+
+            // After unregister, next GetInstance should create new instance
+            var service2 = AscaService.GetInstance(_mockWrapper.Object);
+
+            // Should be different instances after unregister
+            Assert.NotSame(service1, service2);
+        }
+
+        [Fact]
+        public void AscaService_MultipleGetInstance_WithDifferentWrappers_StillReturnsSingleton()
+        {
+            var wrapper1 = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
+            var wrapper2 = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
+
+            var service1 = AscaService.GetInstance(wrapper1.Object);
+            var service2 = AscaService.GetInstance(wrapper2.Object);
+
+            // Singleton pattern returns same instance regardless of wrapper
+            Assert.Same(service1, service2);
+        }
+    }
+}

@@ -1,10 +1,5 @@
 using ast_visual_studio_extension.CxCLI;
-using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca;
-using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers;
-using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
-using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
-using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
@@ -39,45 +34,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
 
             try
             {
-                // Initialize ASCA scanner if enabled
-                if (settings.AscaCheckBox)
+                // Initialize enabled scanners from registry
+                // This loop is extensible: adding a new scanner requires only adding one entry to ScannerRegistry.All
+                foreach (var registration in ScannerRegistry.All)
                 {
-                    var ascaService = AscaService.GetInstance(cxWrapper);
-                    await ascaService.InitializeAsync();
-                    _scanners.Add(ascaService);
-                }
+                    if (!registration.IsEnabled(settings))
+                        continue;
 
-                // Initialize Secrets scanner if enabled
-                if (settings.SecretDetectionRealtimeCheckBox)
-                {
-                    var secretsService = SecretsService.GetInstance(cxWrapper);
-                    await secretsService.InitializeAsync();
-                    _scanners.Add(secretsService);
-                }
-
-                // Initialize IaC scanner if enabled
-                if (settings.IacRealtimeCheckBox)
-                {
-                    var iacService = IacService.GetInstance(cxWrapper);
-                    await iacService.InitializeAsync();
-                    _scanners.Add(iacService);
-                }
-
-                // Initialize Containers scanner if enabled
-                if (settings.ContainersRealtimeCheckBox)
-                {
-                    var containersTool = settings.ContainersTool ?? "docker";
-                    var containersService = ContainersService.GetInstance(cxWrapper, containersTool);
-                    await containersService.InitializeAsync();
-                    _scanners.Add(containersService);
-                }
-
-                // Initialize OSS scanner if enabled
-                if (settings.OssRealtimeCheckBox)
-                {
-                    var ossService = OssService.GetInstance(cxWrapper);
-                    await ossService.InitializeAsync();
-                    _scanners.Add(ossService);
+                    var scanner = registration.Factory(cxWrapper, settings);
+                    await scanner.InitializeAsync();
+                    _scanners.Add(scanner);
                 }
 
                 var solutionRoot = GetSolutionDirectory();

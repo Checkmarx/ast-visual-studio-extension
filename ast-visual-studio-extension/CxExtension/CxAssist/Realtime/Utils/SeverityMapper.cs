@@ -14,7 +14,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         High = 1,
         Medium = 2,     // Default for unknown/null
         Low = 3,
-        Unknown = 2     // Defaults to Medium
+        Unknown = 4     // Distinct value (not aliased to Medium)
     }
 
     /// <summary>

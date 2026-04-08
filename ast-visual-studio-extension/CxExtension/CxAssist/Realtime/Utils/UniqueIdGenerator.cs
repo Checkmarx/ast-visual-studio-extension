@@ -1,6 +1,4 @@
 using System;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 {
@@ -133,27 +131,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         /// <summary>
         /// Hashes input string to create deterministic, fixed-length ID.
-        /// Uses SHA-256 for strong collision resistance.
+        /// Delegates to TempFileManager.GetContentHash for consistent SHA-256 implementation.
         /// Falls back to hashCode if SHA-256 unavailable.
         /// </summary>
-        private static string HashString(string input)
-        {
-            try
-            {
-                using (var sha256 = SHA256.Create())
-                {
-                    var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
-                    var hexString = BitConverter.ToString(hashedBytes).Replace("-", "").ToLower();
-                    // Return first 16 chars for readability (still 64-bit collision resistance)
-                    return hexString.Length > HASH_LENGTH ? hexString.Substring(0, HASH_LENGTH) : hexString;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"SHA-256 hashing failed: {ex.Message}. Using fallback.");
-                // Fallback to simple hash code (less collision resistant but always available)
-                return input.GetHashCode().ToString("x8");
-            }
-        }
+        private static string HashString(string input) =>
+            TempFileManager.GetContentHash(input, HASH_LENGTH);
     }
 }

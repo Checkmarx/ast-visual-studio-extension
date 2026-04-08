@@ -15,16 +15,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
     /// Scans Dockerfile and docker-compose files for base images with known vulnerabilities.
     /// Requires Docker or Podman to be installed.
     /// </summary>
-    public class ContainersService : BaseRealtimeScannerService
+    public class ContainersService : SingletonScannerBase<ContainersService>
     {
-        private static volatile ContainersService _instance;
-        private static readonly object _lock = new object();
         private readonly string _containersTool;
-
-        private static readonly HashSet<string> ContainerFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "dockerfile", "docker-compose.yml", "docker-compose.yaml"
-        };
+        private static readonly IFileFilterStrategy _fileFilter = new ContainersFileFilterStrategy();
 
         protected override string ScannerName => "Containers";
 
@@ -40,19 +34,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         public override async Task UnregisterAsync()
         {
             await base.UnregisterAsync();
-            lock (_lock)
-            {
-                _instance = null;
-            }
+            ResetInstance();
         }
 
         /// <summary>
         /// Containers scanner scans Dockerfile, docker-compose, and Helm chart YAML files.
-        /// Uses FileFilterStrategy for consistent, enhanced filtering rules.
+        /// Uses cached FileFilterStrategy for consistent, enhanced filtering rules.
         /// </summary>
         public override bool ShouldScanFile(string filePath)
         {
-            return new Utils.ContainersFileFilterStrategy().ShouldScanFile(filePath);
+            return _fileFilter.ShouldScanFile(filePath);
         }
 
         /// <summary>
@@ -127,16 +118,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
 
         /// <summary>
         /// Gets or creates the singleton instance.
+        /// If tool parameter changes (e.g. docker → podman), the instance is reset
+        /// to ensure the new tool is used on next GetOrCreate.
         /// </summary>
         public static ContainersService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker")
         {
-            if (_instance != null) return _instance;
-            lock (_lock)
-            {
-                if (_instance == null)
-                    _instance = new ContainersService(cxWrapper, containersTool);
-            }
-            return _instance;
+            containersTool = string.IsNullOrEmpty(containersTool) ? "docker" : containersTool;
+            return GetOrCreate(() => new ContainersService(cxWrapper, containersTool));
         }
     }
 }

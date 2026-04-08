@@ -44,6 +44,22 @@ namespace ast_visual_studio_extension.CxWrapper.Models
             }
         }
 
+        /// <summary>
+        /// Returns a sanitized string representation for logging.
+        /// Redacts sensitive fields (ApiKey, AdditionalParameters) to prevent log forging attacks.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"CxConfig {{ " +
+                   $"ApiKey=[REDACTED], " +
+                   $"AdditionalParameters=[REDACTED], " +
+                   $"AscaEnabled={AscaEnabled}, " +
+                   $"OssRealtimeEnabled={OssRealtimeEnabled}, " +
+                   $"SecretDetectionEnabled={SecretDetectionEnabled}, " +
+                   $"ContainersRealtimeEnabled={ContainersRealtimeEnabled}, " +
+                   $"IacEnabled={IacEnabled} }}";
+        }
+
         public sealed class InvalidCLIConfigException : Exception
         {
             public InvalidCLIConfigException(string message) : base(message) { }
