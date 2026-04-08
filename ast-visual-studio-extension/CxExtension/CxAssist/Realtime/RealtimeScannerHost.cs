@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
 using Microsoft.VisualStudio.Shell;
@@ -15,6 +16,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
     {
         private static readonly SemaphoreSlim Gate = new SemaphoreSlim(1, 1);
         private static RealtimeScannerOrchestrator _orchestrator;
+        private static bool _initializationInProgress;
 
         internal static async Task RegisterAsync(AsyncPackage package, CxCLI.CxWrapper cxWrapper, Type ownerType)
         {
@@ -24,6 +26,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             await Gate.WaitAsync().ConfigureAwait(true);
             try
             {
+                // Skip if already initialized or initialization in progress
+                if (_initializationInProgress || _orchestrator != null)
+                    return;
+
+                _initializationInProgress = true;
+
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 if (!CxPreferencesUI.IsAuthenticated())
                     return;
@@ -38,9 +46,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                 if (cxWrapper == null)
                     return;
 
-                if (_orchestrator != null)
-                    await _orchestrator.UnregisterAllAsync();
-
                 _orchestrator = new RealtimeScannerOrchestrator();
                 await _orchestrator.InitializeAsync(cxWrapper, assistSettings);
             }
@@ -51,6 +56,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             finally
             {
+                _initializationInProgress = false;
                 Gate.Release();
             }
         }
@@ -70,6 +76,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             await RegisterAsync(package, cxWrapper, ownerType).ConfigureAwait(true);
         }
 
+        /// <summary>
+        /// Drops the current orchestrator and rebuilds it from persisted Assist settings, then rescans the active
+        /// document and manifest files. Used after login (when checkboxes are updated after auth) and when Assist
+        /// settings are applied — avoids a no-op <see cref="RegisterFromPackageAsync"/> when an orchestrator already exists.
+        /// </summary>
+        internal static async Task ResyncFromPersistedSettingsAsync(AsyncPackage package, Type ownerType)
+        {
+            if (package == null)
+                return;
+
+            await UnregisterAsync().ConfigureAwait(true);
+            await RegisterFromPackageAsync(package, ownerType).ConfigureAwait(true);
+            await TriggerFullRescanAsync().ConfigureAwait(true);
+        }
+
         internal static async Task UnregisterAsync()
         {
             await Gate.WaitAsync().ConfigureAwait(true);
@@ -81,10 +102,131 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     await _orchestrator.UnregisterAllAsync();
                     _orchestrator = null;
                 }
+
+                OssManifestSweepPolicy.ClearSession();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: unregister failed: {ex.Message}");
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Triggers manifest file and current document scans after authentication.
+        /// Called when user logs in or re-enables scanners in settings.
+        /// </summary>
+        internal static async Task TriggerFullRescanAsync()
+        {
+            await Gate.WaitAsync().ConfigureAwait(true);
+            try
+            {
+                if (_orchestrator == null)
+                    return;
+
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await _orchestrator.TriggerCurrentDocumentScanAsync();
+                // OSS manifest sweep is started from OssService.InitializeAsync (JetBrains scanAllManifestFilesInFolder).
+                // Avoid a second full solution walk here for every engine.
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: TriggerFullRescanAsync failed: {ex.Message}");
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Re-initializes scanners when enable/disable settings change.
+        /// Unregisters old scanner instances (canceling pending scans) and initializes new set.
+        /// </summary>
+        internal static async Task ReinitializeAsync()
+        {
+            await Gate.WaitAsync().ConfigureAwait(true);
+            try
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                // Unregister old scanners (cancels pending scans)
+                if (_orchestrator != null)
+                {
+                    await _orchestrator.UnregisterAllAsync();
+                    _orchestrator = null;
+                }
+
+                _initializationInProgress = false;
+
+                // Re-initialize with current settings
+                var package = ServiceProvider.GlobalProvider?.GetService(typeof(AsyncPackage)) as AsyncPackage;
+                if (package != null)
+                {
+                    var cxWrapper = CxUtils.GetCxWrapper(package, typeof(RealtimeScannerHost));
+                    await RegisterAsync(package, cxWrapper, typeof(RealtimeScannerHost)).ConfigureAwait(true);
+
+                    // Trigger full rescan with new scanner set
+                    await TriggerFullRescanAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: ReinitializeAsync failed: {ex.Message}");
+                OutputPaneWriter.WriteError($"Failed to reinitialize scanners: {ex.Message}");
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Enables a specific scanner (e.g., when user checks a scanner checkbox).
+        /// Only initializes that scanner, doesn't reinit the entire set.
+        /// </summary>
+        internal static async Task EnableScannerAsync(string scannerName)
+        {
+            if (_orchestrator == null || string.IsNullOrEmpty(scannerName))
+                return;
+
+            await Gate.WaitAsync().ConfigureAwait(true);
+            try
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await _orchestrator.EnableScannerAsync(scannerName);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: EnableScannerAsync failed: {ex.Message}");
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Disables a specific scanner (e.g., when user unchecks a scanner checkbox).
+        /// Only unregisters that scanner, doesn't reinit the entire set.
+        /// </summary>
+        internal static async Task DisableScannerAsync(string scannerName)
+        {
+            if (_orchestrator == null || string.IsNullOrEmpty(scannerName))
+                return;
+
+            await Gate.WaitAsync().ConfigureAwait(true);
+            try
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await _orchestrator.DisableScannerAsync(scannerName);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: DisableScannerAsync failed: {ex.Message}");
             }
             finally
             {

@@ -32,6 +32,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             CompletedSweeps.TryAdd(NormalizeRoot(solutionRoot), 0);
         }
 
+        /// <summary>
+        /// Clears per-solution sweep bookkeeping (e.g. after logout). Otherwise a re-login in the same IDE session
+        /// skips <see cref="Oss.OssService.ScanAllManifestsInSolutionAsync"/> because the policy still thinks the sweep ran.
+        /// </summary>
+        internal static void ClearSession()
+        {
+            CompletedSweeps.Clear();
+        }
+
         private static string NormalizeRoot(string solutionRoot)
         {
             try

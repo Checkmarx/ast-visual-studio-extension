@@ -96,6 +96,39 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
+        public void DisableAllRealtimeScannersWhenMcpUnavailable_WhenUserPreferencesNotSet_SnapshotsThenDisables()
+        {
+            var module = CreateModule();
+            module.UserPreferencesSet = false;
+            module.AscaCheckBox = true;
+            module.OssRealtimeCheckBox = false;
+            module.DisableAllRealtimeScannersWhenMcpUnavailable();
+            Assert.True(module.UserPreferencesSet);
+            Assert.True(module.UserPrefAscaRealtime);
+            Assert.False(module.UserPrefOssRealtime);
+            Assert.False(module.AscaCheckBox);
+            Assert.False(module.OssRealtimeCheckBox);
+        }
+
+        [Fact]
+        public void DisableAllRealtimeScannersWhenMcpUnavailable_WhenUserPreferencesSet_DoesNotOverwriteSnapshot()
+        {
+            var module = CreateModule();
+            module.AscaCheckBox = false;
+            module.OssRealtimeCheckBox = true;
+            module.SecretDetectionRealtimeCheckBox = false;
+            module.ContainersRealtimeCheckBox = false;
+            module.IacRealtimeCheckBox = false;
+            module.SaveCurrentSettingsAsUserPreferences();
+            module.EnableAllRealtimeScanners();
+            module.DisableAllRealtimeScannersWhenMcpUnavailable();
+            Assert.False(module.AscaCheckBox);
+            module.ApplyUserPreferencesToRealtimeSettings();
+            Assert.False(module.AscaCheckBox);
+            Assert.True(module.OssRealtimeCheckBox);
+        }
+
+        [Fact]
         public void DisableRealtimeScannersPreservingPreferences_ShouldDisableAllAndPreserve()
         {
             var module = CreateModule();

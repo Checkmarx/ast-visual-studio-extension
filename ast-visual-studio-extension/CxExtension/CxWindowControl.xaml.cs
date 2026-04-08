@@ -84,16 +84,18 @@ namespace ast_visual_studio_extension.CxExtension
             cxToolbar.Init();
         }
 
-        private void OnAuthStateChanged(bool _)
+        private void OnAuthStateChanged(bool isAuthenticated)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.Invoke(CheckToolWindowPanel);
+                Dispatcher.Invoke(() => OnAuthStateChanged(isAuthenticated));
                 return;
             }
 
+            // Realtime registration + rescan: CxWindowPackage (PersistSettings → Resync) and logout unregister.
             CheckToolWindowPanel();
         }
+
         private async Task InitializeAsync()
         {
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());

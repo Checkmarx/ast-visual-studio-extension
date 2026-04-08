@@ -97,13 +97,18 @@ namespace ast_visual_studio_extension.CxExtension
                 // JetBrains GlobalScannerController.settingsApplied → syncAll: resync realtime when Assist prefs change (no tool window required).
                 CxOneAssistSettingsModule.RealtimeAssistSettingsChanged += OnRealtimeAssistSettingsApplied;
 
+                // Unregister realtime scanners on logout from any UI. Login/register + full rescan runs from
+                // PersistSettings → RealtimeAssistSettingsChanged once Assist checkboxes match the new session.
+                CxPreferencesUI.AuthStateChanged += OnGlobalAssistAuthStateChanged;
+
                 // Restore API session early so solution-open realtime registration sees authenticated state
                 // without opening the Checkmarx tool window first.
                 await CxPreferencesUI.TryRestoreAuthenticatedSessionAsync(this);
 
                 // If a solution was already open before this package finished loading, solution events will not
-                // fire again — retry realtime registration now that auth (and Assist settings) may be restored.
-                await RealtimeScannerHost.RegisterFromPackageAsync(this, typeof(CxWindowPackage));
+                // fire again — resync realtime scanners now that auth (and Assist settings) may be restored.
+                if (CxPreferencesUI.IsAuthenticated())
+                    await RealtimeScannerHost.ResyncFromPersistedSettingsAsync(this, typeof(CxWindowPackage));
 
 #if !NO_VS_EXTENSION_MANAGER
                 // Register MCP cleanup handler for when the extension is uninstalled
@@ -213,6 +218,7 @@ namespace ast_visual_studio_extension.CxExtension
                     {
                         await this.JoinableTaskFactory.SwitchToMainThreadAsync();
                         CxOneAssistSettingsModule.RealtimeAssistSettingsChanged -= OnRealtimeAssistSettingsApplied;
+                        CxPreferencesUI.AuthStateChanged -= OnGlobalAssistAuthStateChanged;
                         _solutionEventHandler?.Unregister();
                         await RealtimeScannerHost.UnregisterAsync();
                     });
@@ -235,7 +241,26 @@ namespace ast_visual_studio_extension.CxExtension
             _ = JoinableTaskFactory.RunAsync(async () =>
             {
                 await JoinableTaskFactory.SwitchToMainThreadAsync();
-                await RealtimeScannerHost.RegisterFromPackageAsync(this, typeof(CxWindowPackage));
+                await RealtimeScannerHost.ResyncFromPersistedSettingsAsync(this, typeof(CxWindowPackage));
+            });
+        }
+
+        private void OnGlobalAssistAuthStateChanged(bool isAuthenticated)
+        {
+            if (isAuthenticated)
+                return;
+
+            _ = JoinableTaskFactory.RunAsync(async () =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+                try
+                {
+                    await RealtimeScannerHost.UnregisterAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"CxWindowPackage.OnGlobalAssistAuthStateChanged: {ex.Message}");
+                }
             });
         }
 

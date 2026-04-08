@@ -179,23 +179,24 @@ namespace ast_visual_studio_extension.CxPreferences
                 System.Diagnostics.Debug.WriteLine($"MCP cleanup on logout failed: {ex.Message}");
             }
 
+            // JetBrains parity: do not persist "all scanners off" — toggles stay as last user choice in storage.
+            // Runtime scanning stops via auth → RealtimeScannerHost.UnregisterAsync (GlobalScannerController.syncAll / stopAll).
+            cxPreferencesModule.RestoreAuthenticatedSession = false;
+            ResetAuthState();
+
             try
             {
                 CxOneAssistSettingsModule oneAssistModule = GetOneAssistSettingsModule();
                 if (oneAssistModule != null)
                 {
-                    oneAssistModule.DisableRealtimeScannersPreservingPreferences();
                     oneAssistModule.ContainersTool = "docker";
                     oneAssistModule.PersistSettings();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to disable realtime scanners on logout: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to persist Assist settings on logout: {ex.Message}");
             }
-
-            cxPreferencesModule.RestoreAuthenticatedSession = false;
-            ResetAuthState();
             SetValidationMessage(CxConstants.AUTH_LOGOUT_SUCCESS, isSuccess: true);
             UpdateAuthControlsState();
         }
@@ -350,19 +351,20 @@ namespace ast_visual_studio_extension.CxPreferences
                 SetAuthState(true);
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, typeof(CxPreferencesUI));
-                if (hadAssist)
-                {
-                    var oneAssistRestore = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
-                    if (oneAssistRestore != null)
-                    {
-                        var installService = new McpInstallService();
-                        if (oneAssistRestore.McpEnabled)
-                            await installService.InstallSilentlyAsync(config, typeof(CxPreferencesUI));
 
-                        oneAssistRestore.PersistSettings();
-                        CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
-                    }
+                var oneAssistRestore = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                bool previousMcpEnabled = oneAssistRestore?.McpEnabled ?? false;
+                bool mcpStatusPreviouslyChecked = oneAssistRestore?.McpStatusChecked ?? false;
+
+                bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, typeof(CxPreferencesUI));
+                if (hadAssist && oneAssistRestore != null)
+                {
+                    var installService = new McpInstallService();
+                    ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistRestore, previousMcpEnabled, mcpStatusPreviouslyChecked);
+                    if (oneAssistRestore.McpEnabled)
+                        await installService.InstallSilentlyAsync(config, typeof(CxPreferencesUI));
+                    oneAssistRestore.PersistSettings();
+                    CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
                 }
             }
             catch
@@ -409,6 +411,36 @@ namespace ast_visual_studio_extension.CxPreferences
             return true;
         }
 
+        /// <summary>
+        /// JetBrains <c>GlobalSettingsComponent.completeAuthenticationSetup</c>: only adjust realtime toggles on
+        /// first MCP resolution or when tenant MCP flag changes — not on every re-auth (persisted toggles stay correct).
+        /// </summary>
+        private static void ApplyJetBrainsStyleRealtimeScannerPolicy(
+            CxOneAssistSettingsModule module,
+            bool previousMcpEnabled,
+            bool mcpStatusPreviouslyChecked)
+        {
+            if (module == null)
+                return;
+
+            bool mcpStatusChanged = mcpStatusPreviouslyChecked && (previousMcpEnabled != module.McpEnabled);
+
+            if (!mcpStatusPreviouslyChecked)
+            {
+                if (module.McpEnabled)
+                    module.AutoEnableRealtimeScanners();
+                else
+                    module.DisableAllRealtimeScannersWhenMcpUnavailable();
+            }
+            else if (mcpStatusChanged)
+            {
+                if (module.McpEnabled)
+                    module.AutoEnableRealtimeScanners();
+                else
+                    module.DisableAllRealtimeScannersWhenMcpUnavailable();
+            }
+        }
+
         private async Task CompleteAuthenticationSetupAsync(CxConfig config, bool showWelcomeDialog)
         {
             if (config == null || string.IsNullOrWhiteSpace(config.ApiKey))
@@ -420,39 +452,30 @@ namespace ast_visual_studio_extension.CxPreferences
                 if (package == null)
                     return;
 
+                var oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                bool previousMcpEnabled = oneAssistModule?.McpEnabled ?? false;
+                bool mcpStatusPreviouslyChecked = oneAssistModule?.McpStatusChecked ?? false;
+
                 bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, GetType());
                 if (!hadAssist)
                     return;
 
-                var oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
                 if (oneAssistModule == null)
                     return;
 
                 var installService = new McpInstallService();
 
-                if (showWelcomeDialog)
-                {
-                    // Fresh login: reset to a known good state, then let user override via welcome dialog.
-                    if (oneAssistModule.McpEnabled)
-                    {
-                        oneAssistModule.EnableAllRealtimeScanners();
-                        oneAssistModule.SaveCurrentSettingsAsUserPreferences();
-                    }
-                    else
-                    {
-                        oneAssistModule.DisableAllRealtimeScanners();
-                    }
-                    oneAssistModule.PersistSettings();
-                }
+                ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistModule, previousMcpEnabled, mcpStatusPreviouslyChecked);
 
                 if (oneAssistModule.McpEnabled)
                     await installService.InstallSilentlyAsync(config, GetType());
 
+                // JetBrains calls apply() after MCP update every login — Persist drives RealtimeAssistSettingsChanged / Resync.
+                oneAssistModule.PersistSettings();
+
                 if (showWelcomeDialog)
                     ShowOneAssistWelcomeDialog(oneAssistModule, oneAssistModule.McpEnabled);
-
-                if (!showWelcomeDialog)
-                    oneAssistModule.PersistSettings();
 
                 CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
             }

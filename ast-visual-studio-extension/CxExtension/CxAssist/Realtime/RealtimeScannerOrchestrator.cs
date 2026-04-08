@@ -1,11 +1,14 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
+using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
@@ -19,6 +22,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
     {
         private readonly List<IRealtimeScannerService> _scanners = new List<IRealtimeScannerService>();
         private ManifestFileWatcher _manifestWatcher;
+        private ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
+        private CxOneAssistSettingsModule _settings;
 
         /// <summary>
         /// Initializes all enabled realtime scanners based on the current settings.
@@ -31,6 +36,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
 
             if (!ShouldInitializeRealtimeScanners(settings))
                 return;
+
+            // Store for later use in enable/disable operations
+            _cxWrapper = cxWrapper;
+            _settings = settings;
 
             try
             {
@@ -131,16 +140,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                 string fileName = Path.GetFileName(filePath);
                 OutputPaneWriter.WriteLine($"RealtimeScannerOrchestrator: Manifest file changed: {fileName} ({changeType})");
 
+                // JetBrains parity: dependency manifest rescans are OSS-only; other engines follow the active document.
                 foreach (var scanner in _scanners)
                 {
+                    if (!(scanner is OssService oss))
+                        continue;
                     try
                     {
-                        if (scanner.ShouldScanFile(filePath))
-                            _ = scanner.ScanExternalFileAsync(filePath);
+                        if (oss.ShouldScanFile(filePath))
+                            _ = oss.ScanExternalFileAsync(filePath);
                     }
                     catch (Exception ex)
                     {
-                        OutputPaneWriter.WriteDebug($"RealtimeScannerOrchestrator: rescan dispatch for {fileName}: {ex.Message}");
+                        OutputPaneWriter.WriteDebug($"RealtimeScannerOrchestrator: OSS manifest rescan for {fileName}: {ex.Message}");
                     }
                 }
             }
@@ -191,6 +203,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         {
             try
             {
+                // Cancel all pending scans first
+                CancelAllPendingScans();
+
                 foreach (var scanner in _scanners)
                 {
                     await scanner.UnregisterAsync();
@@ -204,6 +219,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             {
                 OutputPaneWriter.WriteError($"Error unregistering realtime scanners: {ex.Message}");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Cancels all pending debounced scans across all active scanners.
+        /// </summary>
+        private void CancelAllPendingScans()
+        {
+            try
+            {
+                foreach (var scanner in _scanners)
+                {
+                    scanner.CancelPendingScans();
+                }
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"RealtimeScannerOrchestrator: Error canceling pending scans: {ex.Message}");
             }
         }
 
@@ -226,6 +259,135 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             catch (Exception ex)
             {
                 OutputPaneWriter.WriteError($"RealtimeScannerOrchestrator: Error stopping manifest file watcher: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Enables a specific scanner by name and initializes it.
+        /// Called when user enables a scanner checkbox.
+        /// </summary>
+        public async Task EnableScannerAsync(string scannerName)
+        {
+            if (string.IsNullOrEmpty(scannerName) || _cxWrapper == null || _settings == null)
+                return;
+
+            try
+            {
+                // Find the registration for this scanner
+                var registration = ScannerRegistry.All.FirstOrDefault(r => r.Name == scannerName);
+                if (registration == null || registration.IsEnabled(_settings))
+                    return; // Already enabled or not found
+
+                // Create and initialize the scanner
+                var scanner = registration.Factory(_cxWrapper, _settings);
+                await scanner.InitializeAsync();
+                _scanners.Add(scanner);
+
+                OutputPaneWriter.WriteLine($"{scannerName} scanner enabled");
+
+                var solutionDir = GetSolutionDirectory();
+                await scanner.TriggerCurrentDocumentScanAsync();
+
+                // OSS: full manifest sweep runs from Initialize when policy allows. If policy already marked this
+                // solution (e.g. OSS toggled off/on), run manifest resync here so manifests are still scanned.
+                if (scanner is OssService && !string.IsNullOrEmpty(solutionDir)
+                    && !OssManifestSweepPolicy.ShouldScheduleFullManifestSweep(solutionDir))
+                    await scanner.RescanManifestFilesAsync(solutionDir);
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteError($"Failed to enable {scannerName} scanner: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Disables a specific scanner by name and unregisters it.
+        /// Called when user disables a scanner checkbox.
+        /// </summary>
+        public async Task DisableScannerAsync(string scannerName)
+        {
+            if (string.IsNullOrEmpty(scannerName))
+                return;
+
+            try
+            {
+                var scannerToRemove = _scanners.FirstOrDefault(s => GetScannerName(s) == scannerName);
+                if (scannerToRemove == null)
+                    return;
+
+                // Cancel pending scans first
+                scannerToRemove.CancelPendingScans();
+
+                // Unregister
+                await scannerToRemove.UnregisterAsync();
+                _scanners.Remove(scannerToRemove);
+
+                OutputPaneWriter.WriteLine($"{scannerName} scanner disabled");
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteError($"Failed to disable {scannerName} scanner: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the scanner type name from a scanner instance.
+        /// </summary>
+        private string GetScannerName(IRealtimeScannerService scanner)
+        {
+            if (scanner is Asca.AscaService) return "ASCA";
+            if (scanner is Secrets.SecretsService) return "Secrets";
+            if (scanner is Iac.IacService) return "IaC";
+            if (scanner is Containers.ContainersService) return "Containers";
+            if (scanner is Oss.OssService) return "OSS";
+            return scanner.GetType().Name;
+        }
+
+        /// <summary>
+        /// Triggers an instant scan of the current active document.
+        /// Called when user logs in, after re-authentication, or when scanners are re-enabled.
+        /// </summary>
+        public async Task TriggerCurrentDocumentScanAsync()
+        {
+            try
+            {
+                var dte = ServiceProvider.GlobalProvider?.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+                if (dte?.ActiveDocument == null)
+                    return;
+
+                var filePath = dte.ActiveDocument.FullName;
+                if (string.IsNullOrEmpty(filePath))
+                    return;
+
+                foreach (var scanner in _scanners)
+                {
+                    await scanner.InstantScanAsync(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"TriggerCurrentDocumentScanAsync failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// OSS-only solution manifest sweep. Other engines use <see cref="TriggerCurrentDocumentScanAsync"/> only.
+        /// </summary>
+        public async Task TriggerManifestRescanAsync()
+        {
+            try
+            {
+                var solutionRoot = GetSolutionDirectory();
+                if (string.IsNullOrEmpty(solutionRoot))
+                    return;
+
+                var oss = _scanners.OfType<OssService>().FirstOrDefault();
+                if (oss != null)
+                    await oss.RescanManifestFilesAsync(solutionRoot);
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"TriggerManifestRescanAsync failed: {ex.Message}");
             }
         }
     }

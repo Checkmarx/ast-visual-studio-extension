@@ -234,7 +234,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
                 // Read using the Checkmarx-safe path
                 var content = File.ReadAllText(safePath);
-                await RunScanCoreAsync(safePath, content, bypassContentFingerprint: false).ConfigureAwait(false);
+                // Background / batch scans run in parallel; status bar Push/Pop is not LIFO-safe and misleads when most paths skip.
+                await RunScanCoreAsync(safePath, content, bypassContentFingerprint: false, showStatusBarProgress: false)
+                    .ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -491,7 +493,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
         }
 
-        private async Task<int> RunScanCoreAsync(string sourceFilePath, string content, bool bypassContentFingerprint)
+        private async Task<int> RunScanCoreAsync(
+            string sourceFilePath,
+            string content,
+            bool bypassContentFingerprint,
+            bool showStatusBarProgress = true)
         {
             if (string.IsNullOrWhiteSpace(content))
                 return 0;
@@ -502,7 +508,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 var fp = Utils.TempFileManager.GetContentHash(content);
                 if (_lastScannedContentFingerprint.TryGetValue(key, out var prev) && prev == fp)
                 {
-                    OutputPaneWriter.WriteDebug($"{ScannerName}: skip scan (unchanged content) - {sourceFilePath}");
+                    // Batch rescans hit this thousands of times — do not write to Checkmarx Output (use Debug only).
+                    Debug.WriteLine($"{ScannerName}: skip scan (unchanged content) - {sourceFilePath}");
                     return 0;
                 }
             }
@@ -519,7 +526,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
                 File.WriteAllText(tempFilePath, content);
 
-                await RealtimeScanProgressIndicator.PushScanAsync(ScannerName, sourceFilePath);
+                bool progressShown = false;
+                if (showStatusBarProgress)
+                {
+                    await RealtimeScanProgressIndicator.PushScanAsync(ScannerName, sourceFilePath);
+                    progressShown = true;
+                }
+
                 try
                 {
                     var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -535,7 +548,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 }
                 finally
                 {
-                    await RealtimeScanProgressIndicator.PopScanAsync();
+                    if (progressShown)
+                        await RealtimeScanProgressIndicator.PopScanAsync();
                 }
             }
             catch (Exception ex)
@@ -633,6 +647,75 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             catch
             {
                 return path ?? string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Instantly scans the given file (e.g., active document).
+        /// Called when user logs in or scanners are re-enabled.
+        /// </summary>
+        public virtual async Task InstantScanAsync(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !ShouldScanFile(filePath))
+                return;
+
+            try
+            {
+                if (!File.Exists(filePath))
+                    return;
+
+                var content = File.ReadAllText(filePath);
+                await RunScanCoreAsync(filePath, content, bypassContentFingerprint: true).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn($"{ScannerName} scanner: InstantScanAsync failed for {Path.GetFileName(filePath)}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Triggers an instant scan of the currently active document.
+        /// </summary>
+        public virtual async Task TriggerCurrentDocumentScanAsync()
+        {
+            try
+            {
+                var dte = ServiceProvider.GlobalProvider?.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+                if (dte?.ActiveDocument == null)
+                    return;
+
+                var filePath = dte.ActiveDocument.FullName;
+                if (string.IsNullOrEmpty(filePath) || !ShouldScanFile(filePath))
+                    return;
+
+                await InstantScanAsync(filePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn($"{ScannerName} scanner: TriggerCurrentDocumentScanAsync failed: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// JetBrains parity: ASCA, Secrets, IaC, and Containers scan only the active editor document
+        /// (open/save/line-change). Solution-wide dependency manifest enumeration is OSS-only; see
+        /// <see cref="Oss.OssService.RescanManifestFilesAsync"/>.
+        /// </summary>
+        public virtual Task RescanManifestFilesAsync(string solutionRoot) => Task.CompletedTask;
+
+        /// <summary>
+        /// Cancels all pending debounced scans.
+        /// Called when scanner is disabled in settings to stop in-flight work.
+        /// </summary>
+        public virtual void CancelPendingScans()
+        {
+            try
+            {
+                _debounceScheduler?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn($"{ScannerName} scanner: CancelPendingScans failed: {ex.Message}", ex);
             }
         }
     }

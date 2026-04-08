@@ -56,12 +56,32 @@ namespace ast_visual_studio_extension.CxPreferences
         }
 
         /// <summary>
+        /// After registry reload (e.g. Options Cancel), sync the custom Assist UI from this page's properties.
+        /// </summary>
+        public override void LoadSettingsFromStorage()
+        {
+            base.LoadSettingsFromStorage();
+            try
+            {
+                CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CxOneAssistSettingsModule.LoadSettingsFromStorage UI refresh: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// On apply settings
         /// </summary>
         /// <param name="e"></param>
         protected override void OnApply(PageApplyEventArgs e)
         {
+            // Flush UI → properties so serialization matches the Tools → Options surface (also marks page dirty via property updates when handlers ran).
+            CxOneAssistSettingsUI.GetInstance().ApplyUiToModule(this);
             base.OnApply(e);
+            // Treat OK/Apply on Assist page as the baseline for logout / next login (per-engine toggles).
+            SaveCurrentSettingsAsUserPreferences();
             PersistSettings();
         }
 
@@ -127,6 +147,17 @@ namespace ast_visual_studio_extension.CxPreferences
             SecretDetectionRealtimeCheckBox = false;
             ContainersRealtimeCheckBox = false;
             IacRealtimeCheckBox = false;
+        }
+
+        /// <summary>
+        /// JetBrains <c>GlobalSettingsComponent.disableAllRealtimeScanners</c>: when MCP becomes unavailable,
+        /// turns off all engines but only snapshots preferences if the user never had a saved baseline yet.
+        /// </summary>
+        public void DisableAllRealtimeScannersWhenMcpUnavailable()
+        {
+            if (!UserPreferencesSet)
+                SaveCurrentSettingsAsUserPreferences();
+            DisableAllRealtimeScanners();
         }
 
         public void AutoEnableRealtimeScanners()

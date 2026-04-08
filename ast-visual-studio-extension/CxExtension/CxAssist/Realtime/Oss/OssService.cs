@@ -21,6 +21,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
     {
         private static readonly IFileFilterStrategy _fileFilter = new OssFileFilterStrategy();
 
+        private CancellationTokenSource _manifestSweepCts;
+
         protected override string ScannerName => "OSS";
 
         private OssService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
@@ -50,12 +52,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
                 return;
             }
 
+            _manifestSweepCts?.Cancel();
+            _manifestSweepCts?.Dispose();
+            _manifestSweepCts = new CancellationTokenSource();
+            CancellationTokenSource sweepCts = _manifestSweepCts;
+
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await ScanAllManifestsInSolutionAsync(solutionRoot).ConfigureAwait(false);
-                    OssManifestSweepPolicy.MarkSweepCompleted(solutionRoot);
+                    await ScanAllManifestsInSolutionAsync(solutionRoot, sweepCts.Token).ConfigureAwait(false);
+                    if (!sweepCts.Token.IsCancellationRequested)
+                        OssManifestSweepPolicy.MarkSweepCompleted(solutionRoot);
+                }
+                catch (OperationCanceledException)
+                {
+                    OutputPaneWriter.WriteLine("OSS scanner: manifest folder sweep stopped (scanner disabled or session ended).");
                 }
                 catch (Exception ex)
                 {
@@ -68,8 +80,36 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// Unregisters the scanner and resets the singleton.
         /// Allows re-registration to create a fresh instance with proper event wiring.
         /// </summary>
+        public override void CancelPendingScans()
+        {
+            try
+            {
+                _manifestSweepCts?.Cancel();
+            }
+            catch
+            {
+                // ignore
+            }
+
+            base.CancelPendingScans();
+        }
+
         public override async Task UnregisterAsync()
         {
+            try
+            {
+                _manifestSweepCts?.Cancel();
+                _manifestSweepCts?.Dispose();
+            }
+            catch
+            {
+                // ignore
+            }
+            finally
+            {
+                _manifestSweepCts = null;
+            }
+
             await base.UnregisterAsync();
             ResetInstance();
         }
@@ -143,7 +183,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// Invoked from <see cref="InitializeAsync"/> (JetBrains: <c>scanAllManifestFilesInFolder</c> on scanner start).
         /// Runs with limited parallelism so the IDE stays responsive.
         /// </summary>
-        public async Task ScanAllManifestsInSolutionAsync(string solutionRoot)
+        public async Task ScanAllManifestsInSolutionAsync(string solutionRoot, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(solutionRoot) || !Directory.Exists(solutionRoot))
                 return;
@@ -152,19 +192,38 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
             OutputPaneWriter.WriteLine($"OSS scanner: startup manifest sweep — {paths.Count} file(s)");
 
             var semaphore = new SemaphoreSlim(2);
-            var tasks = paths.Select(async path =>
+            try
             {
-                await semaphore.WaitAsync().ConfigureAwait(false);
-                try
+                foreach (var path in paths)
                 {
-                    await ScanExternalFileAsync(path).ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        await ScanExternalFileAsync(path).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
                 }
-                finally
-                {
-                    semaphore.Release();
-                }
-            });
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// JetBrains <c>scanAllManifestFilesInFolder</c>: rescans every dependency manifest under the solution
+        /// (login resync, explicit manifest trigger, or OSS re-enabled after init skipped sweep due to policy).
+        /// </summary>
+        public override async Task RescanManifestFilesAsync(string solutionRoot)
+        {
+            if (string.IsNullOrEmpty(solutionRoot) || !Directory.Exists(solutionRoot))
+                return;
+
+            await ScanAllManifestsInSolutionAsync(solutionRoot, CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
