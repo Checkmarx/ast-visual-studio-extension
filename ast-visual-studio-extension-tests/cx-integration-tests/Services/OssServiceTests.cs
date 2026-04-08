@@ -4,8 +4,14 @@ using ast_visual_studio_extension.CxWrapper.Models;
 using System;
 using Xunit;
 
-namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Services
+namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
 {
+    /// <summary>
+    /// Integration tests for OSS realtime scanner service.
+    /// Requires VS UI context (ThreadHelper, JoinableTaskFactory).
+    /// Run separately from unit tests; skip in CI if VS test host unavailable.
+    /// </summary>
+    [Trait("Category", "Integration")]
     public class OssServiceTests : IDisposable
     {
         private readonly CxWrapper _wrapperInstance;

@@ -5,8 +5,14 @@ using Moq;
 using System;
 using Xunit;
 
-namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Services
+namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
 {
+    /// <summary>
+    /// Integration tests for ASCA realtime scanner service.
+    /// Requires VS UI context (ThreadHelper, JoinableTaskFactory).
+    /// Run separately from unit tests; skip in CI if VS test host unavailable.
+    /// </summary>
+    [Trait("Category", "Integration")]
     public class AscaServiceTests : IDisposable
     {
         private readonly CxWrapper _wrapperInstance;
@@ -115,8 +121,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void AscaService_MultipleGetInstance_WithDifferentWrappers_StillReturnsSingleton()
         {
-            var wrapper1 = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
-            var wrapper2 = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
+            var config1 = new CxConfig { ApiKey = "test1" };
+            var config2 = new CxConfig { ApiKey = "test2" };
+            var wrapper1 = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>(config1, typeof(AscaServiceTests));
+            var wrapper2 = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>(config2, typeof(AscaServiceTests));
 
             var service1 = AscaService.GetInstance(wrapper1.Object);
             var service2 = AscaService.GetInstance(wrapper2.Object);

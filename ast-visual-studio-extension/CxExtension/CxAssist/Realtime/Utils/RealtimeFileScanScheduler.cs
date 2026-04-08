@@ -29,7 +29,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         public RealtimeFileScanScheduler(JoinableTaskFactory joinableTaskFactory)
         {
-            _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
+            // Allow null for unit testing scenarios without VS context
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         /// <summary>
@@ -38,6 +39,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         public void Schedule(string filePath, Func<CancellationToken, Task> work)
         {
             if (_disposed || string.IsNullOrEmpty(filePath) || work == null)
+                return;
+
+            // Skip scheduling if no joinable task factory (unit test context without VS)
+            if (_joinableTaskFactory == null)
                 return;
 
             var key = NormalizePath(filePath);

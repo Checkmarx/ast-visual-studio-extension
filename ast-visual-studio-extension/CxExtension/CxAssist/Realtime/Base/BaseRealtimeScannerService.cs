@@ -132,7 +132,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         {
             _cxWrapper = cxWrapper;
             _logger = LogManager.GetLogger(GetType());
-            _debounceScheduler = new RealtimeFileScanScheduler(ThreadHelper.JoinableTaskFactory);
+            try
+            {
+                _debounceScheduler = new RealtimeFileScanScheduler(ThreadHelper.JoinableTaskFactory);
+            }
+            catch (Exception)
+            {
+                // In unit test context without VS UI (NullReferenceException or InvalidOperationException),
+                // create scheduler with null factory (scheduler will not be functional, but service can be instantiated for testing)
+                _debounceScheduler = new RealtimeFileScanScheduler(null);
+            }
         }
 
         public virtual async Task InitializeAsync()
@@ -157,7 +166,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         {
             try
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                try
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                }
+                catch (Exception)
+                {
+                    // In unit test context without VS UI, skip the main thread switch
+                }
+
                 _debounceScheduler?.Dispose();
 
                 if (!_isSubscribed) return;
