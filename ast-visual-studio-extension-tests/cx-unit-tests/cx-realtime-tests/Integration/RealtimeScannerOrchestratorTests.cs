@@ -56,7 +56,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         public async Task RealtimeScannerOrchestrator_InitializeAsync_WithNullSettings_ReturnsEarly()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
-            var mockConfig = new ast_visual_studio_extension.CxCLI.CxConfig { ApiKey = "test" };
+            var mockConfig = new ast_visual_studio_extension.CxWrapper.Models.CxConfig { ApiKey = "test" };
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>(mockConfig, typeof(RealtimeScannerOrchestratorTests));
 
             // Should return early without error
