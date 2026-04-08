@@ -213,13 +213,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (!ValidateFileSize(normalizedPath))
                     return;
 
-                // Safe file read: use FileInfo to validate before reading
-                var fileInfo = new System.IO.FileInfo(normalizedPath);
-                if (!fileInfo.Exists)
+                // Safe file read: verify file exists before reading
+                if (!File.Exists(normalizedPath))
                     return;
 
-                var content = File.ReadAllText(fileInfo.FullName);
-                await RunScanCoreAsync(fileInfo.FullName, content, bypassContentFingerprint: false).ConfigureAwait(false);
+                var content = File.ReadAllText(normalizedPath);
+                await RunScanCoreAsync(normalizedPath, content, bypassContentFingerprint: false).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
