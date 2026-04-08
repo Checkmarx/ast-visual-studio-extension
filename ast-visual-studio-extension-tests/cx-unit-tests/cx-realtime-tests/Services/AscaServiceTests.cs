@@ -2,29 +2,37 @@ using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca;
 using ast_visual_studio_extension.CxWrapper.Models;
 using Moq;
+using System;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Services
 {
-    public class AscaServiceTests
+    public class AscaServiceTests : IDisposable
     {
-        private readonly Mock<CxWrapper> _mockWrapper;
+        private readonly CxWrapper _wrapperInstance;
 
         public AscaServiceTests()
         {
-            // CxWrapper requires CxConfig and Type in constructor
-            var mockConfig = new Mock<CxConfig>();
-            _mockWrapper = new Mock<CxWrapper>(
-                MockBehavior.Loose,
-                mockConfig.Object,
-                typeof(AscaServiceTests));
+            // Create a real CxConfig for testing (doesn't make actual HTTP calls in unit tests)
+            var config = new CxConfig
+            {
+                ApiKey = "test-api-key"
+            };
+
+            // Create a real CxWrapper instance - it won't make actual calls unless explicitly invoked
+            _wrapperInstance = new CxWrapper(config, typeof(AscaServiceTests));
+        }
+
+        public void Dispose()
+        {
+            // Cleanup: each test gets a fresh instance via xUnit test fixture
         }
 
         [Fact]
         public void AscaService_GetInstance_ReturnsServiceInstance()
         {
             // Get first instance
-            var service1 = AscaService.GetInstance(_mockWrapper.Object);
+            var service1 = AscaService.GetInstance(_wrapperInstance);
 
             Assert.NotNull(service1);
         }
@@ -32,8 +40,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void AscaService_GetInstance_ReturnsSingletonInstance()
         {
-            var service1 = AscaService.GetInstance(_mockWrapper.Object);
-            var service2 = AscaService.GetInstance(_mockWrapper.Object);
+            var service1 = AscaService.GetInstance(_wrapperInstance);
+            var service2 = AscaService.GetInstance(_wrapperInstance);
 
             Assert.Same(service1, service2);
         }
@@ -47,7 +55,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("test.jsx")]
         public void AscaService_ShouldScanFile_WithValidExtension_ReturnsTrue(string filePath)
         {
-            var service = AscaService.GetInstance(_mockWrapper.Object);
+            var service = AscaService.GetInstance(_wrapperInstance);
 
             Assert.True(service.ShouldScanFile(filePath));
         }
@@ -59,7 +67,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("test.yml")]
         public void AscaService_ShouldScanFile_WithInvalidExtension_ReturnsFalse(string filePath)
         {
-            var service = AscaService.GetInstance(_mockWrapper.Object);
+            var service = AscaService.GetInstance(_wrapperInstance);
 
             Assert.False(service.ShouldScanFile(filePath));
         }
@@ -70,7 +78,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("C:\\dist\\bundle.js")]
         public void AscaService_ShouldScanFile_InExcludedPath_ReturnsFalse(string filePath)
         {
-            var service = AscaService.GetInstance(_mockWrapper.Object);
+            var service = AscaService.GetInstance(_wrapperInstance);
 
             Assert.False(service.ShouldScanFile(filePath));
         }
@@ -78,7 +86,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void AscaService_ShouldScanFile_WithNull_ReturnsFalse()
         {
-            var service = AscaService.GetInstance(_mockWrapper.Object);
+            var service = AscaService.GetInstance(_wrapperInstance);
 
             Assert.False(service.ShouldScanFile(null));
         }
@@ -86,7 +94,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void AscaService_ShouldScanFile_WithEmpty_ReturnsFalse()
         {
-            var service = AscaService.GetInstance(_mockWrapper.Object);
+            var service = AscaService.GetInstance(_wrapperInstance);
 
             Assert.False(service.ShouldScanFile(string.Empty));
         }
@@ -94,11 +102,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public async System.Threading.Tasks.Task AscaService_UnregisterAsync_AllowsReinitialization()
         {
-            var service1 = AscaService.GetInstance(_mockWrapper.Object);
+            var service1 = AscaService.GetInstance(_wrapperInstance);
             await service1.UnregisterAsync();
 
             // After unregister, next GetInstance should create new instance
-            var service2 = AscaService.GetInstance(_mockWrapper.Object);
+            var service2 = AscaService.GetInstance(_wrapperInstance);
 
             // Should be different instances after unregister
             Assert.NotSame(service1, service2);

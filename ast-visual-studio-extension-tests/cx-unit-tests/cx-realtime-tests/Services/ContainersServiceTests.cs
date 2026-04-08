@@ -1,28 +1,34 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers;
 using ast_visual_studio_extension.CxWrapper.Models;
-using Moq;
+using System;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Services
 {
-    public class ContainersServiceTests
+    public class ContainersServiceTests : IDisposable
     {
-        private readonly Mock<CxWrapper> _mockWrapper;
+        private readonly CxWrapper _wrapperInstance;
 
         public ContainersServiceTests()
         {
-            var mockConfig = new Mock<CxConfig>();
-            _mockWrapper = new Mock<CxWrapper>(
-                MockBehavior.Loose,
-                mockConfig.Object,
-                typeof(ContainersServiceTests));
+            var config = new CxConfig
+            {
+                ApiKey = "test-api-key"
+            };
+
+            _wrapperInstance = new CxWrapper(config, typeof(ContainersServiceTests));
+        }
+
+        public void Dispose()
+        {
+            // Cleanup
         }
 
         [Fact]
         public void ContainersService_GetInstance_ReturnsServiceInstance()
         {
-            var service = ContainersService.GetInstance(_mockWrapper.Object, "docker");
+            var service = ContainersService.GetInstance(_wrapperInstance, "docker");
 
             Assert.NotNull(service);
         }
@@ -30,8 +36,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void ContainersService_GetInstance_ReturnsSingletonInstance()
         {
-            var service1 = ContainersService.GetInstance(_mockWrapper.Object, "docker");
-            var service2 = ContainersService.GetInstance(_mockWrapper.Object, "podman");
+            var service1 = ContainersService.GetInstance(_wrapperInstance, "docker");
+            var service2 = ContainersService.GetInstance(_wrapperInstance, "podman");
 
             // Singleton pattern returns same instance regardless of container engine
             Assert.Same(service1, service2);
@@ -43,7 +49,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("C:\\helm\\values.yaml")]
         public void ContainersService_ShouldScanFile_WithValidType_ReturnsTrue(string filePath)
         {
-            var service = ContainersService.GetInstance(_mockWrapper.Object, "docker");
+            var service = ContainersService.GetInstance(_wrapperInstance, "docker");
 
             Assert.True(service.ShouldScanFile(filePath));
         }
@@ -54,7 +60,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("package.json")]
         public void ContainersService_ShouldScanFile_WithInvalidType_ReturnsFalse(string filePath)
         {
-            var service = ContainersService.GetInstance(_mockWrapper.Object, "docker");
+            var service = ContainersService.GetInstance(_wrapperInstance, "docker");
 
             Assert.False(service.ShouldScanFile(filePath));
         }
@@ -62,7 +68,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void ContainersService_ShouldScanFile_WithNull_ReturnsFalse()
         {
-            var service = ContainersService.GetInstance(_mockWrapper.Object, "docker");
+            var service = ContainersService.GetInstance(_wrapperInstance, "docker");
 
             Assert.False(service.ShouldScanFile(null));
         }
@@ -70,10 +76,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public async System.Threading.Tasks.Task ContainersService_UnregisterAsync_AllowsReinitialization()
         {
-            var service1 = ContainersService.GetInstance(_mockWrapper.Object, "docker");
+            var service1 = ContainersService.GetInstance(_wrapperInstance, "docker");
             await service1.UnregisterAsync();
 
-            var service2 = ContainersService.GetInstance(_mockWrapper.Object, "docker");
+            var service2 = ContainersService.GetInstance(_wrapperInstance, "docker");
 
             Assert.NotSame(service1, service2);
         }
@@ -83,7 +89,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("podman")]
         public void ContainersService_GetInstance_AcceptsContainerEngine(string engine)
         {
-            var service = ContainersService.GetInstance(_mockWrapper.Object, engine);
+            var service = ContainersService.GetInstance(_wrapperInstance, engine);
 
             Assert.NotNull(service);
         }

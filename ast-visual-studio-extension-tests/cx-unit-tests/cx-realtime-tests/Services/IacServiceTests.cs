@@ -1,28 +1,34 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac;
 using ast_visual_studio_extension.CxWrapper.Models;
-using Moq;
+using System;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Services
 {
-    public class IacServiceTests
+    public class IacServiceTests : IDisposable
     {
-        private readonly Mock<CxWrapper> _mockWrapper;
+        private readonly CxWrapper _wrapperInstance;
 
         public IacServiceTests()
         {
-            var mockConfig = new Mock<CxConfig>();
-            _mockWrapper = new Mock<CxWrapper>(
-                MockBehavior.Loose,
-                mockConfig.Object,
-                typeof(IacServiceTests));
+            var config = new CxConfig
+            {
+                ApiKey = "test-api-key"
+            };
+
+            _wrapperInstance = new CxWrapper(config, typeof(IacServiceTests));
+        }
+
+        public void Dispose()
+        {
+            // Cleanup
         }
 
         [Fact]
         public void IacService_GetInstance_ReturnsServiceInstance()
         {
-            var service = IacService.GetInstance(_mockWrapper.Object);
+            var service = IacService.GetInstance(_wrapperInstance);
 
             Assert.NotNull(service);
         }
@@ -30,8 +36,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void IacService_GetInstance_ReturnsSingletonInstance()
         {
-            var service1 = IacService.GetInstance(_mockWrapper.Object);
-            var service2 = IacService.GetInstance(_mockWrapper.Object);
+            var service1 = IacService.GetInstance(_wrapperInstance);
+            var service2 = IacService.GetInstance(_wrapperInstance);
 
             Assert.Same(service1, service2);
         }
@@ -43,7 +49,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("dockerfile")]
         public void IacService_ShouldScanFile_WithValidType_ReturnsTrue(string filePath)
         {
-            var service = IacService.GetInstance(_mockWrapper.Object);
+            var service = IacService.GetInstance(_wrapperInstance);
 
             Assert.True(service.ShouldScanFile(filePath));
         }
@@ -54,7 +60,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [InlineData("script.sh")]
         public void IacService_ShouldScanFile_WithInvalidType_ReturnsFalse(string filePath)
         {
-            var service = IacService.GetInstance(_mockWrapper.Object);
+            var service = IacService.GetInstance(_wrapperInstance);
 
             Assert.False(service.ShouldScanFile(filePath));
         }
@@ -62,7 +68,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public void IacService_ShouldScanFile_WithNull_ReturnsFalse()
         {
-            var service = IacService.GetInstance(_mockWrapper.Object);
+            var service = IacService.GetInstance(_wrapperInstance);
 
             Assert.False(service.ShouldScanFile(null));
         }
@@ -70,10 +76,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Serv
         [Fact]
         public async System.Threading.Tasks.Task IacService_UnregisterAsync_AllowsReinitialization()
         {
-            var service1 = IacService.GetInstance(_mockWrapper.Object);
+            var service1 = IacService.GetInstance(_wrapperInstance);
             await service1.UnregisterAsync();
 
-            var service2 = IacService.GetInstance(_mockWrapper.Object);
+            var service2 = IacService.GetInstance(_wrapperInstance);
 
             Assert.NotSame(service1, service2);
         }
