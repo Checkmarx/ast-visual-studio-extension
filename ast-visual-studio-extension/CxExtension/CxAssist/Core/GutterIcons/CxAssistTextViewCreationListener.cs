@@ -74,7 +74,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                                     if (!string.IsNullOrEmpty(dte?.ActiveDocument?.FullName))
                                         filePath = dte.ActiveDocument.FullName;
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"CxAssist: Failed to get active document path: {ex.Message}");
+                                }
                                 if (string.IsNullOrEmpty(filePath))
                                 {
                                     var fallback = Interlocked.Increment(ref _fallbackDocumentCounter);

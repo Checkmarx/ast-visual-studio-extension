@@ -1,14 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.IO;
-using System.Threading;
-using EnvDTE;
-using EnvDTE80;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Utilities;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
@@ -156,59 +145,57 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
             if (vulnerabilities == null || vulnerabilities.Count == 0)
                 return;
 
-            var vulnsToApply = vulnerabilities;
-            System.Threading.Tasks.Task.Delay(1000).ContinueWith(_ =>
+            // Capture filePath locally to avoid closure mutation (data race if TextViewCreated called concurrently)
+            string capturedFilePath = filePath;
+            _ = System.Threading.Tasks.Task.Delay(200).ContinueWith(async _ =>
             {
                 try
                 {
-                    ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    var buffer = textView.TextBuffer;
+                    string resolvedFilePath = CxAssistDisplayCoordinator.GetFilePathForBuffer(buffer);
+                    if (string.IsNullOrEmpty(resolvedFilePath))
                     {
-                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                        var buffer = textView.TextBuffer;
-                        filePath = CxAssistDisplayCoordinator.GetFilePathForBuffer(buffer);
-                        if (string.IsNullOrEmpty(filePath))
+                        try
                         {
-                            try
-                            {
-                                var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
-                                filePath = dte?.ActiveDocument?.FullName ?? "file";
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"CxAssistMockDataViewCreationListener: Failed to get active document path: {ex.Message}");
-                                filePath = "file";
-                            }
+                            var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+                            resolvedFilePath = dte?.ActiveDocument?.FullName ?? capturedFilePath;
                         }
-
-                        CxAssistGlyphTagger glyphTagger = null;
-                        CxAssistErrorTagger errorTagger = null;
-                        for (int i = 0; i < 8; i++)
+                        catch (Exception ex)
                         {
-                            glyphTagger = CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer);
-                            errorTagger = CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer);
-                            if (glyphTagger != null && errorTagger != null) break;
-                            await System.Threading.Tasks.Task.Delay(200);
+                            System.Diagnostics.Debug.WriteLine($"CxAssistMockDataViewCreationListener: Failed to get active document path: {ex.Message}");
+                            resolvedFilePath = capturedFilePath;
                         }
+                    }
 
-                        if (glyphTagger == null || errorTagger == null)
-                            return;
+                    CxAssistGlyphTagger glyphTagger = null;
+                    CxAssistErrorTagger errorTagger = null;
+                    for (int i = 0; i < 8; i++)
+                    {
+                        glyphTagger = CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer);
+                        errorTagger = CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer);
+                        if (glyphTagger != null && errorTagger != null) break;
+                        await System.Threading.Tasks.Task.Delay(200);
+                    }
 
-                        // Re-check cached findings (may have been updated while waiting for taggers)
-                        var latestCached = CxAssistDisplayCoordinator.GetCachedVulnerabilitiesForFile(filePath);
-                        var finalVulns = latestCached ?? GetMockVulnerabilitiesForFile(filePath);
-                        if (finalVulns == null || finalVulns.Count == 0)
-                            return;
+                    if (glyphTagger == null || errorTagger == null)
+                        return;
 
-                        CxAssistDisplayCoordinator.UpdateFindings(buffer, finalVulns, filePath);
-                        CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.UI_DECORATED_SUCCESSFULLY, filePath, finalVulns.Count));
-                    });
+                    // Re-check cached findings (may have been updated while waiting for taggers)
+                    var latestCached = CxAssistDisplayCoordinator.GetCachedVulnerabilitiesForFile(resolvedFilePath);
+                    var finalVulns = latestCached ?? GetMockVulnerabilitiesForFile(resolvedFilePath);
+                    if (finalVulns == null || finalVulns.Count == 0)
+                        return;
+
+                    CxAssistDisplayCoordinator.UpdateFindings(buffer, finalVulns, resolvedFilePath);
+                    CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.UI_DECORATED_SUCCESSFULLY, resolvedFilePath, finalVulns.Count));
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] Exception restoring gutter icons for: {filePath}, {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] Exception restoring gutter icons for: {capturedFilePath}, {ex.Message}");
                 }
-            });
+            }, TaskScheduler.Default);
         }
     }
 }
