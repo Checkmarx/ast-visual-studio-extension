@@ -22,8 +22,6 @@ namespace ast_visual_studio_extension.CxExtension.Commands
         public const int IgnoreThisCommandId = 0x0212;
         public const int IgnoreAllCommandId = 0x0213;
 
-        private static readonly Guid CommandSetGuid = new Guid("b7e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e40");
-
         private readonly AsyncPackage _package;
         private readonly OleMenuCommandService _commandService;
 
@@ -50,7 +48,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
         private void AddCommand(int commandId, EventHandler invokeHandler, Func<Vulnerability, string> getText = null, Func<Vulnerability, bool> isVisible = null)
         {
-            var id = new CommandID(CommandSetGuid, commandId);
+            var id = new CommandID(CommandGuids.ErrorListCommandSetGuid, commandId);
             var cmd = new OleMenuCommand(invokeHandler, id);
             cmd.BeforeQueryStatus += (s, e) =>
             {

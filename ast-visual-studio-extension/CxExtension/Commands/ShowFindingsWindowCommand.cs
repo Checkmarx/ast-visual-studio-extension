@@ -20,7 +20,6 @@ namespace ast_visual_studio_extension.CxExtension.Commands
     internal sealed class ShowFindingsWindowCommand
     {
         public const int CommandId = 0x0110;
-        public static readonly Guid CommandSet = new Guid("a6e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e3f");
 
         private readonly AsyncPackage package;
 
@@ -29,7 +28,7 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             this.package = package ?? throw new ArgumentNullException(nameof(package));
             commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
 
-            var menuCommandID = new CommandID(CommandSet, CommandId);
+            var menuCommandID = new CommandID(CommandGuids.ShowFindingsWindowCommandSetGuid, CommandId);
             var menuItem = new MenuCommand(this.Execute, menuCommandID);
             commandService.AddCommand(menuItem);
         }
@@ -118,9 +117,10 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 // If brightness is less than 128, it's a dark theme
                 return brightness < 128;
             }
-            catch
+            catch (Exception ex)
             {
                 // Default to dark theme if detection fails
+                System.Diagnostics.Debug.WriteLine($"Theme detection failed, defaulting to dark: {ex.Message}");
                 return true;
             }
         }
@@ -130,6 +130,9 @@ namespace ast_visual_studio_extension.CxExtension.Commands
         /// </summary>
         private System.Windows.Media.ImageSource LoadSeverityIcon(string severity)
         {
+            if (string.IsNullOrEmpty(severity))
+                return null;
+
             try
             {
                 // Determine theme folder

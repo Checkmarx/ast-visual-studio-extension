@@ -174,7 +174,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                                 var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
                                 filePath = dte?.ActiveDocument?.FullName ?? "file";
                             }
-                            catch { filePath = "file"; }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"CxAssistMockDataViewCreationListener: Failed to get active document path: {ex.Message}");
+                                filePath = "file";
+                            }
                         }
 
                         CxAssistGlyphTagger glyphTagger = null;

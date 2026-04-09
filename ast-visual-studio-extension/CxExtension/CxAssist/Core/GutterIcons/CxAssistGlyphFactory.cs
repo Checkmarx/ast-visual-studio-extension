@@ -1,14 +1,3 @@
-using System;
-using System.ComponentModel.Composition;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core;
-using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Text.Formatting;
-using Microsoft.VisualStudio.Text.Tagging;
-using Microsoft.VisualStudio.Utilities;
-
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
     /// <summary>

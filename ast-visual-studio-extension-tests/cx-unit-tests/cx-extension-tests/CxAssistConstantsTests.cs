@@ -444,9 +444,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         }
 
         [Fact]
-        public void SyncFindingsToBuiltInErrorList_IsBooleanConstant()
+        public void SyncFindingsToBuiltInErrorList_IsTrue()
         {
-            Assert.True(CxAssistConstants.SyncFindingsToBuiltInErrorList || !CxAssistConstants.SyncFindingsToBuiltInErrorList);
+            Assert.True(CxAssistConstants.SyncFindingsToBuiltInErrorList);
         }
 
         [Fact]

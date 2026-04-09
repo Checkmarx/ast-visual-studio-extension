@@ -14,7 +14,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
     /// <summary>
     /// Listens for text view creation and automatically adds test gutter icons and colored markers
-    /// This is a temporary POC to test gutter icon and marker functionality
     /// </summary>
     [Export(typeof(IWpfTextViewCreationListener))]
     [ContentType("CSharp")]
