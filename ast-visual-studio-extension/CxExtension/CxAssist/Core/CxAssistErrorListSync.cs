@@ -117,8 +117,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         ErrorCategory = GetErrorCategory(v.Severity),
                         Text = fullDescription,
                         Document = docPath,
-                        Line = entry.Line,
-                        Column = Math.Max(1, entry.Column),
+                        Line = entry.Line,                                  // 0-based
+                        Column = Math.Max(0, entry.Column - 1),            // Fix: show correct column in VS
                         HierarchyItem = document != null ? GetHierarchyItem(document) : null,
                         HelpKeyword = HelpKeywordPrefix + v.Id
                     };
