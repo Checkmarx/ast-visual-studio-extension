@@ -132,6 +132,7 @@
     <Compile Include="CxWrapper\ReportFormat.cs" />
     <Compile Include="CxExtension\CxWindow.cs" />
     <Compile Include="CxExtension\Commands\AddExtensionWindowCmd.cs" />
+    <Compile Include="CxExtension\Commands\CommandGuids.cs" />
     <Compile Include="CxExtension\Commands\ErrorListContextMenuCommand.cs" />
     <Compile Include="CxExtension\Commands\ShowFindingsWindowCommand.cs" />
     <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\FindingsTreeNode.cs" />

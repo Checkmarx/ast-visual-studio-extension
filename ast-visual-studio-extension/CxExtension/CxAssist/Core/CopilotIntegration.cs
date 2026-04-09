@@ -522,7 +522,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         return major;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log("Failed to parse Visual Studio version: " + ex.Message);
+            }
             return -1;
         }
 
@@ -641,7 +644,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         if (!string.IsNullOrEmpty(v)) return v;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: ValuePattern failed: " + ex.Message);
+                }
 
                 // 2) TextPattern
                 try
@@ -653,7 +659,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         if (!string.IsNullOrEmpty(t)) return t;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: TextPattern failed: " + ex.Message);
+                }
 
                 // 3) SelectionPattern
                 try
@@ -669,7 +678,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: SelectionPattern failed: " + ex.Message);
+                }
 
                 // 4) SelectionItem on descendants (some tree items report selection)
                 try
@@ -690,10 +702,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                                 }
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log("UI Automation: SelectionItem descendant iteration failed: " + ex.Message);
+                        }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: SelectionItem descendants enumeration failed: " + ex.Message);
+                }
 
                 // 5) Fallback: first non-empty named descendant
                 try
@@ -707,10 +725,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             string nm = el.Current.Name?.Trim();
                             if (!string.IsNullOrEmpty(nm)) return nm;
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log("UI Automation: Named descendant iteration failed: " + ex.Message);
+                        }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Named descendants enumeration failed: " + ex.Message);
+                }
 
                 // 6) Parent siblings
                 try
@@ -727,11 +751,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                                 string sn = s.Current.Name?.Trim();
                                 if (!string.IsNullOrEmpty(sn)) return sn;
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: Sibling iteration failed: " + ex.Message);
+                            }
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Parent siblings enumeration failed: " + ex.Message);
+                }
 
                 // 7) Spatial fallback: nearby elements overlapping the picker's bounds
                 try
@@ -754,11 +784,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                                     if (!string.IsNullOrEmpty(nm)) return nm;
                                 }
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: Spatial fallback iteration failed: " + ex.Message);
+                            }
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Spatial fallback enumeration failed: " + ex.Message);
+                }
 
                 return null;
             }
@@ -849,10 +885,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                                     }
                                 }
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: IsAgentModeAlreadyActive heuristic iteration failed: " + ex.Message);
+                            }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log("UI Automation: IsAgentModeAlreadyActive heuristic enumeration failed: " + ex.Message);
+                    }
                 }
 
                 // If VS2026 (or newer) couldn't be positively detected, log the VS major version
@@ -1134,10 +1176,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                                 System.Threading.Thread.Sleep(120);
                                 return true;
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: SetFocus for likely edit failed: " + ex.Message);
+                            }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log("UI Automation: FocusCopilotInput likely edit enumeration failed: " + ex.Message);
+                    }
                 }
 
                 // Final fallback: any focusable element
@@ -1154,10 +1202,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                                 System.Threading.Thread.Sleep(120);
                                 return true;
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: SetFocus for fallback focusable element failed: " + ex.Message);
+                            }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log("UI Automation: FocusCopilotInput final fallback iteration failed: " + ex.Message);
+                    }
                 }
             }
             catch (Exception ex)

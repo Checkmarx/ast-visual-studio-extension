@@ -1,3 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.IO;
+using System.Threading.Tasks;
+using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Text.Editor;
+using Microsoft.VisualStudio.Utilities;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
@@ -118,7 +128,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                     filePath = dte?.ActiveDocument?.FullName;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CxAssistMockDataViewCreationListener: Failed to get file path: {ex.Message}");
+            }
 
             if (IsCSharpFile(filePath))
                 return;
