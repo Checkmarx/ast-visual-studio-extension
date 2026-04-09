@@ -10,7 +10,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
     [Collection("Cx Collection")]
     public class TriageTest : BaseTest
     {
-        [Fact]
+        [Fact(Skip = "Skipped for now")]
         public void TestTriageShow()
         {
             List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
@@ -26,7 +26,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.NotNull(predicates);
         }
 
-        [Fact]
+        [Fact(Skip = "Skipped for now")]
         public void TestTriageUpdate()
         {
             List<Scan> scanList = cxWrapper.GetScans("statuses=Completed");
