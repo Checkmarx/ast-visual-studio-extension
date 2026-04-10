@@ -7,8 +7,8 @@
     <VSIXSubPath>
     </VSIXSubPath>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <!-- Required when building with .NET SDK MSBuild (CI/dotnet build): .resx + binary resources -->
-    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    <!-- Preserialized .resources use DeserializingResourceReader; VSSDK CTO merge (MergeWithCTO) requires classic format — see VSSDK1012. -->
+    <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <TargetFrameworkProfile />
@@ -300,6 +300,11 @@
       <Version>19.225.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Language.Intellisense" Version="17.9.187" />
+    <!-- Aligns with Intellisense package; avoids NU1603 when 17.9.27 is not on the feed. -->
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.9.28">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Language.StandardClassification" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
