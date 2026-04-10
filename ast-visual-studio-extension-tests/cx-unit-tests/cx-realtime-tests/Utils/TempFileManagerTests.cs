@@ -243,5 +243,35 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Util
 
             Assert.True(hash.Length <= 8);
         }
+
+        [Fact]
+        public void TryReadVerifiedExistingFileContent_WithValidFile_ReturnsContentAndPath()
+        {
+            var tempFile = Path.Combine(_testTempDir, Path.GetRandomFileName());
+            File.WriteAllText(tempFile, "hello");
+
+            var ok = TempFileManager.TryReadVerifiedExistingFileContent(tempFile, 1024, out var content, out var path);
+
+            Assert.True(ok);
+            Assert.Equal("hello", content);
+            Assert.Equal(Path.GetFullPath(tempFile), Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void TryReadVerifiedExistingFileContent_WithMissingFile_ReturnsFalse()
+        {
+            var tempFile = Path.Combine(_testTempDir, Guid.NewGuid().ToString("N") + "_not_exist.txt");
+
+            Assert.False(TempFileManager.TryReadVerifiedExistingFileContent(tempFile, 1024, out _, out _));
+        }
+
+        [Fact]
+        public void TryReadVerifiedExistingFileContent_WhenOverMaxSize_ReturnsFalse()
+        {
+            var tempFile = Path.Combine(_testTempDir, Path.GetRandomFileName());
+            File.WriteAllText(tempFile, "xx");
+
+            Assert.False(TempFileManager.TryReadVerifiedExistingFileContent(tempFile, 1, out _, out _));
+        }
     }
 }
