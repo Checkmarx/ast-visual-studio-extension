@@ -285,11 +285,24 @@ namespace ast_visual_studio_extension.CxPreferences
             ClearValidationMessage();
         }
 
-        private CxConfig GetCxConfig() => new CxConfig
+        private CxConfig GetCxConfig()
         {
-            ApiKey = LogForgingSanitizer.StripLineTermination(tbApiKey.Text?.Trim()),
-            AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text),
-        };
+            return CreateCxConfigWithLogNeutralizedCredentials(
+                tbApiKey.Text?.Trim(),
+                tbAdditionalParameters.Text);
+        }
+
+        /// <summary>
+        /// Builds <see cref="CxConfig"/> from credential fields; neutralizes log-forging characters (CWE-117) before assignment.
+        /// </summary>
+        private static CxConfig CreateCxConfigWithLogNeutralizedCredentials(string apiKey, string additionalParameters)
+        {
+            return new CxConfig
+            {
+                ApiKey = LogForgingSanitizer.StripLineTermination(apiKey),
+                AdditionalParameters = LogForgingSanitizer.StripLineTermination(additionalParameters),
+            };
+        }
 
         internal static CxConfig GetConfigSnapshot()
         {
@@ -297,11 +310,9 @@ namespace ast_visual_studio_extension.CxPreferences
             if (ui.cxPreferencesModule != null)
                 return ui.cxPreferencesModule.GetCxConfig();
 
-            return new CxConfig
-            {
-                ApiKey = LogForgingSanitizer.StripLineTermination(ui.tbApiKey.Text?.Trim()),
-                AdditionalParameters = LogForgingSanitizer.StripLineTermination(ui.tbAdditionalParameters.Text),
-            };
+            return CreateCxConfigWithLogNeutralizedCredentials(
+                ui.tbApiKey.Text?.Trim(),
+                ui.tbAdditionalParameters.Text);
         }
 
         internal static async Task TryRestoreAuthenticatedSessionAsync(AsyncPackage package)
