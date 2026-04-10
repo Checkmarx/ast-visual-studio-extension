@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +10,9 @@ namespace ast_visual_studio_extension.CxCLI
 {
     internal class Execution
     {
-        private readonly static string executablePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources", "cx.exe");
+        private const string CliExecutableName = "cx.exe";
+        private readonly static string executableDirectory = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources");
+        private readonly static string executablePath = Path.Combine(executableDirectory, CliExecutableName);
 
         public static string ExecuteCommand(List<string> arguments, Func<string, string> lineParser)
         {
@@ -52,6 +54,11 @@ namespace ast_visual_studio_extension.CxCLI
             string errorData = string.Empty;
             var cliOutput = new List<string>();
 
+            if (!File.Exists(executablePath))
+            {
+                throw new CxException(1, $"Cx CLI not found at: {executablePath}. Ensure the extension is installed correctly and cx.exe is deployed.");
+            }
+
             using (var process = new Process
             {
                 StartInfo = GetProcessStartInfo(arguments)
@@ -89,7 +96,14 @@ namespace ast_visual_studio_extension.CxCLI
 
                 if (process.ExitCode != 0)
                 {
-                    throw new CxException(process.ExitCode, string.IsNullOrEmpty(errorData) ? outputData.Trim() : errorData.Trim());
+                    string message = !string.IsNullOrWhiteSpace(errorData)
+                        ? errorData.Trim()
+                        : (!string.IsNullOrWhiteSpace(outputData) ? outputData.Trim() : null);
+                    if (string.IsNullOrWhiteSpace(message))
+                    {
+                        message = $"Cx CLI exited with code {process.ExitCode}. Path: {executablePath}. Check that the CLI is valid and dependencies are available.";
+                    }
+                    throw new CxException(process.ExitCode, message);
                 }
 
                 return !string.IsNullOrEmpty(outputData) ? outputData.Trim() : errorData.Trim();
@@ -102,7 +116,7 @@ namespace ast_visual_studio_extension.CxCLI
         {
             return new ProcessStartInfo
             {
-                FileName = executablePath,
+                FileName = Path.Combine(executableDirectory, CliExecutableName),
                 Arguments = BuildArguments(arguments),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

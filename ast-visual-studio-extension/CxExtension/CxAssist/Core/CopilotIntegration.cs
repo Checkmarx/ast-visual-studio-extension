@@ -1,0 +1,1258 @@
+using System;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Threading;
+using Microsoft.VisualStudio.Shell;
+using EnvDTE;
+using EnvDTE80;
+using System.Windows.Automation;
+using Process = System.Diagnostics.Process;
+
+namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
+{
+    /// <summary>
+    /// Utility class for integrating with GitHub Copilot Chat in Visual Studio.
+    ///
+    /// <para>
+    /// Since GitHub Copilot does not expose a public API for VS extensions, this
+    /// implementation uses DTE commands with SendKeys as a non-blocking async chain:
+    /// </para>
+    ///
+    /// <list type="number">
+    ///   <item>Copy prompt to clipboard (safety fallback)</item>
+    ///   <item>Open Copilot Chat via DTE command or keyboard shortcut</item>
+    ///   <item>Start a new chat thread via DTE command (best effort)</item>
+    ///   <item>Re-focus Copilot Chat, paste prompt from clipboard, submit via Enter</item>
+
+    /// </list>
+    ///
+    /// <para>
+    /// Each step is scheduled via <see cref="DispatcherTimer"/> at ApplicationIdle
+    /// priority so the UI thread is never blocked (no Thread.Sleep). This ensures
+    /// Copilot Chat can fully render between operations.
+    /// </para>
+    ///
+    /// <para><b>Fallback Behavior:</b></para>
+    /// <para>
+    /// If automation fails at any stage, the prompt remains in the clipboard and
+    /// the user is notified to paste manually.
+    /// </para>
+    /// </summary>
+    internal static class CopilotIntegration
+    {
+        // ==================== Configuration Constants ====================
+
+        /// <summary>
+        /// Timing delays for UI automation. Tuned for typical VS response times.
+        /// </summary>
+        private static class Timing
+        {
+            /// <summary>Delay after opening Copilot to allow UI to fully render.</summary>
+            public const int CopilotOpenDelayMs = 1200;
+
+            /// <summary>Delay after starting a new thread for UI to settle.</summary>
+            public const int NewThreadDelayMs = 500;
+
+            /// <summary>Delay before paste/submit to ensure input field has focus.</summary>
+            public const int PasteDelayMs = 400;
+
+            /// <summary>Brief pause between paste and Enter to let VS process clipboard.</summary>
+            public const int PasteSettleMs = 100;
+        }
+
+        /// <summary>
+        /// UI Automation properties for GitHub Copilot Chat integration.
+        /// </summary>
+        private static class AutomationProperties
+        {
+            public static readonly string[] ModePickerNames = {
+                "Chat Mode Picker", "Chat mode",
+                "Agent Mode Picker", "Agent mode", "Agent",
+                "Mode"
+            };
+            public const string AgentOptionName = "Agent";
+        }
+
+        // ==================== Command ID Constants ====================
+
+        /// <summary>DTE command IDs for opening the Copilot Chat window.</summary>
+        private static readonly string[] OpenChatCommands =
+        {
+            "View.GitHub.Copilot.Chat",
+            "Copilot.Open.Output.Window",
+            "GitHub.Copilot.Chat.OpenThreads"
+        };
+
+        /// <summary>DTE command IDs for starting a new chat thread.</summary>
+        private static readonly string[] NewThreadCommands =
+        {
+            "GitHub.Copilot.Chat.NewThread",
+            "GitHub.Copilot.Chat.New",
+            "GitHub.Copilot.Chat.ClearHistory"
+        };
+
+        // ==================== Result Types ====================
+
+        /// <summary>
+        /// Result of a Copilot integration operation.
+        /// </summary>
+        public enum OperationResult
+        {
+            /// <summary>Full automation succeeded — prompt was sent to Copilot.</summary>
+            FullSuccess,
+
+            /// <summary>Partial success — Copilot opened but automation may have issues.</summary>
+            PartialSuccess,
+
+            /// <summary>Copilot not available — prompt copied to clipboard only.</summary>
+            CopilotNotAvailable,
+
+            /// <summary>Operation failed completely.</summary>
+            Failed
+        }
+
+        /// <summary>
+        /// Detailed result with message for user feedback.
+        /// </summary>
+        public class IntegrationResult
+        {
+            public OperationResult Result { get; }
+            public string Message { get; }
+            public Exception Exception { get; }
+
+            private IntegrationResult(OperationResult result, string message, Exception exception = null)
+            {
+                Result = result;
+                Message = message;
+                Exception = exception;
+            }
+
+            public bool IsSuccess =>
+                Result == OperationResult.FullSuccess || Result == OperationResult.PartialSuccess;
+
+            public static IntegrationResult FullSuccess(string msg) =>
+                new IntegrationResult(OperationResult.FullSuccess, msg);
+
+            public static IntegrationResult PartialSuccess(string msg) =>
+                new IntegrationResult(OperationResult.PartialSuccess, msg);
+
+            public static IntegrationResult CopilotNotAvailable(string msg) =>
+                new IntegrationResult(OperationResult.CopilotNotAvailable, msg);
+
+            public static IntegrationResult Fail(string msg, Exception ex = null) =>
+                new IntegrationResult(OperationResult.Failed, msg, ex);
+        }
+
+        // ==================== Public API ====================
+
+        /// <summary>
+        /// Opens Copilot Chat, starts a new thread, pastes the prompt, and sends it.
+        /// Returns true if the clipboard was set (even if full automation failed).
+        /// Maintains backward compatibility with existing callers.
+        /// </summary>
+        /// <param name="prompt">The prompt to send to Copilot.</param>
+        /// <param name="clipboardFallbackMessage">Message shown if only clipboard copy succeeded.</param>
+        public static bool SendPromptToCopilot(string prompt, string clipboardFallbackMessage)
+        {
+            IntegrationResult result = SendPromptToCopilotDetailed(prompt, clipboardFallbackMessage);
+            return result != null && result.Result != OperationResult.Failed;
+        }
+
+        /// <summary>
+        /// Opens Copilot Chat with prompt and returns detailed result.
+        /// </summary>
+        /// <param name="prompt">The prompt to send to Copilot.</param>
+        /// <param name="clipboardFallbackMessage">Message shown if only clipboard copy succeeded.</param>
+        public static IntegrationResult SendPromptToCopilotDetailed(string prompt, string clipboardFallbackMessage)
+        {
+            if (string.IsNullOrWhiteSpace(prompt))
+                return IntegrationResult.Fail("Prompt is empty");
+
+            Log("Starting Copilot integration workflow");
+
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+
+                // Step 1: Always copy to clipboard first (guaranteed fallback)
+                if (!CopyToClipboard(prompt))
+                {
+                    Log("Failed to copy prompt to clipboard");
+                    return IntegrationResult.Fail("Failed to copy prompt to clipboard");
+                }
+                Log("Prompt copied to clipboard");
+
+                // Step 2: Pre-check if Copilot is available (aligned with JetBrains CopilotIntegration.isCopilotAvailable)
+                if (!IsCopilotAvailable())
+                {
+                    Log("Copilot not available (pre-check), prompt copied to clipboard");
+                    MessageBox.Show(
+                        CxAssistConstants.CopilotOpenInstructionsMessage,
+                        CxAssistConstants.DisplayName,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return IntegrationResult.CopilotNotAvailable(
+                        CxAssistConstants.CopilotOpenInstructionsMessage);
+                }
+
+                // Step 3: Open Copilot Chat
+                bool opened = TryOpenCopilotChat();
+                if (!opened)
+                {
+                    Log("Copilot Chat failed to open - Copilot may not be installed");
+                    MessageBox.Show(
+                        CxAssistConstants.CopilotOpenInstructionsMessage,
+                        CxAssistConstants.DisplayName,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return IntegrationResult.CopilotNotAvailable(
+                        CxAssistConstants.CopilotOpenInstructionsMessage);
+                }
+
+                Log("Copilot Chat opened, scheduling automation sequence");
+
+                // Step 4: Schedule the automation sequence after UI renders
+                ScheduleAutomatedPromptEntry(prompt);
+
+                return IntegrationResult.PartialSuccess(
+                    "Copilot Chat opened, automation in progress...");
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.SendPromptToCopilot");
+                try
+                {
+                    CopyToClipboard(prompt);
+                    MessageBox.Show(
+                        clipboardFallbackMessage ?? CxAssistConstants.CopilotGenericFallbackMessage,
+                        CxAssistConstants.DisplayName,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return IntegrationResult.PartialSuccess(clipboardFallbackMessage);
+                }
+                catch
+                {
+                    return IntegrationResult.Fail("Failed to send prompt", ex);
+                }
+            }
+        }
+
+        // ==================== Automation Scheduler ====================
+
+        /// <summary>
+        /// Schedules the automated prompt entry as a chain of non-blocking
+        /// DispatcherTimer steps. Each step yields to the UI thread so that
+        /// Copilot Chat can render and process events between operations.
+        ///
+        /// <para><b>Step 1</b> (after CopilotOpenDelayMs): Start new thread via DTE.</para>
+        /// <para><b>Step 2</b> (after NewThreadDelayMs): Switch to Agent mode via UI Automation.</para>
+        /// <para><b>Step 3</b> (after AgentModeDelayMs): Re-focus Copilot Chat, paste prompt, submit.</para>
+        /// </summary>
+        private static void ScheduleAutomatedPromptEntry(string prompt)
+        {
+            // New flow: after Copilot opens, require the user to have Agent mode active.
+            // If Agent mode is not active, show an informational popup and do not
+            // attempt to switch modes automatically. The prompt is already copied
+            // to the clipboard as a guaranteed fallback.
+            ScheduleOnIdle(Timing.CopilotOpenDelayMs, () =>
+            {
+                try
+                {
+                    var vsProcess = Process.GetCurrentProcess();
+                    AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+
+                    bool agentActive = false;
+                    if (vsWindow != null)
+                    {
+                        agentActive = IsAgentModeAlreadyActive(vsWindow);
+                    }
+
+                    if (!agentActive)
+                    {
+                        Log("Agent mode not active - prompting user to enable Agent mode and use clipboard fallback");
+                        MessageBox.Show(
+                            "Please select 'Agent' mode in GitHub Copilot Chat. The prompt has been copied to your clipboard — open Copilot Chat, select Agent mode, then paste the prompt to continue.",
+                            CxAssistConstants.DisplayName,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                        return;
+                    }
+
+                    // Agent mode is active — proceed to start a new thread and paste/submit
+                    ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
+                    {
+                        bool newThreadStarted = TryStartNewThread();
+                        Log(newThreadStarted
+                            ? "New thread started via DTE command"
+                            : "DTE new-thread commands not available, continuing with current thread");
+
+                        // If a new thread was started, try focusing the Copilot input
+                        if (newThreadStarted)
+                        {
+                            try
+                            {
+                                var vsProc = Process.GetCurrentProcess();
+                                AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
+                                if (wnd != null)
+                                {
+                                    bool focused = FocusCopilotInput(wnd);
+                                    Log("UI Automation: Focused Copilot input after new thread: " + focused);
+                                }
+                            }
+                            catch (Exception exFocus)
+                            {
+                                Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                            }
+                        }
+
+                        int agentDelay = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+
+                        // Paste + submit
+                        ScheduleOnIdle(agentDelay, () =>
+                        {
+                            PerformPasteAndSubmit();
+                        });
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Log("ScheduleAutomatedPromptEntry error: " + ex.Message);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Re-focuses Copilot Chat and pastes the prompt from clipboard.
+        /// Uses only DTE commands and SendKeys — no Thread.Sleep, no blocking
+        /// UI Automation tree scans.
+        /// </summary>
+        private static void PerformPasteAndSubmit()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            try
+            {
+                // Re-focus the Copilot Chat window so SendKeys goes to the right place
+                TryExecuteDteCommands(OpenChatCommands);
+                Log("Re-focused Copilot Chat before paste");
+
+                PasteAndSubmitViaSendKeys();
+
+                Log("Paste + submit completed");
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.PerformPasteAndSubmit");
+                MessageBox.Show(
+                    CxAssistConstants.CopilotPasteFailedMessage,
+                    CxAssistConstants.DisplayName,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+        }
+
+        /// <summary>
+        /// Schedules an action on the UI thread after a delay, without
+        /// blocking (no Thread.Sleep). Uses DispatcherTimer at ApplicationIdle
+        /// so VS remains responsive.
+        /// </summary>
+        private static void ScheduleOnIdle(int delayMs, Action action)
+        {
+            var timer = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
+            {
+                Interval = TimeSpan.FromMilliseconds(delayMs)
+            };
+            timer.Tick += (s, e) =>
+            {
+                timer.Stop();
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.ScheduleOnIdle");
+                    MessageBox.Show(
+                        CxAssistConstants.CopilotPasteFailedMessage,
+                        CxAssistConstants.DisplayName,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            };
+            timer.Start();
+        }
+
+        // ==================== SendKeys ====================
+
+        /// <summary>
+        /// Pastes the prompt from clipboard and submits via SendKeys.
+        /// Brief pause between paste and Enter lets VS process the clipboard content.
+        /// </summary>
+        private static void PasteAndSubmitViaSendKeys()
+        {
+            System.Windows.Forms.SendKeys.SendWait("^v");
+            System.Threading.Thread.Sleep(Timing.PasteSettleMs);
+            System.Windows.Forms.SendKeys.SendWait("{ENTER}");
+        }
+
+        // ==================== Opening Copilot Chat ====================
+
+        /// <summary>
+        /// Attempts to open GitHub Copilot Chat using multiple strategies:
+        /// <list type="number">
+        ///   <item>DTE ExecuteCommand with known command IDs</item>
+        ///   <item>Keyboard shortcut simulation (Ctrl+\ then C)</item>
+        /// </list>
+        /// </summary>
+        private static bool TryOpenCopilotChat()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            // Strategy 1: DTE commands (most reliable)
+            if (TryExecuteDteCommands(OpenChatCommands))
+            {
+                Log("Opened Copilot Chat via DTE command");
+                return true;
+            }
+
+            // Strategy 2: Keyboard shortcut (Ctrl+\ then C)
+            try
+            {
+                System.Windows.Forms.SendKeys.SendWait("^\\c");
+                Log("Opened Copilot Chat via keyboard shortcut Ctrl+\\, C");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("Keyboard shortcut failed: " + ex.Message);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to start a new chat thread via DTE commands.
+        /// </summary>
+        private static bool TryStartNewThread()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return TryExecuteDteCommands(NewThreadCommands);
+        }
+
+        // ==================== Availability Check ====================
+
+        /// <summary>
+        /// Checks if GitHub Copilot is available before attempting to open it.
+        /// Aligned with JetBrains CopilotIntegration.isCopilotAvailable: checks known
+        /// command IDs via DTE.Commands to see if any are registered.
+        /// </summary>
+        public static bool IsCopilotAvailable()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var dte = GetDte();
+                if (dte?.Commands == null) return false;
+
+                foreach (string cmdId in OpenChatCommands)
+                {
+                    try
+                    {
+                        var cmd = dte.Commands.Item(cmdId);
+                        if (cmd != null) return true;
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return false;
+        }
+
+        // ==================== DTE Helpers ====================
+
+        private static DTE2 GetDte()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return Package.GetGlobalService(typeof(DTE)) as DTE2;
+        }
+
+        /// <summary>
+        /// Tries each command ID in order. Returns true on the first success.
+        /// </summary>
+        private static bool TryExecuteDteCommands(string[] commandIds)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var dte = GetDte();
+            if (dte == null) return false;
+
+            foreach (string cmd in commandIds)
+            {
+                try
+                {
+                    dte.ExecuteCommand(cmd);
+                    Log("DTE command succeeded: " + cmd);
+                    return true;
+                }
+                catch
+                {
+                    Log("DTE command not available: " + cmd);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the Visual Studio major version number (e.g. 17 for VS2022).
+        /// Returns -1 if the version cannot be determined.
+        /// </summary>
+        private static int GetVisualStudioMajorVersion()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var dte = GetDte();
+                if (dte?.Version != null)
+                {
+                    var parts = dte.Version.Split('.');
+                    if (parts.Length > 0 && int.TryParse(parts[0], out int major))
+                        return major;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Failed to parse Visual Studio version: " + ex.Message);
+            }
+            return -1;
+        }
+
+        // ==================== Agent Mode Switching ====================
+
+        /// <summary>
+        /// Switches Copilot Chat to Agent mode using direct UI Automation (no keyboard navigation).
+        /// Searches the entire VS main window for the mode picker button by known names,
+        /// then opens the dropdown and selects Agent.
+        ///
+        /// If Agent mode is already active, returns true without attempting to switch.
+        /// </summary>
+        private static bool TrySwitchToAgentMode()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                Log("Switching to Agent mode via UI Automation...");
+
+                var vsProcess = Process.GetCurrentProcess();
+                AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                if (vsWindow == null)
+                {
+                    Log("UI Automation: Could not get VS main window");
+                    return false;
+                }
+
+                if (IsAgentModeAlreadyActive(vsWindow))
+                {
+                    Log("UI Automation: Agent mode is already active, skipping switch");
+                    return true;
+                }
+
+                AutomationElement modePicker = FindModePickerButton(vsWindow);
+                if (modePicker == null)
+                {
+                    Log("UI Automation: Mode Picker button not found");
+                    ListAvailableElements(vsWindow);
+                    return false;
+                }
+
+                Log("UI Automation: Found Mode Picker, attempting to open dropdown...");
+
+                if (modePicker.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
+                {
+                    Log("UI Automation: Using InvokePattern to open dropdown");
+                    ((InvokePattern)pattern).Invoke();
+                    System.Threading.Thread.Sleep(700);
+                }
+                else
+                {
+                    Log("UI Automation: InvokePattern not supported, using mouse click");
+                    if (!ClickElement(modePicker))
+                    {
+                        Log("UI Automation: Failed to click Mode Picker button");
+                        return false;
+                    }
+                    System.Threading.Thread.Sleep(700);
+                }
+
+                if (SelectAgentDirectly(vsWindow))
+                {
+                    Log("UI Automation: Agent mode selected successfully");
+                    return true;
+                }
+
+                Log("UI Automation: Failed to select Agent option");
+                System.Windows.Forms.SendKeys.SendWait("{ESC}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Finds the Mode Picker button by searching the VS window for known names.
+        /// </summary>
+        private static AutomationElement FindModePickerButton(AutomationElement root)
+        {
+            foreach (string pickerName in AutomationProperties.ModePickerNames)
+            {
+                var picker = root.FindFirst(TreeScope.Descendants,
+                    new PropertyCondition(AutomationElement.NameProperty, pickerName));
+
+                if (picker != null)
+                {
+                    Log("UI Automation: Found Mode Picker button: '" + pickerName + "'");
+                    return picker;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Attempts to read the currently selected mode string from the Mode Picker.
+        /// Tries Value/Text/Selection/SelectionItem patterns then falls back to
+        /// local descendants, parent siblings, and a nearby spatial search.
+        /// Returns null when no candidate is found.
+        /// </summary>
+        private static string GetSelectedMode(AutomationElement modePicker, AutomationElement root)
+        {
+            try
+            {
+                if (modePicker == null) return null;
+
+                // 1) ValuePattern
+                try
+                {
+                    if (modePicker.TryGetCurrentPattern(ValuePattern.Pattern, out object valObj))
+                    {
+                        var vp = (ValuePattern)valObj;
+                        string v = vp.Current.Value?.Trim();
+                        if (!string.IsNullOrEmpty(v)) return v;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: ValuePattern failed: " + ex.Message);
+                }
+
+                // 2) TextPattern
+                try
+                {
+                    if (modePicker.TryGetCurrentPattern(TextPattern.Pattern, out object textObj))
+                    {
+                        var tp = (TextPattern)textObj;
+                        string t = tp.DocumentRange.GetText(-1)?.Trim();
+                        if (!string.IsNullOrEmpty(t)) return t;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: TextPattern failed: " + ex.Message);
+                }
+
+                // 3) SelectionPattern
+                try
+                {
+                    if (modePicker.TryGetCurrentPattern(SelectionPattern.Pattern, out object selObj))
+                    {
+                        var sp = (SelectionPattern)selObj;
+                        var sel = sp.Current.GetSelection();
+                        if (sel != null && sel.Length > 0)
+                        {
+                            string nm = sel[0].Current.Name?.Trim();
+                            if (!string.IsNullOrEmpty(nm)) return nm;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: SelectionPattern failed: " + ex.Message);
+                }
+
+                // 4) SelectionItem on descendants (some tree items report selection)
+                try
+                {
+                    var all = modePicker.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                    for (int i = 0; i < all.Count; i++)
+                    {
+                        try
+                        {
+                            var el = all[i];
+                            if (el.TryGetCurrentPattern(SelectionItemPattern.Pattern, out object sipObj))
+                            {
+                                var sip = (SelectionItemPattern)sipObj;
+                                if (sip.Current.IsSelected)
+                                {
+                                    string nm = el.Current.Name?.Trim();
+                                    if (!string.IsNullOrEmpty(nm)) return nm;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log("UI Automation: SelectionItem descendant iteration failed: " + ex.Message);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: SelectionItem descendants enumeration failed: " + ex.Message);
+                }
+
+                // 5) Fallback: first non-empty named descendant
+                try
+                {
+                    var all = modePicker.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                    for (int i = 0; i < all.Count; i++)
+                    {
+                        try
+                        {
+                            var el = all[i];
+                            string nm = el.Current.Name?.Trim();
+                            if (!string.IsNullOrEmpty(nm)) return nm;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log("UI Automation: Named descendant iteration failed: " + ex.Message);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Named descendants enumeration failed: " + ex.Message);
+                }
+
+                // 6) Parent siblings
+                try
+                {
+                    var parent = System.Windows.Automation.TreeWalker.ControlViewWalker.GetParent(modePicker);
+                    if (parent != null)
+                    {
+                        var siblings = parent.FindAll(TreeScope.Children, System.Windows.Automation.Condition.TrueCondition);
+                        for (int i = 0; i < siblings.Count; i++)
+                        {
+                            try
+                            {
+                                var s = siblings[i];
+                                string sn = s.Current.Name?.Trim();
+                                if (!string.IsNullOrEmpty(sn)) return sn;
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: Sibling iteration failed: " + ex.Message);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Parent siblings enumeration failed: " + ex.Message);
+                }
+
+                // 7) Spatial fallback: nearby elements overlapping the picker's bounds
+                try
+                {
+                    var pickerRect = modePicker.Current.BoundingRectangle;
+                    if (!pickerRect.IsEmpty)
+                    {
+                        var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                        for (int i = 0; i < all.Count; i++)
+                        {
+                            try
+                            {
+                                var el = all[i];
+                                var r = el.Current.BoundingRectangle;
+                                if (r.IsEmpty) continue;
+                                bool intersect = !(r.Right < pickerRect.Left || r.Left > pickerRect.Right || r.Bottom < pickerRect.Top || r.Top > pickerRect.Bottom);
+                                if (intersect)
+                                {
+                                    string nm = el.Current.Name?.Trim();
+                                    if (!string.IsNullOrEmpty(nm)) return nm;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: Spatial fallback iteration failed: " + ex.Message);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Spatial fallback enumeration failed: " + ex.Message);
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Checks if Agent mode is already active by examining the Mode Picker
+        /// button's current display name. If it contains "Agent", the mode is active.
+        /// </summary>
+        private static bool IsAgentModeAlreadyActive(AutomationElement root)
+        {
+            try
+            {
+                AutomationElement modePicker = FindModePickerButton(root);
+                if (modePicker == null)
+                    return false;
+
+                string modePickerName = modePicker.Current.Name ?? "";
+                
+                bool isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                // Prefer a direct read of the selected value via common patterns
+                string selected = GetSelectedMode(modePicker, root);
+                if (!string.IsNullOrEmpty(selected))
+                {
+                    isAgentActive = selected.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+                else
+                {
+                    // Fall back to checking the Mode Picker's own Name text
+                    isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+
+                // Additional heuristics for newer VS versions (e.g., VS2026):
+                // 1) Spatial: sometimes the visible selected text is rendered in a
+                // nearby descendant rather than as the Mode Picker's Name/value.
+                // 2) VS-version-specific: for VS2026 UI changes, expand the spatial
+                // search area and allow matches that are near the picker even if
+                // their bounding rects don't strictly intersect.
+                if (!isAgentActive)
+                {
+                    try
+                    {
+                        var pickerRect = modePicker.Current.BoundingRectangle;
+                        var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+
+                        int vsMajor = GetVisualStudioMajorVersion();
+                        bool isNewVs = vsMajor >= 19; // treat 19+ as VS2026 or newer
+
+                        for (int i = 0; i < all.Count; i++)
+                        {
+                            try
+                            {
+                                var el = all[i];
+                                string name = el.Current.Name ?? "";
+                                if (string.IsNullOrEmpty(name)) continue;
+
+                                if (name.IndexOf("agent", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                                if (name.IndexOf("search agents", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+
+                                var r = el.Current.BoundingRectangle;
+                                if (r.IsEmpty) continue;
+
+                                bool intersect = false;
+                                if (!pickerRect.IsEmpty)
+                                {
+                                    // For newer VS, expand the picker area by 40 pixels to be more forgiving
+                                    var expanded = new System.Windows.Rect(
+                                        pickerRect.X - (isNewVs ? 40 : 0),
+                                        pickerRect.Y - (isNewVs ? 20 : 0),
+                                        pickerRect.Width + (isNewVs ? 80 : 0),
+                                        pickerRect.Height + (isNewVs ? 40 : 0));
+
+                                    intersect = !(r.Right < expanded.Left || r.Left > expanded.Right || r.Bottom < expanded.Top || r.Top > expanded.Bottom);
+                                }
+
+                                if (intersect || !isNewVs)
+                                {
+                                    Log("UI Automation: Heuristic detected Agent text: '" + name + "'");
+                                    if (!el.Current.IsOffscreen)
+                                    {
+                                        isAgentActive = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: IsAgentModeAlreadyActive heuristic iteration failed: " + ex.Message);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("UI Automation: IsAgentModeAlreadyActive heuristic enumeration failed: " + ex.Message);
+                    }
+                }
+
+                // If VS2026 (or newer) couldn't be positively detected, log the VS major version
+                int detectedVsMajor = GetVisualStudioMajorVersion();
+                if (detectedVsMajor >= 0)
+                {
+                    Log("UI Automation: Detected Visual Studio major version: " + detectedVsMajor);
+                }
+
+                Log("UI Automation: Mode Picker current name: '" + modePickerName
+                    + "' (Agent active: " + isAgentActive + ")");
+                return isAgentActive;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in IsAgentModeAlreadyActive: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Selects Agent by typing "Agent" to filter the dropdown, then clicking
+        /// the result. Falls back to arrow key navigation if typing doesn't work.
+        /// </summary>
+        private static bool SelectAgentDirectly(AutomationElement root)
+        {
+            try
+            {
+                Log("UI Automation: Typing 'Agent' to search/filter dropdown...");
+                System.Windows.Forms.SendKeys.SendWait("Agent");
+                System.Threading.Thread.Sleep(800);
+
+                Log("UI Automation: Searching for Agent option after typing...");
+                AutomationElement agentElement = FindAgentElement(root);
+
+                if (agentElement != null)
+                {
+                    Log("UI Automation: Found Agent element, clicking it...");
+
+                    if (ClickElement(agentElement))
+                    {
+                        Log("UI Automation: Agent selected via click");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+
+                    if (agentElement.TryGetCurrentPattern(InvokePattern.Pattern, out object invoke))
+                    {
+                        ((InvokePattern)invoke).Invoke();
+                        Log("UI Automation: Agent selected via InvokePattern");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+
+                    if (agentElement.TryGetCurrentPattern(SelectionItemPattern.Pattern, out object selectPattern))
+                    {
+                        ((SelectionItemPattern)selectPattern).Select();
+                        Log("UI Automation: Agent selected via SelectionItemPattern");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+                }
+
+                Log("UI Automation: Agent element not found after typing, trying arrow key navigation...");
+                return SelectAgentViaArrowKeys();
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in SelectAgentDirectly: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Selects Agent mode by pressing Down arrow repeatedly to navigate
+        /// through dropdown options, then pressing Enter to confirm.
+        /// Fallback when typing doesn't filter the dropdown.
+        /// </summary>
+        private static bool SelectAgentViaArrowKeys()
+        {
+            try
+            {
+                Log("UI Automation: Attempting arrow key navigation...");
+
+                for (int i = 0; i < 5; i++)
+                {
+                    System.Windows.Forms.SendKeys.SendWait("{DOWN}");
+                    System.Threading.Thread.Sleep(200);
+
+                    var vsProcess = Process.GetCurrentProcess();
+                    AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                    if (vsWindow != null && IsAgentModeAlreadyActive(vsWindow))
+                    {
+                        Log("UI Automation: Agent mode now active (after " + (i + 1) + " Down presses)");
+                        System.Windows.Forms.SendKeys.SendWait("{ENTER}");
+                        System.Threading.Thread.Sleep(400);
+                        return true;
+                    }
+                }
+
+                Log("UI Automation: Arrow key navigation did not activate Agent mode");
+                System.Windows.Forms.SendKeys.SendWait("{ESC}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in SelectAgentViaArrowKeys: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Searches for the "Agent" mode option (MenuItem or ListItem with name "Agent").
+        /// Excludes items like "Search agents" that contain "agent" but aren't the mode option.
+        /// </summary>
+        private static AutomationElement FindAgentElement(AutomationElement root)
+        {
+            try
+            {
+                var allElements = root.FindAll(TreeScope.Descendants,
+                    System.Windows.Automation.Condition.TrueCondition);
+
+                foreach (AutomationElement el in allElements)
+                {
+                    try
+                    {
+                        string name = el.Current.Name ?? "";
+                        string nameLower = name.ToLowerInvariant();
+
+                        if (nameLower == "agent" || nameLower.StartsWith("agent "))
+                        {
+                            string ctType = el.Current.ControlType.ProgrammaticName ?? "";
+
+                            if (ctType.Contains("MenuItem") || ctType.Contains("ListItem"))
+                            {
+                                Log("UI Automation: Found Agent mode option [" + ctType + "]: '" + name + "'");
+                                return el;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                foreach (AutomationElement el in allElements)
+                {
+                    try
+                    {
+                        string name = el.Current.Name ?? "";
+                        if (string.Equals(name, "agent", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Log("UI Automation: Found Agent element (second pass): '" + name + "'");
+                            return el;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in FindAgentElement: " + ex.Message);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Clicks an element using mouse coordinates from its bounding rectangle.
+        /// </summary>
+        private static bool ClickElement(AutomationElement element)
+        {
+            try
+            {
+                var rect = element.Current.BoundingRectangle;
+                if (rect.IsEmpty || rect.Width == 0 || rect.Height == 0)
+                {
+                    Log("UI Automation: Element has no valid bounding rectangle");
+                    return false;
+                }
+
+                int clickX = (int)(rect.X + rect.Width / 2);
+                int clickY = (int)(rect.Y + rect.Height / 2);
+
+                SetCursorPos(clickX, clickY);
+                System.Threading.Thread.Sleep(100);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, IntPtr.Zero);
+                System.Threading.Thread.Sleep(50);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, IntPtr.Zero);
+
+                Log("UI Automation: Clicked element at (" + clickX + ", " + clickY + ")");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation: Mouse click failed: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Logs elements whose names contain mode-related keywords for debugging.
+        /// </summary>
+        private static void ListAvailableElements(AutomationElement root)
+        {
+            try
+            {
+                var allElements = root.FindAll(TreeScope.Descendants,
+                    System.Windows.Automation.Condition.TrueCondition);
+
+                int count = 0;
+                foreach (AutomationElement el in allElements)
+                {
+                    try
+                    {
+                        string name = el.Current.Name ?? "";
+                        string ctType = el.Current.ControlType.ProgrammaticName ?? "";
+                        string nameLower = name.ToLowerInvariant();
+
+                        if (!string.IsNullOrEmpty(name) && (nameLower.Contains("mode") ||
+                            nameLower.Contains("ask") || nameLower.Contains("edit") ||
+                            nameLower.Contains("debug") || nameLower.Contains("agent")))
+                        {
+                            Log("UI Automation: Available element [" + ctType + "]: '" + name + "'");
+                            count++;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                Log("UI Automation: Total matching elements found: " + count);
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation error in ListAvailableElements: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to find the Copilot Chat text input area and set keyboard focus to it.
+        /// Uses heuristics: editable controls, document controls, or any focusable
+        /// element whose name looks like a chat prompt. Returns true when focus set.
+        /// </summary>
+        private static bool FocusCopilotInput(AutomationElement root)
+        {
+            try
+            {
+                if (root == null) return false;
+
+                var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                for (int i = 0; i < all.Count; i++)
+                {
+                    try
+                    {
+                        var el = all[i];
+                        if (!el.Current.IsEnabled) continue;
+
+                        string ct = el.Current.ControlType?.ProgrammaticName ?? "";
+                        string name = el.Current.Name ?? "";
+
+                        bool likelyEdit = ct.IndexOf("Edit", StringComparison.OrdinalIgnoreCase) >= 0
+                            || ct.IndexOf("Document", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                        bool nameHint = !string.IsNullOrEmpty(name) && (
+                            name.IndexOf("type", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            name.IndexOf("message", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            name.IndexOf("chat", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            name.IndexOf("prompt", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                        if ((likelyEdit || nameHint) && el.Current.IsKeyboardFocusable)
+                        {
+                            try
+                            {
+                                el.SetFocus();
+                                System.Threading.Thread.Sleep(120);
+                                return true;
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: SetFocus for likely edit failed: " + ex.Message);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("UI Automation: FocusCopilotInput likely edit enumeration failed: " + ex.Message);
+                    }
+                }
+
+                // Final fallback: any focusable element
+                for (int i = 0; i < all.Count; i++)
+                {
+                    try
+                    {
+                        var el = all[i];
+                        if (el.Current.IsKeyboardFocusable && el.Current.IsEnabled)
+                        {
+                            try
+                            {
+                                el.SetFocus();
+                                System.Threading.Thread.Sleep(120);
+                                return true;
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("UI Automation: SetFocus for fallback focusable element failed: " + ex.Message);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("UI Automation: FocusCopilotInput final fallback iteration failed: " + ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("UI Automation: FocusCopilotInput error: " + ex.Message);
+            }
+            return false;
+        }
+
+        // ==================== Native Mouse Click ====================
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetCursorPos(int X, int Y);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, IntPtr dwExtraInfo);
+
+        private const uint MOUSEEVENTF_LEFTDOWN = 0x02;
+        private const uint MOUSEEVENTF_LEFTUP = 0x04;
+
+        // ==================== Clipboard ====================
+
+        private static bool CopyToClipboard(string text)
+        {
+            try
+            {
+                Clipboard.SetText(text);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("Clipboard failed: " + ex.Message);
+                return false;
+            }
+        }
+
+        // ==================== Logging ====================
+
+        private static void Log(string message)
+        {
+            Debug.WriteLine("[" + CxAssistConstants.LogCategory + "] CopilotIntegration: " + message);
+        }
+    }
+}
