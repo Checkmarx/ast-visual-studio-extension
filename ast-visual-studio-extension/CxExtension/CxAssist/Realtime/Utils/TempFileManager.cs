@@ -248,6 +248,69 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         }
 
         /// <summary>
+        /// Resolves <paramref name="candidate"/> to a canonical path, ensures a regular file exists (not a reparse point),
+        /// and returns its <see cref="FileInfo"/>. Mitigates path traversal before any file read.
+        /// </summary>
+        internal static bool TryGetVerifiedRegularFileInfo(string candidate, out FileInfo fileInfo)
+        {
+            fileInfo = null;
+            if (string.IsNullOrWhiteSpace(candidate) || candidate.IndexOf('\0') >= 0)
+                return false;
+
+            try
+            {
+                var normalized = Path.GetFullPath(candidate.Trim());
+                if (!Path.IsPathRooted(normalized))
+                    return false;
+
+                var fi = new FileInfo(normalized);
+                if (!fi.Exists)
+                    return false;
+                if ((fi.Attributes & FileAttributes.ReparsePoint) != 0)
+                    return false;
+
+                fileInfo = fi;
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Validates path and file (same rules as <see cref="TryGetVerifiedRegularFileInfo"/>), enforces <paramref name="maxSizeBytes"/>,
+        /// then reads UTF-8 text via <see cref="File.ReadAllText(string)"/> using <see cref="FileInfo.FullName"/> only.
+        /// Centralizes the read so path traversal sinks are not duplicated in callers.
+        /// </summary>
+        internal static bool TryReadVerifiedExistingFileContent(
+            string candidate,
+            long maxSizeBytes,
+            out string content,
+            out string verifiedAbsolutePath)
+        {
+            content = null;
+            verifiedAbsolutePath = null;
+
+            if (!TryGetVerifiedRegularFileInfo(candidate, out var fi))
+                return false;
+
+            try
+            {
+                if (fi.Length > maxSizeBytes)
+                    return false;
+
+                verifiedAbsolutePath = fi.FullName;
+                content = File.ReadAllText(fi.FullName);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Computes SHA-256 hash of content for collision detection and organization.
         ///
         /// Falls back to simple hashCode if SHA-256 unavailable.

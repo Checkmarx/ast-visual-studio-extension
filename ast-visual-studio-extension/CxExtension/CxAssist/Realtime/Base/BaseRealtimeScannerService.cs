@@ -213,23 +213,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             try
             {
-                if (!TryGetSecureReadableFilePath(filePath, out var safePath))
+                if (!TempFileManager.TryReadVerifiedExistingFileContent(filePath, MAX_FILE_SIZE_BYTES, out var content, out var safePath))
                 {
-                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: Rejecting unsafe or missing file path: {Path.GetFileName(filePath)}");
+                    if (TempFileManager.TryGetVerifiedRegularFileInfo(filePath, out var fiDiag) && fiDiag.Length > MAX_FILE_SIZE_BYTES)
+                        OutputPaneWriter.WriteLine($"{ScannerName}: File {fiDiag.FullName} exceeds max size of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB ({fiDiag.Length / (1024 * 1024)}MB)");
+                    else
+                        OutputPaneWriter.WriteWarning($"{ScannerName} scanner: Rejecting unsafe or missing file path: {Path.GetFileName(filePath)}");
                     return;
                 }
 
-                if (!ValidateFileSize(safePath))
-                    return;
-
-                // Double-check: verify resolved path hasn't changed and file exists
-                if (!File.Exists(safePath))
-                {
-                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: File not found: {Path.GetFileName(filePath)}");
-                    return;
-                }
-
-                var content = File.ReadAllText(safePath);
                 // Background / batch scans run in parallel; status bar Push/Pop is not LIFO-safe and misleads when most paths skip.
                 await RunScanCoreAsync(safePath, content, bypassContentFingerprint: false, showStatusBarProgress: false)
                     .ConfigureAwait(false);
@@ -237,49 +229,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             catch (Exception ex)
             {
                 _logger.Warn($"{ScannerName} scanner: ScanExternalFileAsync failed for {Path.GetFileName(filePath)}: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Resolves <paramref name="candidate"/> with <see cref="Path.GetFullPath(string)"/>, verifies the file exists,
-        /// and returns the canonical path for IO. Mitigates stored path traversal for <see cref="File.ReadAllText"/>.
-        /// Explicitly rejects symlinks and junction points.
-        /// </summary>
-        private static bool TryGetSecureReadableFilePath(string candidate, out string resolvedPath)
-        {
-            resolvedPath = null;
-            if (string.IsNullOrWhiteSpace(candidate))
-                return false;
-
-            if (candidate.IndexOf('\0') >= 0)
-                return false;
-
-            try
-            {
-                var normalized = Path.GetFullPath(candidate.Trim());
-                if (!Path.IsPathRooted(normalized))
-                    return false;
-
-                var fileInfo = new FileInfo(normalized);
-                if (!fileInfo.Exists)
-                    return false;
-
-                // Reject symlinks and junction points (reparse points)
-                if ((fileInfo.Attributes & FileAttributes.ReparsePoint) != 0)
-                    return false;
-
-                // Use FileInfo.FullName directly (already absolute and canonical)
-                resolvedPath = fileInfo.FullName;
-
-                // Verify resolved path is canonical and doesn't contain suspicious patterns
-                if (!Path.GetFullPath(resolvedPath).Equals(resolvedPath, StringComparison.OrdinalIgnoreCase))
-                    return false;
-
-                return !string.IsNullOrEmpty(resolvedPath);
-            }
-            catch (Exception)
-            {
-                return false;
             }
         }
 
@@ -680,14 +629,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             try
             {
-                if (!TryGetSecureReadableFilePath(filePath, out var safePath))
+                if (!TempFileManager.TryReadVerifiedExistingFileContent(filePath, MAX_FILE_SIZE_BYTES, out var content, out var safePath))
+                {
+                    if (TempFileManager.TryGetVerifiedRegularFileInfo(filePath, out var fiDiag) && fiDiag.Length > MAX_FILE_SIZE_BYTES)
+                        OutputPaneWriter.WriteLine($"{ScannerName}: File {fiDiag.FullName} exceeds max size of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB ({fiDiag.Length / (1024 * 1024)}MB)");
                     return;
+                }
 
-                // Double-check: verify resolved path hasn't changed and file exists
-                if (!File.Exists(safePath))
-                    return;
-
-                var content = File.ReadAllText(safePath);
                 await RunScanCoreAsync(safePath, content, bypassContentFingerprint: true).ConfigureAwait(false);
             }
             catch (Exception ex)
