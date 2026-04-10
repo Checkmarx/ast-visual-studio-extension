@@ -70,6 +70,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 System.Diagnostics.Debug.WriteLine($"CxOneAssistSettingsModule.LoadSettingsFromStorage UI refresh: {ex.Message}");
             }
         }
+        internal Microsoft.VisualStudio.Shell.Package GetOwnerPackage()
+            => GetService(typeof(Microsoft.VisualStudio.Shell.Package)) as Microsoft.VisualStudio.Shell.Package;
 
         /// <summary>
         /// On apply settings

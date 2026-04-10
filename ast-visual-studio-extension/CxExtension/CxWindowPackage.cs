@@ -3,6 +3,10 @@ using ast_visual_studio_extension.CxExtension.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime;
 using ast_visual_studio_extension.CxPreferences;
 using ast_visual_studio_extension.CxPreferences.Configuration;
+﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxPreferences.Configuration;
+using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
@@ -43,10 +47,10 @@ namespace ast_visual_studio_extension.CxExtension
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#14110", "#14112", "1.0", IconResourceID = 14400)] // Info on this package for Help/About
-    [ProvideMenuResource("Menus1.ctmenu", 1)]
     [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideToolWindow(typeof(CxWindow),Style = VsDockStyle.Tabbed,Orientation = ToolWindowOrientation.Right,Window = EnvDTE.Constants.vsWindowKindOutput,Transient = false)]
+    [ProvideToolWindow(typeof(CxAssist.UI.FindingsWindow.CxAssistFindingsWindow), Style = VsDockStyle.Tabbed, Orientation = ToolWindowOrientation.Bottom, Window = EnvDTE.Constants.vsWindowKindOutput, Transient = false)]
     [Guid(PackageGuidString)]
     public sealed class CxWindowPackage : AsyncPackage
     {
@@ -62,6 +66,7 @@ namespace ast_visual_studio_extension.CxExtension
 
         // Keeps the solution event handler alive so the event subscription is not garbage-collected
         private SolutionEventHandler _solutionEventHandler;
+        private CxAssistErrorListSync _CxAssistErrorListSync;
 
         #region Package Members
 
@@ -117,9 +122,9 @@ namespace ast_visual_studio_extension.CxExtension
                     _mcpUninstallHandler = new McpUninstallHandler(extensionManager);
 #endif
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex.ToString());
+                //Console.WriteLine(ex.ToString());
             }
         }
         private string GetLogFilePath()

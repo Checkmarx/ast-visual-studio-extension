@@ -1,4 +1,5 @@
-﻿using ast_visual_studio_extension.CxWrapper.Models;
+﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;
@@ -43,8 +44,8 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             CxConfig configuration = new CxConfig
             {
-                ApiKey = ApiKey,
-                AdditionalParameters = AdditionalParameters
+                ApiKey = LogForgingSanitizer.StripLineTermination(ApiKey),
+                AdditionalParameters = LogForgingSanitizer.StripLineTermination(AdditionalParameters)
             };
             return configuration;
         }

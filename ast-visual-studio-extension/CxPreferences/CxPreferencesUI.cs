@@ -21,6 +21,7 @@ namespace ast_visual_studio_extension.CxPreferences
         public event EventHandler OnApplySettingsEvent = delegate { };
 
         private static CxPreferencesUI Instance;
+        private static ASCAService _ascaService;
         private static bool _isAuthenticated;
         internal static event Action<bool> AuthStateChanged;
         private static int _restoreAuthInProgress;
@@ -138,7 +139,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // Ignore programmatic changes when field is read-only
             if (tbApiKey.ReadOnly) return;
 
-            cxPreferencesModule.ApiKey = tbApiKey.Text.Trim();
+            cxPreferencesModule.ApiKey = LogForgingSanitizer.StripLineTermination(tbApiKey.Text.Trim());
             cxPreferencesModule.RestoreAuthenticatedSession = false;
             ResetAuthState();
             UpdateAuthControlsState();
@@ -146,7 +147,16 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void OnAdditionalParametersChange(object sender, EventArgs e)
         {
-            cxPreferencesModule.AdditionalParameters = tbAdditionalParameters.Text;
+            cxPreferencesModule.AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text);
+        }
+
+        private async void OnValidateConnection(object sender, EventArgs e)
+        {
+            if (_isValidationInProgress || string.IsNullOrWhiteSpace(tbApiKey.Text))
+                return;
+
+            SetValidationMessage(CxConstants.AUTH_VALIDATE_IN_PROGRESS, isSuccess: true);
+            await ValidateApiKeyAsync(showErrorOnFailure: true);
         }
 
         private async void OnValidateConnection(object sender, EventArgs e)
@@ -264,7 +274,7 @@ namespace ast_visual_studio_extension.CxPreferences
                 if (cxPreferencesModule != null)
                     cxPreferencesModule.RestoreAuthenticatedSession = false;
                 SetValidationMessage(CxConstants.AUTH_VALIDATE_ERROR, isSuccess: false);
-                System.Diagnostics.Debug.WriteLine($"Authentication error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Authentication error: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
             }
             catch
             {
@@ -570,6 +580,10 @@ namespace ast_visual_studio_extension.CxPreferences
                     }
                     return;
                 }
+                // On session restore (showWelcomeDialog=false): trust registry values, don't touch scanners.
+
+                if (mcpEnabled)
+                    await installService.InstallSilentlyAsync(config, GetType());
 
                 if (assistNode == null && _cachedAssistNode != null)
                 {

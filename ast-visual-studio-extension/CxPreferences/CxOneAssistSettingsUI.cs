@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.Services;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using System;
 using System.Drawing;
@@ -15,6 +16,10 @@ namespace ast_visual_studio_extension.CxPreferences
         internal CxOneAssistSettingsModule cxOneAssistSettingsModule;
 
         private static CxOneAssistSettingsUI Instance;
+        public delegate void EventHandler();
+        public event EventHandler OnApplySettingsEvent = delegate { };
+        private static CxOneAssistSettingsUI Instance;
+        private static ASCAService _ascaService;
         private bool _isMcpInstallInProgress;
         private CancellationTokenSource _mcpStatusDismissCts;
         private bool _isAuthEventSubscribed;
@@ -98,7 +103,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 return;
             }
 
-            bool hasApiKey = !string.IsNullOrWhiteSpace(CxPreferencesUI.GetConfigSnapshot()?.ApiKey);
+            bool hasApiKey = !string.IsNullOrWhiteSpace(
+                CxPreferencesUI.GetCxConfigFromPackage(cxOneAssistSettingsModule?.GetOwnerPackage() as Package)?.ApiKey);
             lnkInstallMcp.Enabled = hasApiKey && !_isMcpInstallInProgress && mcpEnabled;
             lnkEditMcp.Enabled = true;
 
@@ -227,7 +233,7 @@ namespace ast_visual_studio_extension.CxPreferences
             if (_isMcpInstallInProgress)
                 return;
 
-            var config = CxPreferencesUI.GetConfigSnapshot();
+            var config = CxPreferencesUI.GetCxConfigFromPackage(cxOneAssistSettingsModule?.GetOwnerPackage() as Package);
 
             if (string.IsNullOrWhiteSpace(config.ApiKey))
             {
