@@ -243,6 +243,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         /// <summary>
         /// Resolves <paramref name="candidate"/> with <see cref="Path.GetFullPath(string)"/>, verifies the file exists,
         /// and returns the canonical path for IO. Mitigates stored path traversal for <see cref="File.ReadAllText"/>.
+        /// Explicitly rejects symlinks and junction points.
         /// </summary>
         private static bool TryGetSecureReadableFilePath(string candidate, out string resolvedPath)
         {
@@ -263,7 +264,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (!fileInfo.Exists)
                     return false;
 
-                resolvedPath = Path.GetFullPath(fileInfo.FullName);
+                // Reject symlinks and junction points (reparse points)
+                if ((fileInfo.Attributes & FileAttributes.ReparsePoint) != 0)
+                    return false;
+
+                // Use FileInfo.FullName directly (already absolute and canonical)
+                resolvedPath = fileInfo.FullName;
+
+                // Verify resolved path is canonical and doesn't contain suspicious patterns
+                if (!Path.GetFullPath(resolvedPath).Equals(resolvedPath, StringComparison.OrdinalIgnoreCase))
+                    return false;
+
                 return !string.IsNullOrEmpty(resolvedPath);
             }
             catch (Exception)
