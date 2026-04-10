@@ -222,6 +222,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (!ValidateFileSize(safePath))
                     return;
 
+                // Double-check: verify resolved path hasn't changed and file exists
+                if (!File.Exists(safePath))
+                {
+                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: File not found: {Path.GetFileName(filePath)}");
+                    return;
+                }
+
                 var content = File.ReadAllText(safePath);
                 // Background / batch scans run in parallel; status bar Push/Pop is not LIFO-safe and misleads when most paths skip.
                 await RunScanCoreAsync(safePath, content, bypassContentFingerprint: false, showStatusBarProgress: false)
@@ -663,6 +670,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             try
             {
                 if (!TryGetSecureReadableFilePath(filePath, out var safePath))
+                    return;
+
+                // Double-check: verify resolved path hasn't changed and file exists
+                if (!File.Exists(safePath))
                     return;
 
                 var content = File.ReadAllText(safePath);
