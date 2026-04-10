@@ -1,9 +1,14 @@
+﻿using ast_visual_studio_extension.CxExtension.Commands;
+using ast_visual_studio_extension.CxPreferences.Configuration;
 using ast_visual_studio_extension.CxExtension.Commands;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using log4net;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Repository.Hierarchy;
+#if !NO_VS_EXTENSION_MANAGER
+using Microsoft.VisualStudio.ExtensionManager;
+#endif
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -49,6 +54,10 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         public const string PackageGuidString = "63d5f3b4-a254-4bef-974b-0733c306ed2c";
 
+#if !NO_VS_EXTENSION_MANAGER
+        // Keeps the handler alive so the event subscription is not garbage-collected
+        private McpUninstallHandler _mcpUninstallHandler;
+#endif
         private CxAssistErrorListSync _CxAssistErrorListSync;
 
         #region Package Members
@@ -73,6 +82,12 @@ namespace ast_visual_studio_extension.CxExtension
                 // Command to create Checkmarx extension main window
                 await CxWindowCommand.InitializeAsync(this);
 
+#if !NO_VS_EXTENSION_MANAGER
+                // Register MCP cleanup handler for when the extension is uninstalled
+                var extensionManager = await GetServiceAsync(typeof(SVsExtensionManager)) as IVsExtensionManager;
+                if (extensionManager != null)
+                    _mcpUninstallHandler = new McpUninstallHandler(extensionManager);
+#endif
                 // Test CxAssist Hover Popup is registered in ast_visual_studio_extensionPackage so it appears under Tools.
 
                 // Show Findings Window Command (POC for AST-133228 - Custom Tool Window)

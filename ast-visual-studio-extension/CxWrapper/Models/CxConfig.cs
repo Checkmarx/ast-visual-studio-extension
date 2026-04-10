@@ -10,6 +10,10 @@ namespace ast_visual_studio_extension.CxWrapper.Models
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
         public bool AscaEnabled { get; set; } = false;
+        public bool OssRealtimeEnabled { get; set; } = false;
+        public bool SecretDetectionEnabled { get; set; } = false;
+        public bool ContainersRealtimeEnabled { get; set; } = false;
+        public bool IacEnabled { get; set; } = false;
 
 
         public List<string> ToArguments()

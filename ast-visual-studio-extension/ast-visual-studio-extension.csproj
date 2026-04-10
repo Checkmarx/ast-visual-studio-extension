@@ -10,6 +10,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <TargetFrameworkProfile />
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -65,6 +66,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <!-- When building outside a VS installation (e.g., CI), DevEnvDir is empty and
+       the ExtensionManager private assemblies are unavailable. Guard all code that
+       depends on them with #if !NO_VS_EXTENSION_MANAGER. -->
+  <PropertyGroup Condition="'$(DevEnvDir)' == ''">
+    <DefineConstants>$(DefineConstants);NO_VS_EXTENSION_MANAGER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CxExtension\CxInitialPanel.xaml.cs">
@@ -184,18 +191,38 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="CxPreferences\CxPreferencesPackage.cs" />
+    <Compile Include="CxExtension\Utils\LogForgingSanitizer.cs" />
     <Compile Include="CxPreferences\CxPreferencesUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="CxPreferences\CxPreferencesUI.Designer.cs">
       <DependentUpon>CxPreferencesUI.cs</DependentUpon>
     </Compile>
+    <Compile Include="CxPreferences\CxOneAssistSettingsModule.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CxPreferences\CxOneAssistSettingsUI.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CxPreferences\CxOneAssistSettingsUI.Designer.cs">
+      <DependentUpon>CxOneAssistSettingsUI.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CxPreferences\CxOneAssistWelcomeDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CxPreferences\Configuration\McpConfigManager.cs" />
+    <Compile Include="CxPreferences\Configuration\McpInstallResult.cs" />
+    <Compile Include="CxPreferences\Configuration\McpInstallService.cs" />
+    <Compile Include="CxPreferences\Configuration\McpUninstallHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ast_visual_studio_extensionPackage.cs" />
     <Compile Include="ResourceKeyToColorConverter.cs" />
     <Compile Include="VsTheme.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="CxPreferences\Resources\cxAIError.png" />
+    <EmbeddedResource Include="CxPreferences\Resources\welcomePageScanner.png" />
+    <EmbeddedResource Include="CxExtension\Resources\checkmarx-80.ico" />
     <Content Include="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -207,6 +234,16 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <!-- VS private assembly: IVsExtensionManager, SVsExtensionManager, InstallState
+         Only available when DevEnvDir points to a VS installation. -->
+    <Reference Include="Microsoft.VisualStudio.ExtensionManager" Condition="'$(DevEnvDir)' != ''">
+      <HintPath>$(DevEnvDir)PrivateAssemblies\Microsoft.VisualStudio.ExtensionManager.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.ExtensionEngineContract" Condition="'$(DevEnvDir)' != ''">
+      <HintPath>$(DevEnvDir)PrivateAssemblies\Microsoft.VisualStudio.ExtensionEngineContract.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="EnvDTE80" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="PresentationCore" />
@@ -249,8 +286,8 @@
       <Version>7.5.1</Version>
     </PackageReference>
     <PackageReference Include="System.Json" Version="4.7.1" />
+	<PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="SharpVectors" Version="1.8.4.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="CxExtension\Resources\critical.png">

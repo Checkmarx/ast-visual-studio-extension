@@ -196,7 +196,7 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
         private void LoadSecretDetectionGeneralTab(Result result)
         {
-            string description = result?.Description ?? "No Information";
+            string description = result?.Description ?? "No information";
             string filePath = "";
             int start = description.IndexOf('/');
 
