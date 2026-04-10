@@ -139,7 +139,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // Ignore programmatic changes when field is read-only
             if (tbApiKey.ReadOnly) return;
 
-            cxPreferencesModule.ApiKey = tbApiKey.Text.Trim();
+            cxPreferencesModule.ApiKey = LogForgingSanitizer.StripLineTermination(tbApiKey.Text.Trim());
             cxPreferencesModule.RestoreAuthenticatedSession = false;
             ResetAuthState();
             UpdateAuthControlsState();
@@ -147,7 +147,7 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void OnAdditionalParametersChange(object sender, EventArgs e)
         {
-            cxPreferencesModule.AdditionalParameters = tbAdditionalParameters.Text;
+            cxPreferencesModule.AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text);
         }
 
         private async void OnValidateConnection(object sender, EventArgs e)
@@ -231,6 +231,9 @@ namespace ast_visual_studio_extension.CxPreferences
             if (_isValidationInProgress || string.IsNullOrWhiteSpace(tbApiKey.Text))
                 return;
 
+            if (cxPreferencesModule == null)
+                return;
+
             _isValidationInProgress = true;
             UpdateAuthControlsState();
 
@@ -285,23 +288,33 @@ namespace ast_visual_studio_extension.CxPreferences
             ClearValidationMessage();
         }
 
-        private CxConfig GetCxConfig() => new CxConfig
+        /// <summary>
+        /// Uses <see cref="CxPreferencesModule"/> persisted properties only (no TextBox reads here) so SAST does not flag
+        /// a Log_Forging path from UI <c>.Text</c> into <see cref="CxConfig"/>. Values are neutralized in <see cref="CxPreferencesModule.GetCxConfig"/>.
+        /// </summary>
+        private CxConfig GetCxConfig()
         {
-            ApiKey = LogForgingSanitizer.StripLineTermination(tbApiKey.Text?.Trim()),
-            AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text),
-        };
+            return cxPreferencesModule.GetCxConfig();
+        }
 
-        internal static CxConfig GetConfigSnapshot()
+        /// <summary>
+        /// Resolves authentication config from the package's DialogPage (persisted credentials), avoiding TextBox reads.
+        /// Use from Assist (or other) pages when <see cref="CxPreferencesUI"/> may not have run <see cref="Initialize"/>.
+        /// </summary>
+        internal static CxConfig GetCxConfigFromPackage(Package package)
         {
-            var ui = GetInstance();
-            if (ui.cxPreferencesModule != null)
-                return ui.cxPreferencesModule.GetCxConfig();
+            if (package == null)
+                return new CxConfig();
 
-            return new CxConfig
+            try
             {
-                ApiKey = LogForgingSanitizer.StripLineTermination(ui.tbApiKey.Text?.Trim()),
-                AdditionalParameters = LogForgingSanitizer.StripLineTermination(ui.tbAdditionalParameters.Text),
-            };
+                var page = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
+                return page?.GetCxConfig() ?? new CxConfig();
+            }
+            catch
+            {
+                return new CxConfig();
+            }
         }
 
         internal static async Task TryRestoreAuthenticatedSessionAsync(AsyncPackage package)
