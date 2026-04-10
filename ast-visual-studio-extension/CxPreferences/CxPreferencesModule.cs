@@ -1,4 +1,5 @@
-﻿using ast_visual_studio_extension.CxWrapper.Models;
+﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;

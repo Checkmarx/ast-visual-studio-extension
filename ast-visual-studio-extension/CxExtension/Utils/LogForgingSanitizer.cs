@@ -1,9 +1,10 @@
 using System.Text;
 
-namespace ast_visual_studio_extension.CxPreferences
+namespace ast_visual_studio_extension.CxExtension.Utils
 {
     /// <summary>
-    /// Neutralizes characters that can forge extra log lines when values flow into logs or CLI output.
+    /// CWE-117 / log forging: neutralizes line-termination and related characters in data written to logs
+    /// so user-controlled values cannot inject extra log lines (see Checkmarx Log_Forging / Improper Output Neutralization for Logs).
     /// </summary>
     internal static class LogForgingSanitizer
     {

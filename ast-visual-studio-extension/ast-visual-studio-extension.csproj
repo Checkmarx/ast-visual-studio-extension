@@ -191,7 +191,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="CxPreferences\CxPreferencesPackage.cs" />
-    <Compile Include="CxPreferences\LogForgingSanitizer.cs" />
+    <Compile Include="CxExtension\Utils\LogForgingSanitizer.cs" />
     <Compile Include="CxPreferences\CxPreferencesUI.cs">
       <SubType>UserControl</SubType>
     </Compile>
