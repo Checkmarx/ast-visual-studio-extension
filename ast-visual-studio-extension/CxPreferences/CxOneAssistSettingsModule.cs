@@ -41,6 +41,9 @@ namespace ast_visual_studio_extension.CxPreferences
             }
         }
 
+        internal Microsoft.VisualStudio.Shell.Package GetOwnerPackage()
+            => GetService(typeof(Microsoft.VisualStudio.Shell.Package)) as Microsoft.VisualStudio.Shell.Package;
+
         /// <summary>
         /// On apply settings
         /// </summary>
