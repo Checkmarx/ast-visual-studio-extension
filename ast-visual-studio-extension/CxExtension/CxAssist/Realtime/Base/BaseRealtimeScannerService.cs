@@ -208,31 +208,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         /// </summary>
         public virtual async Task ScanExternalFileAsync(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            if (string.IsNullOrEmpty(filePath))
                 return;
 
             try
             {
-                // Verify file exists first (Checkmarx taint clean point)
-                var fileInfo = new FileInfo(filePath);
-                if (!fileInfo.Exists)
-                    return;
-
-                // Use FileInfo.FullName which is Checkmarx-recognized safe source
-                // (FileInfo sanitizes the path internally)
-                var safePath = fileInfo.FullName;
-
-                // Additional security: validate the extracted path
-                if (!IsSafeFilePath(safePath))
+                if (!TryGetSecureReadableFilePath(filePath, out var safePath))
                 {
-                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: Rejecting unsafe file path: {Path.GetFileName(filePath)}");
+                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: Rejecting unsafe or missing file path: {Path.GetFileName(filePath)}");
                     return;
                 }
 
                 if (!ValidateFileSize(safePath))
                     return;
 
-                // Read using the Checkmarx-safe path
                 var content = File.ReadAllText(safePath);
                 // Background / batch scans run in parallel; status bar Push/Pop is not LIFO-safe and misleads when most paths skip.
                 await RunScanCoreAsync(safePath, content, bypassContentFingerprint: false, showStatusBarProgress: false)
@@ -245,23 +234,35 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         }
 
         /// <summary>
-        /// Validates that a path is safe (doesn't contain path traversal sequences after normalization).
+        /// Resolves <paramref name="candidate"/> with <see cref="Path.GetFullPath(string)"/>, verifies the file exists,
+        /// and returns the canonical path for IO. Mitigates stored path traversal for <see cref="File.ReadAllText"/>.
         /// </summary>
-        private bool IsSafeFilePath(string normalizedPath)
+        private static bool TryGetSecureReadableFilePath(string candidate, out string resolvedPath)
         {
-            if (string.IsNullOrEmpty(normalizedPath))
+            resolvedPath = null;
+            if (string.IsNullOrWhiteSpace(candidate))
                 return false;
 
-            // Ensure path doesn't contain traversal sequences even after normalization
-            // (defense in depth - should not happen after GetFullPath, but validates explicitly)
-            if (normalizedPath.Contains("..") || normalizedPath.Contains("~"))
+            if (candidate.IndexOf('\0') >= 0)
                 return false;
 
-            // Ensure path is absolute (not relative)
-            if (!Path.IsPathRooted(normalizedPath))
-                return false;
+            try
+            {
+                var normalized = Path.GetFullPath(candidate.Trim());
+                if (!Path.IsPathRooted(normalized))
+                    return false;
 
-            return true;
+                var fileInfo = new FileInfo(normalized);
+                if (!fileInfo.Exists)
+                    return false;
+
+                resolvedPath = Path.GetFullPath(fileInfo.FullName);
+                return !string.IsNullOrEmpty(resolvedPath);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         protected bool IsResultFresh(DateTime resultTimestamp, int scanDocumentVersion)
@@ -661,11 +662,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             try
             {
-                if (!File.Exists(filePath))
+                if (!TryGetSecureReadableFilePath(filePath, out var safePath))
                     return;
 
-                var content = File.ReadAllText(filePath);
-                await RunScanCoreAsync(filePath, content, bypassContentFingerprint: true).ConfigureAwait(false);
+                var content = File.ReadAllText(safePath);
+                await RunScanCoreAsync(safePath, content, bypassContentFingerprint: true).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
