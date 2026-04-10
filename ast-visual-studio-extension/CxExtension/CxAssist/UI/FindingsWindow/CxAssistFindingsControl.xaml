@@ -23,6 +23,8 @@
         <Style x:Key="TreeViewItemStyle" TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="True"/>
             <Setter Property="Padding" Value="2,2"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <EventSetter Event="MouseDoubleClick" Handler="TreeViewItem_MouseDoubleClick"/>
             <EventSetter Event="PreviewMouseRightButtonDown" Handler="TreeViewItem_PreviewMouseRightButtonDown"/>
             <Setter Property="Template">
@@ -80,7 +82,8 @@
                                     <ContentPresenter x:Name="PART_Header"
                                                       Grid.Column="1"
                                                       ContentSource="Header"
-                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Center"/>
                                 </Grid>
                             </Border>
                             <!-- Children (reduced left margin so vulnerability rows don't have huge gap) -->
@@ -331,6 +334,8 @@
                   BorderThickness="0"
                   Background="Transparent"
                   Foreground="{DynamicResource {x:Static vsui:EnvironmentColors.ToolWindowTextBrushKey}}"
+                  HorizontalContentAlignment="Stretch"
+                  VerticalContentAlignment="Center"
                   SelectedItemChanged="FindingsTreeView_SelectedItemChanged"
                   ContextMenuOpening="FindingsTreeView_ContextMenuOpening">
 

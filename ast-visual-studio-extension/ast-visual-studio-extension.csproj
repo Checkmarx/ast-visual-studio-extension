@@ -187,7 +187,6 @@
     <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphFactory.cs" />
     <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTagger.cs" />
     <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTaggerProvider.cs" />
-    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistTextViewCreationListener.cs" />
     <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistMockDataViewCreationListener.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTagger.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTaggerProvider.cs" />

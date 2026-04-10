@@ -581,6 +581,29 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 OutputPaneWriter.WriteLine($"{itemLabel} {i + 1}: {describeItem(items[i])}");
         }
 
+        /// <summary>
+        /// Clears all display markers (gutter icons, underlines, findings window) for the given file.
+        /// Call when a scan returns 0 results so stale markers are removed after a fix.
+        /// </summary>
+        protected static void ClearDisplayForFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            try
+            {
+                var emptyList = new List<Core.Models.Vulnerability>();
+                var buffer = Core.GutterIcons.CxAssistGlyphTaggerProvider.GetBufferForFile(filePath);
+                if (buffer != null)
+                    Core.CxAssistDisplayCoordinator.UpdateFindings(buffer, emptyList, filePath);
+                else
+                    Core.CxAssistDisplayCoordinator.UpdateFindingsForFile(filePath, emptyList);
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"ClearDisplayForFile failed for {filePath}: {ex.Message}");
+            }
+        }
+
         protected void LogRealtimeDetectionTelemetry(int issueCount)
         {
             if (issueCount <= 0) return;

@@ -1,4 +1,7 @@
 using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
@@ -61,6 +64,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
             if (results?.ScanDetails == null || results.ScanDetails.Count == 0)
             {
                 OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
 
@@ -77,8 +81,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
             }
 
             var mappedResults = VulnerabilityMapper.FromAsca(results.ScanDetails, sourceFilePath);
-            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
+            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(sourceFilePath);
+            if (buffer != null)
+                CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
+            else
+                CxAssistDisplayCoordinator.UpdateFindingsForFile(sourceFilePath, mappedResults);
             return mappedResults.Count;
         }
 
