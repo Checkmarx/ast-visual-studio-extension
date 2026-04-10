@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net60-windows</TargetFramework>
+    <!-- net6.0-windows7.0 matches NuGet assets target key; avoids NETSDK1005 with some SDK 10 + restore combinations. -->
+    <TargetFramework>net6.0-windows7.0</TargetFramework>
 	    <IsTestProject>true</IsTestProject>   
   </PropertyGroup>
 

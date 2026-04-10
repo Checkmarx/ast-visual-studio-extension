@@ -473,7 +473,7 @@ namespace ast_visual_studio_extension.CxCLI
         public ContainersRealtimeResults ContainersRealtimeScan(string sourcePath, string ignoredFilePath = null)
         {
             LogInfoNeutralized(CxConstants.LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD);
-            LogInfoNeutralized($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}, Engine: {engine ?? "default"}");
+            LogInfoNeutralized($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
 
             List<string> arguments = new List<string>
             {

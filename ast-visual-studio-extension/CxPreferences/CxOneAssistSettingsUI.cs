@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxExtension.Services;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using System;
 using System.Drawing;
@@ -18,8 +17,6 @@ namespace ast_visual_studio_extension.CxPreferences
         private static CxOneAssistSettingsUI Instance;
         public delegate void EventHandler();
         public event EventHandler OnApplySettingsEvent = delegate { };
-        private static CxOneAssistSettingsUI Instance;
-        private static ASCAService _ascaService;
         private bool _isMcpInstallInProgress;
         private CancellationTokenSource _mcpStatusDismissCts;
         private bool _isAuthEventSubscribed;

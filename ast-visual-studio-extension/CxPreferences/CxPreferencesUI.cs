@@ -21,7 +21,6 @@ namespace ast_visual_studio_extension.CxPreferences
         public event EventHandler OnApplySettingsEvent = delegate { };
 
         private static CxPreferencesUI Instance;
-        private static ASCAService _ascaService;
         private static bool _isAuthenticated;
         internal static event Action<bool> AuthStateChanged;
         private static int _restoreAuthInProgress;
@@ -148,15 +147,6 @@ namespace ast_visual_studio_extension.CxPreferences
         private void OnAdditionalParametersChange(object sender, EventArgs e)
         {
             cxPreferencesModule.AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text);
-        }
-
-        private async void OnValidateConnection(object sender, EventArgs e)
-        {
-            if (_isValidationInProgress || string.IsNullOrWhiteSpace(tbApiKey.Text))
-                return;
-
-            SetValidationMessage(CxConstants.AUTH_VALIDATE_IN_PROGRESS, isSuccess: true);
-            await ValidateApiKeyAsync(showErrorOnFailure: true);
         }
 
         private async void OnValidateConnection(object sender, EventArgs e)
@@ -324,6 +314,18 @@ namespace ast_visual_studio_extension.CxPreferences
                 ApiKey = SanitizeInput(ui.tbApiKey.Text),
                 AdditionalParameters = SanitizeInput(ui.tbAdditionalParameters.Text),
             };
+        }
+
+        internal static CxConfig GetCxConfigFromPackage(Package package)
+        {
+            if (package == null)
+                return new CxConfig();
+
+            var preferencesModule = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
+            if (preferencesModule != null)
+                return preferencesModule.GetCxConfig();
+
+            return new CxConfig();
         }
 
         internal static async Task TryRestoreAuthenticatedSessionAsync(AsyncPackage package)
@@ -580,10 +582,6 @@ namespace ast_visual_studio_extension.CxPreferences
                     }
                     return;
                 }
-                // On session restore (showWelcomeDialog=false): trust registry values, don't touch scanners.
-
-                if (mcpEnabled)
-                    await installService.InstallSilentlyAsync(config, GetType());
 
                 if (assistNode == null && _cachedAssistNode != null)
                 {

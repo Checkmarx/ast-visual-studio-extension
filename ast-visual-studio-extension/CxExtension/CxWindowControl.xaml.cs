@@ -17,6 +17,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime;
 
 namespace ast_visual_studio_extension.CxExtension
@@ -135,6 +136,35 @@ namespace ast_visual_studio_extension.CxExtension
             return CxAssistFindingsControl;
         }
 
+        /// <summary>
+        /// Selects the Checkmarx One Assist Findings tab (e.g. from View Findings command).
+        /// </summary>
+        public void SwitchToCxAssistTab()
+        {
+            if (CxAssistFindingsTab != null && MainTabControl != null)
+                MainTabControl.SelectedItem = CxAssistFindingsTab;
+        }
+
+        private void MainTabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!ReferenceEquals(sender, MainTabControl))
+                return;
+
+            if (MainTabControl.SelectedItem != CxAssistFindingsTab || _CxAssistDataLoaded)
+                return;
+
+            _CxAssistDataLoaded = true;
+            try
+            {
+                if (CxAssistFindingsControl != null)
+                    CxAssistDisplayCoordinator.RefreshProblemWindow(CxAssistFindingsControl, null, null);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MainTabControl_SelectionChanged CxAssist refresh: {ex.Message}");
+            }
+        }
+
         private void OnAuthStateChanged(bool isAuthenticated)
         {
             if (!Dispatcher.CheckAccess())
@@ -250,7 +280,7 @@ namespace ast_visual_studio_extension.CxExtension
 
         private void OnAssistSettingsApplied()
         {
-            _ = RegisterAsca();
+            _ = RegisterRealtimeScannersIfAuthenticatedAsync();
         }
 
         /// <summary>
