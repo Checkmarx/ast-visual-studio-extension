@@ -107,7 +107,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 return;
             }
 
-            bool hasApiKey = !string.IsNullOrWhiteSpace(CxPreferencesUI.GetConfigSnapshot()?.ApiKey);
+            bool hasApiKey = !string.IsNullOrWhiteSpace(
+                CxPreferencesUI.GetCxConfigFromPackage(cxOneAssistSettingsModule?.GetOwnerPackage() as Package)?.ApiKey);
             lnkInstallMcp.Enabled = hasApiKey && !_isMcpInstallInProgress && mcpEnabled;
             lnkEditMcp.Enabled = true;
 
@@ -240,7 +241,7 @@ namespace ast_visual_studio_extension.CxPreferences
             if (_isMcpInstallInProgress)
                 return;
 
-            var config = CxPreferencesUI.GetConfigSnapshot();
+            var config = CxPreferencesUI.GetCxConfigFromPackage(cxOneAssistSettingsModule?.GetOwnerPackage() as Package);
 
             if (string.IsNullOrWhiteSpace(config.ApiKey))
             {

@@ -139,7 +139,7 @@ namespace ast_visual_studio_extension.CxPreferences
             // Ignore programmatic changes when field is read-only
             if (tbApiKey.ReadOnly) return;
 
-            cxPreferencesModule.ApiKey = tbApiKey.Text.Trim();
+            cxPreferencesModule.ApiKey = LogForgingSanitizer.StripLineTermination(tbApiKey.Text.Trim());
             cxPreferencesModule.RestoreAuthenticatedSession = false;
             ResetAuthState();
             UpdateAuthControlsState();
@@ -147,7 +147,7 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void OnAdditionalParametersChange(object sender, EventArgs e)
         {
-            cxPreferencesModule.AdditionalParameters = tbAdditionalParameters.Text;
+            cxPreferencesModule.AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text);
         }
 
         private async void OnValidateConnection(object sender, EventArgs e)
@@ -231,6 +231,9 @@ namespace ast_visual_studio_extension.CxPreferences
             if (_isValidationInProgress || string.IsNullOrWhiteSpace(tbApiKey.Text))
                 return;
 
+            if (cxPreferencesModule == null)
+                return;
+
             _isValidationInProgress = true;
             UpdateAuthControlsState();
 
@@ -285,34 +288,33 @@ namespace ast_visual_studio_extension.CxPreferences
             ClearValidationMessage();
         }
 
+        /// <summary>
+        /// Uses <see cref="CxPreferencesModule"/> persisted properties only (no TextBox reads here) so SAST does not flag
+        /// a Log_Forging path from UI <c>.Text</c> into <see cref="CxConfig"/>. Values are neutralized in <see cref="CxPreferencesModule.GetCxConfig"/>.
+        /// </summary>
         private CxConfig GetCxConfig()
         {
-            return CreateCxConfigWithLogNeutralizedCredentials(
-                tbApiKey.Text?.Trim(),
-                tbAdditionalParameters.Text);
+            return cxPreferencesModule.GetCxConfig();
         }
 
         /// <summary>
-        /// Builds <see cref="CxConfig"/> from credential fields; neutralizes log-forging characters (CWE-117) before assignment.
+        /// Resolves authentication config from the package's DialogPage (persisted credentials), avoiding TextBox reads.
+        /// Use from Assist (or other) pages when <see cref="CxPreferencesUI"/> may not have run <see cref="Initialize"/>.
         /// </summary>
-        private static CxConfig CreateCxConfigWithLogNeutralizedCredentials(string apiKey, string additionalParameters)
+        internal static CxConfig GetCxConfigFromPackage(Package package)
         {
-            return new CxConfig
+            if (package == null)
+                return new CxConfig();
+
+            try
             {
-                ApiKey = LogForgingSanitizer.StripLineTermination(apiKey),
-                AdditionalParameters = LogForgingSanitizer.StripLineTermination(additionalParameters),
-            };
-        }
-
-        internal static CxConfig GetConfigSnapshot()
-        {
-            var ui = GetInstance();
-            if (ui.cxPreferencesModule != null)
-                return ui.cxPreferencesModule.GetCxConfig();
-
-            return CreateCxConfigWithLogNeutralizedCredentials(
-                ui.tbApiKey.Text?.Trim(),
-                ui.tbAdditionalParameters.Text);
+                var page = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
+                return page?.GetCxConfig() ?? new CxConfig();
+            }
+            catch
+            {
+                return new CxConfig();
+            }
         }
 
         internal static async Task TryRestoreAuthenticatedSessionAsync(AsyncPackage package)
