@@ -177,7 +177,7 @@ namespace ast_visual_studio_extension.CxPreferences
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"MCP cleanup on logout failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"MCP cleanup on logout failed: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
             }
 
             try
@@ -192,7 +192,7 @@ namespace ast_visual_studio_extension.CxPreferences
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to disable realtime scanners on logout: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to disable realtime scanners on logout: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
             }
 
             cxPreferencesModule.RestoreAuthenticatedSession = false;
@@ -264,7 +264,7 @@ namespace ast_visual_studio_extension.CxPreferences
                 if (cxPreferencesModule != null)
                     cxPreferencesModule.RestoreAuthenticatedSession = false;
                 SetValidationMessage(CxConstants.AUTH_VALIDATE_ERROR, isSuccess: false);
-                System.Diagnostics.Debug.WriteLine($"Authentication error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Authentication error: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
             }
             catch
             {
@@ -287,8 +287,8 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private CxConfig GetCxConfig() => new CxConfig
         {
-            ApiKey = tbApiKey.Text,
-            AdditionalParameters = tbAdditionalParameters.Text,
+            ApiKey = LogForgingSanitizer.StripLineTermination(tbApiKey.Text?.Trim()),
+            AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text),
         };
 
         internal static CxConfig GetConfigSnapshot()
@@ -299,8 +299,8 @@ namespace ast_visual_studio_extension.CxPreferences
 
             return new CxConfig
             {
-                ApiKey = ui.tbApiKey.Text,
-                AdditionalParameters = ui.tbAdditionalParameters.Text,
+                ApiKey = LogForgingSanitizer.StripLineTermination(ui.tbApiKey.Text?.Trim()),
+                AdditionalParameters = LogForgingSanitizer.StripLineTermination(ui.tbAdditionalParameters.Text),
             };
         }
 
@@ -399,7 +399,7 @@ namespace ast_visual_studio_extension.CxPreferences
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"MCP auto-install skipped: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"MCP auto-install skipped: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
             }
         }
 
@@ -431,7 +431,7 @@ namespace ast_visual_studio_extension.CxPreferences
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to show welcome dialog: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to show welcome dialog: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
             }
         }
 
