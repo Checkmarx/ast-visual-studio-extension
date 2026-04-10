@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
@@ -31,11 +31,16 @@ namespace ast_visual_studio_extension.CxExtension
         private CancellationTokenSource typingCts;
         private ASCAService _ascaService;
 
+        private bool _CxAssistDataLoaded = false;
+
         public CxWindowControl(AsyncPackage package)
         {
             InitializeComponent();
 
             this.package = package;
+
+            // Subscribe to tab selection changed event to populate CxAssist data when tab is first shown
+            MainTabControl.SelectionChanged += MainTabControl_SelectionChanged;
 
             resultInfoPanel = new ResultInfoPanel(this);
 
@@ -83,6 +88,52 @@ namespace ast_visual_studio_extension.CxExtension
 
             _ = InitializeAsync();
             cxToolbar.Init();
+            Loaded += CxWindowControl_Loaded;
+        }
+
+        /// <summary>
+        /// When loaded, wire Findings tab Settings and other one-time setup.
+        /// </summary>
+        private void CxWindowControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= CxWindowControl_Loaded;
+            try
+            {
+                if (CxAssistFindingsControl != null)
+                {
+                    // Findings tab Settings button opens same Checkmarx settings as Scan Results
+                    CxAssistFindingsControl.SettingsClick += OnCxAssistSettingsClick;
+                    // Pass package so CxAssist can persist severity filter state (same as Scan Results)
+                    CxAssistFindingsControl.SetPackage(package);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CxWindowControl_Loaded: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Opens the same Checkmarx settings (options page) as Scan Results when user clicks Settings in the Findings tab.
+        /// </summary>
+        private void OnCxAssistSettingsClick(object sender, EventArgs e)
+        {
+            try
+            {
+                package?.ShowOptionPage(typeof(CxPreferencesModule));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CxWindowControl: open settings from Findings tab: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the CxAssist Findings Control from the CxAssist tab
+        /// </summary>
+        public CxAssist.UI.FindingsWindow.CxAssistFindingsControl GetCxAssistFindingsControl()
+        {
+            return CxAssistFindingsControl;
         }
 
         private void OnAuthStateChanged(bool _)
@@ -95,6 +146,57 @@ namespace ast_visual_studio_extension.CxExtension
 
             CheckToolWindowPanel();
         }
+        /// <summary>
+        /// Switches to the CxAssist Findings tab
+        /// </summary>
+        public void SwitchToCxAssistTab()
+        {
+            MainTabControl.SelectedItem = CxAssistFindingsTab;
+        }
+
+        /// <summary>
+        /// Switches to the Scan Results tab
+        /// </summary>
+        public void SwitchToScanResultsTab()
+        {
+            MainTabControl.SelectedItem = ScanResultsTab;
+        }
+
+        /// <summary>
+        /// Event handler for tab selection changed - populates CxAssist data when tab is first shown
+        /// </summary>
+        private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MainTabControl.SelectedItem == CxAssistFindingsTab && !_CxAssistDataLoaded)
+            {
+                _CxAssistDataLoaded = true;
+                PopulateCxAssistTestData();
+            }
+        }
+
+        /// <summary>
+        /// Populates the CxAssist Findings tab with test data
+        /// </summary>
+        private void PopulateCxAssistTestData()
+        {
+            try
+            {
+                // Trigger the ShowFindingsWindowCommand to populate test data
+                var command = Commands.ShowFindingsWindowCommand.Instance;
+                if (command != null)
+                {
+                    // Call the command's Execute method programmatically
+                    var executeMethod = command.GetType().GetMethod("Execute",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    executeMethod?.Invoke(command, new object[] { this, EventArgs.Empty });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error populating CxAssist test data: {ex.Message}");
+            }
+        }
+
         private async Task InitializeAsync()
         {
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());

@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxWrapper.Exceptions;
@@ -99,11 +99,9 @@ namespace ast_visual_studio_extension.CxExtension.Panels
         // Draw title
         private void DrawTitle()
         {
-            Image severityIcon = new Image();
-            BitmapImage bitmapImage = new BitmapImage(new Uri(CxUtils.GetIconPathFromSeverity(result.Severity, true), UriKind.RelativeOrAbsolute));
-            severityIcon.Source = bitmapImage;
+            ImageSource severityImageSource = UIUtils.GetSeverityIconSource(result.Severity, true);
 
-            cxWindowUI.ResultSeverityIcon.Source = bitmapImage;
+            cxWindowUI.ResultSeverityIcon.Source = severityImageSource;
             string formatted = ResultUtils.FormatFilenameLine(result.Data?.FileName, result.Data?.Line, result.Data?.RuleName);
             string displayName = !string.IsNullOrEmpty(result.Data?.QueryName) ? result.Data.QueryName :
                                 !string.IsNullOrEmpty(formatted) ? formatted :
