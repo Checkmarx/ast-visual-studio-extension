@@ -10,7 +10,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
     public class McpInstallServiceAsyncTests
     {
         [Fact]
-        public async Task InstallAsync_WithValidConfig_ReturnsResult()
+        public async Task InstallAsync_WithValidConfig_ReturnsResultAsync()
         {
             var mockConfigManager = new Mock<McpConfigManager>();
             var service = new McpInstallService(mockConfigManager.Object);
@@ -24,7 +24,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task InstallAsync_WithNullConfig_ReturnsFalse()
+        public async Task InstallAsync_WithNullConfig_ReturnsFalseAsync()
         {
             var service = new McpInstallService();
 
@@ -36,7 +36,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task IsTenantMcpEnabledAsync_WithNullConfig_ReturnsFalse()
+        public async Task IsTenantMcpEnabledAsync_WithNullConfig_ReturnsFalseAsync()
         {
             var service = new McpInstallService();
 
@@ -46,7 +46,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task IsTenantMcpEnabledAsync_WithEmptyApiKey_ReturnsFalse()
+        public async Task IsTenantMcpEnabledAsync_WithEmptyApiKey_ReturnsFalseAsync()
         {
             var service = new McpInstallService();
             var config = new CxConfig { ApiKey = "" };
@@ -57,7 +57,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task InstallSilentlyAsync_WithNullConfig_ReturnsFalse()
+        public async Task InstallSilentlyAsync_WithNullConfig_ReturnsFalseAsync()
         {
             var service = new McpInstallService();
 
@@ -67,7 +67,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task InstallSilentlyAsync_WithEmptyApiKey_ReturnsFalse()
+        public async Task InstallSilentlyAsync_WithEmptyApiKey_ReturnsFalseAsync()
         {
             var service = new McpInstallService();
             var config = new CxConfig { ApiKey = "" };
@@ -78,7 +78,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task MultipleAsyncOperations_ExecuteSequentially()
+        public async Task MultipleAsyncOperations_ExecuteSequentiallyAsync()
         {
             var service = new McpInstallService();
             var config = new CxConfig { ApiKey = "" };
@@ -92,7 +92,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task InstallAsync_ReturnsValidMcpInstallResult()
+        public async Task InstallAsync_ReturnsValidMcpInstallResultAsync()
         {
             var service = new McpInstallService();
             var config = new CxConfig { ApiKey = "" };

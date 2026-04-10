@@ -28,7 +28,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <Import Project="$(MSBuildThisFileDirectory)obj\$(MSBuildProjectFile).nuget.g.props" Condition="Exists('$(MSBuildThisFileDirectory)obj\$(MSBuildProjectFile).nuget.g.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -493,7 +492,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup />
-  <Import Project="$(MSBuildThisFileDirectory)obj\$(MSBuildProjectFile).nuget.g.targets" Condition="Exists('$(MSBuildThisFileDirectory)obj\$(MSBuildProjectFile).nuget.g.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

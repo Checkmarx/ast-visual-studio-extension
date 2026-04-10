@@ -41,32 +41,24 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Util
         }
 
         [Theory]
-        [InlineData(".cxignore")]
-        [InlineData(".cxignore.text")]
-        [InlineData("something.cxignore")]
-        public void IsCheckmarxIgnoreSidecarPath_WithIgnoreSidecar_ReturnsTrue(string fileName)
+        [InlineData(@"C:\repo\.vscode\foo.checkmarxIgnored")]
+        [InlineData(@"C:\repo\.vscode\sub\temp.checkmarxIgnored.txt")]
+        public void IsCheckmarxIgnoreSidecarPath_WithVscodeAndCheckmarxIgnored_ReturnsTrue(string path)
         {
-            var result = DevAssistSecretsExclusion.IsCheckmarxIgnoreSidecarPath(
-                $"C:\\project\\{fileName}");
+            var result = DevAssistSecretsExclusion.IsCheckmarxIgnoreSidecarPath(path);
 
-            // Depending on implementation, may or may not match
-            // Add assertions based on actual implementation
-            Assert.NotNull(result);
+            Assert.True(result);
         }
 
         [Theory]
-        [InlineData("config.txt")]
-        [InlineData("main.js")]
-        [InlineData("readme.md")]
-        public void IsCheckmarxIgnoreSidecarPath_WithRegularFile_ReturnsFalse(string fileName)
+        [InlineData(@"C:\project\config.txt")]
+        [InlineData(@"C:\repo\.vscode\readme.md")]
+        [InlineData(@"C:\project\.cxignore")]
+        public void IsCheckmarxIgnoreSidecarPath_WithoutRequiredPattern_ReturnsFalse(string path)
         {
-            var result = DevAssistSecretsExclusion.IsCheckmarxIgnoreSidecarPath(
-                $"C:\\project\\{fileName}");
+            var result = DevAssistSecretsExclusion.IsCheckmarxIgnoreSidecarPath(path);
 
-            // Regular files should not match ignore sidecar pattern
-            if (!result) // If False
-                Assert.False(result);
-            // If True, implementation includes these files - verify with actual behavior
+            Assert.False(result);
         }
 
         [Fact]

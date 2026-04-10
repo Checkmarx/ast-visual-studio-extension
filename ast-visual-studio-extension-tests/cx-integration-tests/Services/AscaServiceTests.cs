@@ -106,7 +106,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task AscaService_UnregisterAsync_AllowsReinitialization()
+        public async System.Threading.Tasks.Task AscaService_UnregisterAsync_AllowsReinitializationAsync()
         {
             var service1 = AscaService.GetInstance(_wrapperInstance);
             await service1.UnregisterAsync();

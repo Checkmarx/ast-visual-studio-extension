@@ -40,7 +40,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithNullWrapper_ReturnsEarly()
+        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithNullWrapper_ReturnsEarlyAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var settings = CreateMockSettings();
@@ -53,7 +53,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithNullSettings_ReturnsEarly()
+        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithNullSettings_ReturnsEarlyAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var mockConfig = new ast_visual_studio_extension.CxWrapper.Models.CxConfig { ApiKey = "test" };
@@ -67,7 +67,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_UnregisterAllAsync_WithoutInitialization_Succeeds()
+        public async Task RealtimeScannerOrchestrator_UnregisterAllAsync_WithoutInitialization_SucceedsAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
 
@@ -78,7 +78,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithMcpDisabled_SkipsScannerInitialization()
+        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithMcpDisabled_SkipsScannerInitializationAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var mockConfig = new ast_visual_studio_extension.CxWrapper.Models.CxConfig { ApiKey = "test" };
@@ -93,7 +93,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithNoLicense_SkipsScannerInitialization()
+        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithNoLicense_SkipsScannerInitializationAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var mockConfig = new ast_visual_studio_extension.CxWrapper.Models.CxConfig { ApiKey = "test" };
@@ -109,7 +109,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_UnregisterAllAsync_CanBeCalledMultipleTimes()
+        public async Task RealtimeScannerOrchestrator_UnregisterAllAsync_CanBeCalledMultipleTimesAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
 
@@ -121,7 +121,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_InitializeAsync_ThenUnregister_RestoresCleanState()
+        public async Task RealtimeScannerOrchestrator_InitializeAsync_ThenUnregister_RestoresCleanStateAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
@@ -145,7 +145,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithAllScannersDisabled_StillInitializes()
+        public async Task RealtimeScannerOrchestrator_InitializeAsync_WithAllScannersDisabled_StillInitializesAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
@@ -174,7 +174,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_SkipsInitializationMultipleTimes_BehavesIdempotent()
+        public async Task RealtimeScannerOrchestrator_SkipsInitializationMultipleTimes_BehavesIdempotentAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
@@ -195,7 +195,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         }
 
         [Fact]
-        public async Task RealtimeScannerOrchestrator_Lifecycle_InitializeUnregisterInitialize()
+        public async Task RealtimeScannerOrchestrator_Lifecycle_InitializeUnregisterInitializeAsync()
         {
             var orchestrator = new RealtimeScannerOrchestrator();
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();

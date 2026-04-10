@@ -80,7 +80,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task IacService_UnregisterAsync_AllowsReinitialization()
+        public async System.Threading.Tasks.Task IacService_UnregisterAsync_AllowsReinitializationAsync()
         {
             var service1 = IacService.GetInstance(_wrapperInstance);
             await service1.UnregisterAsync();

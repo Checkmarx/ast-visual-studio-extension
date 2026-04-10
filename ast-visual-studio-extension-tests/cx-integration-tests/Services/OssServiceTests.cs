@@ -83,7 +83,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task OssService_UnregisterAsync_AllowsReinitialization()
+        public async System.Threading.Tasks.Task OssService_UnregisterAsync_AllowsReinitializationAsync()
         {
             var service1 = OssService.GetInstance(_wrapperInstance);
             await service1.UnregisterAsync();
