@@ -1,6 +1,5 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
@@ -22,6 +21,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
         private static readonly IFileFilterStrategy _fileFilter = new AscaFileFilterStrategy();
 
         protected override string ScannerName => "ASCA";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.ASCA;
 
         private AscaService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
@@ -81,11 +82,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
             }
 
             var mappedResults = VulnerabilityMapper.FromAsca(results.ScanDetails, sourceFilePath);
-            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(sourceFilePath);
-            if (buffer != null)
-                CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            else
-                CxAssistDisplayCoordinator.UpdateFindingsForFile(sourceFilePath, mappedResults);
+            CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
             return mappedResults.Count;
         }
 

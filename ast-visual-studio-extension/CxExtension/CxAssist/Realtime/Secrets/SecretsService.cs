@@ -1,6 +1,5 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
@@ -22,6 +21,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         private static readonly IFileFilterStrategy _fileFilter = new SecretsFileFilterStrategy();
 
         protected override string ScannerName => "Secrets";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.Secrets;
 
         private SecretsService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
@@ -108,11 +109,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
             }
 
             var mappedResults = VulnerabilityMapper.FromSecrets(results.Secrets, sourceFilePath);
-            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(sourceFilePath);
-            if (buffer != null)
-                CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            else
-                CxAssistDisplayCoordinator.UpdateFindingsForFile(sourceFilePath, mappedResults);
+            CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
             return mappedResults.Count;
         }
 

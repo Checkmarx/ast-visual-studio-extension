@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell.Interop;
 using static System.Diagnostics.Stopwatch;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 {
@@ -58,6 +59,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         private static readonly string[] AiAgentFilePaths = { "Dummy.txt", "AIAssistantInput" };
 
         protected abstract string ScannerName { get; }
+
+        /// <summary>
+        /// Scanner type used when merging into the display coordinator so clearing one engine does not remove others.
+        /// </summary>
+        protected abstract ScannerType CoordinatorScannerType { get; }
 
         public abstract bool ShouldScanFile(string filePath);
 
@@ -582,21 +588,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         }
 
         /// <summary>
-        /// Clears all display markers (gutter icons, underlines, findings window) for the given file.
-        /// Call when a scan returns 0 results so stale markers are removed after a fix.
+        /// Clears markers and stored findings for this scanner only on the given file; other engines' findings stay.
+        /// Call when a scan returns 0 results so stale markers for this engine are removed after a fix.
         /// </summary>
-        protected static void ClearDisplayForFile(string filePath)
+        protected void ClearDisplayForFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath)) return;
 
             try
             {
-                var emptyList = new List<Core.Models.Vulnerability>();
-                var buffer = Core.GutterIcons.CxAssistGlyphTaggerProvider.GetBufferForFile(filePath);
-                if (buffer != null)
-                    Core.CxAssistDisplayCoordinator.UpdateFindings(buffer, emptyList, filePath);
-                else
-                    Core.CxAssistDisplayCoordinator.UpdateFindingsForFile(filePath, emptyList);
+                Core.CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(filePath, CoordinatorScannerType, new List<Vulnerability>());
             }
             catch (Exception ex)
             {

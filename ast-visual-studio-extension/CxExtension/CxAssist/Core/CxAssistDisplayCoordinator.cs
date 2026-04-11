@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Reflection;
 using Microsoft.VisualStudio.Text;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
@@ -79,21 +78,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static string GetFilePathForBuffer(ITextBuffer buffer) => TryGetFilePathFromBuffer(buffer);
 
         /// <summary>
-        /// Tries to get the file path for the buffer from ITextDocument (when the buffer is backed by a file).
-        /// Uses reflection so we don't require an extra assembly reference.
+        /// Tries to get the file path for the buffer from <see cref="ITextDocument"/> (when the buffer is backed by a file).
+        /// Uses <see cref="typeof(ITextDocument)"/> as the property-bag key (same as the editor). Do not use
+        /// <see cref="Type.GetType(string)"/> with a simple assembly name — that returns null unless that assembly is already loaded.
         /// </summary>
         private static string TryGetFilePathFromBuffer(ITextBuffer buffer)
         {
             if (buffer?.Properties == null) return null;
             try
             {
-                // ITextDocument is in Microsoft.VisualStudio.Text.Logic (or Text.Data); key is often the type
-                var docType = Type.GetType("Microsoft.VisualStudio.Text.ITextDocument, Microsoft.VisualStudio.Text.Logic", false)
-                    ?? Type.GetType("Microsoft.VisualStudio.Text.ITextDocument, Microsoft.VisualStudio.Text.Data", false);
-                if (docType == null) return null;
-                if (!buffer.Properties.TryGetProperty(docType, out object doc) || doc == null) return null;
-                var pathProp = docType.GetProperty("FilePath", BindingFlags.Public | BindingFlags.Instance);
-                return pathProp?.GetValue(doc) as string;
+                if (!buffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument document) || document == null)
+                    return null;
+                return document.FilePath;
             }
             catch
             {
@@ -277,31 +273,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, list.Count, filePath ?? "unknown"));
 
-            // Ensure UI thread for gutter/underline updates (taggers are UI components)
-            try
-            {
-                Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    // Wait briefly for taggers to be created (handles race condition when scan completes before taggers are fully initialized)
-                    WaitForTaggersReady(buffer);
-
-                    // 1. Update gutter
-                    var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
-                    if (glyphTagger != null)
-                        CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
-
-                    // 2. Update underline
-                    var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
-                    if (errorTagger != null)
-                        CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
-                });
-            }
-            catch (Exception ex)
-            {
-                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.UpdateFindings.UI");
-            }
+            ApplyGutterAndErrorTaggersToBuffer(buffer, list);
 
             // 3. Store per file and notify (reference ProblemHolderService + ISSUE_TOPIC-like)
             CxAssistErrorHandler.TryRun(() =>
@@ -329,12 +301,89 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Updates findings for a single file without clearing findings from other files.
-        /// Called when a background scan completes (file not open in editor).
-        /// Automatically filters disabled scanners (aligned with UpdateFindings).
+        /// Applies gutter icons and error tag underlines for the given buffer (UI thread).
+        /// </summary>
+        private static void ApplyGutterAndErrorTaggersToBuffer(ITextBuffer buffer, List<Vulnerability> list)
+        {
+            if (buffer == null)
+                return;
+
+            try
+            {
+                Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    WaitForTaggersReady(buffer);
+
+                    var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
+                    if (glyphTagger != null)
+                        CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
+
+                    var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
+                    if (errorTagger != null)
+                        CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
+                });
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.ApplyGutterAndErrorTaggersToBuffer.UI");
+            }
+        }
+
+        /// <summary>
+        /// Replaces stored and displayed findings for one scanner on a file, preserving findings from other scanners.
+        /// Use for realtime scan results so an engine returning 0 issues does not clear sibling engines' issues on the same file.
+        /// </summary>
+        public static void MergeUpdateFindingsForScanner(string filePath, ScannerType scanner, List<Vulnerability> vulnerabilitiesFromScanner)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            var incoming = vulnerabilitiesFromScanner != null
+                ? vulnerabilitiesFromScanner.FindAll(v => v.Scanner == scanner && CxAssistConstants.IsScannerEnabled(v.Scanner))
+                : new List<Vulnerability>();
+
+            string key = NormalizePath(filePath);
+            if (string.IsNullOrEmpty(key))
+                return;
+
+            List<Vulnerability> mergedForUi;
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            lock (_lock)
+            {
+                _fileToIssues.TryGetValue(key, out var existing);
+                var merged = existing != null
+                    ? existing.Where(v => v.Scanner != scanner).ToList()
+                    : new List<Vulnerability>();
+                merged.AddRange(incoming);
+
+                mergedForUi = new List<Vulnerability>(merged);
+                if (merged.Count == 0)
+                    _fileToIssues.Remove(key);
+                else
+                    _fileToIssues[key] = merged;
+
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, mergedForUi.Count, filePath));
+
+            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(filePath);
+            ApplyGutterAndErrorTaggersToBuffer(buffer, mergedForUi);
+
+            IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
+        /// Replaces all findings for a single file in storage and notifies subscribers.
+        /// Does not update gutter/underlines; does not merge with other scanners — prefer <see cref="MergeUpdateFindingsForScanner"/> for per-engine updates.
         /// </summary>
         /// <param name="filePath">File path to update findings for.</param>
-        /// <param name="vulnerabilities">Findings for this file; null or empty clears findings for this file only.</param>
+        /// <param name="vulnerabilities">Findings for this file; null or empty removes this file from stored issues.</param>
         public static void UpdateFindingsForFile(string filePath, List<Vulnerability> vulnerabilities)
         {
             if (string.IsNullOrEmpty(filePath))
@@ -368,7 +417,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// Sets the stored findings by file and raises IssuesUpdated without updating gutter/underline.
         /// CLEARS ALL previous findings from all files before setting new ones.
         /// Use when displaying fallback data (e.g. package.json mock) in the Findings window so the Error List shows the same data.
-        /// For scanner background updates, use UpdateFindingsForFile instead to preserve findings from other files.
+        /// For realtime scanner updates on a file shared by multiple engines, use <see cref="MergeUpdateFindingsForScanner"/> instead.
         /// </summary>
         public static void SetFindingsByFile(IReadOnlyDictionary<string, List<Vulnerability>> issuesByFile)
         {

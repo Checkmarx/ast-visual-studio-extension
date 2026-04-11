@@ -1,6 +1,5 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
@@ -22,6 +21,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         private static readonly IFileFilterStrategy _fileFilter = new IacFileFilterStrategy();
 
         protected override string ScannerName => "IaC";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.IaC;
 
         private IacService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
@@ -92,11 +93,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
             }
 
             var mappedResults = VulnerabilityMapper.FromIac(results.Results, sourceFilePath);
-            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(sourceFilePath);
-            if (buffer != null)
-                CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            else
-                CxAssistDisplayCoordinator.UpdateFindingsForFile(sourceFilePath, mappedResults);
+            CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
             return mappedResults.Count;
         }
 

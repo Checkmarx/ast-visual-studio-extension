@@ -1,6 +1,5 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
@@ -24,6 +23,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         private static readonly IFileFilterStrategy _fileFilter = new ContainersFileFilterStrategy();
 
         protected override string ScannerName => "Containers";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.Containers;
 
         private ContainersService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker") : base(cxWrapper)
         {
@@ -115,11 +116,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
             }
 
             var mappedResults = VulnerabilityMapper.FromContainers(results.Images, sourceFilePath);
-            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(sourceFilePath);
-            if (buffer != null)
-                CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            else
-                CxAssistDisplayCoordinator.UpdateFindingsForFile(sourceFilePath, mappedResults);
+            CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
             return mappedResults.Count;
         }
 

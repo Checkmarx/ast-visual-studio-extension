@@ -1,6 +1,5 @@
 using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
-using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
@@ -27,6 +26,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         private CancellationTokenSource _manifestSweepCts;
 
         protected override string ScannerName => "OSS";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.OSS;
 
         private OssService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
@@ -177,11 +178,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
             }
 
             var mappedResults = VulnerabilityMapper.FromOss(results.Packages, sourceFilePath);
-            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(sourceFilePath);
-            if (buffer != null)
-                CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            else
-                CxAssistDisplayCoordinator.UpdateFindingsForFile(sourceFilePath, mappedResults);
+            CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
             return mappedResults.Count;
         }
 

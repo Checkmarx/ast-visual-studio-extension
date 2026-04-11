@@ -82,6 +82,9 @@ namespace ast_visual_studio_extension.CxWrapper.Models
         [JsonProperty("description")]
         public string Description { get; }
 
+        /// <summary>1-based start column when the CLI supplies <c>column</c> or <c>start_column</c> (JetBrains/Problems parity).</summary>
+        public int Column { get; }
+
         [JsonConstructor]
         public CxAscaDetail(
             [JsonProperty("rule_id")] int ruleId,
@@ -93,7 +96,9 @@ namespace ast_visual_studio_extension.CxWrapper.Models
             [JsonProperty("problematicLine")] string problematicLine,
             [JsonProperty("length")] int length,
             [JsonProperty("remediationAdvise")] string remediationAdvise,
-            [JsonProperty("description")] string description)
+            [JsonProperty("description")] string description,
+            [JsonProperty("column")] int column = 0,
+            [JsonProperty("start_column")] int startColumn = 0)
         {
             RuleId = ruleId;
             Language = language;
@@ -105,6 +110,7 @@ namespace ast_visual_studio_extension.CxWrapper.Models
             Length = length;
             RemediationAdvise = remediationAdvise;
             Description = description;
+            Column = column != 0 ? column : startColumn;
         }
     }
 
