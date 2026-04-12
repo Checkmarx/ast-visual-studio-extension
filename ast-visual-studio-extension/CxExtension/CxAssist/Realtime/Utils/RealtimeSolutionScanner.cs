@@ -1,5 +1,7 @@
 using EnvDTE;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,8 +15,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     public static class RealtimeSolutionScanner
     {
         /// <summary>
-        /// Returns the directory containing the loaded solution file, or null if unavailable (unsaved solution, etc.).
-        /// Shared by the realtime orchestrator and OSS startup sweep.
+        /// Returns the workspace root for realtime OSS sweep and manifest watching: directory of the loaded .sln,
+        /// or the folder when using Open Folder / directory-based workspace, or <see cref="IVsSolution.GetSolutionInfo"/>
+        /// when DTE <c>Solution.FullName</c> is not set yet.
         /// </summary>
         public static string TryGetSolutionDirectory()
         {
@@ -22,16 +25,63 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             {
                 var dte = Package.GetGlobalService(typeof(DTE)) as DTE;
                 var fullName = dte?.Solution?.FullName;
-                if (string.IsNullOrWhiteSpace(fullName))
-                    return null;
-                try
+                if (!string.IsNullOrWhiteSpace(fullName))
                 {
-                    return Path.GetDirectoryName(fullName);
+                    try
+                    {
+                        // Open Folder (or similar): FullName is the opened directory.
+                        if (Directory.Exists(fullName))
+                            return NormalizeExistingDirectory(fullName);
+
+                        if (File.Exists(fullName))
+                        {
+                            var dir = Path.GetDirectoryName(fullName);
+                            return NormalizeExistingDirectory(dir);
+                        }
+                    }
+                    catch (ArgumentException)
+                    {
+                        // fall through to IVsSolution
+                    }
                 }
-                catch (ArgumentException)
-                {
+
+                return TryGetSolutionDirectoryFromVsSolution();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string TryGetSolutionDirectoryFromVsSolution()
+        {
+            try
+            {
+                var solution = Package.GetGlobalService(typeof(SVsSolution)) as IVsSolution;
+                if (solution == null)
                     return null;
-                }
+
+                // Works for many "no .sln path in DTE yet" cases, including Open Folder where pbstrSolutionFile may be empty.
+                int hr = solution.GetSolutionInfo(out string solutionDirectory, out _, out _);
+                if (ErrorHandler.Failed(hr))
+                    return null;
+
+                return NormalizeExistingDirectory(solutionDirectory);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string NormalizeExistingDirectory(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+            try
+            {
+                var full = Path.GetFullPath(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                return Directory.Exists(full) ? full : null;
             }
             catch
             {

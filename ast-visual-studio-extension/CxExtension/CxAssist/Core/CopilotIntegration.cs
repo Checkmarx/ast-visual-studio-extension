@@ -2,9 +2,13 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.Shell;
+using ast_visual_studio_extension.CxExtension.Utils;
 using EnvDTE;
 using EnvDTE80;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Imaging;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Automation;
 using Process = System.Diagnostics.Process;
 
@@ -48,13 +52,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         private static class Timing
         {
             /// <summary>Delay after opening Copilot to allow UI to fully render.</summary>
-            public const int CopilotOpenDelayMs = 1200;
+            public const int CopilotOpenDelayMs = 900;
 
             /// <summary>Delay after starting a new thread for UI to settle.</summary>
-            public const int NewThreadDelayMs = 500;
+            public const int NewThreadDelayMs = 400;
 
             /// <summary>Delay before paste/submit to ensure input field has focus.</summary>
-            public const int PasteDelayMs = 400;
+            public const int PasteDelayMs = 350;
 
             /// <summary>Brief pause between paste and Enter to let VS process clipboard.</summary>
             public const int PasteSettleMs = 100;
@@ -68,7 +72,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             public static readonly string[] ModePickerNames = {
                 "Chat Mode Picker", "Chat mode",
                 "Agent Mode Picker", "Agent mode", "Agent",
-                "Mode"
+                "Mode", "Copilot mode", "Chat mode picker",
+                "Mode picker", "Pick a mode"
             };
             public const string AgentOptionName = "Agent";
         }
@@ -146,6 +151,95 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         // ==================== Public API ====================
 
         /// <summary>
+        /// Shows a non-modal main-window info bar (fallback: status bar). No blocking dialogs.
+        /// </summary>
+        /// <param name="useWarningSeverity">When true and not an error, uses the warning (yellow) info bar style.</param>
+        public static void ShowAssistNotification(string message, bool isError = false, bool useWarningSeverity = false)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var pkg = ServiceProvider.GlobalProvider?.GetService(typeof(AsyncPackage)) as AsyncPackage;
+                if (pkg != null)
+                {
+                    if (isError)
+                        CxUtils.DisplayMessageInInfoBar(pkg, message, KnownMonikers.StatusError, autoDismiss: true);
+                    else if (useWarningSeverity)
+                        CxUtils.DisplayMessageInInfoBar(pkg, message, KnownMonikers.StatusWarning, autoDismiss: true);
+                    else
+                        CxUtils.DisplayMessageInInfoBar(pkg, message, KnownMonikers.StatusInformation, autoDismiss: true);
+                    return;
+                }
+
+                var dte = GetDte();
+                if (dte?.StatusBar != null)
+                    dte.StatusBar.Text = message;
+            }
+            catch (Exception ex)
+            {
+                Log("ShowAssistNotification failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>True when GitHub Copilot chat commands are registered (extension present).</summary>
+        public static bool CheckCopilotInstalled()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var dte = GetDte();
+                if (dte?.Commands == null) return false;
+
+                foreach (string cmdId in OpenChatCommands)
+                {
+                    try
+                    {
+                        var cmd = dte.Commands.Item(cmdId);
+                        if (cmd != null) return true;
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return false;
+        }
+
+        /// <summary>Legacy name; use <see cref="CheckCopilotInstalled"/>.</summary>
+        public static bool IsCopilotAvailable() => CheckCopilotInstalled();
+
+        /// <summary>
+        /// Starts a new Copilot chat thread via DTE (best-effort).
+        /// </summary>
+        public static bool OpenCopilotThread()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return TryExecuteDteCommands(NewThreadCommands);
+        }
+
+        /// <summary>
+        /// Whether Copilot Chat appears to be in Agent mode (VS 2022 vs newer UIs differ; heuristics apply for major version 19+).
+        /// </summary>
+        public static bool IsAgentMode()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var vsProcess = Process.GetCurrentProcess();
+                AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                return vsWindow != null && IsAgentModeAlreadyActive(vsWindow);
+            }
+            catch (Exception ex)
+            {
+                Log("IsAgentMode failed: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Opens Copilot Chat, starts a new thread, pastes the prompt, and sends it.
         /// Returns true if the clipboard was set (even if full automation failed).
         /// Maintains backward compatibility with existing callers.
@@ -182,37 +276,32 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 }
                 Log("Prompt copied to clipboard");
 
+                // Capture the code document window before Copilot steals focus (for editor info bar above the file).
+                IVsWindowFrame assistDocumentFrame = TryCaptureAssistDocumentFrame();
+
                 // Step 2: Pre-check if Copilot is available (aligned with JetBrains CopilotIntegration.isCopilotAvailable)
-                if (!IsCopilotAvailable())
+                if (!CheckCopilotInstalled())
                 {
                     Log("Copilot not available (pre-check), prompt copied to clipboard");
-                    MessageBox.Show(
-                        CxAssistConstants.CopilotOpenInstructionsMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowAssistNotification(CxAssistConstants.CopilotNotInstalledInfoBarMessage, isError: false, useWarningSeverity: true);
                     return IntegrationResult.CopilotNotAvailable(
-                        CxAssistConstants.CopilotOpenInstructionsMessage);
+                        CxAssistConstants.CopilotNotInstalledInfoBarMessage);
                 }
 
                 // Step 3: Open Copilot Chat
-                bool opened = TryOpenCopilotChat();
+                bool opened = OpenCopilotChat();
                 if (!opened)
                 {
                     Log("Copilot Chat failed to open - Copilot may not be installed");
-                    MessageBox.Show(
-                        CxAssistConstants.CopilotOpenInstructionsMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowAssistNotification(CxAssistConstants.CopilotChatOpenFailedInfoBarMessage, isError: false, useWarningSeverity: true);
                     return IntegrationResult.CopilotNotAvailable(
-                        CxAssistConstants.CopilotOpenInstructionsMessage);
+                        CxAssistConstants.CopilotChatOpenFailedInfoBarMessage);
                 }
 
                 Log("Copilot Chat opened, scheduling automation sequence");
 
                 // Step 4: Schedule the automation sequence after UI renders
-                ScheduleAutomatedPromptEntry(prompt);
+                ScheduleAutomatedPromptEntry(prompt, assistDocumentFrame);
 
                 return IntegrationResult.PartialSuccess(
                     "Copilot Chat opened, automation in progress...");
@@ -223,11 +312,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 try
                 {
                     CopyToClipboard(prompt);
-                    MessageBox.Show(
-                        clipboardFallbackMessage ?? CxAssistConstants.CopilotGenericFallbackMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowAssistNotification(
+                        clipboardFallbackMessage ?? CxAssistConstants.CopilotGenericFallbackMessage);
                     return IntegrationResult.PartialSuccess(clipboardFallbackMessage);
                 }
                 catch
@@ -244,73 +330,120 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// DispatcherTimer steps. Each step yields to the UI thread so that
         /// Copilot Chat can render and process events between operations.
         ///
-        /// <para><b>Step 1</b> (after CopilotOpenDelayMs): Start new thread via DTE.</para>
-        /// <para><b>Step 2</b> (after NewThreadDelayMs): Switch to Agent mode via UI Automation.</para>
-        /// <para><b>Step 3</b> (after AgentModeDelayMs): Re-focus Copilot Chat, paste prompt, submit.</para>
+        /// <para><b>Agent mode:</b> new thread → paste → Enter (submit).</para>
+        /// <para><b>Non-agent:</b> new thread (awaited via timer chain) → paste only → info bar (no modal).</para>
         /// </summary>
-        private static void ScheduleAutomatedPromptEntry(string prompt)
+        /// <summary>
+        /// Resolves the active document <see cref="IVsWindowFrame"/> while the editor still has selection context.
+        /// </summary>
+        private static IVsWindowFrame TryCaptureAssistDocumentFrame()
         {
-            // New flow: after Copilot opens, require the user to have Agent mode active.
-            // If Agent mode is not active, show an informational popup and do not
-            // attempt to switch modes automatically. The prompt is already copied
-            // to the clipboard as a guaranteed fallback.
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var mon = Package.GetGlobalService(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
+                if (mon != null
+                    && ErrorHandler.Succeeded(mon.GetCurrentElementValue((uint)VSConstants.VSSELELEMID.SEID_DocumentFrame, out object frameObj))
+                    && frameObj is IVsWindowFrame frame)
+                {
+                    return frame;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("TryCaptureAssistDocumentFrame: " + ex.Message);
+            }
+
+            return null;
+        }
+
+        private static void ShowCopilotNotAgentModeUserMessage(IVsWindowFrame assistDocumentFrame)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            AssistDocumentInfoBar.TryShowWarning(
+                assistDocumentFrame,
+                CxAssistConstants.CopilotNotAgentModeInfoBarMessage,
+                () => ShowAssistNotification(
+                    CxAssistConstants.CopilotNotAgentModeInfoBarMessage,
+                    isError: false,
+                    useWarningSeverity: true));
+        }
+
+        private static void ScheduleAutomatedPromptEntry(string prompt, IVsWindowFrame assistDocumentFrame)
+        {
             ScheduleOnIdle(Timing.CopilotOpenDelayMs, () =>
             {
                 try
                 {
                     var vsProcess = Process.GetCurrentProcess();
                     AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                    bool agentActive = vsWindow != null && IsAgentModeAlreadyActive(vsWindow);
 
-                    bool agentActive = false;
-                    if (vsWindow != null)
+                    if (agentActive)
                     {
-                        agentActive = IsAgentModeAlreadyActive(vsWindow);
-                    }
+                        Log("Agent mode active — new thread then paste and submit");
+                        ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
+                        {
+                            bool newThreadStarted = OpenCopilotThread();
+                            Log(newThreadStarted
+                                ? "New thread started via DTE command"
+                                : "DTE new-thread commands not available, continuing with current thread");
 
-                    if (!agentActive)
-                    {
-                        Log("Agent mode not active - prompting user to enable Agent mode and use clipboard fallback");
-                        MessageBox.Show(
-                            "Please select 'Agent' mode in GitHub Copilot Chat. The prompt has been copied to your clipboard — open Copilot Chat, select Agent mode, then paste the prompt to continue.",
-                            CxAssistConstants.DisplayName,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                            if (newThreadStarted)
+                            {
+                                try
+                                {
+                                    var vsProc = Process.GetCurrentProcess();
+                                    AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
+                                    if (wnd != null)
+                                    {
+                                        bool focused = FocusCopilotInput(wnd);
+                                        Log("UI Automation: Focused Copilot input after new thread: " + focused);
+                                    }
+                                }
+                                catch (Exception exFocus)
+                                {
+                                    Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                                }
+                            }
+
+                            int delayAfterThread = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                            ScheduleOnIdle(delayAfterThread, PerformPasteAndSubmit);
+                        });
                         return;
                     }
 
-                    // Agent mode is active — proceed to start a new thread and paste/submit
+                    Log("Agent mode not active — new thread, insert prompt without submit, info bar");
                     ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
                     {
-                        bool newThreadStarted = TryStartNewThread();
-                        Log(newThreadStarted
-                            ? "New thread started via DTE command"
-                            : "DTE new-thread commands not available, continuing with current thread");
-
-                        // If a new thread was started, try focusing the Copilot input
-                        if (newThreadStarted)
+                        bool threadOk = OpenCopilotThread();
+                        if (!threadOk)
+                            ShowAssistNotification(CxAssistConstants.CopilotChatOpenFailedInfoBarMessage, isError: false, useWarningSeverity: true);
+                        else
                         {
                             try
                             {
                                 var vsProc = Process.GetCurrentProcess();
                                 AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
                                 if (wnd != null)
-                                {
-                                    bool focused = FocusCopilotInput(wnd);
-                                    Log("UI Automation: Focused Copilot input after new thread: " + focused);
-                                }
+                                    FocusCopilotInput(wnd);
                             }
                             catch (Exception exFocus)
                             {
-                                Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                                Log("UI Automation: focus before non-agent paste: " + exFocus.Message);
                             }
                         }
 
-                        int agentDelay = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
-
-                        // Paste + submit
-                        ScheduleOnIdle(agentDelay, () =>
+                        int delayBeforePaste = threadOk ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                        ScheduleOnIdle(delayBeforePaste, () =>
                         {
-                            PerformPasteAndSubmit();
+                            bool inserted = InsertPromptWithoutSubmitting();
+                            if (!threadOk)
+                                return;
+                            if (!inserted)
+                                ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
+                            else
+                                ShowCopilotNotAgentModeUserMessage(assistDocumentFrame);
                         });
                     });
                 }
@@ -343,11 +476,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.PerformPasteAndSubmit");
-                MessageBox.Show(
-                    CxAssistConstants.CopilotPasteFailedMessage,
-                    CxAssistConstants.DisplayName,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
             }
         }
 
@@ -372,14 +501,29 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 catch (Exception ex)
                 {
                     CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.ScheduleOnIdle");
-                    MessageBox.Show(
-                        CxAssistConstants.CopilotPasteFailedMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
                 }
             };
             timer.Start();
+        }
+
+        /// <summary>
+        /// Pastes the prompt from the clipboard into Copilot input without sending (no Enter).
+        /// </summary>
+        private static bool InsertPromptWithoutSubmitting()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                TryExecuteDteCommands(OpenChatCommands);
+                System.Windows.Forms.SendKeys.SendWait("^v");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.InsertPromptWithoutSubmitting");
+                return false;
+            }
         }
 
         // ==================== SendKeys ====================
@@ -398,13 +542,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         // ==================== Opening Copilot Chat ====================
 
         /// <summary>
-        /// Attempts to open GitHub Copilot Chat using multiple strategies:
-        /// <list type="number">
-        ///   <item>DTE ExecuteCommand with known command IDs</item>
-        ///   <item>Keyboard shortcut simulation (Ctrl+\ then C)</item>
-        /// </list>
+        /// Opens the Copilot Chat tool window (not necessarily a new thread), using DTE commands or Ctrl+\, C.
         /// </summary>
-        private static bool TryOpenCopilotChat()
+        private static bool OpenCopilotChat()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -430,47 +570,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return false;
         }
 
-        /// <summary>
-        /// Attempts to start a new chat thread via DTE commands.
-        /// </summary>
-        private static bool TryStartNewThread()
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            return TryExecuteDteCommands(NewThreadCommands);
-        }
-
         // ==================== Availability Check ====================
-
-        /// <summary>
-        /// Checks if GitHub Copilot is available before attempting to open it.
-        /// Aligned with JetBrains CopilotIntegration.isCopilotAvailable: checks known
-        /// command IDs via DTE.Commands to see if any are registered.
-        /// </summary>
-        public static bool IsCopilotAvailable()
-        {
-            try
-            {
-                ThreadHelper.ThrowIfNotOnUIThread();
-                var dte = GetDte();
-                if (dte?.Commands == null) return false;
-
-                foreach (string cmdId in OpenChatCommands)
-                {
-                    try
-                    {
-                        var cmd = dte.Commands.Item(cmdId);
-                        if (cmd != null) return true;
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-            catch
-            {
-            }
-            return false;
-        }
+        // See <see cref="CheckCopilotInstalled"/> and <see cref="IsCopilotAvailable"/>.
 
         // ==================== DTE Helpers ====================
 
@@ -846,7 +947,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
 
                         int vsMajor = GetVisualStudioMajorVersion();
-                        bool isNewVs = vsMajor >= 19; // treat 19+ as VS2026 or newer
+                        // VS 17 = VS2022; VS 18+ = newer shell (2025/2026) with different Copilot mode UI.
+                        bool isNewVs = vsMajor >= 18;
 
                         for (int i = 0; i < all.Count; i++)
                         {

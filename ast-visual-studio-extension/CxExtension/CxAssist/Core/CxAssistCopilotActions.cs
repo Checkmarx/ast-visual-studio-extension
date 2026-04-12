@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Windows;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 
@@ -84,9 +83,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         private static void ShowNoPromptMessage(string detail, bool isFix)
         {
             string message = isFix
-                ? "No fix prompt available for this finding.\n" + detail
-                : "View Details:\n" + detail;
-            MessageBox.Show(message, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                ? "No fix prompt available for this finding. " + detail
+                : "View Details: " + detail;
+            CopilotIntegration.ShowAssistNotification(message, isError: false);
         }
     }
 }

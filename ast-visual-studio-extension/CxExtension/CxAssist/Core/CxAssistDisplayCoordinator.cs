@@ -2,7 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Tagging;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers;
@@ -47,7 +51,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
             foreach (var kv in snapshot)
             {
-                var buffer = GutterIcons.CxAssistGlyphTaggerProvider.GetBufferForFile(kv.Key);
+                var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(kv.Key);
                 if (buffer != null)
                     UpdateFindings(buffer, kv.Value, kv.Key);
             }
@@ -230,25 +234,40 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Waits briefly for both taggers to be created (with timeout).
-        /// Returns true when both taggers exist, false if timeout occurs.
+        /// Nudges the tagging system so <see cref="CxAssistGlyphTaggerProvider"/> / <see cref="CxAssistErrorTaggerProvider"/> materialize for buffers
+        /// that were resolved via RDT before a view existed.
         /// </summary>
-        private static bool WaitForTaggersReady(ITextBuffer buffer, int timeoutMs = 500)
+        private static void TryEnsureTaggersMaterialized(ITextBuffer buffer)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            while (sw.ElapsedMilliseconds < timeoutMs)
+            if (buffer == null)
+                return;
+
+            try
             {
-                var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "", null);
-                var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "", null);
-                if (glyphTagger != null && errorTagger != null)
+                var mef = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+                var factory = mef?.GetService<IBufferTagAggregatorFactoryService>();
+                if (factory == null)
+                    return;
+
+                var snapshot = buffer.CurrentSnapshot;
+                var span = snapshot.Length > 0
+                    ? new SnapshotSpan(snapshot, 0, snapshot.Length)
+                    : new SnapshotSpan(snapshot, 0, 0);
+                var spans = new NormalizedSnapshotSpanCollection(span);
+
+                using (ITagAggregator<CxAssistGlyphTag> glyphAgg = factory.CreateTagAggregator<CxAssistGlyphTag>(buffer))
+                using (ITagAggregator<IErrorTag> errorAgg = factory.CreateTagAggregator<IErrorTag>(buffer))
                 {
-                    sw.Stop();
-                    return true;
+                    if (glyphAgg != null && spans.Count > 0)
+                        _ = glyphAgg.GetTags(spans);
+                    if (errorAgg != null && spans.Count > 0)
+                        _ = errorAgg.GetTags(spans);
                 }
-                System.Threading.Thread.Sleep(10);
             }
-            sw.Stop();
-            return false;
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.TryEnsureTaggersMaterialized");
+            }
         }
 
         /// <summary>
@@ -301,7 +320,38 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Applies gutter icons and error tag underlines for the given buffer (UI thread).
+        /// Applies gutter icons and error tag underlines for the given buffer (must run on the UI thread).
+        /// </summary>
+        private static async Task ApplyGutterAndErrorTaggersToBufferCoreAsync(ITextBuffer buffer, List<Vulnerability> list)
+        {
+            if (buffer == null)
+                return;
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            TryEnsureTaggersMaterialized(buffer);
+
+            var deadline = Environment.TickCount + 500;
+            while (Environment.TickCount < deadline)
+            {
+                var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
+                var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
+                if (glyphTagger != null && errorTagger != null)
+                    break;
+                await Task.Delay(15);
+            }
+
+            var glyphTaggerFinal = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
+            if (glyphTaggerFinal != null)
+                CxAssistErrorHandler.TryRun(() => glyphTaggerFinal.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
+
+            var errorTaggerFinal = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
+            if (errorTaggerFinal != null)
+                CxAssistErrorHandler.TryRun(() => errorTaggerFinal.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
+        }
+
+        /// <summary>
+        /// Applies gutter icons and error tag underlines for the given buffer (marshals to UI thread).
         /// </summary>
         private static void ApplyGutterAndErrorTaggersToBuffer(ITextBuffer buffer, List<Vulnerability> list)
         {
@@ -310,25 +360,48 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             try
             {
-                Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    WaitForTaggersReady(buffer);
-
-                    var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
-                    if (glyphTagger != null)
-                        CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
-
-                    var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
-                    if (errorTagger != null)
-                        CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
-                });
+                ThreadHelper.JoinableTaskFactory.Run(() => ApplyGutterAndErrorTaggersToBufferCoreAsync(buffer, list));
             }
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.ApplyGutterAndErrorTaggersToBuffer.UI");
             }
+        }
+
+        /// <summary>
+        /// OSS / manifest scans often finish before the JSON buffer is registered in the RDT or before taggers exist.
+        /// Retries on the UI thread so gutter and squiggles apply once <see cref="CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile"/> succeeds.
+        /// </summary>
+        private static void ScheduleApplyGutterWhenBufferAvailable(string filePath, List<Vulnerability> findings)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            var payload = findings != null ? new List<Vulnerability>(findings) : new List<Vulnerability>();
+
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try
+                {
+                    for (int attempt = 0; attempt < 30; attempt++)
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                        var buffer = CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
+                        if (buffer != null)
+                        {
+                            await ApplyGutterAndErrorTaggersToBufferCoreAsync(buffer, payload);
+                            return;
+                        }
+
+                        await Task.Delay(60);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.ScheduleApplyGutterWhenBufferAvailable");
+                }
+            });
         }
 
         /// <summary>
@@ -372,8 +445,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, mergedForUi.Count, filePath));
 
-            var buffer = CxAssistGlyphTaggerProvider.GetBufferForFile(filePath);
-            ApplyGutterAndErrorTaggersToBuffer(buffer, mergedForUi);
+            var buffer = CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
+            if (buffer != null)
+                ApplyGutterAndErrorTaggersToBuffer(buffer, mergedForUi);
+            else
+                ScheduleApplyGutterWhenBufferAvailable(filePath, mergedForUi);
 
             IssuesUpdated?.Invoke(snapshot);
         }
@@ -468,7 +544,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                     foreach (var filePath in filesToClear)
                     {
-                        var buffer = GutterIcons.CxAssistGlyphTaggerProvider.GetBufferForFile(filePath);
+                        var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
                         if (buffer != null)
                         {
                             // Update taggers with empty list to clear all icons and underlines
@@ -543,7 +619,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                     foreach (var filePath in filesToRefresh)
                     {
-                        var buffer = GutterIcons.CxAssistGlyphTaggerProvider.GetBufferForFile(filePath);
+                        var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
                         if (buffer != null)
                         {
                             // Get remaining findings for this file (after filtering)

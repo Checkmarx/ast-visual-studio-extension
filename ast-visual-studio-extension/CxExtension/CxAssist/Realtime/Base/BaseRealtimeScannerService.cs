@@ -278,6 +278,54 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: text editor + document events registered.");
             OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: Monitoring enabled");
+
+            ScheduleActiveDocumentOpenScanAfterSubscribe();
+        }
+
+        /// <summary>
+        /// <see cref="DocumentEvents.DocumentOpened"/> does not fire for documents already open when we subscribe (e.g. package.json at startup).
+        /// Mirrors <see cref="OnDocumentOpened"/> for the active document, with short retries when DTE text is not yet hydrated.
+        /// </summary>
+        private void ScheduleActiveDocumentOpenScanAfterSubscribe()
+        {
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try
+                {
+                    for (int attempt = 0; attempt < 6; attempt++)
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                        var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
+                        var document = dte?.ActiveDocument;
+                        if (document == null)
+                            return;
+
+                        if (!ShouldScanFile(document.FullName))
+                            return;
+
+                        var textDocument = (TextDocument)document.Object("TextDocument");
+                        if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
+                            return;
+
+                        var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+                        if (!string.IsNullOrWhiteSpace(content))
+                        {
+                            _debounceScheduler?.CancelPending(document.FullName);
+                            TrySyncLineChangeBaseline(document);
+                            OutputPaneWriter.WriteDebug($"{ScannerName}: Active document after subscribe — instant scan ({document.Name})");
+                            await InstantScanAsync(document);
+                            return;
+                        }
+
+                        await Task.Delay(75);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    OutputPaneWriter.WriteError($"{ScannerName}: Active document scan after subscribe failed: {ex.Message}");
+                }
+            });
         }
 
         /// <summary>
