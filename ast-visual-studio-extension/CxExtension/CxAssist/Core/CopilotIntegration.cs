@@ -419,13 +419,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Shows Copilot prompt preparation failed error in the info bar.
+        /// Shows Copilot prompt preparation failed error in the info bar (as warning with error fallback).
         /// </summary>
         private static void ShowCopilotPromptPrepareFailedMessage(IVsWindowFrame assistDocumentFrame)
         {
-            if (assistDocumentFrame == null) return;
+            if (assistDocumentFrame == null)
+            {
+                ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
+                return;
+            }
             ThreadHelper.ThrowIfNotOnUIThread();
-            AssistDocumentInfoBar.TryShowError(
+            AssistDocumentInfoBar.TryShowWarning(
                 assistDocumentFrame,
                 CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage,
                 () => ShowAssistNotification(
