@@ -1056,23 +1056,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     Log("UI Automation: Child search failed: " + ex.Message);
                 }
 
-                // Additional heuristic for VS 2026: check if mode picker button has a checked/pressed state
-                // In some versions, Agent mode might show as "pressed" or have different visual state
-                try
-                {
-                    if (modePicker.TryGetCurrentPattern(TogglePattern.Pattern, out object togglePattern))
-                    {
-                        var toggle = (TogglePattern)togglePattern;
-                        // If button has toggle state, we might infer mode from it
-                        Log("UI Automation: Mode picker has TogglePattern: " + toggle.Current.ToggleState);
-                        // This alone won't tell us the mode, but could be part of broader heuristic
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log("UI Automation: TogglePattern check failed: " + ex.Message);
-                }
-
                 string modePickerName = modePicker.Current.Name ?? "";
                 bool isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
 
