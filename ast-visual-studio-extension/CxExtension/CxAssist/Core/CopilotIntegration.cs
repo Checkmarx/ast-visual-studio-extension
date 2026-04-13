@@ -392,13 +392,92 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 try
                 {
-                    // VS 2026: UI Automation cannot reliably detect current chat mode (Agent vs Ask)
-                    // because the "Chat mode" button does not expose its selection state.
-                    // For safety, always paste without auto-submitting. Users must press Enter manually
-                    // or the extension can be enhanced in future with a user preference setting.
+                    int vsMajor = GetVisualStudioMajorVersion();
 
-                    Log("Chat mode detection unreliable in VS 2026 — pasting prompt without auto-submit");
+                    // VS 2026+: Mode detection is unreliable (Chat mode button doesn't expose selection state)
+                    // Skip all automation and paste-only workflow with user message
+                    if (vsMajor >= 18)
+                    {
+                        Log("VS 2026+ detected — using paste-only workflow (mode detection unavailable)");
+                        ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
+                        {
+                            bool threadOk = OpenCopilotThread();
+                            if (!threadOk)
+                                ShowAssistNotification(CxAssistConstants.CopilotChatOpenFailedInfoBarMessage, isError: false, useWarningSeverity: true);
+                            else
+                            {
+                                try
+                                {
+                                    var vsProc = Process.GetCurrentProcess();
+                                    AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
+                                    if (wnd != null)
+                                        FocusCopilotInput(wnd);
+                                }
+                                catch (Exception exFocus)
+                                {
+                                    Log("UI Automation: focus before paste: " + exFocus.Message);
+                                }
+                            }
 
+                            int delayBeforePaste = threadOk ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                            ScheduleOnIdle(delayBeforePaste, () =>
+                            {
+                                bool inserted = InsertPromptWithoutSubmitting();
+                                if (!threadOk)
+                                    return;
+                                if (!inserted)
+                                    ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
+                                else
+                                {
+                                    // Show message asking user to switch to Agent mode and submit
+                                    ShowAssistNotification(
+                                        "Prompt pasted into Copilot Chat. Please switch to Agent mode and press Enter to submit.",
+                                        isError: false,
+                                        useWarningSeverity: true);
+                                }
+                            });
+                        });
+                        return;
+                    }
+
+                    // VS 2022 and earlier: Attempt to detect Agent mode
+                    bool agentMode = IsAgentMode();
+
+                    if (agentMode)
+                    {
+                        Log("Agent mode detected — auto-submitting prompt");
+                        ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
+                        {
+                            bool newThreadStarted = OpenCopilotThread();
+                            Log(newThreadStarted
+                                ? "New thread started via DTE command"
+                                : "DTE new-thread commands not available, continuing with current thread");
+
+                            if (newThreadStarted)
+                            {
+                                try
+                                {
+                                    var vsProc = Process.GetCurrentProcess();
+                                    AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
+                                    if (wnd != null)
+                                    {
+                                        bool focused = FocusCopilotInput(wnd);
+                                        Log("UI Automation: Focused Copilot input after new thread: " + focused);
+                                    }
+                                }
+                                catch (Exception exFocus)
+                                {
+                                    Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                                }
+                            }
+
+                            int delayAfterThread = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                            ScheduleOnIdle(delayAfterThread, PerformPasteAndSubmit);
+                        });
+                        return;
+                    }
+
+                    Log("Agent mode not detected — pasting prompt without auto-submit");
                     ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
                     {
                         bool threadOk = OpenCopilotThread();
@@ -975,6 +1054,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 catch (Exception ex)
                 {
                     Log("UI Automation: Child search failed: " + ex.Message);
+                }
+
+                // Additional heuristic for VS 2026: check if mode picker button has a checked/pressed state
+                // In some versions, Agent mode might show as "pressed" or have different visual state
+                try
+                {
+                    if (modePicker.TryGetCurrentPattern(TogglePattern.Pattern, out object togglePattern))
+                    {
+                        var toggle = (TogglePattern)togglePattern;
+                        // If button has toggle state, we might infer mode from it
+                        Log("UI Automation: Mode picker has TogglePattern: " + toggle.Current.ToggleState);
+                        // This alone won't tell us the mode, but could be part of broader heuristic
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: TogglePattern check failed: " + ex.Message);
                 }
 
                 string modePickerName = modePicker.Current.Name ?? "";
