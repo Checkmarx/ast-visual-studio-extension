@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Automation;
 using Process = System.Diagnostics.Process;
+using System.Linq;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 {
@@ -70,7 +71,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         private static class AutomationProperties
         {
             public static readonly string[] ModePickerNames = {
-                "Chat Mode Picker", "Chat mode",
+                // VS 2026 name (primary)
+                "Chat mode",
+                // VS 2022 and fallback names
+                "Chat Mode Picker",
                 "Agent Mode Picker", "Agent mode", "Agent",
                 "Mode", "Copilot mode", "Chat mode picker",
                 "Mode picker", "Pick a mode"
@@ -222,6 +226,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>
         /// Whether Copilot Chat appears to be in Agent mode (VS 2022 vs newer UIs differ; heuristics apply for major version 19+).
+        /// VS 2026: Mode detection is unreliable via UI Automation, so we assume Agent mode is active.
         /// </summary>
         public static bool IsAgentMode()
         {
@@ -230,7 +235,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 ThreadHelper.ThrowIfNotOnUIThread();
                 var vsProcess = Process.GetCurrentProcess();
                 AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
-                return vsWindow != null && IsAgentModeAlreadyActive(vsWindow);
+
+                if (vsWindow == null)
+                {
+                    Log("IsAgentMode: Could not get VS main window");
+                    return false;
+                }
+
+                // Attempt UI Automation detection
+                // NOTE: VS 2026 doesn't reliably expose current mode through standard UI Automation patterns.
+                // In Ask mode, detection will return false (correct behavior).
+                // In Agent mode, detection may or may not work depending on whether the UI exposes the mode state.
+                bool detected = IsAgentModeAlreadyActive(vsWindow);
+                return detected;
             }
             catch (Exception ex)
             {
@@ -375,45 +392,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 try
                 {
-                    var vsProcess = Process.GetCurrentProcess();
-                    AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
-                    bool agentActive = vsWindow != null && IsAgentModeAlreadyActive(vsWindow);
+                    // VS 2026: UI Automation cannot reliably detect current chat mode (Agent vs Ask)
+                    // because the "Chat mode" button does not expose its selection state.
+                    // For safety, always paste without auto-submitting. Users must press Enter manually
+                    // or the extension can be enhanced in future with a user preference setting.
 
-                    if (agentActive)
-                    {
-                        Log("Agent mode active — new thread then paste and submit");
-                        ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
-                        {
-                            bool newThreadStarted = OpenCopilotThread();
-                            Log(newThreadStarted
-                                ? "New thread started via DTE command"
-                                : "DTE new-thread commands not available, continuing with current thread");
+                    Log("Chat mode detection unreliable in VS 2026 — pasting prompt without auto-submit");
 
-                            if (newThreadStarted)
-                            {
-                                try
-                                {
-                                    var vsProc = Process.GetCurrentProcess();
-                                    AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
-                                    if (wnd != null)
-                                    {
-                                        bool focused = FocusCopilotInput(wnd);
-                                        Log("UI Automation: Focused Copilot input after new thread: " + focused);
-                                    }
-                                }
-                                catch (Exception exFocus)
-                                {
-                                    Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
-                                }
-                            }
-
-                            int delayAfterThread = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
-                            ScheduleOnIdle(delayAfterThread, PerformPasteAndSubmit);
-                        });
-                        return;
-                    }
-
-                    Log("Agent mode not active — new thread, insert prompt without submit, info bar");
                     ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
                     {
                         bool threadOk = OpenCopilotThread();
@@ -618,9 +603,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 var dte = GetDte();
                 if (dte?.Version != null)
                 {
+                    Log($"GetVisualStudioMajorVersion: DTE.Version = '{dte.Version}'");
                     var parts = dte.Version.Split('.');
                     if (parts.Length > 0 && int.TryParse(parts[0], out int major))
+                    {
+                        Log($"GetVisualStudioMajorVersion: Parsed major version = {major}");
                         return major;
+                    }
+                }
+                else
+                {
+                    Log($"GetVisualStudioMajorVersion: DTE or DTE.Version is null");
                 }
             }
             catch (Exception ex)
@@ -917,8 +910,74 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 if (modePicker == null)
                     return false;
 
+                // VS 2026: Search entire Copilot Chat pane for "Agent" text indicator
+                // The current mode is displayed somewhere in the Copilot Chat window, not necessarily at the button
+                try
+                {
+                    // Find the Copilot Chat pane (parent of the mode picker)
+                    AutomationElement copilotPane = modePicker;
+                    for (int i = 0; i < 10; i++) // Walk up the tree
+                    {
+                        var parent = TreeWalker.ControlViewWalker.GetParent(copilotPane);
+                        if (parent == null) break;
+
+                        string parentName = parent.Current.Name ?? "";
+                        if (parentName.IndexOf("Copilot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            parentName.IndexOf("Chat", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            copilotPane = parent;
+                            break;
+                        }
+                        copilotPane = parent;
+                    }
+
+                    // Search pane for "Agent" text
+                    var allInPane = copilotPane.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                    for (int i = 0; i < allInPane.Count; i++)
+                    {
+                        try
+                        {
+                            string name = allInPane[i].Current.Name ?? "";
+                            // Look for standalone "Agent" or "Agent mode" indicator
+                            if (name.Equals("Agent", StringComparison.OrdinalIgnoreCase) ||
+                                name.IndexOf("Agent mode", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                Log("UI Automation: Found Agent mode indicator: '" + name + "'");
+                                return true;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Copilot pane search failed: " + ex.Message);
+                }
+
+                // Fallback: Check button's direct children
+                try
+                {
+                    var children = modePicker.FindAll(TreeScope.Children, System.Windows.Automation.Condition.TrueCondition);
+                    foreach (AutomationElement child in children)
+                    {
+                        try
+                        {
+                            string childName = child.Current.Name ?? "";
+                            if (childName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                Log("UI Automation: Found 'Agent' in button child: " + childName);
+                                return true;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Child search failed: " + ex.Message);
+                }
+
                 string modePickerName = modePicker.Current.Name ?? "";
-                
                 bool isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
 
                 // Prefer a direct read of the selected value via common patterns
