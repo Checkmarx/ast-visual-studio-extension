@@ -390,8 +390,9 @@
                     </ContextMenu.Resources>
                     <MenuItem Header="Fix with Checkmarx One Assist" Click="FixWithCxOneAssist_Click"/>
                     <MenuItem Header="View details" Click="ViewDetails_Click"/>
-                    <MenuItem x:Name="IgnoreThisMenuItem" Header="Ignore this vulnerability" Click="Ignore_Click"/>
-                    <MenuItem x:Name="IgnoreAllMenuItem" Header="Ignore all of this type" Click="IgnoreAll_Click"/>
+                    <!-- TODO: Ignore feature not yet implemented - hidden for now -->
+                    <!--<MenuItem x:Name="IgnoreThisMenuItem" Header="Ignore this vulnerability" Click="Ignore_Click"/>
+                    <MenuItem x:Name="IgnoreAllMenuItem" Header="Ignore all of this type" Click="IgnoreAll_Click"/>-->
                     <!-- Full-width HR: Border as item so it stretches to menu edges (theme-aware grey) -->
                     <Border Height="1" Margin="0,2,0,2" VerticalAlignment="Center"
                             Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBorderKey}}"

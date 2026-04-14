@@ -377,15 +377,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 new ClassifiedTextRun(urlClassification, CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v), CxAssistConstants.FixWithCxOneAssist, ClassifiedTextRunStyle.Underline),
                 new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                new ClassifiedTextRun(urlClassification, CxAssistConstants.ViewDetails, () => RunViewDetails(v), CxAssistConstants.ViewDetails, ClassifiedTextRunStyle.Underline),
-                new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                new ClassifiedTextRun(urlClassification, ignoreThisLabel, () => RunIgnoreVulnerability(v), ignoreThisLabel, ClassifiedTextRunStyle.Underline)
+                new ClassifiedTextRun(urlClassification, CxAssistConstants.ViewDetails, () => RunViewDetails(v), CxAssistConstants.ViewDetails, ClassifiedTextRunStyle.Underline)
+                // TODO: Ignore feature not yet implemented - hidden for now
+                // new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
+                // new ClassifiedTextRun(urlClassification, ignoreThisLabel, () => RunIgnoreVulnerability(v), ignoreThisLabel, ClassifiedTextRunStyle.Underline)
             };
-            if (includeIgnoreAll)
-            {
-                runs.Add(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont));
-                runs.Add(new ClassifiedTextRun(urlClassification, CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v), CxAssistConstants.IgnoreAllOfThisType, ClassifiedTextRunStyle.Underline));
-            }
+            // TODO: Ignore feature not yet implemented - hidden for now
+            // if (includeIgnoreAll)
+            // {
+            //     runs.Add(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont));
+            //     runs.Add(new ClassifiedTextRun(urlClassification, CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v), CxAssistConstants.IgnoreAllOfThisType, ClassifiedTextRunStyle.Underline));
+            // }
             elements.Add(new ClassifiedTextElement(runs.ToArray()));
         }
 
@@ -500,9 +502,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
                     AddLink(CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v));
                     AddLink(CxAssistConstants.ViewDetails, () => RunViewDetails(v));
-                    AddLink(CxAssistConstants.GetIgnoreThisLabel(v.Scanner), () => RunIgnoreVulnerability(v));
-                    if (includeIgnoreAllOfThisType)
-                        AddLink(CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v));
+                    // TODO: Ignore feature not yet implemented - hidden for now
+                    // AddLink(CxAssistConstants.GetIgnoreThisLabel(v.Scanner), () => RunIgnoreVulnerability(v));
+                    // if (includeIgnoreAllOfThisType)
+                    //     AddLink(CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v));
 
                     return (System.Windows.UIElement)panel;
                 });

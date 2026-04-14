@@ -32,8 +32,9 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
             AddCommand(FixCommandId, OnFixWithAssist);
             AddCommand(ViewDetailsCommandId, OnViewDetails);
-            AddCommand(IgnoreThisCommandId, OnIgnoreThis, v => CxAssistConstants.GetIgnoreThisLabel(v.Scanner));
-            AddCommand(IgnoreAllCommandId, OnIgnoreAll, v => CxAssistConstants.GetIgnoreAllLabel(v.Scanner));
+            // TODO: Ignore feature not yet implemented - hidden for now
+            // AddCommand(IgnoreThisCommandId, OnIgnoreThis, v => CxAssistConstants.GetIgnoreThisLabel(v.Scanner));
+            // AddCommand(IgnoreAllCommandId, OnIgnoreAll, v => CxAssistConstants.GetIgnoreAllLabel(v.Scanner));
         }
 
         public static ErrorListContextMenuCommand Instance { get; private set; }
