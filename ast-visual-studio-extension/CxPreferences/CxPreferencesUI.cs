@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using ast_visual_studio_extension.CxWrapper.Exceptions;
@@ -184,10 +185,13 @@ namespace ast_visual_studio_extension.CxPreferences
 
             try
             {
+                // Clear all findings immediately before any async events fire
+                CxAssistDisplayCoordinator.ClearAllFindings();
+
                 CxOneAssistSettingsModule oneAssistModule = GetOneAssistSettingsModule();
                 if (oneAssistModule != null)
                 {
-                    // Disable all scanners immediately on logout → stops scanning and cleans up findings
+                    // Disable all scanners → stops scanning
                     oneAssistModule.DisableAllRealtimeScanners();
                     oneAssistModule.ContainersTool = "docker";
                     // Persist fires RealtimeAssistSettingsChanged → RealtimeScannerHost stops all scanners
