@@ -3,7 +3,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     internal class CxConstants
     {
         /************ GENERAL ************/
-        public static string EXTENSION_TITLE => "Checkmarx One";
+        public static string EXTENSION_TITLE => "Checkmarx";
 
         /// <summary>VS Output window pane title for Assist and scanner logs (single pane; not the tool window caption).</summary>
         public static string OutputWindowPaneName => "Checkmarx";
