@@ -165,6 +165,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// <returns>True if lock files are defined for this manifest type</returns>
         public static bool HasCompanionFiles(string manifestFileName)
         {
+            if (manifestFileName == null) return false;
             return LockFilesByManifest.ContainsKey(manifestFileName);
         }
 
@@ -175,6 +176,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// <returns>Array of lock file names, or empty array if none defined</returns>
         public static string[] GetCompanionFileNames(string manifestFileName)
         {
+            if (manifestFileName == null) return Array.Empty<string>();
             return LockFilesByManifest.TryGetValue(manifestFileName, out var lockFiles)
                 ? lockFiles
                 : Array.Empty<string>();

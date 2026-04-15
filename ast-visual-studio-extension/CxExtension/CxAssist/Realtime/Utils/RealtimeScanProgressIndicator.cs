@@ -38,10 +38,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
                 try
                 {
-                    // Show animated progress bar with label in same call
-                    // This prevents the gap between text and bar
+                    // nProgress=0, nProgressTotal=0 → indeterminate animated bar (not a full green block)
                     string label = $"Checkmarx is Scanning File : {fileName}";
-                    statusBar.Progress(ref _progressCookie, 1, label, 1, 1);
+                    statusBar.Progress(ref _progressCookie, 1, label, 0, 0);
                 }
                 catch
                 {
@@ -84,9 +83,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                     }
                     else
                     {
-                        // Show progress for next scan
+                        // Show indeterminate progress for concurrent scan
                         string label = $"Checkmarx is Scanning File : {_currentFileName}";
-                        statusBar.Progress(ref _progressCookie, 1, label, 1, 1);
+                        statusBar.Progress(ref _progressCookie, 1, label, 0, 0);
                     }
                 }
                 catch

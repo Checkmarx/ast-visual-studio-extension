@@ -210,7 +210,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             if (string.IsNullOrEmpty(fileName))
                 return "file.dat";
 
-            var baseName = Path.GetFileName(fileName.Trim());
+            var baseName = Path.GetFileName(fileName.Replace('\0', '_').Trim());
             if (string.IsNullOrEmpty(baseName))
                 return "file.dat";
 
