@@ -206,7 +206,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             else AddDefaultActionLinks(v, elements, includeIgnoreAll: false);
         }
 
-        /// <summary>ASCA: reference-style — summary line when multiple; per-vuln row (icon + bold title - description - grey "SAST vulnerability"); separators between entries.</summary>
+        /// <summary>ASCA: JetBrains-style — summary count header when multiple, then each vulnerability as its own row (icon + bold title - description - grey "SAST vulnerability") with action links.</summary>
         private static void BuildAscaDescription(List<Vulnerability> vulns, List<object> elements)
         {
             if (vulns == null || vulns.Count == 0) return;
@@ -242,12 +242,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             }
         }
 
-        /// <summary>IaC: reference-style — summary line when multiple; per-vuln row (icon + bold title - actualValue description - grey "IaC vulnerability"); separators between entries.</summary>
+        /// <summary>IaC: JetBrains-style — summary count header when multiple, then each vulnerability as its own row (icon + bold title - actualValue description - grey "IaC vulnerability").</summary>
         private static void BuildIacDescription(List<Vulnerability> vulns, List<object> elements)
         {
             if (vulns == null || vulns.Count == 0) return;
 
-            // Summary line for multiple issues (reference: "4 IAC issues detected on this line Checkmarx One Assist")
             if (vulns.Count > 1)
             {
                 var summaryRow = CreateMultipleIssuesSummaryRow(vulns.Count, CxAssistConstants.MultipleIacIssuesOnLine);
