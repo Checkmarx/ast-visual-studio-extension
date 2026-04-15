@@ -4,7 +4,6 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -66,30 +65,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         {
             var results = await _cxWrapper.IacRealtimeScanAsync(tempFilePath);
 
-            // Log raw JSON response
-            if (results != null)
-            {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
-            }
-
             if (results?.Results == null || results.Results.Count == 0)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results - {Path.GetFileName(sourceFilePath)}");
                 ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
 
             int issueCount = results.Results.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({issueCount} issues found)");
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: {issueCount} issue(s) found — {Path.GetFileName(sourceFilePath)}");
 
-            // Log individual issues like JetBrains does
             for (int i = 0; i < issueCount; i++)
             {
                 var issue = results.Results[i];
-                var severity = issue.Severity ?? "UNKNOWN";
-                var title = issue.Title ?? "Unknown Issue";
-                OutputPaneWriter.WriteLine($"Issue {i + 1}: {title} [{severity}]");
+                OutputPaneWriter.WriteDebug($"{ScannerName} issue {i + 1}: {issue.Title ?? "Unknown"} [{issue.Severity ?? "UNKNOWN"}]");
             }
 
             var mappedResults = VulnerabilityMapper.FromIac(results.Results, sourceFilePath);

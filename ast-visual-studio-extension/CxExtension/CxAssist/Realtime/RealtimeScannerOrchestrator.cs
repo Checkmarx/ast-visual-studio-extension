@@ -55,6 +55,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     _scanners.Add(scanner);
                 }
 
+                if (_scanners.Count > 0)
+                {
+                    var names = string.Join(", ", _scanners.Select(s => GetScannerName(s)));
+                    OutputPaneWriter.WriteLine($"Realtime scanners started: {names}");
+                }
+
                 var solutionRoot = GetSolutionDirectory();
 
                 // Start manifest file watcher to detect dependency/config changes
@@ -98,7 +104,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                 _manifestWatcher = new ManifestFileWatcher(solutionRoot);
                 _manifestWatcher.ManifestFileChanged += OnManifestFileChanged;
                 _manifestWatcher.Start();
-                OutputPaneWriter.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher started");
             }
             catch (Exception ex)
             {
@@ -138,7 +143,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             try
             {
                 string fileName = Path.GetFileName(filePath);
-                OutputPaneWriter.WriteLine($"RealtimeScannerOrchestrator: Manifest file changed: {fileName} ({changeType})");
+                OutputPaneWriter.WriteDebug($"Manifest file changed: {fileName} ({changeType})");
 
                 // JetBrains parity: dependency manifest rescans are OSS-only; other engines follow the active document.
                 foreach (var scanner in _scanners)
@@ -210,6 +215,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                 {
                     await scanner.UnregisterAsync();
                 }
+
+                if (_scanners.Count > 0)
+                    OutputPaneWriter.WriteLine("Realtime scanners stopped");
+
                 _scanners.Clear();
 
                 // Stop manifest file watcher
@@ -253,7 +262,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     _manifestWatcher.Stop();
                     _manifestWatcher.Dispose();
                     _manifestWatcher = null;
-                    OutputPaneWriter.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher stopped");
                 }
             }
             catch (Exception ex)

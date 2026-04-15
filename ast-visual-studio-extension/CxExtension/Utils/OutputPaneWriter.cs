@@ -48,11 +48,19 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         }
 
         /// <summary>
-        /// Writes a debug message to the Checkmarx output pane with DEBUG prefix.
+        /// Writes a debug message only when a debugger is attached or a DEBUG build.
+        /// Silent in production release builds with no debugger.
         /// </summary>
         public static void WriteDebug(string message)
         {
+#if DEBUG
             WriteToPane($"{PANE_PREFIX} [DEBUG] {message}");
+#else
+            if (System.Diagnostics.Debugger.IsAttached)
+                WriteToPane($"{PANE_PREFIX} [DEBUG] {message}");
+            else
+                Debug.WriteLine($"{PANE_PREFIX} [DEBUG] {message}");
+#endif
         }
 
         /// <summary>

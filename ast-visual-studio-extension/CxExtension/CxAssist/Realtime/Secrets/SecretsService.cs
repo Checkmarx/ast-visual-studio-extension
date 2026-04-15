@@ -4,7 +4,6 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -82,30 +81,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
 
             var results = await _cxWrapper.SecretsRealtimeScanAsync(tempFilePath);
 
-            // Log raw JSON response
-            if (results != null)
-            {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
-            }
-
             if (results?.Secrets == null || results.Secrets.Count == 0)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results - {Path.GetFileName(sourceFilePath)}");
                 ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
 
             int secretCount = results.Secrets.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({secretCount} secrets found)");
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: {secretCount} secret(s) found — {Path.GetFileName(sourceFilePath)}");
 
-            // Log individual secrets like JetBrains does
             for (int i = 0; i < secretCount; i++)
             {
                 var secret = results.Secrets[i];
-                var severity = secret.Severity ?? "UNKNOWN";
-                var title = secret.Title ?? "Unknown Secret";
-                OutputPaneWriter.WriteLine($"Secret {i + 1}: {title} [{severity}]");
+                OutputPaneWriter.WriteDebug($"{ScannerName} secret {i + 1}: {secret.Title ?? "Unknown"} [{secret.Severity ?? "UNKNOWN"}]");
             }
 
             var mappedResults = VulnerabilityMapper.FromSecrets(results.Secrets, sourceFilePath);

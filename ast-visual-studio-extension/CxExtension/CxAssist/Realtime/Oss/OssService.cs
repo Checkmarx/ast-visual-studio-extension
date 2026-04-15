@@ -4,7 +4,6 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -67,7 +66,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
                 {
                     await ScanAllManifestsInSolutionAsync(solutionRoot, sweepCts.Token).ConfigureAwait(false);
                     if (!sweepCts.Token.IsCancellationRequested)
+                    {
                         OssManifestSweepPolicy.MarkSweepCompleted(solutionRoot);
+                        OutputPaneWriter.WriteLine("OSS scanner: startup manifest sweep completed");
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -151,30 +153,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
 
             var results = await _cxWrapper.OssRealtimeScanAsync(tempFilePath);
 
-            // Log raw JSON response
-            if (results != null)
-            {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
-            }
-
             if (results?.Packages == null || results.Packages.Count == 0)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results - {Path.GetFileName(sourceFilePath)}");
                 ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
 
             int packageCount = results.Packages.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({packageCount} issues found)");
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: {packageCount} vulnerable package(s) found — {Path.GetFileName(sourceFilePath)}");
 
-            // Log individual packages like JetBrains does
             for (int i = 0; i < packageCount; i++)
             {
                 var package = results.Packages[i];
-                var name = package.PackageName ?? "Unknown";
-                var version = package.PackageVersion ?? "Unknown";
-                OutputPaneWriter.WriteLine($"Package {i + 1}: {name}@{version}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} package {i + 1}: {package.PackageName ?? "Unknown"}@{package.PackageVersion ?? "Unknown"}");
             }
 
             var mappedResults = VulnerabilityMapper.FromOss(results.Packages, sourceFilePath);

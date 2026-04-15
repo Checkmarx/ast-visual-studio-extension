@@ -142,7 +142,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             {
                 var targetPath = Path.Combine(targetDir, lockFileName);
                 File.Copy(sourcePath, targetPath, overwrite: true);
-                OutputPaneWriter.WriteLine($"CompanionFileManager: Copied lock file - {lockFileName}");
+                OutputPaneWriter.WriteDebug($"CompanionFileManager: Copied lock file - {lockFileName}");
             }
             catch (IOException ioEx)
             {

@@ -4,7 +4,6 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -90,29 +89,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
             // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
             var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
 
-            // Log raw JSON response
-            if (results != null)
-            {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
-            }
-
             if (results?.Images == null || results.Images.Count == 0)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results - {Path.GetFileName(sourceFilePath)}");
                 ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
 
             int imageCount = results.Images.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({imageCount} issues found)");
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: {imageCount} image(s) with vulnerabilities — {Path.GetFileName(sourceFilePath)}");
 
-            // Log individual images like JetBrains does
             for (int i = 0; i < imageCount; i++)
             {
                 var image = results.Images[i];
                 int vulnCount = image.Vulnerabilities?.Count ?? 0;
-                OutputPaneWriter.WriteLine($"Image {i + 1}: {image.ImageName ?? "Unknown"} - {vulnCount} vulnerabilities");
+                OutputPaneWriter.WriteDebug($"{ScannerName} image {i + 1}: {image.ImageName ?? "Unknown"} — {vulnCount} vulnerabilities");
             }
 
             var mappedResults = VulnerabilityMapper.FromContainers(results.Images, sourceFilePath);
