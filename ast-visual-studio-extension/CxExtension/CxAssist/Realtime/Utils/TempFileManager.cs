@@ -343,10 +343,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// <summary>
         /// Recursively deletes temp directory and all contents safely.
         ///
+        /// Security:
+        /// - Only deletes directories under Path.GetTempPath() to prevent accidental deletion of arbitrary system directories
+        /// - Rejects symlinks/junctions at every level (not just root) to prevent symlink-based escape attacks
+        /// - DirectoryInfo.GetFiles/GetDirectories() follow reparse points, so each subdirectory is checked
+        ///
         /// Pattern: Walk directory tree in reverse order (deepest first)
         /// Ensures all files are deleted before parent directories.
         /// </summary>
-        /// <param name="folderPath">Path to directory to delete</param>
+        /// <param name="folderPath">Path to directory to delete (must be under Path.GetTempPath())</param>
+        private static readonly string _cachedTempPath = Path.GetFullPath(Path.GetTempPath());
+
         public static void DeleteTempDirectory(string folderPath)
         {
             if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath))
@@ -354,7 +361,43 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
             try
             {
-                var dirInfo = new DirectoryInfo(folderPath);
+                // Security: Validate and delete recursively with per-directory checks
+                DeleteTempDirectoryRecursive(folderPath, _cachedTempPath);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deleting temp directory {folderPath}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Internal recursive delete with per-directory boundary and reparse-point validation.
+        /// </summary>
+        private static void DeleteTempDirectoryRecursive(string folderPath, string tempPathBoundary)
+        {
+            if (string.IsNullOrEmpty(folderPath))
+                return;
+
+            try
+            {
+                // Canonicalize and validate this directory level
+                var normalizedPath = Path.GetFullPath(folderPath.Trim());
+
+                // Security: Verify this path is still under the temp boundary
+                if (!normalizedPath.StartsWith(tempPathBoundary, StringComparison.OrdinalIgnoreCase))
+                {
+                    System.Diagnostics.Debug.WriteLine($"DeleteTempDirectoryRecursive: Path escaped temp boundary: {normalizedPath}");
+                    return;
+                }
+
+                var dirInfo = new DirectoryInfo(normalizedPath);
+
+                // Security: Reject reparse points (symlinks, junctions) at every level to prevent escape
+                if ((dirInfo.Attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"DeleteTempDirectoryRecursive: Rejected reparse point: {normalizedPath}");
+                    return;
+                }
 
                 // Delete files first
                 foreach (var file in dirInfo.GetFiles())
@@ -369,10 +412,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                     }
                 }
 
-                // Delete subdirectories recursively
+                // Delete subdirectories recursively (with per-directory validation)
                 foreach (var dir in dirInfo.GetDirectories())
                 {
-                    DeleteTempDirectory(dir.FullName);
+                    DeleteTempDirectoryRecursive(dir.FullName, tempPathBoundary);
                 }
 
                 // Delete the directory itself
@@ -382,14 +425,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Failed to delete directory {folderPath}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Failed to delete directory {normalizedPath}: {ex.Message}");
                 }
 
-                System.Diagnostics.Debug.WriteLine($"Temp directory deleted: {folderPath}");
+                System.Diagnostics.Debug.WriteLine($"Temp directory deleted: {normalizedPath}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error deleting temp directory {folderPath}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in DeleteTempDirectoryRecursive {folderPath}: {ex.Message}");
             }
         }
     }
