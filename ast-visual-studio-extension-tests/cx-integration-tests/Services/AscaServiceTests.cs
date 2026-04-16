@@ -13,7 +13,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
     /// Run separately from unit tests; skip in CI if VS test host unavailable.
     /// </summary>
     [Trait("Category", "Integration")]
-    public class AscaServiceTests : IDisposable
+    public class AscaServiceTests
     {
         private readonly CxWrapper _wrapperInstance;
 
@@ -27,11 +27,6 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
 
             // Create a real CxWrapper instance - it won't make actual calls unless explicitly invoked
             _wrapperInstance = new CxWrapper(config, typeof(AscaServiceTests));
-        }
-
-        public void Dispose()
-        {
-            // Cleanup: each test gets a fresh instance via xUnit test fixture
         }
 
         [Fact]
