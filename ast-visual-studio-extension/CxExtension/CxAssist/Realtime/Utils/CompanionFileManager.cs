@@ -144,17 +144,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 File.Copy(sourcePath, targetPath, overwrite: true);
                 OutputPaneWriter.WriteDebug($"CompanionFileManager: Copied lock file - {lockFileName}");
             }
-            catch (IOException ioEx)
-            {
-                OutputPaneWriter.WriteWarning($"CompanionFileManager: Failed to copy {lockFileName} - IO error: {ioEx.Message}");
-            }
-            catch (UnauthorizedAccessException authEx)
-            {
-                OutputPaneWriter.WriteWarning($"CompanionFileManager: Failed to copy {lockFileName} - Permission denied: {authEx.Message}");
-            }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"CompanionFileManager: Failed to copy {lockFileName} - Error: {ex.Message}");
+                OutputPaneWriter.WriteWarning($"OSS scanner: error occurred while saving companion file {lockFileName}: {ex.Message}");
             }
         }
 

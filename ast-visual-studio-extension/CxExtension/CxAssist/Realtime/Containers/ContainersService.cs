@@ -73,42 +73,51 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         /// <summary>
         /// Invokes the Containers realtime scan CLI command.
         /// Maps results to Result objects for display in the findings panel.
-        /// Silently skips if Docker/Podman is not available.
+        /// Shows error if Docker/Podman is not available (aligned with JetBrains error handling).
+        /// Catches and logs all errors to the output pane.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
-            // Check if Docker/Podman is available first
-            bool engineExists = await _cxWrapper.CheckEngineExistAsync(_containersTool);
-            if (!engineExists)
+            try
             {
-                // Silently skip if container tool is not available
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no container engine available - {sourceFilePath}");
-                return 0;
+                // Check if Docker/Podman is available first
+                bool engineExists = await _cxWrapper.CheckEngineExistAsync(_containersTool);
+                if (!engineExists)
+                {
+                    OutputPaneWriter.WriteError($"{ScannerName} scanner: {_containersTool} is not available. Please ensure Docker or Podman is installed and running.");
+                    _logger.Warn($"{ScannerName} scanner: {_containersTool} engine not found on system");
+                    return 0;
+                }
+
+                if (new System.IO.FileInfo(tempFilePath).Length == 0)
+                {
+                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: no content found in file - {Path.GetFileName(sourceFilePath)}");
+                    return 0;
+                }
+
+                // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
+                var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
+
+                if (results?.Images == null || results.Images.Count == 0)
+                {
+                    ClearDisplayForFile(sourceFilePath);
+                    return 0;
+                }
+
+                int imageCount = results.Images.Count;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: {imageCount} image(s) with vulnerabilities — {Path.GetFileName(sourceFilePath)}");
+
+                var mappedResults = VulnerabilityMapper.FromContainers(results.Images, sourceFilePath);
+                CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
+                return mappedResults.Count;
             }
-
-            // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
-            var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
-
-            if (results?.Images == null || results.Images.Count == 0)
+            catch (Exception ex)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results - {Path.GetFileName(sourceFilePath)}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
                 ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
-
-            int imageCount = results.Images.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: {imageCount} image(s) with vulnerabilities — {Path.GetFileName(sourceFilePath)}");
-
-            for (int i = 0; i < imageCount; i++)
-            {
-                var image = results.Images[i];
-                int vulnCount = image.Vulnerabilities?.Count ?? 0;
-                OutputPaneWriter.WriteDebug($"{ScannerName} image {i + 1}: {image.ImageName ?? "Unknown"} — {vulnCount} vulnerabilities");
-            }
-
-            var mappedResults = VulnerabilityMapper.FromContainers(results.Images, sourceFilePath);
-            CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
-            return mappedResults.Count;
         }
 
         /// <summary>

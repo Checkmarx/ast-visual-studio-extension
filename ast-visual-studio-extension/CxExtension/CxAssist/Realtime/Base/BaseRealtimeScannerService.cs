@@ -154,11 +154,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 _isInitialized = true;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RegisterDteRealtimeEvents();
-                _logger.Debug($"{ScannerName} scanner initialized");
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: initialized for real-time scanning");
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"Failed to initialize {ScannerName} scanner: {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to initialize - {ex.Message}");
                 _isInitialized = false;
                 throw;
             }
@@ -196,10 +196,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
                 _isSubscribed = false;
                 _isInitialized = false;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: disabled");
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"Error unregistering {ScannerName} events: {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to disable - {ex.Message}");
                 throw;
             }
         }
@@ -218,9 +219,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (!TempFileManager.TryReadVerifiedExistingFileContent(filePath, MAX_FILE_SIZE_BYTES, out var content, out var safePath))
                 {
                     if (TempFileManager.TryGetVerifiedRegularFileInfo(filePath, out var fiDiag) && fiDiag.Length > MAX_FILE_SIZE_BYTES)
-                        OutputPaneWriter.WriteWarning($"{ScannerName}: Skipping {fiDiag.Name} — file exceeds {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB limit");
+                        OutputPaneWriter.WriteWarning($"{ScannerName} scanner: skipping {fiDiag.Name} — file exceeds {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB limit");
                     else
-                        OutputPaneWriter.WriteDebug($"{ScannerName} scanner: Skipping unsafe or missing file: {Path.GetFileName(filePath)}");
+                        _logger.Debug($"{ScannerName} scanner: skipping unsafe or missing file: {Path.GetFileName(filePath)}");
                     return;
                 }
 
@@ -230,6 +231,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
             catch (Exception ex)
             {
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(filePath)} - {ex.Message}");
                 _logger.Warn($"{ScannerName} scanner: ScanExternalFileAsync failed for {Path.GetFileName(filePath)}: {ex.Message}", ex);
             }
         }
@@ -422,13 +424,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             if (document.FullName.Contains("\\node_modules\\") || document.FullName.Contains("/node_modules/"))
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: file not eligible (base filter) - {document.FullName}");
+                _logger.Debug($"{ScannerName} scanner: file not eligible (base filter) - {document.FullName}");
                 return;
             }
 
             if (!ShouldScanFile(document.FullName))
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: unsupported file - {document.FullName}");
+                _logger.Debug($"{ScannerName} scanner: unsupported file - {document.FullName}");
                 return;
             }
 
@@ -524,6 +526,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             string tempFilePath = null;
             try
             {
+                _logger.Debug($"{ScannerName} scanner: starting scan - {sourceFilePath}");
+
                 var originalFileName = Path.GetFileName(sourceFilePath);
                 tempFilePath = CreateTempFilePath(originalFileName, content, sourceFilePath);
 
@@ -561,7 +565,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ScannerName} scanner: Scan error - {ex.Message}", ex);
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Error($"{ScannerName} scanner: scan error - {ex.Message}", ex);
                 return 0;
             }
             finally

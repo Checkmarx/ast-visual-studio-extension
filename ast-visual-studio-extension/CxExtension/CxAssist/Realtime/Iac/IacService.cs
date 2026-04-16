@@ -60,30 +60,40 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         /// <summary>
         /// Invokes the IaC realtime scan CLI command.
         /// Maps results to Result objects for display in the findings panel.
+        /// Catches and logs all errors to the output pane (aligned with JetBrains error handling).
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
-            var results = await _cxWrapper.IacRealtimeScanAsync(tempFilePath);
-
-            if (results?.Results == null || results.Results.Count == 0)
+            try
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results - {Path.GetFileName(sourceFilePath)}");
+                if (new System.IO.FileInfo(tempFilePath).Length == 0)
+                {
+                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: no content found in file - {Path.GetFileName(sourceFilePath)}");
+                    return 0;
+                }
+
+                var results = await _cxWrapper.IacRealtimeScanAsync(tempFilePath);
+
+                if (results?.Results == null || results.Results.Count == 0)
+                {
+                    ClearDisplayForFile(sourceFilePath);
+                    return 0;
+                }
+
+                int issueCount = results.Results.Count;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: {issueCount} issue(s) found — {Path.GetFileName(sourceFilePath)}");
+
+                var mappedResults = VulnerabilityMapper.FromIac(results.Results, sourceFilePath);
+                CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
+                return mappedResults.Count;
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
                 ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
-
-            int issueCount = results.Results.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: {issueCount} issue(s) found — {Path.GetFileName(sourceFilePath)}");
-
-            for (int i = 0; i < issueCount; i++)
-            {
-                var issue = results.Results[i];
-                OutputPaneWriter.WriteDebug($"{ScannerName} issue {i + 1}: {issue.Title ?? "Unknown"} [{issue.Severity ?? "UNKNOWN"}]");
-            }
-
-            var mappedResults = VulnerabilityMapper.FromIac(results.Results, sourceFilePath);
-            CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
-            return mappedResults.Count;
         }
 
         /// <summary>
