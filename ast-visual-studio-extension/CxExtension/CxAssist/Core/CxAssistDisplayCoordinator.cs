@@ -49,13 +49,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     copy[kv.Key] = new List<Vulnerability>(kv.Value);
                 snapshot = copy;
             }
-            foreach (var kv in snapshot)
+            // ResolveBufferForOpenFile requires the UI thread.
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(kv.Key);
-                if (buffer != null)
-                    UpdateFindings(buffer, kv.Value, kv.Key);
-            }
-            IssuesUpdated?.Invoke(snapshot);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                foreach (var kv in snapshot)
+                {
+                    var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(kv.Key);
+                    if (buffer != null)
+                        UpdateFindings(buffer, kv.Value, kv.Key);
+                }
+                IssuesUpdated?.Invoke(snapshot);
+            });
         }
 
         /// <summary>
@@ -421,6 +426,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             if (string.IsNullOrEmpty(key))
                 return;
 
+            // Update in-memory store on whichever thread we are on — the lock makes it safe.
             List<Vulnerability> mergedForUi;
             IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
             lock (_lock)
@@ -445,11 +451,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, mergedForUi.Count, filePath));
 
-            var buffer = CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
-            if (buffer != null)
-                ApplyGutterAndErrorTaggersToBuffer(buffer, mergedForUi);
-            else
-                ScheduleApplyGutterWhenBufferAvailable(filePath, mergedForUi);
+            // ResolveBufferForOpenFile calls TryGetTextBufferForMoniker which requires the UI thread.
+            // Marshal the buffer lookup + gutter apply to the UI thread; data is already committed above.
+            var capturedMerged = mergedForUi;
+            var capturedPath = filePath;
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var buffer = CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(capturedPath);
+                if (buffer != null)
+                    await ApplyGutterAndErrorTaggersToBufferCoreAsync(buffer, capturedMerged);
+                else
+                    ScheduleApplyGutterWhenBufferAvailable(capturedPath, capturedMerged);
+            });
 
             IssuesUpdated?.Invoke(snapshot);
         }
