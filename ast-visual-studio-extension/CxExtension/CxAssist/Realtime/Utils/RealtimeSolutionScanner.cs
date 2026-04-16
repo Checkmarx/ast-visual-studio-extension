@@ -69,6 +69,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             // instead of crashing the entire enumeration on first access-denied or path-too-long
             IEnumerable<string> SafeEnumerateAllFiles(string root)
             {
+                var results = new List<string>();
                 var stack = new Stack<string>();
                 stack.Push(root);
 
@@ -84,7 +85,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                             try
                             {
                                 if (!IsUnderSkippedDirectory(rootFull, file))
-                                    yield return file;
+                                    results.Add(file);
                             }
                             catch
                             {
@@ -132,6 +133,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                         continue;
                     }
                 }
+
+                return results;
             }
 
             foreach (var path in SafeEnumerateAllFiles(rootFull))
