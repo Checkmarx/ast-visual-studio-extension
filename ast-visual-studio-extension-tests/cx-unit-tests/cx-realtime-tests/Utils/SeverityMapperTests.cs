@@ -127,10 +127,10 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Util
         }
 
         [Fact]
-        public void MapToString_WithUnknown_ReturnsMedium()
+        public void MapToString_WithUnknown_ReturnsUnknown()
         {
             var result = SeverityMapper.MapToString("unknown-type");
-            Assert.Equal("Medium", result);
+            Assert.Equal("Unknown", result);
         }
 
         [Fact]
