@@ -58,9 +58,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
                 OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
             }
 
-            if (results?.ScanDetails == null || results.ScanDetails.Count == 0)
+            if (results == null)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: null results returned - {sourceFilePath}");
+                return 0;
+            }
+
+            if (results.ScanDetails == null || results.ScanDetails.Count == 0)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no scan details returned - {sourceFilePath}");
                 return 0;
             }
 

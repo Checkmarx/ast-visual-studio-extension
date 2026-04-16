@@ -89,22 +89,15 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Infr
         }
 
         [Fact]
-        public void ScannerRegistration_IsEnabled_WithNullSettings_ReturnsFalse()
+        public void ScannerRegistration_IsEnabled_WithNullSettings_ThrowsNullReferenceException()
         {
             var registration = new ScannerRegistration(
                 "ASCA",
                 s => s.AscaCheckBox,
                 (w, s) => null);
 
-            // Should handle null gracefully
-            try
-            {
-                registration.IsEnabled(null);
-            }
-            catch (System.NullReferenceException)
-            {
-                // Expected behavior - IsEnabled uses settings directly
-            }
+            // IsEnabled does not null-check settings, so null input will throw
+            Assert.Throws<System.NullReferenceException>(() => registration.IsEnabled(null));
         }
     }
 }

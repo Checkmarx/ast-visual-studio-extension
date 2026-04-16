@@ -68,9 +68,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (!Directory.Exists(_solutionDirectory))
             {
-                string msg = $"Solution directory does not exist: {_solutionDirectory}";
-                OutputPaneWriter.WriteLine($"ManifestFileWatcher: {msg}");
-                OutputPaneWriter.WriteWarning($"ManifestFileWatcher: {msg}");
+                OutputPaneWriter.WriteWarning($"ManifestFileWatcher: Solution directory does not exist: {_solutionDirectory}");
                 return;
             }
 
@@ -93,13 +91,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 _watcher.Error += OnWatcherError;
 
                 _watcher.EnableRaisingEvents = true;
-                string startMsg = $"Started monitoring manifest files in: {_solutionDirectory}";
-                OutputPaneWriter.WriteLine($"ManifestFileWatcher: {startMsg}");
-                OutputPaneWriter.WriteLine($"ManifestFileWatcher: {startMsg}");
+                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Started monitoring manifest files in: {_solutionDirectory}");
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"ManifestFileWatcher: Failed to start: {ex.Message}");
                 OutputPaneWriter.WriteError($"ManifestFileWatcher: Failed to start: {ex.Message}");
             }
         }
@@ -112,7 +107,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             if (_watcher != null)
             {
                 _watcher.EnableRaisingEvents = false;
-                OutputPaneWriter.WriteLine("ManifestFileWatcher: Stopped monitoring");
                 OutputPaneWriter.WriteLine("ManifestFileWatcher: Stopped monitoring");
             }
         }
