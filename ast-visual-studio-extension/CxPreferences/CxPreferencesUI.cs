@@ -228,7 +228,13 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private async Task ValidateApiKeyAsync(bool showErrorOnFailure)
         {
-            if (_isValidationInProgress || string.IsNullOrWhiteSpace(tbApiKey.Text))
+            if (string.IsNullOrWhiteSpace(tbApiKey.Text))
+            {
+                ResetAuthState();
+                return;
+            }
+
+            if (_isValidationInProgress)
                 return;
 
             _isValidationInProgress = true;
