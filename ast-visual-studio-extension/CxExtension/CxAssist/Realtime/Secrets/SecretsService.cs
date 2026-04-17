@@ -1,8 +1,9 @@
 using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,6 +20,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         private static readonly IFileFilterStrategy _fileFilter = new SecretsFileFilterStrategy();
 
         protected override string ScannerName => "Secrets";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.Secrets;
 
         private SecretsService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
@@ -57,56 +60,41 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// Invokes the Secrets realtime scan CLI command.
         /// Maps results to Result objects for display in the findings panel.
         /// Validates that file content is not empty before scanning.
+        /// Catches and logs all errors to the output pane (aligned with JetBrains error handling).
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
-            // Validate file is not empty (prevent scanning blank files)
             try
             {
+                // Validate file is not empty (prevent scanning blank files)
                 var fileContent = System.IO.File.ReadAllText(tempFilePath);
                 if (string.IsNullOrWhiteSpace(fileContent))
                 {
-                    OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no content found - {sourceFilePath}");
                     return 0;
                 }
+
+                var results = await _cxWrapper.SecretsRealtimeScanAsync(tempFilePath);
+
+                if (results?.Secrets == null || results.Secrets.Count == 0)
+                {
+                    ClearDisplayForFile(sourceFilePath);
+                    return 0;
+                }
+
+                int secretCount = results.Secrets.Count;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: {secretCount} secret(s) found — {Path.GetFileName(sourceFilePath)}");
+
+                var mappedResults = VulnerabilityMapper.FromSecrets(results.Secrets, sourceFilePath);
+                CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
+                return mappedResults.Count;
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"{ScannerName} scanner: scan error - {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
+                ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
-
-            var results = await _cxWrapper.SecretsRealtimeScanAsync(tempFilePath);
-
-            // Log raw JSON response
-            if (results != null)
-            {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
-            }
-
-            if (results?.Secrets == null || results.Secrets.Count == 0)
-            {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
-                return 0;
-            }
-
-            int secretCount = results.Secrets.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({secretCount} secrets found)");
-
-            // Log individual secrets like JetBrains does
-            for (int i = 0; i < secretCount; i++)
-            {
-                var secret = results.Secrets[i];
-                var severity = secret.Severity ?? "UNKNOWN";
-                var title = secret.Title ?? "Unknown Secret";
-                OutputPaneWriter.WriteLine($"Secret {i + 1}: {title} [{severity}]");
-            }
-
-            var mappedResults = VulnerabilityMapper.FromSecrets(results.Secrets, sourceFilePath);
-            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            return mappedResults.Count;
         }
 
         /// <summary>

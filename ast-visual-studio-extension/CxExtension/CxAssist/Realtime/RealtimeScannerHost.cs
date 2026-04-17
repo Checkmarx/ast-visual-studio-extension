@@ -70,7 +70,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: {ex.Message}");
                 OutputPaneWriter.WriteError($"Realtime scanner initialization failed: {ex.Message}");
             }
             finally
@@ -125,7 +124,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: unregister failed: {ex.Message}");
+                OutputPaneWriter.WriteError($"Realtime scanners failed to stop: {ex.Message}");
             }
             finally
             {
@@ -168,7 +167,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: TriggerFullRescanAsync failed: {ex.Message}");
+                OutputPaneWriter.WriteError($"Realtime scanner rescan failed: {ex.Message}");
             }
         }
 
@@ -206,7 +205,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: ReinitializeAsync failed: {ex.Message}");
                 OutputPaneWriter.WriteError($"Failed to reinitialize scanners: {ex.Message}");
             }
             finally
@@ -232,7 +230,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: EnableScannerAsync failed: {ex.Message}");
+                OutputPaneWriter.WriteError($"Failed to enable {scannerName} scanner: {ex.Message}");
             }
             finally
             {
@@ -257,7 +255,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"RealtimeScannerHost: DisableScannerAsync failed: {ex.Message}");
+                OutputPaneWriter.WriteError($"Failed to disable {scannerName} scanner: {ex.Message}");
             }
             finally
             {

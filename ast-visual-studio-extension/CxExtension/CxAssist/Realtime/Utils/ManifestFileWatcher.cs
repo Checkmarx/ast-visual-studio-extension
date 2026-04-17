@@ -115,8 +115,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (IsManifestFile(e.FullPath))
             {
-                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file created: {e.Name}");
-                OutputPaneWriter.WriteTrace($"Manifest file created: {e.Name}");
+                OutputPaneWriter.WriteDebug($"ManifestFileWatcher: Manifest file created: {e.Name}");
                 ManifestFileChanged?.Invoke(e.FullPath, WatcherChangeTypes.Created);
             }
         }
@@ -125,8 +124,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (IsManifestFile(e.FullPath))
             {
-                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file modified: {e.Name}");
-                OutputPaneWriter.WriteTrace($"Manifest file modified: {e.Name}");
+                OutputPaneWriter.WriteDebug($"ManifestFileWatcher: Manifest file modified: {e.Name}");
                 ManifestFileChanged?.Invoke(e.FullPath, WatcherChangeTypes.Changed);
             }
         }
@@ -135,8 +133,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             if (IsManifestFile(e.FullPath))
             {
-                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file deleted: {e.Name}");
-                OutputPaneWriter.WriteTrace($"Manifest file deleted: {e.Name}");
+                OutputPaneWriter.WriteDebug($"ManifestFileWatcher: Manifest file deleted: {e.Name}");
                 ManifestFileChanged?.Invoke(e.FullPath, WatcherChangeTypes.Deleted);
             }
         }
@@ -148,9 +145,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
             if (oldIsManifest || newIsManifest)
             {
-                OutputPaneWriter.WriteLine($"ManifestFileWatcher: Manifest file renamed: {e.OldName} -> {e.Name}");
-                OutputPaneWriter.WriteTrace($"Manifest file renamed: {e.OldName} -> {e.Name}");
-                // Fire for both old and new (if applicable)
+                OutputPaneWriter.WriteDebug($"ManifestFileWatcher: Manifest file renamed: {e.OldName} -> {e.Name}");
                 if (oldIsManifest)
                     ManifestFileChanged?.Invoke(e.OldFullPath, WatcherChangeTypes.Deleted);
                 if (newIsManifest)
@@ -162,10 +157,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         {
             Exception ex = e.GetException();
             if (ex != null)
-            {
-                OutputPaneWriter.WriteError($"ManifestFileWatcher: Error: {ex.Message}");
                 OutputPaneWriter.WriteError($"ManifestFileWatcher: {ex.Message}");
-            }
         }
 
         /// <summary>

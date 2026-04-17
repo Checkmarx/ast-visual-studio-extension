@@ -142,19 +142,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             {
                 var targetPath = Path.Combine(targetDir, lockFileName);
                 File.Copy(sourcePath, targetPath, overwrite: true);
-                OutputPaneWriter.WriteLine($"CompanionFileManager: Copied lock file - {lockFileName}");
-            }
-            catch (IOException ioEx)
-            {
-                OutputPaneWriter.WriteWarning($"CompanionFileManager: Failed to copy {lockFileName} - IO error: {ioEx.Message}");
-            }
-            catch (UnauthorizedAccessException authEx)
-            {
-                OutputPaneWriter.WriteWarning($"CompanionFileManager: Failed to copy {lockFileName} - Permission denied: {authEx.Message}");
+                OutputPaneWriter.WriteDebug($"CompanionFileManager: Copied lock file - {lockFileName}");
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"CompanionFileManager: Failed to copy {lockFileName} - Error: {ex.Message}");
+                OutputPaneWriter.WriteWarning($"OSS scanner: error occurred while saving companion file {lockFileName}: {ex.Message}");
             }
         }
 
@@ -165,6 +157,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// <returns>True if lock files are defined for this manifest type</returns>
         public static bool HasCompanionFiles(string manifestFileName)
         {
+            if (manifestFileName == null) return false;
             return LockFilesByManifest.ContainsKey(manifestFileName);
         }
 
@@ -175,6 +168,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         /// <returns>Array of lock file names, or empty array if none defined</returns>
         public static string[] GetCompanionFileNames(string manifestFileName)
         {
+            if (manifestFileName == null) return Array.Empty<string>();
             return LockFilesByManifest.TryGetValue(manifestFileName, out var lockFiles)
                 ? lockFiles
                 : Array.Empty<string>();
