@@ -111,14 +111,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     // Same description format as Findings tab: PrimaryDisplayText + " Checkmarx One Assist [Ln X, Col Y]"
                     int displayLine = entry.Line + 1; // 1-based for description text to match Findings
                     string fullDescription = $"{entry.DisplayText} {CxAssistConstants.DisplayName} [Ln {displayLine}, Col {entry.Column}]";
+
+                    // For package.json files, use Line = -1 to prevent squiggle rendering in editor
+                    bool isPackageJson = !string.IsNullOrEmpty(filePath) && filePath.EndsWith("package.json", StringComparison.OrdinalIgnoreCase);
+                    int taskLine = isPackageJson ? -1 : entry.Line;
+
                     var task = new ErrorTask
                     {
                         Category = TaskCategory.BuildCompile,
-                        ErrorCategory = GetErrorCategory(v.Severity),
-                        Text = fullDescription,
-                        Document = docPath,
-                        Line = entry.Line,                                  // 0-based
-                        Column = Math.Max(0, entry.Column - 1),            // Fix: show correct column in VS
+                        ErrorCategory = TaskErrorCategory.Error,        // Show severity in Error List
+                        Text = fullDescription,                         // Already includes "[Ln X, Col Y]" (line 113)
+                        Document = docPath,                             // Document displays filename in Error List
+                        Line = taskLine,                                // -1 for OSS (no squiggles), actual line for others
+                        Column = Math.Max(0, entry.Column - 1),        // Column for Error List display
                         HierarchyItem = document != null ? GetHierarchyItem(document) : null,
                         HelpKeyword = HelpKeywordPrefix + v.Id
                     };
@@ -237,16 +242,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 return path;
             }
-        }
-
-        /// <summary>
-        /// Use Error for all findings so the Error List draws only red underlines. Otherwise
-        /// Warning (green) and Message (blue) on the same line can override red and make severity unclear.
-        /// Severity is still shown in the task Text (e.g. [High], [Medium]).
-        /// </summary>
-        private static TaskErrorCategory GetErrorCategory(SeverityLevel severity)
-        {
-            return TaskErrorCategory.Error;
         }
 
         private static IVsHierarchy GetHierarchyItem(Document document)

@@ -14,6 +14,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
     [Name("CxAssist Quick Fix")]
     [ContentType("code")]
     [ContentType("text")]
+    [ContentType("JSON")]
+    [ContentType("JSONC")]
     internal class CxAssistSuggestedActionsSourceProvider : ISuggestedActionsSourceProvider
     {
         public ISuggestedActionsSource CreateSuggestedActionsSource(ITextView textView, ITextBuffer textBuffer)

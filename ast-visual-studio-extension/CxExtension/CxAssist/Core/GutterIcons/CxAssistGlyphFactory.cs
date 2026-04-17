@@ -100,6 +100,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
     [Order(After = "VsTextMarker")]
     [ContentType("code")]
     [ContentType("text")]
+    [ContentType("JSON")]
+    [ContentType("JSONC")]
     [TagType(typeof(CxAssistGlyphTag))]
     [TextViewRole(PredefinedTextViewRoles.Document)]
     [TextViewRole(PredefinedTextViewRoles.Editable)]

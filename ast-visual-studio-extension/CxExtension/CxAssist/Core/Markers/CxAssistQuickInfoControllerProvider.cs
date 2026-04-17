@@ -11,6 +11,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
     [Name("CxAssist QuickInfo Controller")]
     [ContentType("code")]
     [ContentType("text")]
+    [ContentType("JSON")]
+    [ContentType("JSONC")]
     internal class CxAssistQuickInfoControllerProvider : IIntellisenseControllerProvider
     {
         [Import]

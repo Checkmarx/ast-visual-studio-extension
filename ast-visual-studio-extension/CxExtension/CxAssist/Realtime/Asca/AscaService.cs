@@ -1,10 +1,12 @@
 using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
@@ -19,6 +21,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
         private static readonly IFileFilterStrategy _fileFilter = new AscaFileFilterStrategy();
 
         protected override string ScannerName => "ASCA";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.ASCA;
 
         private AscaService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
@@ -46,46 +50,34 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Asca
         /// <summary>
         /// Invokes the ASCA realtime scan CLI command.
         /// Maps results to Result objects for display in the findings panel.
+        /// Catches and logs all errors to the output pane (aligned with JetBrains error handling).
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
-            var results = await _cxWrapper.ScanAscaAsync(tempFilePath, ascaLatestVersion: false);
-
-            // Log raw JSON response
-            if (results != null)
+            try
             {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
+                var results = await _cxWrapper.ScanAscaAsync(tempFilePath, ascaLatestVersion: false);
+
+                if (results?.ScanDetails == null || results.ScanDetails.Count == 0)
+                {
+                    ClearDisplayForFile(sourceFilePath);
+                    return 0;
+                }
+
+                int issueCount = results.ScanDetails.Count;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: {issueCount} issue(s) found — {Path.GetFileName(sourceFilePath)}");
+
+                var mappedResults = VulnerabilityMapper.FromAsca(results.ScanDetails, sourceFilePath);
+                CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
+                return mappedResults.Count;
             }
-
-            if (results == null)
+            catch (Exception ex)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: null results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
+                ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
-
-            if (results.ScanDetails == null || results.ScanDetails.Count == 0)
-            {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no scan details returned - {sourceFilePath}");
-                return 0;
-            }
-
-            int issueCount = results.ScanDetails.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({issueCount} issues found)");
-
-            // Log individual issues like JetBrains does
-            for (int i = 0; i < issueCount; i++)
-            {
-                var issue = results.ScanDetails[i];
-                var severity = issue.Severity ?? "UNKNOWN";
-                var title = issue.RuleName ?? "Unknown Issue";
-                OutputPaneWriter.WriteLine($"Issue {i + 1}: {title} [{severity}]");
-            }
-
-            var mappedResults = VulnerabilityMapper.FromAsca(results.ScanDetails, sourceFilePath);
-            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            return mappedResults.Count;
         }
 
         /// <summary>

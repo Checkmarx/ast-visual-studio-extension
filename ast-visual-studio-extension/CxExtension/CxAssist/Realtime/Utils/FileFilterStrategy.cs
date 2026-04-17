@@ -151,8 +151,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             if (IacFileNames.Contains(fileName))
                 return true;
 
-            // Check filename prefix (Dockerfile, Dockerfile-dev, etc.)
-            if (fileName.StartsWith("dockerfile", StringComparison.OrdinalIgnoreCase))
+            // Check filename contains "dockerfile" (Dockerfile, Dockerfile-dev, nginx-alpine-slim.dockerfile, etc.)
+            if (fileName.IndexOf("dockerfile", StringComparison.OrdinalIgnoreCase) >= 0)
                 return true;
 
             // Check terraform variable files (*.auto.tfvars, *.terraform.tfvars)

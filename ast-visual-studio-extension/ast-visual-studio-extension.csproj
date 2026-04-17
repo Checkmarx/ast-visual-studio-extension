@@ -121,6 +121,7 @@
     <Compile Include="CxExtension\Toolbar\ProjectsCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\ScansCombobox.cs" />
     <Compile Include="CxExtension\Toolbar\CxToolbar.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\EditorBufferResolver.cs" />
     <Compile Include="CxExtension\Utils\OutputPaneUtils.cs" />
     <Compile Include="CxExtension\Utils\OutputPaneWriter.cs" />
     <Compile Include="CxExtension\Utils\RepositoryInformation.cs" />
@@ -187,8 +188,6 @@
     <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphFactory.cs" />
     <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTagger.cs" />
     <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistGlyphTaggerProvider.cs" />
-    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistTextViewCreationListener.cs" />
-    <Compile Include="CxExtension\CxAssist\Core\GutterIcons\CxAssistMockDataViewCreationListener.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTagger.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistErrorTaggerProvider.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Markers\CxAssistQuickInfoController.cs" />
@@ -208,6 +207,7 @@
     <Compile Include="CxExtension\CxAssist\Core\AssistIconLoader.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistOutputPane.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistErrorHandler.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\AssistDocumentInfoBar.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CopilotIntegration.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistCopilotActions.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Prompts\CxOneAssistFixPrompts.cs" />
@@ -306,6 +306,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Language.StandardClassification" Version="17.9.187" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.Logic" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="17.9.187" />
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.12.2069">

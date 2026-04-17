@@ -16,7 +16,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell.Interop;
-using static System.Diagnostics.Stopwatch;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 {
@@ -59,6 +59,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
         protected abstract string ScannerName { get; }
 
+        /// <summary>
+        /// Scanner type used when merging into the display coordinator so clearing one engine does not remove others.
+        /// </summary>
+        protected abstract ScannerType CoordinatorScannerType { get; }
+
         public abstract bool ShouldScanFile(string filePath);
 
         /// <summary>
@@ -86,10 +91,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             try
             {
                 if (!ValidateFileSize(filePath))
-                {
-                    OutputPaneWriter.WriteLine($"{ScannerName} scanner: Skipping {Path.GetFileName(filePath)} - file size exceeds 100MB limit");
                     return null;
-                }
 
                 using (var cts = new CancellationTokenSource(SCAN_TIMEOUT_MS))
                 {
@@ -116,7 +118,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 var fileInfo = new FileInfo(filePath);
                 if (fileInfo.Length > MAX_FILE_SIZE_BYTES)
                 {
-                    OutputPaneWriter.WriteLine($"{ScannerName}: File {filePath} exceeds max size of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB ({fileInfo.Length / (1024 * 1024)}MB)");
+                    OutputPaneWriter.WriteWarning($"{ScannerName}: Skipping {Path.GetFileName(filePath)} — file exceeds {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB limit");
                     return false;
                 }
                 return true;
@@ -152,11 +154,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 _isInitialized = true;
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 RegisterDteRealtimeEvents();
-                OutputPaneWriter.WriteLine($"{ScannerName} scanner initialized");
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: initialized for real-time scanning");
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"Failed to initialize {ScannerName} scanner: {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to initialize - {ex.Message}");
                 _isInitialized = false;
                 throw;
             }
@@ -194,10 +196,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
                 _isSubscribed = false;
                 _isInitialized = false;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: disabled");
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"Error unregistering {ScannerName} events: {ex.Message}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to disable - {ex.Message}");
                 throw;
             }
         }
@@ -216,9 +219,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (!TempFileManager.TryReadVerifiedExistingFileContent(filePath, MAX_FILE_SIZE_BYTES, out var content, out var safePath))
                 {
                     if (TempFileManager.TryGetVerifiedRegularFileInfo(filePath, out var fiDiag) && fiDiag.Length > MAX_FILE_SIZE_BYTES)
-                        OutputPaneWriter.WriteLine($"{ScannerName}: File {fiDiag.FullName} exceeds max size of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB ({fiDiag.Length / (1024 * 1024)}MB)");
+                        OutputPaneWriter.WriteWarning($"{ScannerName} scanner: skipping {fiDiag.Name} — file exceeds {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB limit");
                     else
-                        OutputPaneWriter.WriteWarning($"{ScannerName} scanner: Rejecting unsafe or missing file path: {Path.GetFileName(filePath)}");
+                        _logger.Debug($"{ScannerName} scanner: skipping unsafe or missing file: {Path.GetFileName(filePath)}");
                     return;
                 }
 
@@ -228,6 +231,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
             catch (Exception ex)
             {
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(filePath)} - {ex.Message}");
                 _logger.Warn($"{ScannerName} scanner: ScanExternalFileAsync failed for {Path.GetFileName(filePath)}: {ex.Message}", ex);
             }
         }
@@ -270,8 +274,54 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             if (document != null)
                 TrySyncLineChangeBaseline(document);
 
-            OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: text editor + document events registered.");
-            OutputPaneWriter.WriteLine($"✓ {ScannerName} scanner: Monitoring enabled");
+            OutputPaneWriter.WriteLine($"{ScannerName} scanner: monitoring enabled");
+
+            ScheduleActiveDocumentOpenScanAfterSubscribe();
+        }
+
+        /// <summary>
+        /// <see cref="DocumentEvents.DocumentOpened"/> does not fire for documents already open when we subscribe (e.g. package.json at startup).
+        /// Mirrors <see cref="OnDocumentOpened"/> for the active document, with short retries when DTE text is not yet hydrated.
+        /// </summary>
+        private void ScheduleActiveDocumentOpenScanAfterSubscribe()
+        {
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try
+                {
+                    for (int attempt = 0; attempt < 6; attempt++)
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                        var dte = (DTE2)Package.GetGlobalService(typeof(SDTE));
+                        var document = dte?.ActiveDocument;
+                        if (document == null)
+                            return;
+
+                        if (!ShouldScanFile(document.FullName))
+                            return;
+
+                        var textDocument = (TextDocument)document.Object("TextDocument");
+                        if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
+                            return;
+
+                        var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
+                        if (!string.IsNullOrWhiteSpace(content))
+                        {
+                            _debounceScheduler?.CancelPending(document.FullName);
+                            TrySyncLineChangeBaseline(document);
+                            await InstantScanAsync(document);
+                            return;
+                        }
+
+                        await Task.Delay(75);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    OutputPaneWriter.WriteError($"{ScannerName}: Active document scan after subscribe failed: {ex.Message}");
+                }
+            });
         }
 
         /// <summary>
@@ -374,13 +424,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             if (document.FullName.Contains("\\node_modules\\") || document.FullName.Contains("/node_modules/"))
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: file not eligible (base filter) - {document.FullName}");
+                _logger.Debug($"{ScannerName} scanner: file not eligible (base filter) - {document.FullName}");
                 return;
             }
 
             if (!ShouldScanFile(document.FullName))
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: unsupported file - {document.FullName}");
+                _logger.Debug($"{ScannerName} scanner: unsupported file - {document.FullName}");
                 return;
             }
 
@@ -391,11 +441,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             if (string.IsNullOrWhiteSpace(content))
                 return;
 
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: starting scan - {document.FullName}");
-            var sw = Stopwatch.StartNew();
-            var count = await RunScanCoreAsync(document.FullName, content, bypassContentFingerprint: false);
-            sw.Stop();
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {document.FullName} ({count} issues, {sw.ElapsedMilliseconds}ms)");
+            await RunScanCoreAsync(document.FullName, content, bypassContentFingerprint: false);
         }
 
         private void OnDocumentOpened(Document document)
@@ -411,7 +457,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 _debounceScheduler?.CancelPending(document.FullName);
                 TrySyncLineChangeBaseline(document);
 
-                OutputPaneWriter.WriteDebug($"{ScannerName}: File opened: {document.Name}, triggering instant scan");
+                _logger.Debug($"{ScannerName}: File opened: {document.Name}");
                 _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () => await InstantScanAsync(document));
             }
             catch (Exception ex)
@@ -426,7 +472,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             try
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName}: File closing: {document.Name}");
                 _debounceScheduler?.CancelPending(document.FullName);
             }
             catch (Exception ex)
@@ -449,11 +494,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (string.IsNullOrWhiteSpace(content))
                     return;
 
-                var sw = Stopwatch.StartNew();
-                var count = await RunScanCoreAsync(document.FullName, content, bypassContentFingerprint: true);
-                sw.Stop();
-
-                OutputPaneWriter.WriteLine($"{ScannerName} scanner: Scan completed - {Path.GetFileName(document.FullName)} ({sw.ElapsedMilliseconds}ms, {count} issue(s) found)");
+                await RunScanCoreAsync(document.FullName, content, bypassContentFingerprint: true);
             }
             catch (Exception ex)
             {
@@ -485,6 +526,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             string tempFilePath = null;
             try
             {
+                _logger.Debug($"{ScannerName} scanner: starting scan - {sourceFilePath}");
+
                 var originalFileName = Path.GetFileName(sourceFilePath);
                 tempFilePath = CreateTempFilePath(originalFileName, content, sourceFilePath);
 
@@ -522,7 +565,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ScannerName} scanner: Scan error - {ex.Message}", ex);
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Error($"{ScannerName} scanner: scan error - {ex.Message}", ex);
                 return 0;
             }
             finally
@@ -567,18 +611,35 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             Func<TItem, string> describeItem)
         {
             if (rawResult != null)
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - "
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON - "
                     + JsonConvert.SerializeObject(rawResult, Formatting.Indented));
 
             if (items == null || items.Count == 0)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results - {Path.GetFileName(sourceFilePath)}");
                 return;
             }
 
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({items.Count} {itemLabel} found)");
             for (int i = 0; i < items.Count; i++)
-                OutputPaneWriter.WriteLine($"{itemLabel} {i + 1}: {describeItem(items[i])}");
+                OutputPaneWriter.WriteDebug($"{ScannerName} {itemLabel} {i + 1}: {describeItem(items[i])}");
+        }
+
+        /// <summary>
+        /// Clears markers and stored findings for this scanner only on the given file; other engines' findings stay.
+        /// Call when a scan returns 0 results so stale markers for this engine are removed after a fix.
+        /// </summary>
+        protected void ClearDisplayForFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            try
+            {
+                Core.CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(filePath, CoordinatorScannerType, new List<Vulnerability>());
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"ClearDisplayForFile failed for {filePath}: {ex.Message}");
+            }
         }
 
         protected void LogRealtimeDetectionTelemetry(int issueCount)
@@ -632,7 +693,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 if (!TempFileManager.TryReadVerifiedExistingFileContent(filePath, MAX_FILE_SIZE_BYTES, out var content, out var safePath))
                 {
                     if (TempFileManager.TryGetVerifiedRegularFileInfo(filePath, out var fiDiag) && fiDiag.Length > MAX_FILE_SIZE_BYTES)
-                        OutputPaneWriter.WriteLine($"{ScannerName}: File {fiDiag.FullName} exceeds max size of {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB ({fiDiag.Length / (1024 * 1024)}MB)");
+                        OutputPaneWriter.WriteWarning($"{ScannerName}: Skipping {fiDiag.Name} — file exceeds {MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB limit");
                     return;
                 }
 

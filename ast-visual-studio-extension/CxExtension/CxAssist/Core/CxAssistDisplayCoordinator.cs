@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Reflection;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Tagging;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers;
@@ -46,13 +49,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     copy[kv.Key] = new List<Vulnerability>(kv.Value);
                 snapshot = copy;
             }
-            foreach (var kv in snapshot)
+            // ResolveBufferForOpenFile requires the UI thread.
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                var buffer = GutterIcons.CxAssistGlyphTaggerProvider.GetBufferForFile(kv.Key);
-                if (buffer != null)
-                    UpdateFindings(buffer, kv.Value, kv.Key);
-            }
-            IssuesUpdated?.Invoke(snapshot);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                foreach (var kv in snapshot)
+                {
+                    var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(kv.Key);
+                    if (buffer != null)
+                        UpdateFindings(buffer, kv.Value, kv.Key);
+                }
+                IssuesUpdated?.Invoke(snapshot);
+            });
         }
 
         /// <summary>
@@ -79,21 +87,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static string GetFilePathForBuffer(ITextBuffer buffer) => TryGetFilePathFromBuffer(buffer);
 
         /// <summary>
-        /// Tries to get the file path for the buffer from ITextDocument (when the buffer is backed by a file).
-        /// Uses reflection so we don't require an extra assembly reference.
+        /// Tries to get the file path for the buffer from <see cref="ITextDocument"/> (when the buffer is backed by a file).
+        /// Uses <see cref="typeof(ITextDocument)"/> as the property-bag key (same as the editor). Do not use
+        /// <see cref="Type.GetType(string)"/> with a simple assembly name — that returns null unless that assembly is already loaded.
         /// </summary>
         private static string TryGetFilePathFromBuffer(ITextBuffer buffer)
         {
             if (buffer?.Properties == null) return null;
             try
             {
-                // ITextDocument is in Microsoft.VisualStudio.Text.Logic (or Text.Data); key is often the type
-                var docType = Type.GetType("Microsoft.VisualStudio.Text.ITextDocument, Microsoft.VisualStudio.Text.Logic", false)
-                    ?? Type.GetType("Microsoft.VisualStudio.Text.ITextDocument, Microsoft.VisualStudio.Text.Data", false);
-                if (docType == null) return null;
-                if (!buffer.Properties.TryGetProperty(docType, out object doc) || doc == null) return null;
-                var pathProp = docType.GetProperty("FilePath", BindingFlags.Public | BindingFlags.Instance);
-                return pathProp?.GetValue(doc) as string;
+                if (!buffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument document) || document == null)
+                    return null;
+                return document.FilePath;
             }
             catch
             {
@@ -234,6 +239,43 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
+        /// Nudges the tagging system so <see cref="CxAssistGlyphTaggerProvider"/> / <see cref="CxAssistErrorTaggerProvider"/> materialize for buffers
+        /// that were resolved via RDT before a view existed.
+        /// </summary>
+        private static void TryEnsureTaggersMaterialized(ITextBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            try
+            {
+                var mef = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+                var factory = mef?.GetService<IBufferTagAggregatorFactoryService>();
+                if (factory == null)
+                    return;
+
+                var snapshot = buffer.CurrentSnapshot;
+                var span = snapshot.Length > 0
+                    ? new SnapshotSpan(snapshot, 0, snapshot.Length)
+                    : new SnapshotSpan(snapshot, 0, 0);
+                var spans = new NormalizedSnapshotSpanCollection(span);
+
+                using (ITagAggregator<CxAssistGlyphTag> glyphAgg = factory.CreateTagAggregator<CxAssistGlyphTag>(buffer))
+                using (ITagAggregator<IErrorTag> errorAgg = factory.CreateTagAggregator<IErrorTag>(buffer))
+                {
+                    if (glyphAgg != null && spans.Count > 0)
+                        _ = glyphAgg.GetTags(spans);
+                    if (errorAgg != null && spans.Count > 0)
+                        _ = errorAgg.GetTags(spans);
+                }
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.TryEnsureTaggersMaterialized");
+            }
+        }
+
+        /// <summary>
         /// Updates gutter icons, underlines (squiggles), and stored findings for the problem window in one call.
         /// Stores issues per file and raises IssuesUpdated so the findings window can stay in sync (reference-like).
         /// </summary>
@@ -255,15 +297,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, list.Count, filePath ?? "unknown"));
 
-            // 1. Update gutter
-            var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
-            if (glyphTagger != null)
-                CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
-
-            // 2. Update underline
-            var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
-            if (errorTagger != null)
-                CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
+            ApplyGutterAndErrorTaggersToBuffer(buffer, list);
 
             // 3. Store per file and notify (reference ProblemHolderService + ISSUE_TOPIC-like)
             CxAssistErrorHandler.TryRun(() =>
@@ -291,8 +325,189 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
+        /// Applies gutter icons and error tag underlines for the given buffer (must run on the UI thread).
+        /// </summary>
+        private static async Task ApplyGutterAndErrorTaggersToBufferCoreAsync(ITextBuffer buffer, List<Vulnerability> list)
+        {
+            if (buffer == null)
+                return;
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            TryEnsureTaggersMaterialized(buffer);
+
+            var deadline = Environment.TickCount + 500;
+            while (Environment.TickCount < deadline)
+            {
+                var glyphTagger = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
+                var errorTagger = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
+                if (glyphTagger != null && errorTagger != null)
+                    break;
+                await Task.Delay(15);
+            }
+
+            var glyphTaggerFinal = CxAssistErrorHandler.TryGet(() => CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetGlyphTagger", null);
+            if (glyphTaggerFinal != null)
+                CxAssistErrorHandler.TryRun(() => glyphTaggerFinal.UpdateVulnerabilities(list), "Coordinator.GlyphTagger.UpdateVulnerabilities");
+
+            var errorTaggerFinal = CxAssistErrorHandler.TryGet(() => CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "Coordinator.GetErrorTagger", null);
+            if (errorTaggerFinal != null)
+                CxAssistErrorHandler.TryRun(() => errorTaggerFinal.UpdateVulnerabilities(list), "Coordinator.ErrorTagger.UpdateVulnerabilities");
+        }
+
+        /// <summary>
+        /// Applies gutter icons and error tag underlines for the given buffer (marshals to UI thread).
+        /// </summary>
+        private static void ApplyGutterAndErrorTaggersToBuffer(ITextBuffer buffer, List<Vulnerability> list)
+        {
+            if (buffer == null)
+                return;
+
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(() => ApplyGutterAndErrorTaggersToBufferCoreAsync(buffer, list));
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.ApplyGutterAndErrorTaggersToBuffer.UI");
+            }
+        }
+
+        /// <summary>
+        /// OSS / manifest scans often finish before the JSON buffer is registered in the RDT or before taggers exist.
+        /// Retries on the UI thread so gutter and squiggles apply once <see cref="CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile"/> succeeds.
+        /// </summary>
+        private static void ScheduleApplyGutterWhenBufferAvailable(string filePath, List<Vulnerability> findings)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            var payload = findings != null ? new List<Vulnerability>(findings) : new List<Vulnerability>();
+
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try
+                {
+                    for (int attempt = 0; attempt < 30; attempt++)
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                        var buffer = CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
+                        if (buffer != null)
+                        {
+                            await ApplyGutterAndErrorTaggersToBufferCoreAsync(buffer, payload);
+                            return;
+                        }
+
+                        await Task.Delay(60);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.ScheduleApplyGutterWhenBufferAvailable");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Replaces stored and displayed findings for one scanner on a file, preserving findings from other scanners.
+        /// Use for realtime scan results so an engine returning 0 issues does not clear sibling engines' issues on the same file.
+        /// </summary>
+        public static void MergeUpdateFindingsForScanner(string filePath, ScannerType scanner, List<Vulnerability> vulnerabilitiesFromScanner)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            var incoming = vulnerabilitiesFromScanner != null
+                ? vulnerabilitiesFromScanner.FindAll(v => v.Scanner == scanner && CxAssistConstants.IsScannerEnabled(v.Scanner))
+                : new List<Vulnerability>();
+
+            string key = NormalizePath(filePath);
+            if (string.IsNullOrEmpty(key))
+                return;
+
+            // Update in-memory store on whichever thread we are on — the lock makes it safe.
+            List<Vulnerability> mergedForUi;
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            lock (_lock)
+            {
+                _fileToIssues.TryGetValue(key, out var existing);
+                var merged = existing != null
+                    ? existing.Where(v => v.Scanner != scanner).ToList()
+                    : new List<Vulnerability>();
+                merged.AddRange(incoming);
+
+                mergedForUi = new List<Vulnerability>(merged);
+                if (merged.Count == 0)
+                    _fileToIssues.Remove(key);
+                else
+                    _fileToIssues[key] = merged;
+
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+
+            CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, mergedForUi.Count, filePath));
+
+            // ResolveBufferForOpenFile calls TryGetTextBufferForMoniker which requires the UI thread.
+            // Marshal the buffer lookup + gutter apply to the UI thread; data is already committed above.
+            var capturedMerged = mergedForUi;
+            var capturedPath = filePath;
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var buffer = CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(capturedPath);
+                if (buffer != null)
+                    await ApplyGutterAndErrorTaggersToBufferCoreAsync(buffer, capturedMerged);
+                else
+                    ScheduleApplyGutterWhenBufferAvailable(capturedPath, capturedMerged);
+            });
+
+            IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
+        /// Replaces all findings for a single file in storage and notifies subscribers.
+        /// Does not update gutter/underlines; does not merge with other scanners — prefer <see cref="MergeUpdateFindingsForScanner"/> for per-engine updates.
+        /// </summary>
+        /// <param name="filePath">File path to update findings for.</param>
+        /// <param name="vulnerabilities">Findings for this file; null or empty removes this file from stored issues.</param>
+        public static void UpdateFindingsForFile(string filePath, List<Vulnerability> vulnerabilities)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            // Filter out findings from disabled scanners (aligned with UpdateFindings)
+            var list = vulnerabilities != null
+                ? vulnerabilities.FindAll(v => CxAssistConstants.IsScannerEnabled(v.Scanner))
+                : new List<Vulnerability>();
+
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            lock (_lock)
+            {
+                string key = NormalizePath(filePath);
+                if (string.IsNullOrEmpty(key)) return;
+
+                if (list.Count == 0)
+                    _fileToIssues.Remove(key);
+                else
+                    _fileToIssues[key] = new List<Vulnerability>(list);
+
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+            IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
         /// Sets the stored findings by file and raises IssuesUpdated without updating gutter/underline.
+        /// CLEARS ALL previous findings from all files before setting new ones.
         /// Use when displaying fallback data (e.g. package.json mock) in the Findings window so the Error List shows the same data.
+        /// For realtime scanner updates on a file shared by multiple engines, use <see cref="MergeUpdateFindingsForScanner"/> instead.
         /// </summary>
         public static void SetFindingsByFile(IReadOnlyDictionary<string, List<Vulnerability>> issuesByFile)
         {
@@ -314,6 +529,136 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     copy[kv.Key] = new List<Vulnerability>(kv.Value);
                 snapshot = copy;
             }
+            IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
+        /// Clears all findings from all files and notifies subscribers.
+        /// Also clears gutter icons and underlines in all open files.
+        /// Called only on logout to completely remove all findings.
+        /// </summary>
+        public static void ClearAllFindings()
+        {
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            var filesToClear = new List<string>();
+
+            lock (_lock)
+            {
+                filesToClear.AddRange(_fileToIssues.Keys);
+                _fileToIssues.Clear();
+                snapshot = new Dictionary<string, List<Vulnerability>>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            // Clear gutter icons and underlines for all files that had findings (UI thread)
+            try
+            {
+                Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    foreach (var filePath in filesToClear)
+                    {
+                        var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
+                        if (buffer != null)
+                        {
+                            // Update taggers with empty list to clear all icons and underlines
+                            var glyphTagger = CxAssistErrorHandler.TryGet(() => GutterIcons.CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "", null);
+                            if (glyphTagger != null)
+                                CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(new List<Vulnerability>()), "");
+
+                            var errorTagger = CxAssistErrorHandler.TryGet(() => Markers.CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "", null);
+                            if (errorTagger != null)
+                                CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(new List<Vulnerability>()), "");
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.ClearAllFindings.UI");
+            }
+
+            // Notify subscribers (clears Findings window and Error List)
+            IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
+        /// Clears findings only from disabled scanners, preserving findings from enabled scanners.
+        /// Also updates gutter icons and underlines in all open files.
+        /// Called when user toggles a scanner on/off in settings without logging out.
+        /// </summary>
+        public static void ClearFindingsFromDisabledScanners()
+        {
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            var filesToRefresh = new List<string>();
+
+            lock (_lock)
+            {
+                // Iterate all files and remove vulnerabilities from disabled scanners
+                foreach (var filePath in _fileToIssues.Keys.ToList())
+                {
+                    var list = _fileToIssues[filePath];
+                    if (list == null) continue;
+
+                    // Keep only findings from enabled scanners
+                    var filtered = list.Where(v => CxAssistConstants.IsScannerEnabled(v.Scanner)).ToList();
+
+                    if (filtered.Count == 0)
+                    {
+                        // Remove file entry if no findings left
+                        _fileToIssues.Remove(filePath);
+                        filesToRefresh.Add(filePath);
+                    }
+                    else if (filtered.Count < list.Count)
+                    {
+                        // Update file entry with filtered findings
+                        _fileToIssues[filePath] = filtered;
+                        filesToRefresh.Add(filePath);
+                    }
+                }
+
+                // Create snapshot for notification
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+
+            // Update gutter icons and underlines for all affected files (UI thread)
+            try
+            {
+                Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await Microsoft.VisualStudio.Shell.ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    foreach (var filePath in filesToRefresh)
+                    {
+                        var buffer = GutterIcons.CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(filePath);
+                        if (buffer != null)
+                        {
+                            // Get remaining findings for this file (after filtering)
+                            var remainingVulns = snapshot.ContainsKey(NormalizePath(filePath))
+                                ? snapshot[NormalizePath(filePath)]
+                                : new List<Vulnerability>();
+
+                            // Update both gutter and underline taggers
+                            var glyphTagger = CxAssistErrorHandler.TryGet(() => GutterIcons.CxAssistGlyphTaggerProvider.GetTaggerForBuffer(buffer), "", null);
+                            if (glyphTagger != null)
+                                CxAssistErrorHandler.TryRun(() => glyphTagger.UpdateVulnerabilities(remainingVulns), "");
+
+                            var errorTagger = CxAssistErrorHandler.TryGet(() => Markers.CxAssistErrorTaggerProvider.GetTaggerForBuffer(buffer), "", null);
+                            if (errorTagger != null)
+                                CxAssistErrorHandler.TryRun(() => errorTagger.UpdateVulnerabilities(remainingVulns), "");
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.ClearFindingsFromDisabledScanners.UI");
+            }
+
+            // Notify subscribers (updates Findings window and Error List)
             IssuesUpdated?.Invoke(snapshot);
         }
 

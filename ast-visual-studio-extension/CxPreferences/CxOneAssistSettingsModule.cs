@@ -2,6 +2,8 @@ using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 
 namespace ast_visual_studio_extension.CxPreferences
 {
@@ -89,10 +91,19 @@ namespace ast_visual_studio_extension.CxPreferences
 
         /// <summary>
         /// Explicitly persist all module settings to the registry and notify listeners to resync realtime scanners.
+        /// Also syncs scanner enable/disable state so ClearFindingsFromDisabledScanners() has correct state.
         /// </summary>
         public void PersistSettings()
         {
             SaveSettingsToStorage();
+
+            // Sync scanner enabled/disabled state BEFORE firing the event so ClearFindingsFromDisabledScanners() has current state
+            CxAssistConstants.SetScannerEnabled(ScannerType.ASCA, AscaCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.OSS, OssRealtimeCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.Secrets, SecretDetectionRealtimeCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.Containers, ContainersRealtimeCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.IaC, IacRealtimeCheckBox);
+
             RealtimeAssistSettingsChanged?.Invoke(this, EventArgs.Empty);
         }
 

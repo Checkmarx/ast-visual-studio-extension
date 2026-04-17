@@ -1,8 +1,9 @@
 using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,6 +26,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
 
         protected override string ScannerName => "OSS";
 
+        protected override ScannerType CoordinatorScannerType => ScannerType.OSS;
+
         private OssService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
         {
         }
@@ -41,14 +44,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
             string solutionRoot = RealtimeSolutionScanner.TryGetSolutionDirectory();
             if (string.IsNullOrEmpty(solutionRoot))
             {
-                OutputPaneWriter.WriteDebug("OSS scanner: manifest folder sweep skipped — no solution directory (save the solution or open a .sln)");
+                OutputPaneWriter.WriteLine("OSS scanner: manifest sweep skipped — no solution directory. Save the solution or open a .sln file.");
                 return;
             }
 
             if (!OssManifestSweepPolicy.ShouldScheduleFullManifestSweep(solutionRoot))
             {
-                OutputPaneWriter.WriteDebug(
-                    $"OSS scanner: manifest folder sweep skipped — already completed for this solution in this session ({solutionRoot})");
+                _logger.Debug($"OSS scanner: manifest sweep skipped — already completed for this solution in this session ({solutionRoot})");
                 return;
             }
 
@@ -63,7 +65,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
                 {
                     await ScanAllManifestsInSolutionAsync(solutionRoot, sweepCts.Token).ConfigureAwait(false);
                     if (!sweepCts.Token.IsCancellationRequested)
+                    {
                         OssManifestSweepPolicy.MarkSweepCompleted(solutionRoot);
+                        OutputPaneWriter.WriteLine("OSS scanner: startup manifest sweep completed");
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -139,43 +144,43 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// Invokes the OSS realtime scan CLI command.
         /// Maps results to Result objects for display in the findings panel.
         /// Copies companion lock files (package-lock.json, yarn.lock) alongside the temp file.
+        /// Catches and logs all errors to the output pane (aligned with JetBrains error handling).
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
-            // Copy companion lock file (package-lock.json / yarn.lock) alongside temp file
-            CopyCompanionLockFile(sourceFilePath, Path.GetDirectoryName(tempFilePath));
-
-            var results = await _cxWrapper.OssRealtimeScanAsync(tempFilePath);
-
-            // Log raw JSON response
-            if (results != null)
+            try
             {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
+                if (new System.IO.FileInfo(tempFilePath).Length == 0)
+                {
+                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: no content found in file - {Path.GetFileName(sourceFilePath)}");
+                    return 0;
+                }
+
+                // Copy companion lock file (package-lock.json / yarn.lock) alongside temp file
+                CopyCompanionLockFile(sourceFilePath, Path.GetDirectoryName(tempFilePath));
+
+                var results = await _cxWrapper.OssRealtimeScanAsync(tempFilePath);
+
+                if (results?.Packages == null || results.Packages.Count == 0)
+                {
+                    ClearDisplayForFile(sourceFilePath);
+                    return 0;
+                }
+
+                int packageCount = results.Packages.Count;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: {packageCount} vulnerable package(s) found — {Path.GetFileName(sourceFilePath)}");
+
+                var mappedResults = VulnerabilityMapper.FromOss(results.Packages, sourceFilePath);
+                CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
+                return mappedResults.Count;
             }
-
-            if (results?.Packages == null || results.Packages.Count == 0)
+            catch (Exception ex)
             {
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no results returned - {sourceFilePath}");
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
+                ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
-
-            int packageCount = results.Packages.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({packageCount} issues found)");
-
-            // Log individual packages like JetBrains does
-            for (int i = 0; i < packageCount; i++)
-            {
-                var package = results.Packages[i];
-                var name = package.PackageName ?? "Unknown";
-                var version = package.PackageVersion ?? "Unknown";
-                OutputPaneWriter.WriteLine($"Package {i + 1}: {name}@{version}");
-            }
-
-            var mappedResults = VulnerabilityMapper.FromOss(results.Packages, sourceFilePath);
-            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            return mappedResults.Count;
         }
 
         /// <summary>
