@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 {
     /// <summary>
-    /// Shows Visual Studio status bar progress with animated progress bar.
-    /// Displays: "Checkmarx is Scanning File : filename.ext" with animated bar underneath
+    /// Shows Visual Studio status bar progress message during realtime scans.
+    /// Displays: "Checkmarx is Scanning File : filename.ext" with single-run progress bar.
+    /// Progress bar fills from 0-100% once per scan, then clears.
     /// </summary>
     internal static class RealtimeScanProgressIndicator
     {
@@ -17,6 +18,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         private static int _depth;
         private static uint _progressCookie;
         private static string _currentFileName = string.Empty;
+        private static System.Timers.Timer _progressTimer;
+        private static uint _currentProgress = 0;
 
         internal static async Task PushScanAsync(string scannerName, string sourceFilePath)
         {
@@ -38,10 +41,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
                 try
                 {
-                    // Show animated progress bar with label in same call
-                    // This prevents the gap between text and bar
+                    // Show progress bar that fills from 0-100% once during the scan.
+                    // Progress fills at ~200ms per 10%, completing in ~2 seconds.
                     string label = $"Checkmarx is Scanning File : {fileName}";
-                    statusBar.Progress(ref _progressCookie, 1, label, 1, 1);
+                    _currentProgress = 0;
+                    StartProgressBar(label);
                 }
                 catch
                 {
@@ -59,40 +63,33 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 if (_depth > 0)
                     _depth--;
 
-                var statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
-                if (statusBar == null)
+                try
                 {
                     if (_depth == 0)
                     {
+                        // Stop progress bar and clear status bar
+                        StopProgressBar();
+
+                        var statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
+                        if (statusBar != null)
+                        {
+                            statusBar.Progress(ref _progressCookie, 0, string.Empty, 0, 0);
+                        }
                         TrySetTextFallback(string.Empty);
                         ResetProgress();
                     }
                     else
                     {
-                        TrySetTextFallback($"Checkmarx is Scanning File : {_currentFileName}");
-                    }
-                    return;
-                }
-
-                try
-                {
-                    if (_depth == 0)
-                    {
-                        // Clear the progress bar when all scans complete
-                        statusBar.Progress(ref _progressCookie, 0, string.Empty, 0, 0);
-                        ResetProgress();
-                    }
-                    else
-                    {
-                        // Show progress for next scan
+                        // More scans pending - show current file
                         string label = $"Checkmarx is Scanning File : {_currentFileName}";
-                        statusBar.Progress(ref _progressCookie, 1, label, 1, 1);
+                        TrySetTextFallback(label);
                     }
                 }
                 catch
                 {
                     if (_depth == 0)
                     {
+                        StopProgressBar();
                         TrySetTextFallback(string.Empty);
                         ResetProgress();
                     }
@@ -102,10 +99,68 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         /// <summary>
         /// Resets progress state when all scans complete.
+        /// _progressCookie must be reset to 0 so VS allocates a fresh one on the next PushScan.
+        /// Reusing a cookie that VS has already closed causes the bar to silently disappear.
         /// </summary>
         private static void ResetProgress()
         {
+            _progressCookie = 0;
             _currentFileName = string.Empty;
+        }
+
+        /// <summary>
+        /// Starts progress bar that fills 0-100% once during scan.
+        /// Updates every 200ms with +10% increment = ~2 second fill time.
+        /// </summary>
+        private static void StartProgressBar(string label)
+        {
+            StopProgressBar();
+
+            _currentProgress = 0;
+            _progressTimer = new System.Timers.Timer(200);
+            _progressTimer.Elapsed += (sender, e) =>
+            {
+                try
+                {
+                    lock (ProgressLock)
+                    {
+                        _currentProgress += 10;
+                        if (_currentProgress > 100)
+                            _currentProgress = 100;
+
+                        var statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
+                        if (statusBar != null)
+                        {
+                            statusBar.Progress(ref _progressCookie, 1, label, _currentProgress, 100);
+                        }
+
+                        // Stop timer once progress reaches 100%
+                        if (_currentProgress >= 100)
+                        {
+                            StopProgressBar();
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore timer errors
+                }
+            };
+            _progressTimer.AutoReset = true;
+            _progressTimer.Start();
+        }
+
+        /// <summary>
+        /// Stops the progress bar timer.
+        /// </summary>
+        private static void StopProgressBar()
+        {
+            if (_progressTimer != null)
+            {
+                _progressTimer.Stop();
+                _progressTimer.Dispose();
+                _progressTimer = null;
+            }
         }
 
         private static void TrySetTextFallback(string message)
