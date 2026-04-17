@@ -150,8 +150,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         private void OnIssuesUpdated(IReadOnlyDictionary<string, List<Core.Models.Vulnerability>> issuesByFile)
         {
-            // Coordinator raises IssuesUpdated from UI thread (callers use SwitchToMainThreadAsync).
-            RefreshFromCoordinator();
+            // IssuesUpdated can fire from a background scanner thread — marshal to UI thread
+            // so ApplyFilters can safely read ToggleButton.IsChecked and update FileNodes.
+            Dispatcher.InvokeAsync(RefreshFromCoordinator);
         }
 
         /// <summary>
@@ -611,7 +612,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         private void ApplyFilters()
         {
             if (_allFileNodes == null || _allFileNodes.Count == 0)
+            {
+                FileNodes = new ObservableCollection<FileNode>();
                 return;
+            }
 
             // Get active filters
             var activeFilters = new System.Collections.Generic.List<string>();
@@ -682,7 +686,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         public void SetAllFileNodes(ObservableCollection<FileNode> allNodes)
         {
             _allFileNodes = allNodes;
-            FileNodes = new ObservableCollection<FileNode>(allNodes);
+            ApplyFilters();
         }
 
         #endregion

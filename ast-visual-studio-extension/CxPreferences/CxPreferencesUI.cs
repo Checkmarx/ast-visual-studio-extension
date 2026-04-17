@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using ast_visual_studio_extension.CxWrapper.Exceptions;
@@ -179,17 +180,21 @@ namespace ast_visual_studio_extension.CxPreferences
                 System.Diagnostics.Debug.WriteLine($"MCP cleanup on logout failed: {ex.Message}");
             }
 
-            // JetBrains parity: do not persist "all scanners off" — toggles stay as last user choice in storage.
-            // Runtime scanning stops via auth → RealtimeScannerHost.UnregisterAsync (GlobalScannerController.syncAll / stopAll).
             cxPreferencesModule.RestoreAuthenticatedSession = false;
             ResetAuthState();
 
             try
             {
+                // Clear all findings immediately before any async events fire
+                CxAssistDisplayCoordinator.ClearAllFindings();
+
                 CxOneAssistSettingsModule oneAssistModule = GetOneAssistSettingsModule();
                 if (oneAssistModule != null)
                 {
+                    // Disable all scanners → stops scanning
+                    oneAssistModule.DisableAllRealtimeScanners();
                     oneAssistModule.ContainersTool = "docker";
+                    // Persist fires RealtimeAssistSettingsChanged → RealtimeScannerHost stops all scanners
                     oneAssistModule.PersistSettings();
                 }
             }
@@ -251,10 +256,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 SetAuthState(true);
                 if (cxPreferencesModule != null)
                     cxPreferencesModule.RestoreAuthenticatedSession = true;
-                // autoDismiss: false for background validation — user sees connected state when Settings opens
-                SetValidationMessage(CxConstants.AUTH_VALIDATE_SUCCESS, isSuccess: true, autoDismiss: !showErrorOnFailure);
 
-                // Do not block auth UI state updates on MCP checks/auto-install.
+                // Success message shown inside CompleteAuthenticationSetupAsync after license check
                 _ = CompleteAuthenticationSetupAsync(GetCxConfig(), showWelcomeDialog: showErrorOnFailure);
             }
             catch (CxException ex) when (showErrorOnFailure)
@@ -381,8 +384,14 @@ namespace ast_visual_studio_extension.CxPreferences
                     ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistRestore, previousMcpEnabled, mcpStatusPreviouslyChecked);
                     if (oneAssistRestore.McpEnabled)
                         await installService.InstallSilentlyAsync(config, typeof(CxPreferencesUI));
-                    oneAssistRestore.PersistSettings();
-                    CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+
+                    // Only start scanning on restore if user has already seen the welcome dialog
+                    // (WelcomeShown = true means user has configured scanners previously)
+                    if (oneAssistRestore.WelcomeShown)
+                    {
+                        oneAssistRestore.PersistSettings();
+                        CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+                    }
                 }
             }
             catch
@@ -474,7 +483,12 @@ namespace ast_visual_studio_extension.CxPreferences
                 bool previousMcpEnabled = oneAssistModule?.McpEnabled ?? false;
                 bool mcpStatusPreviouslyChecked = oneAssistModule?.McpStatusChecked ?? false;
 
+                // Step 1: Check license
                 bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, GetType());
+
+                // Step 2: Show success message after license check
+                SetValidationMessage(CxConstants.AUTH_VALIDATE_SUCCESS, isSuccess: true, autoDismiss: !showWelcomeDialog);
+
                 if (!hadAssist)
                     return;
 
@@ -482,20 +496,25 @@ namespace ast_visual_studio_extension.CxPreferences
                 if (oneAssistModule == null)
                     return;
 
-                var installService = new McpInstallService();
-
-                ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistModule, previousMcpEnabled, mcpStatusPreviouslyChecked);
-
+                // Step 3: Install MCP if enabled
                 if (oneAssistModule.McpEnabled)
+                {
+                    var installService = new McpInstallService();
                     await installService.InstallSilentlyAsync(config, GetType());
-
-                // JetBrains calls apply() after MCP update every login — Persist drives RealtimeAssistSettingsChanged / Resync.
-                oneAssistModule.PersistSettings();
+                }
 
                 if (showWelcomeDialog)
-                    ShowOneAssistWelcomeDialog(oneAssistModule, oneAssistModule.McpEnabled);
-
-                CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+                {
+                    // Step 4: Show welcome dialog — policy, persist and scan start ONLY after user closes it
+                    ShowOneAssistWelcomeDialog(oneAssistModule, oneAssistModule.McpEnabled, previousMcpEnabled, mcpStatusPreviouslyChecked);
+                }
+                else
+                {
+                    // No welcome dialog (background restore) — apply policy and persist immediately
+                    ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistModule, previousMcpEnabled, mcpStatusPreviouslyChecked);
+                    oneAssistModule.PersistSettings();
+                    CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+                }
             }
             catch (Exception ex)
             {
@@ -519,7 +538,7 @@ namespace ast_visual_studio_extension.CxPreferences
             }
         }
 
-        private void ShowOneAssistWelcomeDialog(CxOneAssistSettingsModule module, bool mcpEnabled)
+        private void ShowOneAssistWelcomeDialog(CxOneAssistSettingsModule module, bool mcpEnabled, bool previousMcpEnabled = false, bool mcpStatusPreviouslyChecked = false)
         {
             try
             {
@@ -528,6 +547,16 @@ namespace ast_visual_studio_extension.CxPreferences
                     welcomeDialog.ShowDialog(FindForm());
                     module.WelcomeShown = true;
                 }
+
+                // After user closes welcome dialog:
+                // Step 1: Apply scanner policy based on user selection in welcome dialog
+                ApplyJetBrainsStyleRealtimeScannerPolicy(module, previousMcpEnabled, mcpStatusPreviouslyChecked);
+
+                // Step 2: Persist settings → fires RealtimeAssistSettingsChanged → starts scanning
+                module.PersistSettings();
+
+                // Step 3: Refresh checkboxes in Assist tab
+                CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
             }
             catch (Exception ex)
             {

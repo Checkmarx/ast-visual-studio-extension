@@ -245,6 +245,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public const string CopilotOpenInstructionsMessage = "Prompt copied to clipboard! Paste it into GitHub Copilot Chat (Agent Mode).";
         public const string CopilotGenericFallbackMessage = "Prompt copied to clipboard. Paste into GitHub Copilot Chat.";
 
+        /// <summary>Non-modal (info bar) when Copilot extension/commands are not registered.</summary>
+        public const string CopilotNotInstalledInfoBarMessage =
+            "GitHub Copilot is not installed. Your prompt was copied to the clipboard—install GitHub Copilot, open Copilot Chat, paste the prompt, switch to Agent mode, then submit.";
+
+        /// <summary>Non-modal when Copilot Chat UI could not be opened (commands may exist but host failed).</summary>
+        public const string CopilotChatOpenFailedInfoBarMessage =
+            "Could not open GitHub Copilot Chat. Your prompt was copied to the clipboard—open Copilot Chat manually, paste the prompt, switch to Agent mode, then submit.";
+
+        /// <summary>Non-modal when the user is not in Agent mode; prompt was pasted without sending.</summary>
+        public const string CopilotNotAgentModeInfoBarMessage =
+            "GitHub Copilot Chat is not in Agent mode. Your prompt is ready in Copilot Chat—switch to Agent mode, then submit.";
+
+        /// <summary>Non-modal for VS 2026+; mode detection is unavailable so prompt is pasted without auto-submit in any mode.</summary>
+        public const string CopilotPasteOnlyVs2026InfoBarMessage =
+            "Prompt pasted into GitHub Copilot Chat. Please switch to Agent mode (Ignore if already in Agent mode) and press Enter to submit.";
+
+        /// <summary>Non-modal when paste/focus into Copilot input failed.</summary>
+        public const string CopilotPromptPrepareFailedInfoBarMessage = "Unable to prepare prompt in Copilot.";
+
         /// <summary>Context menu / Error List / Quick Info / Quick Fix: "Ignore this [finding type]" label based on scanner.</summary>
         public static string GetIgnoreThisLabel(ScannerType scanner)
         {
