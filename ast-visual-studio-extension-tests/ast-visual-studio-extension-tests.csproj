@@ -1,8 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- net6.0-windows7.0 matches NuGet assets target key; avoids NETSDK1005 with some SDK 10 + restore combinations. -->
     <TargetFramework>net60-windows</TargetFramework>
-	    <IsTestProject>true</IsTestProject>   
+	    <IsTestProject>true</IsTestProject>
+    <!-- Transitive VS SDK packages target net472; restore fallback is expected for extension test host. -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

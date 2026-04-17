@@ -23,7 +23,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task TryRestoreAuthenticatedSessionAsync_WithNullPackage_DoesNotThrow()
+        public async Task TryRestoreAuthenticatedSessionAsync_WithNullPackage_DoesNotThrowAsync()
         {
             await CxPreferencesUI.TryRestoreAuthenticatedSessionAsync(null);
         }

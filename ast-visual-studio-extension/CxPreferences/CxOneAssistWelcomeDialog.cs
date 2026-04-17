@@ -32,6 +32,10 @@ namespace ast_visual_studio_extension.CxPreferences
         private readonly CxOneAssistSettingsModule _settings;
         private readonly bool _mcpEnabled;
         private CheckBox _enableAllScannersCheckBox;
+        /// <summary>
+        /// True if the user cleared the welcome checkbox at least once this session; checking again then means enable-all.
+        /// </summary>
+        private bool _welcomeRealtimeCheckboxWasUncheckedOnce;
 
         public CxOneAssistWelcomeDialog(CxOneAssistSettingsModule settings, bool mcpEnabled)
         {
@@ -346,15 +350,19 @@ namespace ast_visual_studio_extension.CxPreferences
             if (!_mcpEnabled)
                 return;
 
+            // First close with checkbox still checked (never unchecked): saved per-engine prefs only.
+            // Unchecked: all scanners off, without overwriting UserPref* snapshot.
+            // Unchecked then checked again before close: enable every realtime scanner and persist as prefs.
             if (_enableAllScannersCheckBox.Checked)
             {
-                _settings.EnableAllRealtimeScanners();
+                if (_welcomeRealtimeCheckboxWasUncheckedOnce)
+                    _settings.EnableAllRealtimeScanners();
+                else
+                    _settings.AutoEnableRealtimeScanners();
+                _settings.SaveCurrentSettingsAsUserPreferences();
             }
             else
-            {
                 _settings.DisableAllRealtimeScanners();
-            }
-            _settings.SaveCurrentSettingsAsUserPreferences();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -390,40 +398,32 @@ namespace ast_visual_studio_extension.CxPreferences
             };
             featureCard.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
-            var checkPanel = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                AutoSize = true,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                BackColor = Color.Transparent,
-                Margin = new Padding(0, 0, 0, 8)
-            };
-
+            // MCP on: checkbox enabled, default checked = apply saved realtime scanner prefs only (not “enable all”).
+            // Unchecked = disable all scanners for this session without wiping saved UserPref* snapshot.
             _enableAllScannersCheckBox = new CheckBox
             {
                 AutoSize = true,
+                Dock = DockStyle.Top,
                 Checked = _mcpEnabled,
                 Enabled = _mcpEnabled,
                 BackColor = Color.Transparent,
                 ForeColor = _text,
-                Margin = new Padding(0, 3, 6, 0) // slight vertical alignment tweak
-            };
-
-            var checkboxLabel = new Label
-            {
-                AutoSize = true,
-                ForeColor = _text,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold, GraphicsUnit.Point),
-                Text = "Code Smarter with Checkmarx One Assist",
-                Enabled = _mcpEnabled,
-                Margin = new Padding(0, 2, 0, 0)
+                Text ="Code Smarter with Checkmarx One Assist",
+                Margin = new Padding(0, 0, 0, 10)
             };
 
-            checkPanel.Controls.Add(_enableAllScannersCheckBox);
-            checkPanel.Controls.Add(checkboxLabel);
+            if (_mcpEnabled)
+            {
+                _enableAllScannersCheckBox.CheckedChanged += (_, __) =>
+                {
+                    if (!_enableAllScannersCheckBox.Checked)
+                        _welcomeRealtimeCheckboxWasUncheckedOnce = true;
+                };
+            }
 
-            featureCard.Controls.Add(checkPanel, 0, 0);
+            featureCard.Controls.Add(_enableAllScannersCheckBox, 0, 0);
+            featureCard.RowCount = 1;
 
             var details = new[]
             {

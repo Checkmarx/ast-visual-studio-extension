@@ -8,8 +8,15 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
 {
     public class CxPreferencesUITests_Async
     {
+        public CxPreferencesUITests_Async()
+        {
+            // Reset auth state before each test for isolation
+            var isAuthenticated = typeof(CxPreferencesUI).GetField("_isAuthenticated", BindingFlags.NonPublic | BindingFlags.Static);
+            isAuthenticated?.SetValue(null, false);
+        }
+
         [Fact]
-        public async Task ValidateApiKeyAsync_WithEmptyApiKey_DoesNotAuthenticate()
+        public async Task ValidateApiKeyAsync_WithEmptyApiKey_DoesNotAuthenticateAsync()
         {
             var ui = CxPreferencesUI.GetInstance();
 
@@ -32,7 +39,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public async Task TryRestoreAuthenticatedSessionAsync_WithNullPackage_DoesNotThrow()
+        public async Task TryRestoreAuthenticatedSessionAsync_WithNullPackage_DoesNotThrowAsync()
         {
             // TryRestoreAuthenticatedSessionAsync is internal and should handle null gracefully.
             // Early return on null input (line 310 of CxPreferencesUI.cs).

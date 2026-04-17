@@ -667,7 +667,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
 
             Assert.Single(fileNodes);
             // ASCA groups by line: multiple findings on same line → one node (highest severity shown).
-            Assert.Equal(1, fileNodes[0].Vulnerabilities.Count);
+            Assert.Single(fileNodes[0].Vulnerabilities);
             Assert.Equal(7, fileNodes[0].Vulnerabilities[0].Line);
         }
 

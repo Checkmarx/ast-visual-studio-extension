@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ast_visual_studio_extension.CxWrapper.Models
@@ -6,6 +7,19 @@ namespace ast_visual_studio_extension.CxWrapper.Models
     [ExcludeFromCodeCoverage]
     public class Result
     {
+        /// <summary>
+        /// Timestamp when this result was generated (for freshness validation).
+        /// Prevents out-of-order scan completions from displaying stale results.
+        /// </summary>
+        [JsonIgnore]
+        public DateTime ResultTimestamp { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Version/generation counter of the document when scan was initiated.
+        /// Used to detect if document was edited between scan start and completion.
+        /// </summary>
+        [JsonIgnore]
+        public int DocumentVersion { get; set; } = 0;
         [JsonProperty("type")]
         public string Type { get; set; }
 

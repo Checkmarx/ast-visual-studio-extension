@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxExtension.Services;
 using ast_visual_studio_extension.CxPreferences.Configuration;
 using System;
 using System.Drawing;
@@ -15,10 +14,9 @@ namespace ast_visual_studio_extension.CxPreferences
     {
         internal CxOneAssistSettingsModule cxOneAssistSettingsModule;
 
+        private static CxOneAssistSettingsUI Instance;
         public delegate void EventHandler();
         public event EventHandler OnApplySettingsEvent = delegate { };
-        private static CxOneAssistSettingsUI Instance;
-        private static ASCAService _ascaService;
         private bool _isMcpInstallInProgress;
         private CancellationTokenSource _mcpStatusDismissCts;
         private bool _isAuthEventSubscribed;
@@ -40,11 +38,6 @@ namespace ast_visual_studio_extension.CxPreferences
             }
 
             return Instance;
-        }
-
-        public void ThrowEventOnApply()
-        {
-            OnApplySettingsEvent();
         }
 
         public void Initialize(CxOneAssistSettingsModule settingsModule)
@@ -117,7 +110,7 @@ namespace ast_visual_studio_extension.CxPreferences
             else if (!mcpEnabled)
                 SetMcpStatus("MCP is disabled by your tenant settings.", isSuccess: false, autoDismiss: false);
             else
-                SetMcpStatus(string.Empty, isSuccess: true, autoDismiss: false);
+                SetMcpStatus("MCP is enabled for your tenant.", isSuccess: true, autoDismiss: false);
         }
 
         public void RefreshCheckboxesFromModule()
@@ -137,6 +130,29 @@ namespace ast_visual_studio_extension.CxPreferences
             containersCheckBox.Checked = cxOneAssistSettingsModule.ContainersRealtimeCheckBox;
             iacCheckBox.Checked = cxOneAssistSettingsModule.IacRealtimeCheckBox;
             cmbContainersTool.SelectedItem = cxOneAssistSettingsModule.ContainersTool ?? "docker";
+
+            // AuthStateChanged can run before tenant MCP flags are written; sync Install MCP / status from module.
+            ApplyAuthenticationState(CxPreferencesUI.IsAuthenticated());
+        }
+
+        /// <summary>
+        /// Copies current control values into the settings module. Call from <see cref="CxOneAssistSettingsModule.OnApply"/> only
+        /// so registry and realtime scanners update on OK/Apply, not on every checkbox click.
+        /// </summary>
+        internal void ApplyUiToModule(CxOneAssistSettingsModule module)
+        {
+            if (module == null)
+                return;
+
+            if (!CxPreferencesUI.IsAuthenticated())
+                return;
+
+            module.AscaCheckBox = ascaCheckBox.Checked;
+            module.OssRealtimeCheckBox = ossCheckBox.Checked;
+            module.SecretDetectionRealtimeCheckBox = secretsCheckBox.Checked;
+            module.ContainersRealtimeCheckBox = containersCheckBox.Checked;
+            module.IacRealtimeCheckBox = iacCheckBox.Checked;
+            module.ContainersTool = cmbContainersTool.SelectedItem?.ToString() ?? "docker";
         }
 
         private void SetInteractiveControlsEnabled(bool enabled)
@@ -152,82 +168,55 @@ namespace ast_visual_studio_extension.CxPreferences
             lnkEditMcp.Enabled = enabled;
         }
 
-        private async void AscaCheckBox_CheckedChanged(object sender, EventArgs e)
+        /// <summary>
+        /// Keeps <see cref="CxOneAssistSettingsModule"/> in sync with the form for Options dirty-state / serialization,
+        /// without writing registry or resyncing realtime scanners until <see cref="CxOneAssistSettingsModule.OnApply"/>.
+        /// </summary>
+        private void SyncAssistUiToModuleProperties()
         {
-            if (!CxPreferencesUI.IsAuthenticated())
+            ApplyUiToModule(cxOneAssistSettingsModule);
+        }
+
+        private void AscaCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-
-            try
-            {
-                bool isChecked = ascaCheckBox.Checked;
-                cxOneAssistSettingsModule.AscaCheckBox = isChecked;
-                cxOneAssistSettingsModule.PersistSettings();
-
-                if (isChecked)
-                {
-                    var parentModule = new CxPreferencesModule();
-                    CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(parentModule.GetCxConfig(), GetType());
-                    _ascaService = ASCAService.GetInstance(cxWrapper);
-                    await _ascaService.InitializeASCAAsync();
-                }
-                else
-                {
-                    // If ASCA is disabled, dispose the service if it exists
-                    if (_ascaService != null)
-                    {
-                        await _ascaService.UnregisterTextChangeEventsAsync();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"ASCA checkbox change failed: {ex.Message}");
-            }
+            SyncAssistUiToModuleProperties();
         }
 
         private void OssCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (!CxPreferencesUI.IsAuthenticated())
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-
-            cxOneAssistSettingsModule.OssRealtimeCheckBox = ossCheckBox.Checked;
-            cxOneAssistSettingsModule.PersistSettings();
+            SyncAssistUiToModuleProperties();
         }
 
         private void SecretsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (!CxPreferencesUI.IsAuthenticated())
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-
-            cxOneAssistSettingsModule.SecretDetectionRealtimeCheckBox = secretsCheckBox.Checked;
-            cxOneAssistSettingsModule.PersistSettings();
+            SyncAssistUiToModuleProperties();
         }
 
         private void ContainersCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (!CxPreferencesUI.IsAuthenticated())
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-
-            cxOneAssistSettingsModule.ContainersRealtimeCheckBox = containersCheckBox.Checked;
-            cxOneAssistSettingsModule.PersistSettings();
+            SyncAssistUiToModuleProperties();
         }
 
         private void IacCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (!CxPreferencesUI.IsAuthenticated())
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-
-            cxOneAssistSettingsModule.IacRealtimeCheckBox = iacCheckBox.Checked;
-            cxOneAssistSettingsModule.PersistSettings();
+            SyncAssistUiToModuleProperties();
         }
 
         private void CmbContainersTool_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (!CxPreferencesUI.IsAuthenticated())
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-
-            cxOneAssistSettingsModule.ContainersTool = cmbContainersTool.SelectedItem?.ToString() ?? "docker";
-            cxOneAssistSettingsModule.PersistSettings();
+            SyncAssistUiToModuleProperties();
         }
 
         private async void LnkInstallMcp_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -363,5 +352,6 @@ namespace ast_visual_studio_extension.CxPreferences
                 // Replaced by a newer status message.
             }
         }
+
     }
 }
