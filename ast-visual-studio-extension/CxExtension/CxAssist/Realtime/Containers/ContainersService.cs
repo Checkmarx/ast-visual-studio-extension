@@ -1,8 +1,9 @@
 using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,6 +22,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         private static readonly IFileFilterStrategy _fileFilter = new ContainersFileFilterStrategy();
 
         protected override string ScannerName => "Containers";
+
+        protected override ScannerType CoordinatorScannerType => ScannerType.Containers;
 
         private ContainersService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker") : base(cxWrapper)
         {
@@ -70,28 +73,30 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         /// <summary>
         /// Invokes the Containers realtime scan CLI command.
         /// Maps results to Result objects for display in the findings panel.
-        /// Silently skips if Docker/Podman is not available.
+        /// Shows error if Docker/Podman is not available (aligned with JetBrains error handling).
+        /// Catches and logs all errors to the output pane.
         /// </summary>
         protected override async Task<int> ScanAndDisplayAsync(string tempFilePath, string sourceFilePath)
         {
-            // Check if Docker/Podman is available first
-            bool engineExists = await _cxWrapper.CheckEngineExistAsync(_containersTool);
-            if (!engineExists)
+            try
             {
-                // Silently skip if container tool is not available
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no container engine available - {sourceFilePath}");
-                return 0;
-            }
+                // Check if Docker/Podman is available first
+                bool engineExists = await _cxWrapper.CheckEngineExistAsync(_containersTool);
+                if (!engineExists)
+                {
+                    OutputPaneWriter.WriteError($"{ScannerName} scanner: {_containersTool} is not available. Please ensure Docker or Podman is installed and running.");
+                    _logger.Warn($"{ScannerName} scanner: {_containersTool} engine not found on system");
+                    return 0;
+                }
 
-            // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
-            var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
+                if (new System.IO.FileInfo(tempFilePath).Length == 0)
+                {
+                    OutputPaneWriter.WriteWarning($"{ScannerName} scanner: no content found in file - {Path.GetFileName(sourceFilePath)}");
+                    return 0;
+                }
 
-            // Log raw JSON response
-            if (results != null)
-            {
-                var jsonResponse = JsonConvert.SerializeObject(results, Formatting.Indented);
-                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: raw JSON response - {jsonResponse}");
-            }
+                // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
+                var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
 
             if (results == null)
             {
@@ -105,21 +110,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
                 return 0;
             }
 
-            int imageCount = results.Images.Count;
-            OutputPaneWriter.WriteLine($"{ScannerName} scanner: scan completed - {sourceFilePath} ({imageCount} issues found)");
+                int imageCount = results.Images.Count;
+                OutputPaneWriter.WriteLine($"{ScannerName} scanner: {imageCount} image(s) with vulnerabilities — {Path.GetFileName(sourceFilePath)}");
 
-            // Log individual images like JetBrains does
-            for (int i = 0; i < imageCount; i++)
-            {
-                var image = results.Images[i];
-                int vulnCount = image.Vulnerabilities?.Count ?? 0;
-                OutputPaneWriter.WriteLine($"Image {i + 1}: {image.ImageName ?? "Unknown"} - {vulnCount} vulnerabilities");
+                var mappedResults = VulnerabilityMapper.FromContainers(results.Images, sourceFilePath);
+                CxAssistDisplayCoordinator.MergeUpdateFindingsForScanner(sourceFilePath, CoordinatorScannerType, mappedResults);
+                return mappedResults.Count;
             }
-
-            var mappedResults = VulnerabilityMapper.FromContainers(results.Images, sourceFilePath);
-            // TODO: Integrate with findings display (after CxAssistDisplayCoordinator PR merges)
-            // CxAssistDisplayCoordinator.UpdateFindings(buffer, mappedResults, sourceFilePath);
-            return mappedResults.Count;
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
+                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
+                ClearDisplayForFile(sourceFilePath);
+                return 0;
+            }
         }
 
         /// <summary>
