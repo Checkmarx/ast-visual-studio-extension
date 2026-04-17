@@ -97,6 +97,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         /// <summary>
         /// Returns all files under <paramref name="rootDirectory"/> that are not under skipped folders.
+        /// Gracefully handles access-denied and path-too-long exceptions by continuing enumeration
+        /// instead of crashing mid-iteration. Callers receive partial results for accessible paths.
         /// </summary>
         public static IEnumerable<string> EnumerateFiles(string rootDirectory)
         {
@@ -113,10 +115,80 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 yield break;
             }
 
-            foreach (var path in Directory.EnumerateFiles(rootFull, "*", SearchOption.AllDirectories))
+            // Enumerate with error handling: catch per-directory exceptions and continue
+            // instead of crashing the entire enumeration on first access-denied or path-too-long
+            IEnumerable<string> SafeEnumerateAllFiles(string root)
             {
-                if (IsUnderSkippedDirectory(rootFull, path))
-                    continue;
+                var results = new List<string>();
+                var stack = new Stack<string>();
+                stack.Push(root);
+
+                while (stack.Count > 0)
+                {
+                    string currentDir = stack.Pop();
+
+                    // Enumerate files in current directory
+                    try
+                    {
+                        foreach (var file in Directory.EnumerateFiles(currentDir, "*"))
+                        {
+                            try
+                            {
+                                if (!IsUnderSkippedDirectory(rootFull, file))
+                                    results.Add(file);
+                            }
+                            catch
+                            {
+                                // Skip individual files that can't be accessed
+                                continue;
+                            }
+                        }
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        // Silently skip directories we can't access
+                        continue;
+                    }
+                    catch (PathTooLongException)
+                    {
+                        // Silently skip paths that are too long
+                        continue;
+                    }
+
+                    // Enumerate subdirectories
+                    try
+                    {
+                        foreach (var subDir in Directory.EnumerateDirectories(currentDir, "*"))
+                        {
+                            try
+                            {
+                                if (!IsUnderSkippedDirectory(rootFull, subDir))
+                                    stack.Push(subDir);
+                            }
+                            catch
+                            {
+                                // Skip directories we can't check
+                                continue;
+                            }
+                        }
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        // Silently skip enumeration of subdirectories
+                        continue;
+                    }
+                    catch (PathTooLongException)
+                    {
+                        // Silently skip enumeration of subdirectories
+                        continue;
+                    }
+                }
+
+                return results;
+            }
+
+            foreach (var path in SafeEnumerateAllFiles(rootFull))
+            {
                 yield return path;
             }
         }

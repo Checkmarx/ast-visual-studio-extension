@@ -58,9 +58,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         /// <summary>
         /// Maps raw severity to display string.
+        /// Null/empty severities default to "Medium". Unrecognized severities display as "Unknown"
+        /// to distinguish data quality issues from legitimate lack of severity info.
         /// </summary>
         /// <param name="rawSeverity">Raw severity string</param>
-        /// <returns>Capitalized display string (Critical, High, Medium, Low)</returns>
+        /// <returns>Capitalized display string (Critical, High, Medium, Low, Unknown)</returns>
         public static string MapToString(string rawSeverity)
         {
             var level = MapToLevel(rawSeverity);
@@ -68,8 +70,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             {
                 SeverityLevel.Critical => "Critical",
                 SeverityLevel.High => "High",
+                SeverityLevel.Medium => "Medium",
                 SeverityLevel.Low => "Low",
-                SeverityLevel.Unknown => "Medium",
+                SeverityLevel.Unknown => "Unknown",
                 _ => "Medium"
             };
         }

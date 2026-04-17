@@ -45,11 +45,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
             var orchestrator = new RealtimeScannerOrchestrator();
             var settings = CreateMockSettings();
 
-            // Should return early without error
-            await orchestrator.InitializeAsync(null, settings);
-
-            // No exception thrown
-            Assert.True(true);
+            // Should return early without error or exception
+            var ex = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(null, settings));
+            Assert.Null(ex);
         }
 
         [Fact]
@@ -59,11 +57,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
             var mockConfig = new ast_visual_studio_extension.CxWrapper.Models.CxConfig { ApiKey = "test" };
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>(mockConfig, typeof(RealtimeScannerOrchestratorTests));
 
-            // Should return early without error
-            await orchestrator.InitializeAsync(mockWrapper.Object, null);
-
-            // No exception thrown
-            Assert.True(true);
+            // Should return early without error or exception
+            var ex = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, null));
+            Assert.Null(ex);
         }
 
         [Fact]
@@ -72,9 +68,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
             var orchestrator = new RealtimeScannerOrchestrator();
 
             // Should not throw even without prior initialization
-            await orchestrator.UnregisterAllAsync();
-
-            Assert.True(true);
+            var ex = await Record.ExceptionAsync(() => orchestrator.UnregisterAllAsync());
+            Assert.Null(ex);
         }
 
         [Fact]
@@ -85,11 +80,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>(mockConfig, typeof(RealtimeScannerOrchestratorTests));
             var settings = CreateMockSettings(mcpEnabled: false);
 
-            // Should return early because MCP is disabled
-            await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-
-            // No scanners should be initialized
-            Assert.True(true);
+            // Should return early because MCP is disabled without throwing
+            var ex = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
+            Assert.Null(ex);
         }
 
         [Fact]
@@ -101,11 +94,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
             var settings = CreateMockSettings(devAssistLicense: false);
             settings.OneAssistLicenseEnabled = false;
 
-            // Should return early because no license
-            await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-
-            // No scanners should be initialized
-            Assert.True(true);
+            // Should return early because no license without throwing
+            var ex = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
+            Assert.Null(ex);
         }
 
         [Fact]
@@ -113,11 +104,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
         {
             var orchestrator = new RealtimeScannerOrchestrator();
 
-            // Should be idempotent
-            await orchestrator.UnregisterAllAsync();
-            await orchestrator.UnregisterAllAsync();
+            // Should be idempotent - no exceptions on multiple calls
+            var ex1 = await Record.ExceptionAsync(() => orchestrator.UnregisterAllAsync());
+            var ex2 = await Record.ExceptionAsync(() => orchestrator.UnregisterAllAsync());
 
-            Assert.True(true);
+            Assert.Null(ex1);
+            Assert.Null(ex2);
         }
 
         [Fact]
@@ -129,19 +121,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
 
             // This will attempt to initialize scanners
             // We expect it to handle gracefully (VS environment not available in tests)
-            try
-            {
-                await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-            }
-            catch
-            {
-                // Expected in test environment - no DTE available
-            }
+            await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
 
             // Should be able to unregister without error
-            await orchestrator.UnregisterAllAsync();
-
-            Assert.True(true);
+            var unregisterEx = await Record.ExceptionAsync(() => orchestrator.UnregisterAllAsync());
+            Assert.Null(unregisterEx);
         }
 
         [Fact]
@@ -158,19 +142,11 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
 
             // Should initialize orchestrator even if all scanners disabled
             // (manifest watcher still starts if solution directory available)
-            try
-            {
-                await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-            }
-            catch
-            {
-                // Expected in test environment
-            }
+            await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
 
-            // Should be able to unregister
-            await orchestrator.UnregisterAllAsync();
-
-            Assert.True(true);
+            // Should be able to unregister without error
+            var unregisterEx = await Record.ExceptionAsync(() => orchestrator.UnregisterAllAsync());
+            Assert.Null(unregisterEx);
         }
 
         [Fact]
@@ -180,18 +156,16 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
             var settings = CreateMockSettings();
 
-            // Call multiple times
-            try
-            {
-                await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-                await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-            }
-            catch
-            {
-                // Expected in test environment
-            }
+            // Call multiple times - should be idempotent
+            var ex1 = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
+            var ex2 = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
 
-            Assert.True(true);
+            // Both calls should succeed or fail in same way (idempotent)
+            // At least the second call should not fail if first succeeded
+            if (ex1 == null)
+            {
+                Assert.Null(ex2);
+            }
         }
 
         [Fact]
@@ -201,26 +175,25 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Inte
             var mockWrapper = new Mock<ast_visual_studio_extension.CxCLI.CxWrapper>();
             var settings = CreateMockSettings();
 
-            try
+            // Initialize
+            var initEx1 = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
+
+            // Unregister
+            var unregEx1 = await Record.ExceptionAsync(() => orchestrator.UnregisterAllAsync());
+            Assert.Null(unregEx1);
+
+            // Initialize again
+            var initEx2 = await Record.ExceptionAsync(() => orchestrator.InitializeAsync(mockWrapper.Object, settings));
+
+            // Final cleanup
+            var unregEx2 = await Record.ExceptionAsync(() => orchestrator.UnregisterAllAsync());
+            Assert.Null(unregEx2);
+
+            // If first init succeeded, all others should succeed (idempotent lifecycle)
+            if (initEx1 == null)
             {
-                // Initialize
-                await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-
-                // Unregister
-                await orchestrator.UnregisterAllAsync();
-
-                // Initialize again
-                await orchestrator.InitializeAsync(mockWrapper.Object, settings);
-
-                // Final cleanup
-                await orchestrator.UnregisterAllAsync();
+                Assert.Null(initEx2);
             }
-            catch
-            {
-                // Expected in test environment
-            }
-
-            Assert.True(true);
         }
     }
 }

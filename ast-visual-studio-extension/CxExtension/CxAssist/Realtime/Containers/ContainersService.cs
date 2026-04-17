@@ -98,11 +98,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
                 // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
                 var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
 
-                if (results?.Images == null || results.Images.Count == 0)
-                {
-                    ClearDisplayForFile(sourceFilePath);
-                    return 0;
-                }
+            if (results == null)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: null results returned - {sourceFilePath}");
+                return 0;
+            }
+
+            if (results.Images == null || results.Images.Count == 0)
+            {
+                OutputPaneWriter.WriteDebug($"{ScannerName} scanner: no images found - {sourceFilePath}");
+                return 0;
+            }
 
                 int imageCount = results.Images.Count;
                 OutputPaneWriter.WriteLine($"{ScannerName} scanner: {imageCount} image(s) with vulnerabilities — {Path.GetFileName(sourceFilePath)}");

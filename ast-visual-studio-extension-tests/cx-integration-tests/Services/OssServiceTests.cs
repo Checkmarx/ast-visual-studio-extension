@@ -12,7 +12,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
     /// Run separately from unit tests; skip in CI if VS test host unavailable.
     /// </summary>
     [Trait("Category", "Integration")]
-    public class OssServiceTests : IDisposable
+    public class OssServiceTests
     {
         private readonly CxWrapper _wrapperInstance;
 
@@ -24,11 +24,6 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
             };
 
             _wrapperInstance = new CxWrapper(config, typeof(OssServiceTests));
-        }
-
-        public void Dispose()
-        {
-            // Cleanup
         }
 
         [Fact]

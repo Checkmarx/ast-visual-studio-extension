@@ -26,12 +26,31 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             await Gate.WaitAsync().ConfigureAwait(true);
             try
             {
-                // Skip if already initialized or initialization in progress
-                if (_initializationInProgress || _orchestrator != null)
-                    return;
+                await RegisterAsyncInternal(package, cxWrapper, ownerType);
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
 
-                _initializationInProgress = true;
+        /// <summary>
+        /// Internal register without acquiring gate (for use by callers that already hold the gate).
+        /// Prevents deadlock when called from ReinitializeAsync which already holds Gate.
+        /// </summary>
+        private static async Task RegisterAsyncInternal(AsyncPackage package, CxCLI.CxWrapper cxWrapper, Type ownerType)
+        {
+            if (package == null)
+                return;
 
+            // Skip if already initialized or initialization in progress
+            if (_initializationInProgress || _orchestrator != null)
+                return;
+
+            _initializationInProgress = true;
+
+            try
+            {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 if (!CxPreferencesUI.IsAuthenticated())
                     return;
@@ -56,7 +75,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             finally
             {
                 _initializationInProgress = false;
-                Gate.Release();
             }
         }
 
@@ -123,9 +141,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             await Gate.WaitAsync().ConfigureAwait(true);
             try
             {
-                if (_orchestrator == null)
-                    return;
+                await TriggerFullRescanAsyncInternal();
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
 
+        /// <summary>
+        /// Internal trigger without acquiring gate (for use by callers that already hold the gate).
+        /// Prevents deadlock when called from ReinitializeAsync which already holds Gate.
+        /// </summary>
+        private static async Task TriggerFullRescanAsyncInternal()
+        {
+            if (_orchestrator == null)
+                return;
+
+            try
+            {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 await _orchestrator.TriggerCurrentDocumentScanAsync();
                 // OSS manifest sweep is started from OssService.InitializeAsync (JetBrains scanAllManifestFilesInFolder).
@@ -135,15 +169,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             {
                 OutputPaneWriter.WriteError($"Realtime scanner rescan failed: {ex.Message}");
             }
-            finally
-            {
-                Gate.Release();
-            }
         }
 
         /// <summary>
         /// Re-initializes scanners when enable/disable settings change.
         /// Unregisters old scanner instances (canceling pending scans) and initializes new set.
+        /// Uses internal helpers to prevent deadlock (gate must be held for entire operation).
         /// </summary>
         internal static async Task ReinitializeAsync()
         {
@@ -161,15 +192,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
 
                 _initializationInProgress = false;
 
-                // Re-initialize with current settings
+                // Re-initialize with current settings (use internal helper to avoid re-acquiring gate)
                 var package = ServiceProvider.GlobalProvider?.GetService(typeof(AsyncPackage)) as AsyncPackage;
                 if (package != null)
                 {
                     var cxWrapper = CxUtils.GetCxWrapper(package, typeof(RealtimeScannerHost));
-                    await RegisterAsync(package, cxWrapper, typeof(RealtimeScannerHost)).ConfigureAwait(true);
+                    await RegisterAsyncInternal(package, cxWrapper, typeof(RealtimeScannerHost)).ConfigureAwait(true);
 
-                    // Trigger full rescan with new scanner set
-                    await TriggerFullRescanAsync();
+                    // Trigger full rescan with new scanner set (use internal helper to avoid re-acquiring gate)
+                    await TriggerFullRescanAsyncInternal();
                 }
             }
             catch (Exception ex)
