@@ -377,13 +377,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         private static void ShowCopilotNotAgentModeUserMessage(IVsWindowFrame assistDocumentFrame)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            AssistDocumentInfoBar.TryShowWarning(
-                assistDocumentFrame,
+            ShowAssistNotification(
                 CxAssistConstants.CopilotNotAgentModeInfoBarMessage,
-                () => ShowAssistNotification(
-                    CxAssistConstants.CopilotNotAgentModeInfoBarMessage,
-                    isError: false,
-                    useWarningSeverity: true));
+                isError: false,
+                useWarningSeverity: true);
         }
 
         /// <summary>
@@ -391,15 +388,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         private static void ShowCopilotNotInstalledMessage(IVsWindowFrame assistDocumentFrame)
         {
-            if (assistDocumentFrame == null) return;
             ThreadHelper.ThrowIfNotOnUIThread();
-            AssistDocumentInfoBar.TryShowWarning(
-                assistDocumentFrame,
+            ShowAssistNotification(
                 CxAssistConstants.CopilotNotInstalledInfoBarMessage,
-                () => ShowAssistNotification(
-                    CxAssistConstants.CopilotNotInstalledInfoBarMessage,
-                    isError: false,
-                    useWarningSeverity: true));
+                isError: false,
+                useWarningSeverity: true);
         }
 
         /// <summary>
@@ -407,15 +400,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         private static void ShowCopilotChatOpenFailedMessage(IVsWindowFrame assistDocumentFrame)
         {
-            if (assistDocumentFrame == null) return;
             ThreadHelper.ThrowIfNotOnUIThread();
-            AssistDocumentInfoBar.TryShowWarning(
-                assistDocumentFrame,
+            ShowAssistNotification(
                 CxAssistConstants.CopilotChatOpenFailedInfoBarMessage,
-                () => ShowAssistNotification(
-                    CxAssistConstants.CopilotChatOpenFailedInfoBarMessage,
-                    isError: false,
-                    useWarningSeverity: true));
+                isError: false,
+                useWarningSeverity: true);
         }
 
         /// <summary>
@@ -423,18 +412,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         private static void ShowCopilotPromptPrepareFailedMessage(IVsWindowFrame assistDocumentFrame)
         {
-            if (assistDocumentFrame == null)
-            {
-                ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
-                return;
-            }
             ThreadHelper.ThrowIfNotOnUIThread();
-            AssistDocumentInfoBar.TryShowWarning(
-                assistDocumentFrame,
+            ShowAssistNotification(
                 CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage,
-                () => ShowAssistNotification(
-                    CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage,
-                    isError: true));
+                isError: true);
         }
 
         /// <summary>
@@ -443,15 +424,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         private static void ShowCopilotPasteOnlyVs2026Message(IVsWindowFrame assistDocumentFrame)
         {
-            if (assistDocumentFrame == null) return;
             ThreadHelper.ThrowIfNotOnUIThread();
-            AssistDocumentInfoBar.TryShowWarning(
-                assistDocumentFrame,
+            ShowAssistNotification(
                 CxAssistConstants.CopilotPasteOnlyVs2026InfoBarMessage,
-                () => ShowAssistNotification(
-                    CxAssistConstants.CopilotPasteOnlyVs2026InfoBarMessage,
-                    isError: false,
-                    useWarningSeverity: true));
+                isError: false,
+                useWarningSeverity: true);
         }
 
         private static void ScheduleAutomatedPromptEntry(string prompt, IVsWindowFrame assistDocumentFrame)
