@@ -16,6 +16,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
     [Export(typeof(ITaggerProvider))]
     [ContentType("code")]
     [ContentType("text")]
+    [ContentType("JSON")]
+    [ContentType("JSONC")]
     [TagType(typeof(IErrorTag))]
     [TextViewRole(PredefinedTextViewRoles.Document)]
     [TextViewRole(PredefinedTextViewRoles.Editable)]

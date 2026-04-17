@@ -62,7 +62,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                                         continue;
 
                                     var line = snapshot.GetLineFromLineNumber(lineNumber);
-                                    SnapshotSpan underlineSpan = GetUnderlineSpan(snapshot, line, vulnerability);
+                                    if (!TryGetUnderlineSpan(snapshot, line, vulnerability, out var underlineSpan) || underlineSpan.IsEmpty)
+                                        continue;
 
                                     var tooltipText = BuildTooltipText(vulnerability);
                                     IErrorTag tag = new ErrorTag("Error", tooltipText);
@@ -86,22 +87,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         }
 
         /// <summary>
-        /// Gets the snapshot span for the underline. When Locations is set, use the range for this line from the matching location.
-        /// Otherwise: on the first line use StartIndex/EndIndex when set; on continuation lines use full line.
-        /// Full-line fallback trims leading/trailing whitespace so the squiggle covers only code characters
-        /// (aligned with JetBrains DevAssistUtils.getTextRangeForLine).
+        /// When <see cref="Vulnerability.Locations"/> is set, only underlines lines that have a location entry; uses a trimmed full line
+        /// if column span is invalid (e.g. OSS OK rows) so we do not paint the wrong line or an empty span.
         /// </summary>
-        private static SnapshotSpan GetUnderlineSpan(ITextSnapshot snapshot, ITextSnapshotLine line, Vulnerability v)
+        private static bool TryGetUnderlineSpan(ITextSnapshot snapshot, ITextSnapshotLine line, Vulnerability v, out SnapshotSpan span)
         {
+            span = default;
             int line0Based = line.LineNumber;
             int line1Based = line0Based + 1;
 
-            // Per-line locations (e.g. pom.xml): use StartIndex/EndIndex for this line when present.
             if (v.Locations != null && v.Locations.Count > 0)
             {
                 foreach (var loc in v.Locations)
                 {
-                    if (loc.Line != line1Based) continue;
+                    if (loc.Line != line1Based)
+                        continue;
+
                     if (loc.EndIndex > loc.StartIndex && loc.StartIndex >= 0)
                     {
                         int startOffset = Math.Min(loc.StartIndex, line.Length);
@@ -109,17 +110,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                         if (length > 0)
                         {
                             int startPos = line.Start + startOffset;
-                            return new SnapshotSpan(snapshot, startPos, length);
+                            span = new SnapshotSpan(snapshot, startPos, length);
+                            return true;
                         }
                     }
-                    return GetTrimmedLineSpan(snapshot, line);
+
+                    span = GetTrimmedLineSpan(snapshot, line);
+                    return !span.IsEmpty;
                 }
-                return GetTrimmedLineSpan(snapshot, line);
+
+                return false;
             }
 
-            // Fallback: single LineNumber/EndLineNumber with one StartIndex/EndIndex on first line.
             int firstLine0Based = CxAssistConstants.To0BasedLineForEditor(v.Scanner, v.LineNumber);
-            bool isFirstLine = (line0Based == firstLine0Based);
+            bool isFirstLine = line0Based == firstLine0Based;
             if (isFirstLine && v.EndIndex > v.StartIndex && v.StartIndex >= 0)
             {
                 int startOffset = Math.Min(v.StartIndex, line.Length);
@@ -127,10 +131,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 if (length > 0)
                 {
                     int startPos = line.Start + startOffset;
-                    return new SnapshotSpan(snapshot, startPos, length);
+                    span = new SnapshotSpan(snapshot, startPos, length);
+                    return true;
                 }
             }
-            return GetTrimmedLineSpan(snapshot, line);
+
+            span = GetTrimmedLineSpan(snapshot, line);
+            return !span.IsEmpty;
         }
 
         /// <summary>
