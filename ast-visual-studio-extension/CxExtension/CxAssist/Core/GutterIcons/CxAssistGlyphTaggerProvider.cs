@@ -168,27 +168,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         }
 
         /// <summary>
-        /// Uses the tagger cache when the buffer is already materialized; otherwise resolves via the running document table.
-        /// Prefer the UI thread (RDT path requires it).
+        /// Uses the tagger cache when the buffer is already materialized.
+        /// Returns null if buffer is not currently tracked (not yet opened in editor).
         /// </summary>
         public static ITextBuffer ResolveBufferForOpenFile(string filePath)
         {
-            var cached = GetBufferForFile(filePath);
-            if (cached != null)
-                return cached;
-            if (string.IsNullOrEmpty(filePath))
-                return null;
-            string moniker;
-            try
-            {
-                moniker = Path.GetFullPath(filePath);
-            }
-            catch
-            {
-                moniker = filePath;
-            }
-
-            return EditorBufferResolver.TryGetTextBufferForMoniker(moniker);
+            return GetBufferForFile(filePath);
         }
 
         /// <summary>
