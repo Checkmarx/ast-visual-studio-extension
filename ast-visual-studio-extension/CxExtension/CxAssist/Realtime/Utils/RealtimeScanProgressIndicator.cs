@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
