@@ -357,5 +357,71 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 findingsControl.SetAllFileNodes(fileNodes);
             }, "Coordinator.RefreshProblemWindow");
         }
+
+        /// <summary>
+        /// Updates findings for a specific file without a buffer.
+        /// Updates internal storage and raises IssuesUpdated event.
+        /// </summary>
+        public static void UpdateFindingsForFile(string filePath, List<Vulnerability> vulnerabilities)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return;
+
+            var list = vulnerabilities != null
+                ? vulnerabilities.FindAll(v => CxAssistConstants.IsScannerEnabled(v.Scanner))
+                : new List<Vulnerability>();
+
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            lock (_lock)
+            {
+                string key = NormalizePath(filePath);
+                if (string.IsNullOrEmpty(key)) return;
+
+                if (list.Count == 0)
+                    _fileToIssues.Remove(key);
+                else
+                    _fileToIssues[key] = new List<Vulnerability>(list);
+
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+            IssuesUpdated?.Invoke(snapshot);
+        }
+
+        /// <summary>
+        /// Clears all findings from the coordinator.
+        /// Used when user logs out or disables all scanners.
+        /// </summary>
+        public static void ClearAllFindings()
+        {
+            lock (_lock)
+            {
+                _fileToIssues.Clear();
+            }
+            IssuesUpdated?.Invoke(new Dictionary<string, List<Vulnerability>>());
+        }
+
+        /// <summary>
+        /// Clears findings from disabled scanners only.
+        /// Called when user toggles a scanner off via preferences.
+        /// </summary>
+        public static void ClearFindingsFromDisabledScanners()
+        {
+            lock (_lock)
+            {
+                foreach (var filePath in _fileToIssues.Keys.ToList())
+                {
+                    _fileToIssues[filePath] = _fileToIssues[filePath]
+                        .Where(v => v != null && CxAssistConstants.IsScannerEnabled(v.Scanner))
+                        .ToList();
+
+                    if (_fileToIssues[filePath].Count == 0)
+                        _fileToIssues.Remove(filePath);
+                }
+            }
+            IssuesUpdated?.Invoke(GetAllIssuesByFile());
+        }
     }
 }
