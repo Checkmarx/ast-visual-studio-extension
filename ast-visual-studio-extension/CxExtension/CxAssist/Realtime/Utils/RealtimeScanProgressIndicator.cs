@@ -47,8 +47,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                     _currentProgress = 0;
                     StartProgressBar(label);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "RealtimeScanProgressIndicator.PushScanAsync");
                     TrySetTextFallback($"Checkmarx is Scanning File : {fileName}");
                 }
             }
@@ -85,8 +86,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                         TrySetTextFallback(label);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "RealtimeScanProgressIndicator.PopScanAsync");
                     if (_depth == 0)
                     {
                         StopProgressBar();
@@ -110,6 +112,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         /// <summary>
         /// Starts progress bar that fills 0-100% once during scan.
+        /// VS Progress contract: initialize with cookie=0 and fInProgress=1 (VS allocates cookie),
+        /// then update with the same cookie, then call with fInProgress=0 to clear.
         /// Updates every 200ms with +10% increment = ~2 second fill time.
         /// </summary>
         private static void StartProgressBar(string label)
@@ -117,6 +121,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             StopProgressBar();
 
             _currentProgress = 0;
+
+            // Initialize progress bar (VS allocates _progressCookie when passed as 0)
+            var statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
+            if (statusBar != null)
+            {
+                try
+                {
+                    statusBar.Progress(ref _progressCookie, 1, label, 0, 100);
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "RealtimeScanProgressIndicator.StartProgressBar");
+                    return;
+                }
+            }
+
             _progressTimer = new System.Timers.Timer(200);
             _progressTimer.Elapsed += (sender, e) =>
             {
@@ -128,10 +148,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                         if (_currentProgress > 100)
                             _currentProgress = 100;
 
-                        var statusBar = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
-                        if (statusBar != null)
+                        var sb = Package.GetGlobalService(typeof(SVsStatusbar)) as IVsStatusbar;
+                        if (sb != null)
                         {
-                            statusBar.Progress(ref _progressCookie, 1, label, _currentProgress, 100);
+                            sb.Progress(ref _progressCookie, 1, label, _currentProgress, 100);
                         }
 
                         // Stop timer once progress reaches 100%
@@ -141,9 +161,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore timer errors
+                    CxAssistErrorHandler.LogAndSwallow(ex, "RealtimeScanProgressIndicator.ProgressTimer");
                 }
             };
             _progressTimer.AutoReset = true;
