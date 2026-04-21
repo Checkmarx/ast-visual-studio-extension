@@ -359,7 +359,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Updates findings for a specific file without a buffer (for testing or file-based updates).
+        /// Updates findings for a specific file without a buffer.
         /// Updates internal storage and raises IssuesUpdated event.
         /// </summary>
         public static void UpdateFindingsForFile(string filePath, List<Vulnerability> vulnerabilities)
@@ -414,7 +414,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 foreach (var filePath in _fileToIssues.Keys.ToList())
                 {
                     _fileToIssues[filePath] = _fileToIssues[filePath]
-                        .Where(v => v != null && v.Scanner != 0)
+                        .Where(v => v != null && CxAssistConstants.IsScannerEnabled(v.Scanner))
                         .ToList();
 
                     if (_fileToIssues[filePath].Count == 0)
