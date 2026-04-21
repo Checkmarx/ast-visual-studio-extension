@@ -860,7 +860,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             }
             catch
             {
-                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FAILED_COPY_CLIPBOARD);
             }
         }
 
@@ -901,7 +901,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             }
             catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FAILED_COPY_CLIPBOARD);
             }
         }
 
@@ -933,7 +933,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                    CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FAILED_COPY_CLIPBOARD);
                 }
             }
         }
