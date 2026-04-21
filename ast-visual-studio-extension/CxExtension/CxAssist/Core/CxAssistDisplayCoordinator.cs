@@ -57,6 +57,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>
         /// Normalizes a file path for use as the per-file map key (same file always maps to the same key).
+        /// Returns the original path if normalization fails, ensuring the key is never empty for valid inputs.
         /// </summary>
         private static string NormalizePath(string path)
         {
@@ -68,7 +69,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.NormalizePath");
-                return path;
+                return path ?? string.Empty;
             }
         }
 
@@ -259,10 +260,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     merged.AddRange(existing.FindAll(v => v.Scanner != scannerType));
                 }
 
-                // Add the new findings from this scanner
+                // Add the new findings from this scanner (only if scanner is enabled)
                 if (newFindings != null && newFindings.Count > 0)
                 {
-                    merged.AddRange(newFindings.FindAll(v => CxAssistConstants.IsScannerEnabled(v.Scanner)));
+                    merged.AddRange(newFindings.FindAll(v => v != null && CxAssistConstants.IsScannerEnabled(v.Scanner)));
                 }
 
                 // Update the map

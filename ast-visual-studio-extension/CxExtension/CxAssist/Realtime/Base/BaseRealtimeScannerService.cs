@@ -301,7 +301,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                         if (!ShouldScanFile(document.FullName))
                             return;
 
-                        var textDocument = (TextDocument)document.Object("TextDocument");
+                        TextDocument textDocument;
+                        try
+                        {
+                            textDocument = document.Object("TextDocument") as TextDocument;
+                        }
+                        catch (InvalidCastException ex)
+                        {
+                            _logger.Debug($"{ScannerName}: Failed to get TextDocument: {ex.Message}");
+                            return;
+                        }
                         if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
                             return;
 
@@ -358,7 +367,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         {
             try
             {
-                var textDocument = (TextDocument)document.Object("TextDocument");
+                TextDocument textDocument;
+                try
+                {
+                    textDocument = document.Object("TextDocument") as TextDocument;
+                }
+                catch (InvalidCastException)
+                {
+                    return;
+                }
                 if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
                     return;
                 _lineChangeBaselinePath = document.FullName;
@@ -380,7 +397,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 
             try
             {
-                var textDocument = (TextDocument)document.Object("TextDocument");
+                TextDocument textDocument;
+                try
+                {
+                    textDocument = document.Object("TextDocument") as TextDocument;
+                }
+                catch (InvalidCastException)
+                {
+                    return;
+                }
                 if (textDocument == null) return;
 
                 var currentContent = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
@@ -434,7 +459,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
                 return;
             }
 
-            var textDocument = (TextDocument)document.Object("TextDocument");
+            TextDocument textDocument;
+            try
+            {
+                textDocument = document.Object("TextDocument") as TextDocument;
+            }
+            catch (InvalidCastException ex)
+            {
+                _logger.Debug($"{ScannerName}: Failed to get TextDocument: {ex.Message}");
+                return;
+            }
             if (textDocument?.StartPoint == null || textDocument?.EndPoint == null) return;
 
             var content = textDocument.StartPoint.CreateEditPoint().GetText(textDocument.EndPoint);
@@ -486,7 +520,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                var textDocument = (TextDocument)document.Object("TextDocument");
+                TextDocument textDocument;
+                try
+                {
+                    textDocument = document.Object("TextDocument") as TextDocument;
+                }
+                catch (InvalidCastException ex)
+                {
+                    _logger.Debug($"{ScannerName}: Failed to get TextDocument: {ex.Message}");
+                    return;
+                }
                 if (textDocument?.StartPoint == null || textDocument?.EndPoint == null)
                     return;
 
