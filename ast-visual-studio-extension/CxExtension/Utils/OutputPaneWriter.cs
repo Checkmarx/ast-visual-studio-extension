@@ -20,7 +20,6 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     {
         private static OutputWindowPane _checkmarxPane;
         private static readonly object _lockObject = new object();
-        private const string PANE_NAME = "Checkmarx";
         private const string PANE_PREFIX = "[Checkmarx]";
 
         /// <summary>
@@ -49,11 +48,19 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         }
 
         /// <summary>
-        /// Writes a debug message to the Checkmarx output pane with DEBUG prefix.
+        /// Writes a debug message only when a debugger is attached or a DEBUG build.
+        /// Silent in production release builds with no debugger.
         /// </summary>
         public static void WriteDebug(string message)
         {
+#if DEBUG
             WriteToPane($"{PANE_PREFIX} [DEBUG] {message}");
+#else
+            if (System.Diagnostics.Debugger.IsAttached)
+                WriteToPane($"{PANE_PREFIX} [DEBUG] {message}");
+            else
+                Debug.WriteLine($"{PANE_PREFIX} [DEBUG] {message}");
+#endif
         }
 
         /// <summary>
@@ -63,6 +70,14 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
             WriteToPane($"{PANE_PREFIX} [{timestamp}] {message}");
+        }
+
+        /// <summary>
+        /// Assist lifecycle messages (same pane and lock as other output; avoids a second pane from <c>CxAssistOutputPane</c>).
+        /// </summary>
+        public static void WriteAssistLifecycle(string message)
+        {
+            WriteToPane($"{PANE_PREFIX} {DateTime.Now}: {message}");
         }
 
         /// <summary>
@@ -121,7 +136,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
                         _checkmarxPane = OutputPaneUtils.InitializeOutputPane(
                             dte.ToolWindows.OutputWindow,
-                            PANE_NAME);
+                            CxConstants.OutputWindowPaneName);
 
                         if (_checkmarxPane == null)
                         {

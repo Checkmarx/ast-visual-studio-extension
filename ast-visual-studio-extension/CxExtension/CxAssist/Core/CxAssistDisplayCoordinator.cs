@@ -57,6 +57,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>
         /// Normalizes a file path for use as the per-file map key (same file always maps to the same key).
+        /// Returns the original path if normalization fails, ensuring the key is never empty for valid inputs.
         /// </summary>
         private static string NormalizePath(string path)
         {
@@ -68,7 +69,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.NormalizePath");
-                return path;
+                return path ?? string.Empty;
             }
         }
 
@@ -231,6 +232,54 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                 return result.Count > 0 ? result : null;
             }
+        }
+
+        /// <summary>
+        /// Merges findings from a specific scanner type into existing findings for a file.
+        /// Replaces all findings of that scanner type for the file with the new list.
+        /// Updates gutter, underlines, and the findings window in one call.
+        /// </summary>
+        /// <param name="filePath">File path to update findings for.</param>
+        /// <param name="scannerType">Scanner type to merge findings for.</param>
+        /// <param name="newFindings">New findings for this scanner; if empty/null, clears findings of this scanner type for the file.</param>
+        public static void MergeUpdateFindingsForScanner(string filePath, ScannerType scannerType, List<Vulnerability> newFindings)
+        {
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            string key = NormalizePath(filePath);
+            if (string.IsNullOrEmpty(key)) return;
+
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            lock (_lock)
+            {
+                // Get existing findings for this file
+                List<Vulnerability> merged = new List<Vulnerability>();
+                if (_fileToIssues.TryGetValue(key, out var existing) && existing != null)
+                {
+                    // Keep all findings NOT from this scanner
+                    merged.AddRange(existing.FindAll(v => v.Scanner != scannerType));
+                }
+
+                // Add the new findings from this scanner (only if scanner is enabled)
+                if (newFindings != null && newFindings.Count > 0)
+                {
+                    merged.AddRange(newFindings.FindAll(v => v != null && CxAssistConstants.IsScannerEnabled(v.Scanner)));
+                }
+
+                // Update the map
+                if (merged.Count == 0)
+                    _fileToIssues.Remove(key);
+                else
+                    _fileToIssues[key] = merged;
+
+                // Snapshot for IssuesUpdated event
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+
+            IssuesUpdated?.Invoke(snapshot);
         }
 
         /// <summary>

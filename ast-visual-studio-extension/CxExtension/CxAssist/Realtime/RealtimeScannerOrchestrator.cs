@@ -4,6 +4,7 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxPreferences;
+using log4net;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
     /// </summary>
     public class RealtimeScannerOrchestrator
     {
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(RealtimeScannerOrchestrator));
         private readonly List<IRealtimeScannerService> _scanners = new List<IRealtimeScannerService>();
         private ManifestFileWatcher _manifestWatcher;
         private ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
@@ -53,6 +55,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     var scanner = registration.Factory(cxWrapper, settings);
                     await scanner.InitializeAsync();
                     _scanners.Add(scanner);
+                }
+
+                if (_scanners.Count > 0)
+                {
+                    var names = string.Join(", ", _scanners.Select(s => GetScannerName(s)));
+                    OutputPaneWriter.WriteLine($"Realtime scanners started: {names}");
                 }
 
                 var solutionRoot = GetSolutionDirectory();
@@ -98,7 +106,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                 _manifestWatcher = new ManifestFileWatcher(solutionRoot);
                 _manifestWatcher.ManifestFileChanged += OnManifestFileChanged;
                 _manifestWatcher.Start();
-                OutputPaneWriter.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher started");
             }
             catch (Exception ex)
             {
@@ -138,7 +145,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
             try
             {
                 string fileName = Path.GetFileName(filePath);
-                OutputPaneWriter.WriteLine($"RealtimeScannerOrchestrator: Manifest file changed: {fileName} ({changeType})");
+                _logger.Debug($"Manifest file changed: {fileName} ({changeType})");
 
                 // JetBrains parity: dependency manifest rescans are OSS-only; other engines follow the active document.
                 foreach (var scanner in _scanners)
@@ -152,7 +159,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     }
                     catch (Exception ex)
                     {
-                        OutputPaneWriter.WriteDebug($"RealtimeScannerOrchestrator: OSS manifest rescan for {fileName}: {ex.Message}");
+                        OutputPaneWriter.WriteWarning($"OSS scanner: manifest rescan failed for {fileName} - {ex.Message}");
                     }
                 }
             }
@@ -170,25 +177,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         {
             if (settings == null)
             {
-                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: No Assist settings module, skipping scanner initialization");
+                OutputPaneWriter.WriteLine("Realtime scanners: skipping initialization — settings not available");
                 return false;
             }
 
             if (!CxPreferencesUI.IsAuthenticated())
             {
-                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: User not authenticated, skipping scanner initialization");
+                OutputPaneWriter.WriteLine("Realtime scanners: skipping initialization — user not authenticated");
                 return false;
             }
 
             if (!settings.McpEnabled)
             {
-                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: MCP disabled for tenant, skipping realtime scanners");
+                OutputPaneWriter.WriteLine("Realtime scanners: skipping initialization — Checkmarx One Assist is not enabled for this tenant");
                 return false;
             }
 
             if (!settings.DevAssistLicenseEnabled && !settings.OneAssistLicenseEnabled)
             {
-                OutputPaneWriter.WriteDebug("RealtimeScannerOrchestrator: No Assist license entitlement, skipping realtime scanners");
+                OutputPaneWriter.WriteLine("Realtime scanners: skipping initialization — no Checkmarx One Assist license entitlement");
                 return false;
             }
 
@@ -210,6 +217,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                 {
                     await scanner.UnregisterAsync();
                 }
+
+                if (_scanners.Count > 0)
+                    OutputPaneWriter.WriteLine("Realtime scanners stopped");
+
                 _scanners.Clear();
 
                 // Stop manifest file watcher
@@ -253,7 +264,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     _manifestWatcher.Stop();
                     _manifestWatcher.Dispose();
                     _manifestWatcher = null;
-                    OutputPaneWriter.WriteLine("RealtimeScannerOrchestrator: Manifest file watcher stopped");
                 }
             }
             catch (Exception ex)

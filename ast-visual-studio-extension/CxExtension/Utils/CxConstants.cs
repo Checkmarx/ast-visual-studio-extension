@@ -118,5 +118,8 @@
         public static string AUTH_VALIDATE_ERROR => "Error in authentication";
         public static string AUTH_LOGOUT_SUCCESS => "You have successfully logged out";
 
+        /************ OUTPUT WINDOW ************/
+        public static string OutputWindowPaneName => "Checkmarx";
+
     }
 }
