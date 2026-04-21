@@ -899,7 +899,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                     ShowStatusBarNotification("Message copied to clipboard.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
             }
