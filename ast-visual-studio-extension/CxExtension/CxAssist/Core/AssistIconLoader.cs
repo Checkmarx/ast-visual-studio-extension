@@ -264,7 +264,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 if (!_popupIconsLogged)
                 {
                     _popupIconsLogged = true;
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {string.Format(CxAssistConstants.ICONS_LOADED_FOR_THEME, currentTheme)}");
+                    CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.ICONS_LOADED_FOR_THEME, currentTheme));
                 }
                 return img;
             }

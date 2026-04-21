@@ -122,7 +122,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             _allFileNodes = new ObservableCollection<FileNode>();
             DataContext = this;
 
-            System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FINDINGS_WINDOW_INITIATED}");
+            CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FINDINGS_WINDOW_INITIATED);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -929,7 +929,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 {
                     Clipboard.SetText(prompt);
                     ShowStatusBarNotification("Fix prompt copied to clipboard. Paste into GitHub Copilot Chat to get remediation steps.");
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {string.Format(CxAssistConstants.FIX_PROMPT_COPIED, v.Title ?? v.Description ?? "unknown")}");
+                    CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.FIX_PROMPT_COPIED, v.Title ?? v.Description ?? "unknown"));
                 }
                 catch (Exception ex)
                 {
