@@ -99,6 +99,11 @@ namespace ast_visual_studio_extension.CxExtension
                     Debug.WriteLine("CxWindowPackage: Solution event handler registered");
                 }
 
+                // Initialize Error List sync so findings appear in both Findings window and VS Error List
+                _CxAssistErrorListSync = new CxAssistErrorListSync();
+                _CxAssistErrorListSync.Start();
+                Debug.WriteLine("CxWindowPackage: Error List sync initialized");
+
                 // JetBrains GlobalScannerController.settingsApplied → syncAll: resync realtime when Assist prefs change (no tool window required).
                 CxOneAssistSettingsModule.RealtimeAssistSettingsChanged += OnRealtimeAssistSettingsApplied;
 
@@ -246,6 +251,10 @@ namespace ast_visual_studio_extension.CxExtension
             _ = JoinableTaskFactory.RunAsync(async () =>
             {
                 await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                // Clear findings from disabled scanners only (user toggled scanner off)
+                CxAssistDisplayCoordinator.ClearFindingsFromDisabledScanners();
+
                 await RealtimeScannerHost.ResyncFromPersistedSettingsAsync(this, typeof(CxWindowPackage));
             });
         }
@@ -260,6 +269,9 @@ namespace ast_visual_studio_extension.CxExtension
                 await JoinableTaskFactory.SwitchToMainThreadAsync();
                 try
                 {
+                    // Clear ALL findings on logout (user logged out)
+                    CxAssistDisplayCoordinator.ClearAllFindings();
+
                     await RealtimeScannerHost.UnregisterAsync();
                 }
                 catch (Exception ex)

@@ -1,9 +1,12 @@
-﻿namespace ast_visual_studio_extension.CxExtension.Utils
+namespace ast_visual_studio_extension.CxExtension.Utils
 {
     internal class CxConstants
     {
         /************ GENERAL ************/
-        public static string EXTENSION_TITLE => "Checkmarx One";
+        public static string EXTENSION_TITLE => "Checkmarx";
+
+        /// <summary>VS Output window pane title for Assist and scanner logs (single pane; not the tool window caption).</summary>
+        public static string OutputWindowPaneName => "Checkmarx";
         public static string TREE_PARENT_NODE => "Scan {0}";
         public static string TREE_PARENT_NODE_NO_RESULTS => "No results for scan {0}";
         public static string DESC_TAB_LBL_ACTUAL_VALUE => "Actual value: ";

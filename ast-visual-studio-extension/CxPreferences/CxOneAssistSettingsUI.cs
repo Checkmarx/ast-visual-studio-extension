@@ -20,6 +20,8 @@ namespace ast_visual_studio_extension.CxPreferences
         private bool _isMcpInstallInProgress;
         private CancellationTokenSource _mcpStatusDismissCts;
         private bool _isAuthEventSubscribed;
+        private System.Threading.Timer _scannerCheckboxDebounceTimer;
+        private const int DebounceDelayMs = 300;  // Batch checkbox changes within 300ms
 
         private static readonly Color McpSuccessColor = Color.FromArgb(0, 120, 50);
         private static readonly Color McpErrorColor = Color.FromArgb(160, 0, 0);
@@ -181,35 +183,66 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-            SyncAssistUiToModuleProperties();
+            DebounceSyncAssistUi();
         }
 
         private void OssCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-            SyncAssistUiToModuleProperties();
+            DebounceSyncAssistUi();
         }
 
         private void SecretsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-            SyncAssistUiToModuleProperties();
+            DebounceSyncAssistUi();
         }
 
         private void ContainersCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-            SyncAssistUiToModuleProperties();
+            DebounceSyncAssistUi();
         }
 
         private void IacCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
-            SyncAssistUiToModuleProperties();
+            DebounceSyncAssistUi();
+        }
+
+        /// <summary>
+        /// Debounces scanner checkbox changes so multiple checkbox clicks batch into a single sync operation.
+        /// This prevents enabling/disabling scanners one-by-one which causes delays.
+        /// </summary>
+        private void DebounceSyncAssistUi()
+        {
+            // Dispose existing timer
+            if (_scannerCheckboxDebounceTimer != null)
+            {
+                _scannerCheckboxDebounceTimer.Dispose();
+            }
+
+            // Start new timer to sync after user stops clicking
+            _scannerCheckboxDebounceTimer = new System.Threading.Timer(
+                callback: (_) =>
+                {
+                    if (InvokeRequired)
+                    {
+                        BeginInvoke((Action)SyncAssistUiToModuleProperties);
+                    }
+                    else
+                    {
+                        SyncAssistUiToModuleProperties();
+                    }
+                    _scannerCheckboxDebounceTimer?.Dispose();
+                },
+                state: null,
+                dueTime: DebounceDelayMs,
+                period: Timeout.Infinite);
         }
 
         private void CmbContainersTool_SelectedIndexChanged(object sender, EventArgs e)

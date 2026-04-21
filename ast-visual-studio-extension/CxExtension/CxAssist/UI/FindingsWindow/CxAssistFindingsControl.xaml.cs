@@ -122,7 +122,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             _allFileNodes = new ObservableCollection<FileNode>();
             DataContext = this;
 
-            System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FINDINGS_WINDOW_INITIATED}");
+            CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FINDINGS_WINDOW_INITIATED);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -150,8 +150,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         private void OnIssuesUpdated(IReadOnlyDictionary<string, List<Core.Models.Vulnerability>> issuesByFile)
         {
-            // Coordinator raises IssuesUpdated from UI thread (callers use SwitchToMainThreadAsync).
-            RefreshFromCoordinator();
+            // IssuesUpdated can fire from a background scanner thread — marshal to UI thread
+            // so ApplyFilters can safely read ToggleButton.IsChecked and update FileNodes.
+            Dispatcher.InvokeAsync(RefreshFromCoordinator);
         }
 
         /// <summary>
@@ -611,7 +612,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         private void ApplyFilters()
         {
             if (_allFileNodes == null || _allFileNodes.Count == 0)
+            {
+                FileNodes = new ObservableCollection<FileNode>();
                 return;
+            }
 
             // Get active filters
             var activeFilters = new System.Collections.Generic.List<string>();
@@ -682,7 +686,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         public void SetAllFileNodes(ObservableCollection<FileNode> allNodes)
         {
             _allFileNodes = allNodes;
-            FileNodes = new ObservableCollection<FileNode>(allNodes);
+            ApplyFilters();
         }
 
         #endregion
@@ -856,7 +860,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             }
             catch
             {
-                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FAILED_COPY_CLIPBOARD);
             }
         }
 
@@ -895,9 +899,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                     ShowStatusBarNotification("Message copied to clipboard.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FAILED_COPY_CLIPBOARD);
             }
         }
 
@@ -925,11 +929,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 {
                     Clipboard.SetText(prompt);
                     ShowStatusBarNotification("Fix prompt copied to clipboard. Paste into GitHub Copilot Chat to get remediation steps.");
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {string.Format(CxAssistConstants.FIX_PROMPT_COPIED, v.Title ?? v.Description ?? "unknown")}");
+                    CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.FIX_PROMPT_COPIED, v.Title ?? v.Description ?? "unknown"));
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[{CxAssistConstants.LogCategory}] {CxAssistConstants.FAILED_COPY_CLIPBOARD}");
+                    CxAssistOutputPane.WriteToOutputPane(CxAssistConstants.FAILED_COPY_CLIPBOARD);
                 }
             }
         }

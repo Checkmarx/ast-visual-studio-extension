@@ -2,11 +2,16 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.Shell;
+using ast_visual_studio_extension.CxExtension.Utils;
 using EnvDTE;
 using EnvDTE80;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Imaging;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Automation;
 using Process = System.Diagnostics.Process;
+using System.Linq;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 {
@@ -48,13 +53,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         private static class Timing
         {
             /// <summary>Delay after opening Copilot to allow UI to fully render.</summary>
-            public const int CopilotOpenDelayMs = 1200;
+            public const int CopilotOpenDelayMs = 900;
 
             /// <summary>Delay after starting a new thread for UI to settle.</summary>
-            public const int NewThreadDelayMs = 500;
+            public const int NewThreadDelayMs = 400;
 
             /// <summary>Delay before paste/submit to ensure input field has focus.</summary>
-            public const int PasteDelayMs = 400;
+            public const int PasteDelayMs = 350;
 
             /// <summary>Brief pause between paste and Enter to let VS process clipboard.</summary>
             public const int PasteSettleMs = 100;
@@ -66,9 +71,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         private static class AutomationProperties
         {
             public static readonly string[] ModePickerNames = {
-                "Chat Mode Picker", "Chat mode",
+                // VS 2026 name (primary)
+                "Chat mode",
+                // VS 2022 and fallback names
+                "Chat Mode Picker",
                 "Agent Mode Picker", "Agent mode", "Agent",
-                "Mode"
+                "Mode", "Copilot mode", "Chat mode picker",
+                "Mode picker", "Pick a mode"
             };
             public const string AgentOptionName = "Agent";
         }
@@ -146,6 +155,108 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         // ==================== Public API ====================
 
         /// <summary>
+        /// Shows a non-modal main-window info bar (fallback: status bar). No blocking dialogs.
+        /// </summary>
+        /// <param name="useWarningSeverity">When true and not an error, uses the warning (yellow) info bar style.</param>
+        public static void ShowAssistNotification(string message, bool isError = false, bool useWarningSeverity = false)
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var pkg = ServiceProvider.GlobalProvider?.GetService(typeof(AsyncPackage)) as AsyncPackage;
+                if (pkg != null)
+                {
+                    if (isError)
+                        CxUtils.DisplayMessageInInfoBar(pkg, message, KnownMonikers.StatusError, autoDismiss: true);
+                    else if (useWarningSeverity)
+                        CxUtils.DisplayMessageInInfoBar(pkg, message, KnownMonikers.StatusWarning, autoDismiss: true);
+                    else
+                        CxUtils.DisplayMessageInInfoBar(pkg, message, KnownMonikers.StatusInformation, autoDismiss: true);
+                    return;
+                }
+
+                var dte = GetDte();
+                if (dte?.StatusBar != null)
+                    dte.StatusBar.Text = message;
+            }
+            catch (Exception ex)
+            {
+                Log("ShowAssistNotification failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>True when GitHub Copilot chat commands are registered (extension present).</summary>
+        public static bool CheckCopilotInstalled()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var dte = GetDte();
+                if (dte?.Commands == null) return false;
+
+                foreach (string cmdId in OpenChatCommands)
+                {
+                    try
+                    {
+                        var cmd = dte.Commands.Item(cmdId);
+                        if (cmd != null) return true;
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return false;
+        }
+
+        /// <summary>Legacy name; use <see cref="CheckCopilotInstalled"/>.</summary>
+        public static bool IsCopilotAvailable() => CheckCopilotInstalled();
+
+        /// <summary>
+        /// Starts a new Copilot chat thread via DTE (best-effort).
+        /// </summary>
+        public static bool OpenCopilotThread()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return TryExecuteDteCommands(NewThreadCommands);
+        }
+
+        /// <summary>
+        /// Whether Copilot Chat appears to be in Agent mode (VS 2022 vs newer UIs differ; heuristics apply for major version 19+).
+        /// VS 2026: Mode detection is unreliable via UI Automation, so we assume Agent mode is active.
+        /// </summary>
+        public static bool IsAgentMode()
+        {
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var vsProcess = Process.GetCurrentProcess();
+                AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+
+                if (vsWindow == null)
+                {
+                    Log("IsAgentMode: Could not get VS main window");
+                    return false;
+                }
+
+                // Attempt UI Automation detection
+                // NOTE: VS 2026 doesn't reliably expose current mode through standard UI Automation patterns.
+                // In Ask mode, detection will return false (correct behavior).
+                // In Agent mode, detection may or may not work depending on whether the UI exposes the mode state.
+                bool detected = IsAgentModeAlreadyActive(vsWindow);
+                return detected;
+            }
+            catch (Exception ex)
+            {
+                Log("IsAgentMode failed: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Opens Copilot Chat, starts a new thread, pastes the prompt, and sends it.
         /// Returns true if the clipboard was set (even if full automation failed).
         /// Maintains backward compatibility with existing callers.
@@ -182,37 +293,32 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 }
                 Log("Prompt copied to clipboard");
 
+                // Capture the code document window before Copilot steals focus (for editor info bar above the file).
+                IVsWindowFrame assistDocumentFrame = TryCaptureAssistDocumentFrame();
+
                 // Step 2: Pre-check if Copilot is available (aligned with JetBrains CopilotIntegration.isCopilotAvailable)
-                if (!IsCopilotAvailable())
+                if (!CheckCopilotInstalled())
                 {
                     Log("Copilot not available (pre-check), prompt copied to clipboard");
-                    MessageBox.Show(
-                        CxAssistConstants.CopilotOpenInstructionsMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowCopilotNotInstalledMessage(assistDocumentFrame);
                     return IntegrationResult.CopilotNotAvailable(
-                        CxAssistConstants.CopilotOpenInstructionsMessage);
+                        CxAssistConstants.CopilotNotInstalledInfoBarMessage);
                 }
 
                 // Step 3: Open Copilot Chat
-                bool opened = TryOpenCopilotChat();
+                bool opened = OpenCopilotChat();
                 if (!opened)
                 {
                     Log("Copilot Chat failed to open - Copilot may not be installed");
-                    MessageBox.Show(
-                        CxAssistConstants.CopilotOpenInstructionsMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowCopilotChatOpenFailedMessage(assistDocumentFrame);
                     return IntegrationResult.CopilotNotAvailable(
-                        CxAssistConstants.CopilotOpenInstructionsMessage);
+                        CxAssistConstants.CopilotChatOpenFailedInfoBarMessage);
                 }
 
                 Log("Copilot Chat opened, scheduling automation sequence");
 
                 // Step 4: Schedule the automation sequence after UI renders
-                ScheduleAutomatedPromptEntry(prompt);
+                ScheduleAutomatedPromptEntry(prompt, assistDocumentFrame);
 
                 return IntegrationResult.PartialSuccess(
                     "Copilot Chat opened, automation in progress...");
@@ -223,11 +329,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 try
                 {
                     CopyToClipboard(prompt);
-                    MessageBox.Show(
-                        clipboardFallbackMessage ?? CxAssistConstants.CopilotGenericFallbackMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowAssistNotification(
+                        clipboardFallbackMessage ?? CxAssistConstants.CopilotGenericFallbackMessage);
                     return IntegrationResult.PartialSuccess(clipboardFallbackMessage);
                 }
                 catch
@@ -244,73 +347,206 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// DispatcherTimer steps. Each step yields to the UI thread so that
         /// Copilot Chat can render and process events between operations.
         ///
-        /// <para><b>Step 1</b> (after CopilotOpenDelayMs): Start new thread via DTE.</para>
-        /// <para><b>Step 2</b> (after NewThreadDelayMs): Switch to Agent mode via UI Automation.</para>
-        /// <para><b>Step 3</b> (after AgentModeDelayMs): Re-focus Copilot Chat, paste prompt, submit.</para>
+        /// <para><b>Agent mode:</b> new thread → paste → Enter (submit).</para>
+        /// <para><b>Non-agent:</b> new thread (awaited via timer chain) → paste only → info bar (no modal).</para>
         /// </summary>
-        private static void ScheduleAutomatedPromptEntry(string prompt)
+        /// <summary>
+        /// Resolves the active document <see cref="IVsWindowFrame"/> while the editor still has selection context.
+        /// </summary>
+        private static IVsWindowFrame TryCaptureAssistDocumentFrame()
         {
-            // New flow: after Copilot opens, require the user to have Agent mode active.
-            // If Agent mode is not active, show an informational popup and do not
-            // attempt to switch modes automatically. The prompt is already copied
-            // to the clipboard as a guaranteed fallback.
+            try
+            {
+                ThreadHelper.ThrowIfNotOnUIThread();
+                var mon = Package.GetGlobalService(typeof(SVsShellMonitorSelection)) as IVsMonitorSelection;
+                if (mon != null
+                    && ErrorHandler.Succeeded(mon.GetCurrentElementValue((uint)VSConstants.VSSELELEMID.SEID_DocumentFrame, out object frameObj))
+                    && frameObj is IVsWindowFrame frame)
+                {
+                    return frame;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("TryCaptureAssistDocumentFrame: " + ex.Message);
+            }
+
+            return null;
+        }
+
+        private static void ShowCopilotNotAgentModeUserMessage(IVsWindowFrame assistDocumentFrame)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            ShowAssistNotification(
+                CxAssistConstants.CopilotNotAgentModeInfoBarMessage,
+                isError: false,
+                useWarningSeverity: true);
+        }
+
+        /// <summary>
+        /// Shows Copilot not installed warning in the info bar.
+        /// </summary>
+        private static void ShowCopilotNotInstalledMessage(IVsWindowFrame assistDocumentFrame)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            ShowAssistNotification(
+                CxAssistConstants.CopilotNotInstalledInfoBarMessage,
+                isError: false,
+                useWarningSeverity: true);
+        }
+
+        /// <summary>
+        /// Shows Copilot Chat failed to open warning in the info bar.
+        /// </summary>
+        private static void ShowCopilotChatOpenFailedMessage(IVsWindowFrame assistDocumentFrame)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            ShowAssistNotification(
+                CxAssistConstants.CopilotChatOpenFailedInfoBarMessage,
+                isError: false,
+                useWarningSeverity: true);
+        }
+
+        /// <summary>
+        /// Shows Copilot prompt preparation failed error in the info bar (as warning with error fallback).
+        /// </summary>
+        private static void ShowCopilotPromptPrepareFailedMessage(IVsWindowFrame assistDocumentFrame)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            ShowAssistNotification(
+                CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage,
+                isError: true);
+        }
+
+        /// <summary>
+        /// Shows VS 2026 paste-only workflow message in the info bar.
+        /// Used when mode detection is unavailable and prompt is pasted without auto-submit.
+        /// </summary>
+        private static void ShowCopilotPasteOnlyVs2026Message(IVsWindowFrame assistDocumentFrame)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            ShowAssistNotification(
+                CxAssistConstants.CopilotPasteOnlyVs2026InfoBarMessage,
+                isError: false,
+                useWarningSeverity: true);
+        }
+
+        private static void ScheduleAutomatedPromptEntry(string prompt, IVsWindowFrame assistDocumentFrame)
+        {
             ScheduleOnIdle(Timing.CopilotOpenDelayMs, () =>
             {
                 try
                 {
-                    var vsProcess = Process.GetCurrentProcess();
-                    AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                    int vsMajor = GetVisualStudioMajorVersion();
 
-                    bool agentActive = false;
-                    if (vsWindow != null)
+                    // VS 2026+: Mode detection is unreliable (Chat mode button doesn't expose selection state)
+                    // Skip all automation and paste-only workflow with user message
+                    if (vsMajor >= 18)
                     {
-                        agentActive = IsAgentModeAlreadyActive(vsWindow);
-                    }
+                        Log("VS 2026+ detected — using paste-only workflow (mode detection unavailable)");
+                        ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
+                        {
+                            bool threadOk = OpenCopilotThread();
+                            if (!threadOk)
+                                ShowCopilotChatOpenFailedMessage(assistDocumentFrame);
+                            else
+                            {
+                                try
+                                {
+                                    var vsProc = Process.GetCurrentProcess();
+                                    AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
+                                    if (wnd != null)
+                                        FocusCopilotInput(wnd);
+                                }
+                                catch (Exception exFocus)
+                                {
+                                    Log("UI Automation: focus before paste: " + exFocus.Message);
+                                }
+                            }
 
-                    if (!agentActive)
-                    {
-                        Log("Agent mode not active - prompting user to enable Agent mode and use clipboard fallback");
-                        MessageBox.Show(
-                            "Please select 'Agent' mode in GitHub Copilot Chat. The prompt has been copied to your clipboard — open Copilot Chat, select Agent mode, then paste the prompt to continue.",
-                            CxAssistConstants.DisplayName,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
+                            int delayBeforePaste = threadOk ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                            ScheduleOnIdle(delayBeforePaste, () =>
+                            {
+                                bool inserted = InsertPromptWithoutSubmitting();
+                                if (!threadOk)
+                                    return;
+                                if (!inserted)
+                                    ShowCopilotPromptPrepareFailedMessage(assistDocumentFrame);
+                                else
+                                    ShowCopilotPasteOnlyVs2026Message(assistDocumentFrame);
+                            });
+                        });
                         return;
                     }
 
-                    // Agent mode is active — proceed to start a new thread and paste/submit
+                    // VS 2022 and earlier: Attempt to detect Agent mode
+                    bool agentMode = IsAgentMode();
+
+                    if (agentMode)
+                    {
+                        Log("Agent mode detected — auto-submitting prompt");
+                        ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
+                        {
+                            bool newThreadStarted = OpenCopilotThread();
+                            Log(newThreadStarted
+                                ? "New thread started via DTE command"
+                                : "DTE new-thread commands not available, continuing with current thread");
+
+                            if (newThreadStarted)
+                            {
+                                try
+                                {
+                                    var vsProc = Process.GetCurrentProcess();
+                                    AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
+                                    if (wnd != null)
+                                    {
+                                        bool focused = FocusCopilotInput(wnd);
+                                        Log("UI Automation: Focused Copilot input after new thread: " + focused);
+                                    }
+                                }
+                                catch (Exception exFocus)
+                                {
+                                    Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                                }
+                            }
+
+                            int delayAfterThread = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                            ScheduleOnIdle(delayAfterThread, PerformPasteAndSubmit);
+                        });
+                        return;
+                    }
+
+                    Log("Agent mode not detected — pasting prompt without auto-submit");
                     ScheduleOnIdle(Timing.NewThreadDelayMs, () =>
                     {
-                        bool newThreadStarted = TryStartNewThread();
-                        Log(newThreadStarted
-                            ? "New thread started via DTE command"
-                            : "DTE new-thread commands not available, continuing with current thread");
-
-                        // If a new thread was started, try focusing the Copilot input
-                        if (newThreadStarted)
+                        bool threadOk = OpenCopilotThread();
+                        if (!threadOk)
+                            ShowCopilotChatOpenFailedMessage(assistDocumentFrame);
+                        else
                         {
                             try
                             {
                                 var vsProc = Process.GetCurrentProcess();
                                 AutomationElement wnd = AutomationElement.FromHandle(vsProc.MainWindowHandle);
                                 if (wnd != null)
-                                {
-                                    bool focused = FocusCopilotInput(wnd);
-                                    Log("UI Automation: Focused Copilot input after new thread: " + focused);
-                                }
+                                    FocusCopilotInput(wnd);
                             }
                             catch (Exception exFocus)
                             {
-                                Log("UI Automation: error focusing input after new thread: " + exFocus.Message);
+                                Log("UI Automation: focus before non-agent paste: " + exFocus.Message);
                             }
                         }
 
-                        int agentDelay = newThreadStarted ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
-
-                        // Paste + submit
-                        ScheduleOnIdle(agentDelay, () =>
+                        int delayBeforePaste = threadOk ? Timing.NewThreadDelayMs : Timing.PasteDelayMs;
+                        ScheduleOnIdle(delayBeforePaste, () =>
                         {
-                            PerformPasteAndSubmit();
+                            bool inserted = InsertPromptWithoutSubmitting();
+                            if (!threadOk)
+                                return;
+                            if (!inserted)
+                                ShowCopilotPromptPrepareFailedMessage(assistDocumentFrame);
+                            else
+                                ShowCopilotNotAgentModeUserMessage(assistDocumentFrame);
                         });
                     });
                 }
@@ -343,11 +579,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.PerformPasteAndSubmit");
-                MessageBox.Show(
-                    CxAssistConstants.CopilotPasteFailedMessage,
-                    CxAssistConstants.DisplayName,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
             }
         }
 
@@ -372,14 +604,29 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 catch (Exception ex)
                 {
                     CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.ScheduleOnIdle");
-                    MessageBox.Show(
-                        CxAssistConstants.CopilotPasteFailedMessage,
-                        CxAssistConstants.DisplayName,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
                 }
             };
             timer.Start();
+        }
+
+        /// <summary>
+        /// Pastes the prompt from the clipboard into Copilot input without sending (no Enter).
+        /// </summary>
+        private static bool InsertPromptWithoutSubmitting()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                TryExecuteDteCommands(OpenChatCommands);
+                System.Windows.Forms.SendKeys.SendWait("^v");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.InsertPromptWithoutSubmitting");
+                return false;
+            }
         }
 
         // ==================== SendKeys ====================
@@ -398,13 +645,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         // ==================== Opening Copilot Chat ====================
 
         /// <summary>
-        /// Attempts to open GitHub Copilot Chat using multiple strategies:
-        /// <list type="number">
-        ///   <item>DTE ExecuteCommand with known command IDs</item>
-        ///   <item>Keyboard shortcut simulation (Ctrl+\ then C)</item>
-        /// </list>
+        /// Opens the Copilot Chat tool window (not necessarily a new thread), using DTE commands or Ctrl+\, C.
         /// </summary>
-        private static bool TryOpenCopilotChat()
+        private static bool OpenCopilotChat()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -430,47 +673,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return false;
         }
 
-        /// <summary>
-        /// Attempts to start a new chat thread via DTE commands.
-        /// </summary>
-        private static bool TryStartNewThread()
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            return TryExecuteDteCommands(NewThreadCommands);
-        }
-
         // ==================== Availability Check ====================
-
-        /// <summary>
-        /// Checks if GitHub Copilot is available before attempting to open it.
-        /// Aligned with JetBrains CopilotIntegration.isCopilotAvailable: checks known
-        /// command IDs via DTE.Commands to see if any are registered.
-        /// </summary>
-        public static bool IsCopilotAvailable()
-        {
-            try
-            {
-                ThreadHelper.ThrowIfNotOnUIThread();
-                var dte = GetDte();
-                if (dte?.Commands == null) return false;
-
-                foreach (string cmdId in OpenChatCommands)
-                {
-                    try
-                    {
-                        var cmd = dte.Commands.Item(cmdId);
-                        if (cmd != null) return true;
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-            catch
-            {
-            }
-            return false;
-        }
+        // See <see cref="CheckCopilotInstalled"/> and <see cref="IsCopilotAvailable"/>.
 
         // ==================== DTE Helpers ====================
 
@@ -517,9 +721,17 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 var dte = GetDte();
                 if (dte?.Version != null)
                 {
+                    Log($"GetVisualStudioMajorVersion: DTE.Version = '{dte.Version}'");
                     var parts = dte.Version.Split('.');
                     if (parts.Length > 0 && int.TryParse(parts[0], out int major))
+                    {
+                        Log($"GetVisualStudioMajorVersion: Parsed major version = {major}");
                         return major;
+                    }
+                }
+                else
+                {
+                    Log($"GetVisualStudioMajorVersion: DTE or DTE.Version is null");
                 }
             }
             catch (Exception ex)
@@ -530,78 +742,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         // ==================== Agent Mode Switching ====================
-
-        /// <summary>
-        /// Switches Copilot Chat to Agent mode using direct UI Automation (no keyboard navigation).
-        /// Searches the entire VS main window for the mode picker button by known names,
-        /// then opens the dropdown and selects Agent.
-        ///
-        /// If Agent mode is already active, returns true without attempting to switch.
-        /// </summary>
-        private static bool TrySwitchToAgentMode()
-        {
-            try
-            {
-                ThreadHelper.ThrowIfNotOnUIThread();
-                Log("Switching to Agent mode via UI Automation...");
-
-                var vsProcess = Process.GetCurrentProcess();
-                AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
-                if (vsWindow == null)
-                {
-                    Log("UI Automation: Could not get VS main window");
-                    return false;
-                }
-
-                if (IsAgentModeAlreadyActive(vsWindow))
-                {
-                    Log("UI Automation: Agent mode is already active, skipping switch");
-                    return true;
-                }
-
-                AutomationElement modePicker = FindModePickerButton(vsWindow);
-                if (modePicker == null)
-                {
-                    Log("UI Automation: Mode Picker button not found");
-                    ListAvailableElements(vsWindow);
-                    return false;
-                }
-
-                Log("UI Automation: Found Mode Picker, attempting to open dropdown...");
-
-                if (modePicker.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
-                {
-                    Log("UI Automation: Using InvokePattern to open dropdown");
-                    ((InvokePattern)pattern).Invoke();
-                    System.Threading.Thread.Sleep(700);
-                }
-                else
-                {
-                    Log("UI Automation: InvokePattern not supported, using mouse click");
-                    if (!ClickElement(modePicker))
-                    {
-                        Log("UI Automation: Failed to click Mode Picker button");
-                        return false;
-                    }
-                    System.Threading.Thread.Sleep(700);
-                }
-
-                if (SelectAgentDirectly(vsWindow))
-                {
-                    Log("UI Automation: Agent mode selected successfully");
-                    return true;
-                }
-
-                Log("UI Automation: Failed to select Agent option");
-                System.Windows.Forms.SendKeys.SendWait("{ESC}");
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log("UI Automation error: " + ex.Message);
-                return false;
-            }
-        }
 
         /// <summary>
         /// Finds the Mode Picker button by searching the VS window for known names.
@@ -816,8 +956,74 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 if (modePicker == null)
                     return false;
 
+                // VS 2026: Search entire Copilot Chat pane for "Agent" text indicator
+                // The current mode is displayed somewhere in the Copilot Chat window, not necessarily at the button
+                try
+                {
+                    // Find the Copilot Chat pane (parent of the mode picker)
+                    AutomationElement copilotPane = modePicker;
+                    for (int i = 0; i < 10; i++) // Walk up the tree
+                    {
+                        var parent = TreeWalker.ControlViewWalker.GetParent(copilotPane);
+                        if (parent == null) break;
+
+                        string parentName = parent.Current.Name ?? "";
+                        if (parentName.IndexOf("Copilot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            parentName.IndexOf("Chat", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            copilotPane = parent;
+                            break;
+                        }
+                        copilotPane = parent;
+                    }
+
+                    // Search pane for "Agent" text
+                    var allInPane = copilotPane.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
+                    for (int i = 0; i < allInPane.Count; i++)
+                    {
+                        try
+                        {
+                            string name = allInPane[i].Current.Name ?? "";
+                            // Look for standalone "Agent" or "Agent mode" indicator
+                            if (name.Equals("Agent", StringComparison.OrdinalIgnoreCase) ||
+                                name.IndexOf("Agent mode", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                Log("UI Automation: Found Agent mode indicator: '" + name + "'");
+                                return true;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Copilot pane search failed: " + ex.Message);
+                }
+
+                // Fallback: Check button's direct children
+                try
+                {
+                    var children = modePicker.FindAll(TreeScope.Children, System.Windows.Automation.Condition.TrueCondition);
+                    foreach (AutomationElement child in children)
+                    {
+                        try
+                        {
+                            string childName = child.Current.Name ?? "";
+                            if (childName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                Log("UI Automation: Found 'Agent' in button child: " + childName);
+                                return true;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("UI Automation: Child search failed: " + ex.Message);
+                }
+
                 string modePickerName = modePicker.Current.Name ?? "";
-                
                 bool isAgentActive = modePickerName.IndexOf("agent", StringComparison.OrdinalIgnoreCase) >= 0;
 
                 // Prefer a direct read of the selected value via common patterns
@@ -846,7 +1052,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
 
                         int vsMajor = GetVisualStudioMajorVersion();
-                        bool isNewVs = vsMajor >= 19; // treat 19+ as VS2026 or newer
+                        // VS 17 = VS2022; VS 18+ = newer shell (2025/2026) with different Copilot mode UI.
+                        bool isNewVs = vsMajor >= 18;
 
                         for (int i = 0; i < all.Count; i++)
                         {
@@ -912,228 +1119,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 Log("UI Automation error in IsAgentModeAlreadyActive: " + ex.Message);
                 return false;
-            }
-        }
-
-        /// <summary>
-        /// Selects Agent by typing "Agent" to filter the dropdown, then clicking
-        /// the result. Falls back to arrow key navigation if typing doesn't work.
-        /// </summary>
-        private static bool SelectAgentDirectly(AutomationElement root)
-        {
-            try
-            {
-                Log("UI Automation: Typing 'Agent' to search/filter dropdown...");
-                System.Windows.Forms.SendKeys.SendWait("Agent");
-                System.Threading.Thread.Sleep(800);
-
-                Log("UI Automation: Searching for Agent option after typing...");
-                AutomationElement agentElement = FindAgentElement(root);
-
-                if (agentElement != null)
-                {
-                    Log("UI Automation: Found Agent element, clicking it...");
-
-                    if (ClickElement(agentElement))
-                    {
-                        Log("UI Automation: Agent selected via click");
-                        System.Threading.Thread.Sleep(400);
-                        return true;
-                    }
-
-                    if (agentElement.TryGetCurrentPattern(InvokePattern.Pattern, out object invoke))
-                    {
-                        ((InvokePattern)invoke).Invoke();
-                        Log("UI Automation: Agent selected via InvokePattern");
-                        System.Threading.Thread.Sleep(400);
-                        return true;
-                    }
-
-                    if (agentElement.TryGetCurrentPattern(SelectionItemPattern.Pattern, out object selectPattern))
-                    {
-                        ((SelectionItemPattern)selectPattern).Select();
-                        Log("UI Automation: Agent selected via SelectionItemPattern");
-                        System.Threading.Thread.Sleep(400);
-                        return true;
-                    }
-                }
-
-                Log("UI Automation: Agent element not found after typing, trying arrow key navigation...");
-                return SelectAgentViaArrowKeys();
-            }
-            catch (Exception ex)
-            {
-                Log("UI Automation error in SelectAgentDirectly: " + ex.Message);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Selects Agent mode by pressing Down arrow repeatedly to navigate
-        /// through dropdown options, then pressing Enter to confirm.
-        /// Fallback when typing doesn't filter the dropdown.
-        /// </summary>
-        private static bool SelectAgentViaArrowKeys()
-        {
-            try
-            {
-                Log("UI Automation: Attempting arrow key navigation...");
-
-                for (int i = 0; i < 5; i++)
-                {
-                    System.Windows.Forms.SendKeys.SendWait("{DOWN}");
-                    System.Threading.Thread.Sleep(200);
-
-                    var vsProcess = Process.GetCurrentProcess();
-                    AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
-                    if (vsWindow != null && IsAgentModeAlreadyActive(vsWindow))
-                    {
-                        Log("UI Automation: Agent mode now active (after " + (i + 1) + " Down presses)");
-                        System.Windows.Forms.SendKeys.SendWait("{ENTER}");
-                        System.Threading.Thread.Sleep(400);
-                        return true;
-                    }
-                }
-
-                Log("UI Automation: Arrow key navigation did not activate Agent mode");
-                System.Windows.Forms.SendKeys.SendWait("{ESC}");
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Log("UI Automation error in SelectAgentViaArrowKeys: " + ex.Message);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Searches for the "Agent" mode option (MenuItem or ListItem with name "Agent").
-        /// Excludes items like "Search agents" that contain "agent" but aren't the mode option.
-        /// </summary>
-        private static AutomationElement FindAgentElement(AutomationElement root)
-        {
-            try
-            {
-                var allElements = root.FindAll(TreeScope.Descendants,
-                    System.Windows.Automation.Condition.TrueCondition);
-
-                foreach (AutomationElement el in allElements)
-                {
-                    try
-                    {
-                        string name = el.Current.Name ?? "";
-                        string nameLower = name.ToLowerInvariant();
-
-                        if (nameLower == "agent" || nameLower.StartsWith("agent "))
-                        {
-                            string ctType = el.Current.ControlType.ProgrammaticName ?? "";
-
-                            if (ctType.Contains("MenuItem") || ctType.Contains("ListItem"))
-                            {
-                                Log("UI Automation: Found Agent mode option [" + ctType + "]: '" + name + "'");
-                                return el;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                foreach (AutomationElement el in allElements)
-                {
-                    try
-                    {
-                        string name = el.Current.Name ?? "";
-                        if (string.Equals(name, "agent", StringComparison.OrdinalIgnoreCase))
-                        {
-                            Log("UI Automation: Found Agent element (second pass): '" + name + "'");
-                            return el;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log("UI Automation error in FindAgentElement: " + ex.Message);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Clicks an element using mouse coordinates from its bounding rectangle.
-        /// </summary>
-        private static bool ClickElement(AutomationElement element)
-        {
-            try
-            {
-                var rect = element.Current.BoundingRectangle;
-                if (rect.IsEmpty || rect.Width == 0 || rect.Height == 0)
-                {
-                    Log("UI Automation: Element has no valid bounding rectangle");
-                    return false;
-                }
-
-                int clickX = (int)(rect.X + rect.Width / 2);
-                int clickY = (int)(rect.Y + rect.Height / 2);
-
-                SetCursorPos(clickX, clickY);
-                System.Threading.Thread.Sleep(100);
-                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, IntPtr.Zero);
-                System.Threading.Thread.Sleep(50);
-                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, IntPtr.Zero);
-
-                Log("UI Automation: Clicked element at (" + clickX + ", " + clickY + ")");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log("UI Automation: Mouse click failed: " + ex.Message);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Logs elements whose names contain mode-related keywords for debugging.
-        /// </summary>
-        private static void ListAvailableElements(AutomationElement root)
-        {
-            try
-            {
-                var allElements = root.FindAll(TreeScope.Descendants,
-                    System.Windows.Automation.Condition.TrueCondition);
-
-                int count = 0;
-                foreach (AutomationElement el in allElements)
-                {
-                    try
-                    {
-                        string name = el.Current.Name ?? "";
-                        string ctType = el.Current.ControlType.ProgrammaticName ?? "";
-                        string nameLower = name.ToLowerInvariant();
-
-                        if (!string.IsNullOrEmpty(name) && (nameLower.Contains("mode") ||
-                            nameLower.Contains("ask") || nameLower.Contains("edit") ||
-                            nameLower.Contains("debug") || nameLower.Contains("agent")))
-                        {
-                            Log("UI Automation: Available element [" + ctType + "]: '" + name + "'");
-                            count++;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                Log("UI Automation: Total matching elements found: " + count);
-            }
-            catch (Exception ex)
-            {
-                Log("UI Automation error in ListAvailableElements: " + ex.Message);
             }
         }
 
@@ -1220,17 +1205,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
             return false;
         }
-
-        // ==================== Native Mouse Click ====================
-
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool SetCursorPos(int X, int Y);
-
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, IntPtr dwExtraInfo);
-
-        private const uint MOUSEEVENTF_LEFTDOWN = 0x02;
-        private const uint MOUSEEVENTF_LEFTUP = 0x04;
 
         // ==================== Clipboard ====================
 

@@ -357,5 +357,54 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 findingsControl.SetAllFileNodes(fileNodes);
             }, "Coordinator.RefreshProblemWindow");
         }
+
+        /// <summary>
+        /// Clears all findings from the coordinator.
+        /// Used when user logs out or disables all scanners.
+        /// </summary>
+        public static void ClearAllFindings()
+        {
+            lock (_lock)
+            {
+                _fileToIssues.Clear();
+            }
+            IssuesUpdated?.Invoke(new Dictionary<string, List<Vulnerability>>());
+        }
+
+        /// <summary>
+        /// Clears findings from disabled scanners only.
+        /// Called when user toggles a scanner off via preferences.
+        /// Aligned with JetBrains ProblemHolderService.removeAllScanIssuesOfType().
+        /// </summary>
+        public static void ClearFindingsFromDisabledScanners()
+        {
+            var filesToRemove = new List<string>();
+
+            lock (_lock)
+            {
+                // Iterate all files and remove findings from disabled scanners
+                foreach (var filePath in _fileToIssues.Keys.ToList())
+                {
+                    if (!_fileToIssues.TryGetValue(filePath, out var vulnerabilities) || vulnerabilities == null)
+                        continue;
+
+                    // Keep only findings from enabled scanners
+                    _fileToIssues[filePath] = vulnerabilities
+                        .Where(v => v != null && CxAssistConstants.IsScannerEnabled(v.Scanner))
+                        .ToList();
+
+                    // Mark file for removal if no vulnerabilities remain
+                    if (_fileToIssues[filePath].Count == 0)
+                        filesToRemove.Add(filePath);
+                }
+
+                // Remove files with no remaining vulnerabilities
+                foreach (var filePath in filesToRemove)
+                    _fileToIssues.Remove(filePath);
+            }
+
+            // Broadcast update to all UI subscribers
+            IssuesUpdated?.Invoke(GetAllIssuesByFile());
+        }
     }
 }
