@@ -1,7 +1,7 @@
+using ast_visual_studio_extension.CxExtension.Utils;
 using Microsoft.VisualStudio.Threading;
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -83,7 +83,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"RealtimeFileScanScheduler: debounced work failed for {filePath}: {ex}");
+                    OutputPaneWriter.WriteError($"Realtime scan failed for {Path.GetFileName(filePath)}: {ex.Message}");
                 }
             }, CancellationToken.None);
         }
