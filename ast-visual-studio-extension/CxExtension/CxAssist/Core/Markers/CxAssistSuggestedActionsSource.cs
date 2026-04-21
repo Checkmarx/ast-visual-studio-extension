@@ -25,6 +25,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             _textBuffer = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
         }
 
+        public event EventHandler<EventArgs> SuggestedActionsChanged
+        {
+            add { }
+            remove { }
+        }
+
         public void Dispose()
         {
         }
