@@ -10,6 +10,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
     [Order(Before = "Default Quick Info Presenter")]
     [ContentType("code")]
     [ContentType("text")]
+    [ContentType("JSON")]
+    [ContentType("JSONC")]
     internal class CxAssistAsyncQuickInfoSourceProvider : IAsyncQuickInfoSourceProvider
     {
         public IAsyncQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer)

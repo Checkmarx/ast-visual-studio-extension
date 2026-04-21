@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -18,6 +19,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
     [Export(typeof(ITaggerProvider))]
     [ContentType("code")]
     [ContentType("text")]
+    [ContentType("JSON")]
+    [ContentType("JSONC")]
     [TagType(typeof(CxAssistGlyphTag))]
     [TextViewRole(PredefinedTextViewRoles.Document)]
     [TextViewRole(PredefinedTextViewRoles.Editable)]
@@ -129,17 +132,48 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         public static ITextBuffer GetBufferForFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath) || _instance == null) return null;
+            string targetFull;
+            try
+            {
+                targetFull = Path.GetFullPath(filePath);
+            }
+            catch
+            {
+                targetFull = filePath;
+            }
+
             lock (_instance._taggers)
             {
                 foreach (var buffer in _instance._taggers.Keys)
                 {
                     string bufferPath = CxAssistDisplayCoordinator.GetFilePathForBuffer(buffer);
-                    if (!string.IsNullOrEmpty(bufferPath) &&
-                        string.Equals(bufferPath, filePath, StringComparison.OrdinalIgnoreCase))
+                    if (string.IsNullOrEmpty(bufferPath))
+                        continue;
+                    string bufferFull;
+                    try
+                    {
+                        bufferFull = Path.GetFullPath(bufferPath);
+                    }
+                    catch
+                    {
+                        bufferFull = bufferPath;
+                    }
+
+                    if (string.Equals(bufferFull, targetFull, StringComparison.OrdinalIgnoreCase))
                         return buffer;
                 }
             }
+
             return null;
+        }
+
+        /// <summary>
+        /// Uses the tagger cache when the buffer is already materialized.
+        /// Returns null if buffer is not currently tracked (not yet opened in editor).
+        /// </summary>
+        public static ITextBuffer ResolveBufferForOpenFile(string filePath)
+        {
+            return GetBufferForFile(filePath);
         }
 
         /// <summary>
