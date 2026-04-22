@@ -3,6 +3,8 @@
 Standardized documentation for the Checkmarx One Visual Studio Extension repository.
 
 ## Project Overview
+A custom visual studio extension (VSIX) that gets published on microsoft visual studio marketplace.
+Supported for VS 2022, VS2026. Must be backward compatible with VS 2022 version.
 
 **Name:** Checkmarx One Visual Studio Extension
 
@@ -173,7 +175,6 @@ ast-visual-studio-extension/
 ## Development Setup
 
 ### Prerequisites
-- **Visual Studio 2022** (Community, Professional, or Enterprise)
 - **.NET 6.0 Windows Desktop Runtime**
 - **NuGet** (included with VS)
 - **MSBuild** (included with VS)
@@ -319,19 +320,23 @@ msbuild /t:Clean
    - Use `async/await` and `ThreadHelper.JoinableTaskFactory`
    - Test with UI responsiveness metrics
 
-3. **Do not** execute CLI commands without timeout
+3. **Do not** implement any REST API invocation neither in extension or wrapper source code
+   - AST-CLI wrapper orchestrates AST-CLI command invocations instead
+   - Stop when a wrapper AST-CLI command for functionality is not found.
+
+4. **Do not** execute CLI commands without timeout
    - All CLI calls must have 30-second timeout (CxConstants.CLI_TIMEOUT)
    - Handle timeout gracefully (user notification, retry logic)
 
-4. **Do not** create new WPF windows/dialogs directly
+5. **Do not** create new WPF windows/dialogs directly
    - Use VS services (InfoBar, MessageBox, Error List)
    - Maintain consistency with VS theme
 
-5. **Do not** log sensitive information
+6. **Do not** log sensitive information
    - Never log credentials, tokens, or personal data
    - Review log messages for security implications
 
-6. **Do not** deploy to production without:
+7. **Do not** deploy to production without:
    - Unit test coverage for new code
    - Manual testing in experimental hive
    - Code review approval
@@ -499,6 +504,7 @@ dotnet test --collect:"XPlat Code Coverage"
 - **Location after build:** `ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix`
 - **Size:** ~5-10 MB (includes dependencies)
 - **Dependencies:** Included in VSIX (self-contained)
+- Validate extension (VSIX) schema compatibility 
 
 ### Installation Methods
 1. **From Marketplace:** Visual Studio → Extensions → Manage Extensions → search "Checkmarx"
