@@ -505,7 +505,7 @@ namespace ast_visual_studio_extension.CxPreferences
                 bool previousMcpEnabled = oneAssistModule?.McpEnabled ?? false;
                 bool mcpStatusPreviouslyChecked = oneAssistModule?.McpStatusChecked ?? false;
 
-                // Step 1: Check license
+                // Step 1: Check license (network call, can take time)
                 bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, GetType());
 
                 // Step 2: Show success message after license check
@@ -518,17 +518,27 @@ namespace ast_visual_studio_extension.CxPreferences
                 if (oneAssistModule == null)
                     return;
 
-                // Step 3: Install MCP if enabled
-                if (oneAssistModule.McpEnabled)
-                {
-                    var installService = new McpInstallService();
-                    await installService.InstallSilentlyAsync(config, GetType());
-                }
-
                 if (showWelcomeDialog)
                 {
-                    // Step 4: Show welcome dialog — policy, persist and scan start ONLY after user closes it
+                    // Step 3a: Show welcome dialog immediately (don't wait for MCP installation)
                     ShowOneAssistWelcomeDialog(oneAssistModule, oneAssistModule.McpEnabled, previousMcpEnabled, mcpStatusPreviouslyChecked);
+
+                    // Step 3b: Install MCP in background while user is viewing the Welcome dialog
+                    if (oneAssistModule.McpEnabled)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var installService = new McpInstallService();
+                                await installService.InstallSilentlyAsync(config, GetType());
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Background MCP installation failed: {ex.Message}");
+                            }
+                        });
+                    }
                 }
                 else
                 {
@@ -539,6 +549,23 @@ namespace ast_visual_studio_extension.CxPreferences
                     ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistModule, previousMcpEnabled, mcpStatusPreviouslyChecked);
                     oneAssistModule.PersistSettings();
                     CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+
+                    // Install MCP in background for restored sessions too
+                    if (oneAssistModule.McpEnabled)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var installService = new McpInstallService();
+                                await installService.InstallSilentlyAsync(config, GetType());
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Background MCP installation failed (restore): {ex.Message}");
+                            }
+                        });
+                    }
                 }
             }
             catch (Exception ex)
