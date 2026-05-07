@@ -25,6 +25,8 @@ namespace ast_visual_studio_extension.CxPreferences
         private static bool _isAuthenticated;
         internal static event Action<bool> AuthStateChanged;
         private static int _restoreAuthInProgress;
+        private static bool _isFreshLoginInProgress = false;
+        private static bool _welcomeDialogVisible = false;
         private bool _isValidationInProgress;
         private bool _isInitializing;
         private bool _hasLoaded;
@@ -155,6 +157,8 @@ namespace ast_visual_studio_extension.CxPreferences
             if (_isValidationInProgress || string.IsNullOrWhiteSpace(tbApiKey.Text))
                 return;
 
+            _isFreshLoginInProgress = true;
+            UpdateAuthControlsState();
             SetValidationMessage(CxConstants.AUTH_VALIDATE_IN_PROGRESS, isSuccess: true);
             await ValidateApiKeyAsync(showErrorOnFailure: true);
         }
@@ -259,38 +263,54 @@ namespace ast_visual_studio_extension.CxPreferences
 
                 // Success message shown inside CompleteAuthenticationSetupAsync after license check
                 _ = CompleteAuthenticationSetupAsync(GetCxConfig(), showWelcomeDialog: showErrorOnFailure);
+
+                // DO NOT update UI here - let CompleteAuthenticationSetupAsync handle it
+                // to ensure Welcome dialog flag is set before button is enabled
             }
             catch (CxException ex) when (showErrorOnFailure)
             {
                 SetAuthState(false);
+                _isFreshLoginInProgress = false;
+                _welcomeDialogVisible = false;
                 if (cxPreferencesModule != null)
                     cxPreferencesModule.RestoreAuthenticatedSession = false;
                 SetValidationMessage(string.Format(CxConstants.AUTH_VALIDATE_FAIL_TEMPLATE, SanitizeErrorMessage(ex.Message)), isSuccess: false);
+                _isValidationInProgress = false;
+                UpdateAuthControlsState();
             }
             catch (Exception ex) when (showErrorOnFailure)
             {
                 SetAuthState(false);
+                _isFreshLoginInProgress = false;
+                _welcomeDialogVisible = false;
                 if (cxPreferencesModule != null)
                     cxPreferencesModule.RestoreAuthenticatedSession = false;
                 SetValidationMessage(CxConstants.AUTH_VALIDATE_ERROR, isSuccess: false);
                 System.Diagnostics.Debug.WriteLine($"Authentication error: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
+                _isValidationInProgress = false;
+                UpdateAuthControlsState();
             }
             catch
             {
                 SetAuthState(false);
+                _isFreshLoginInProgress = false;
+                _welcomeDialogVisible = false;
                 if (cxPreferencesModule != null)
                     cxPreferencesModule.RestoreAuthenticatedSession = false;
+                _isValidationInProgress = false;
+                UpdateAuthControlsState();
             }
             finally
             {
                 _isValidationInProgress = false;
-                UpdateAuthControlsState();
             }
         }
 
         private void ResetAuthState()
         {
             SetAuthState(false);
+            _isFreshLoginInProgress = false;
+            _welcomeDialogVisible = false;
             ClearValidationMessage();
         }
 
@@ -473,6 +493,8 @@ namespace ast_visual_studio_extension.CxPreferences
             if (config == null || string.IsNullOrWhiteSpace(config.ApiKey))
                 return;
 
+            _isFreshLoginInProgress = false;
+
             try
             {
                 var package = cxPreferencesModule?.GetOwnerPackage() as AsyncPackage;
@@ -511,6 +533,9 @@ namespace ast_visual_studio_extension.CxPreferences
                 else
                 {
                     // No welcome dialog (background restore) — apply policy and persist immediately
+                    _welcomeDialogVisible = true;
+                    UpdateAuthControlsState();
+
                     ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistModule, previousMcpEnabled, mcpStatusPreviouslyChecked);
                     oneAssistModule.PersistSettings();
                     CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
@@ -544,6 +569,10 @@ namespace ast_visual_studio_extension.CxPreferences
             {
                 using (var welcomeDialog = new CxOneAssistWelcomeDialog(module, mcpEnabled))
                 {
+                    // Mark welcome dialog as visible before showing it
+                    _welcomeDialogVisible = true;
+                    UpdateAuthControlsState();
+
                     welcomeDialog.ShowDialog(FindForm());
                     module.WelcomeShown = true;
                 }
@@ -579,7 +608,7 @@ namespace ast_visual_studio_extension.CxPreferences
                 : System.Drawing.SystemColors.Window;
 
             button1.Enabled = hasApiKey && !_isAuthenticated && !_isValidationInProgress;
-            btnLogout.Enabled = _isAuthenticated && !_isValidationInProgress;
+            btnLogout.Enabled = _isAuthenticated && !_isValidationInProgress && (!_isFreshLoginInProgress || _welcomeDialogVisible);
             // Temporary: hide assist navigation link from the Authentication page.
             goToAssistLink.Visible = false;
 
