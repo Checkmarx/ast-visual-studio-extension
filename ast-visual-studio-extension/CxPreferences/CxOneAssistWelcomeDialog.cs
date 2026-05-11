@@ -44,7 +44,7 @@ namespace ast_visual_studio_extension.CxPreferences
             InitializeThemePalette();
 
             var assembly = typeof(CxOneAssistWelcomeDialog).Assembly;
-            using (var stream = assembly.GetManifestResourceStream(CxConstants.ICON_CX_LOGO_ICO))
+            using (var stream = assembly.GetManifestResourceStream($"ast_visual_studio_extension.CxExtension.Resources.{CxConstants.ICON_CX_LOGO_ICO}"))
             {
                 if (stream != null)
                 {
