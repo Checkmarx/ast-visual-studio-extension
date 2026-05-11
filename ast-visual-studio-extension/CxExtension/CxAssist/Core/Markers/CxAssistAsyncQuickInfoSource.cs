@@ -74,6 +74,43 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             if (issuesOnly.Count == 0)
                 return null;
 
+            // If any vulnerability spans multiple lines: only show popover on the first line
+            var hasMultiLineVuln = issuesOnly.Any(v =>
+                (v.Locations != null && v.Locations.Count > 1) ||
+                (v.EndLineNumber > 0 && v.EndLineNumber > v.LineNumber));
+
+            if (hasMultiLineVuln)
+            {
+                foreach (var vuln in issuesOnly)
+                {
+                    // Check if this specific vulnerability is multi-line
+                    bool isMultiLine = (vuln.Locations != null && vuln.Locations.Count > 1) ||
+                                      (vuln.EndLineNumber > 0 && vuln.EndLineNumber > vuln.LineNumber);
+
+                    if (isMultiLine)
+                    {
+                        // Determine the actual first line of this multi-line vulnerability
+                        int actualFirstLine = vuln.LineNumber;
+
+                        if (vuln.Locations != null && vuln.Locations.Count > 0)
+                        {
+                            var firstLocation = vuln.Locations.OrderBy(l => l.Line).FirstOrDefault();
+                            if (firstLocation != null)
+                            {
+                                actualFirstLine = firstLocation.Line;
+                            }
+                        }
+
+                        // Only show popover one line prior to the actual first line
+                        int targetLine = actualFirstLine - 1;
+                        if (lineNumber != targetLine)
+                        {
+                            return null;
+                        }
+                    }
+                }
+            }
+
             // Only one of our sources (per session) should contribute; avoid duplicate blocks when multiple subject buffers exist.
             lock (_sessionLock)
             {
