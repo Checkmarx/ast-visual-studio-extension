@@ -15,7 +15,7 @@ jobs:
     name: Check if dependabot commits exist
     outputs:
       isDependabot: ${{ steps.check-dependabot.outputs.dependabotExists }}
-    runs-on: ubuntu-latest
+    runs-on: cx-public-ubuntu-x64
     steps:
       - name: Check if dependabot commits exist
         id: check-dependabot
@@ -24,7 +24,7 @@ jobs:
         run: echo "dependabotExists=$(echo $GITHUB_CONTEXT | jq '.event.commits[0].author | any(. == "dependabot[bot]")')" >> $GITHUB_OUTPUT
 
   delete-tag:
-    runs-on: ubuntu-latest
+    runs-on: cx-public-ubuntu-x64
     needs: check-dependabot-commits
     if: ${{needs.check-dependabot-commits.outputs.isDependabot == 'false'}}
     steps:
