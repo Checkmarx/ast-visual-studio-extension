@@ -2,7 +2,7 @@ name: Checkmarx One visual studio extension CI
 
 on: [ pull_request, workflow_dispatch ]
 
-permissions: write-all
+permissions: {}
 
 jobs:
   integration-tests:
