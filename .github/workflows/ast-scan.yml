@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Checkmarx One CLI Action
-        uses: checkmarx/ast-github-action@6c56658230f79c227a55120e9b24845d574d5225 #main
+        uses: checkmarx/ast-github-action@86e9ae570a811f9a1fb85903647a307aa3bf6253 #main
         with:
           base_uri: ${{ secrets.AST_RND_SCANS_BASE_URI }}
           cx_tenant: ${{ secrets.AST_RND_SCANS_TENANT }}
