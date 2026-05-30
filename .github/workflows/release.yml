@@ -44,7 +44,7 @@ jobs:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
+        uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
         with:
           vs-version: '17.2'
       
@@ -94,7 +94,7 @@ jobs:
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create Release
-        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v0.1.15
+        uses: step-security/action-gh-release@277bfa82abcfdb73e5bbb19e213fd76532ee2be5 # v3.0.0
         with:
           tag_name: ${{ inputs.tag }}
           prerelease: ${{ inputs.dev }}
