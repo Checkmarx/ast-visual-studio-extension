@@ -2,7 +2,7 @@ name: Checkmarx One visual studio extension CI
 
 on: [ pull_request, workflow_dispatch ]
 
-permissions: {}
+permissions: write-all
 
 jobs:
   integration-tests:
@@ -11,18 +11,18 @@ jobs:
       contents: write
     steps:
       - name: Fetch Sources
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4
 
       - name: Setup VSTest
         uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
 
       - name: Add MSBuild to PATH
-        uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
+        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
         with:
           vs-version: '17.2'
           
       - name: Install .NET 6.0 Windows Desktop Runtime
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '6.0.x'
           include-prerelease: false

@@ -39,12 +39,12 @@ jobs:
       CLI_VERSION: ${{ steps.extract_cli_version.outputs.CLI_VERSION }}
     steps:
       - name: Fetch Sources
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Add MSBuild to PATH
-        uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
+        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
         with:
           vs-version: '17.2'
       
@@ -94,7 +94,7 @@ jobs:
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create Release
-        uses: step-security/action-gh-release@277bfa82abcfdb73e5bbb19e213fd76532ee2be5 # v3.0.0
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v0.1.15
         with:
           tag_name: ${{ inputs.tag }}
           prerelease: ${{ inputs.dev }}
@@ -117,7 +117,7 @@ jobs:
       product_name: Visual Studio
       release_version: ${{ inputs.tag }}
       cli_release_version: ${{ needs.release.outputs.CLI_VERSION }}
-      release_author: "Sypher Team"
+      release_author: "Phoenix Team"
       release_url: https://github.com/Checkmarx/ast-visual-studio-extension/releases/tag/${{ inputs.tag }}
       jira_product_name: VISUAL_STUDIO
     secrets: inherit

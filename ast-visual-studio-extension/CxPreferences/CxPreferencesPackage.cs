@@ -11,7 +11,8 @@ namespace ast_visual_studio_extension.CxPreferences
      */
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [Guid(CxPreferencesPackage.PackageGuidString)]
-    [ProvideOptionPage(typeof(CxPreferencesModule), "Checkmarx", "Checkmarx settings", 0, 0, true)]
+    [ProvideOptionPage(typeof(CxPreferencesModule), "Checkmarx One", "Authentication", 0, 0, true)]
+    [ProvideOptionPage(typeof(CxOneAssistSettingsModule), "Checkmarx One", "Checkmarx One Assist", 0, 0, true)]
     public sealed class CxPreferencesPackage : AsyncPackage
     {
         public const string PackageGuidString = "e2527bed-dc52-4188-9e62-c8037a3fc796";

@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxPreferences;
 using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Imaging.Interop;
@@ -45,6 +45,23 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             Enum.TryParse(severity, out Severity resultSeverity);
 
             return resultSeverity;
+        }
+
+        /// <summary>
+        /// Create a wrapper to call CLI (no TreeView; for package/solution paths where UI error display is unavailable).
+        /// </summary>
+        public static CxCLI.CxWrapper GetCxWrapper(AsyncPackage package, Type type)
+        {
+            try
+            {
+                var preferences = (CxPreferencesModule)package.GetDialogPage(typeof(CxPreferencesModule));
+                CxConfig configuration = preferences.GetCxConfig();
+                return new CxCLI.CxWrapper(configuration, type);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
