@@ -15,14 +15,14 @@
 
 <br />
 <p align="center">
-  <a href="https://github.com/Checkmarx/ast-Visual Studio-plugin">
+  <a href="https://github.com/Checkmarx/ast-visual-studio-extension">
     <img src="https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/cx_x_icon.png" alt="Logo" width="80" height="80" />
   </a>
   <h3 align="center">CHECKMARX VISUAL STUDIO PLUGIN</h3>
   <p align="center">
-    <a href="https://docs.checkmarx.com/en/34965-68734-installing-and-setting-up-the-checkmarx-one-Visual Studio-pluging.html"><strong>Explore the docs »</strong></a>
+    <a href="https://docs.checkmarx.com/en/34965-68739-installing-and-setting-up-the-checkmarx-one-visual-studio-extension.html"><strong>Explore the docs »</strong></a>
     <br />
-    <a href="https://plugins.Visual Studio.com/plugin/17672-checkmarx-ast"><strong>Marketplace »</strong></a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=Checkmarx.checkmarx-one-visual-studio"><strong>Marketplace »</strong></a>
   </p>
 </p>
 <p  align="center">
@@ -33,9 +33,9 @@ The Checkmarx Visual Studio plugin enables you to import results from a Checkmar
 
 <br  />
 <p  align="center">
-<a  href="https://github.com/Checkmarx/ast-Visual Studio-plugin/issues/new">Report Bug</a>
+<a  href="https://github.com/Checkmarx/ast-visual-studio-extension/issues/new">Report Bug</a>
 ·
-<a  href="https://github.com/Checkmarx/ast-Visual Studio-plugin/issues/new">Request Feature</a>
+<a  href="https://github.com/Checkmarx/ast-visual-studio-extension/issues/new">Request Feature</a>
 
 </p>
 <br>
@@ -115,7 +115,7 @@ This tool enables Checkmarx One users to access the full functionality of your C
 
 ### Prerequisites  
 
-  - Supported for **Visual Studion 2022** and **Visual Studio 2026** - Community, Professional and Enterprise editions
+  - Supported for **Visual Studio 2022** and **Visual Studio 2026** - Community, Professional and Enterprise editions
   - Officially supported only for .NET Framework version 4.7.2, 4.8 or 4.8.1.
   - You have an **API key** for your Checkmarx One account.  See [Generating an API Key](https://checkmarx.com/resource/documents/en/34965-68618-generating-an-api-key.html)
 > 🔑 In order to use this integration for running an end-to-end flow of scanning a project and viewing results with the minimum required permissions, the API Key or user account should have the role `plugin-scanner`. Alternatively, they can have at a minimum the out-of-the-box composite role `ast-scanner` as well as the IAM role `default-roles`.
@@ -144,7 +144,7 @@ Developer Assist is an agentic AI tool that delivers real-time context-aware pre
 - AI powered explanation of risk details.
 
 ### Prerequisites
-  - Supported for **Visual Studion 2022** version 17.0+ and **Visual Studio 2026** - Community, Professional and Enterprise editions
+  - Supported for **Visual Studio 2022** version 17.0+ and **Visual Studio 2026** - Community, Professional and Enterprise editions
  - A Checkmarx One account with a **Checkmarx One Assist** or **AI protection** license, and with the **Checkmarx MCP** activated for your tenant account in the Checkmarx One UI under **Settings → Plugins**. This must be done by an account admin.
  - You have **GitHub Copilot** installed and running
 
@@ -164,7 +164,7 @@ Developer Assist is an agentic AI tool that delivers real-time context-aware pre
 
 ## Feedback
 
-We’d love to hear your feedback! If you come across a bug or have a feature request, please let us know by submitting an issue in [GitHub Issues](https://github.com/Checkmarx/ast-Visual Studio-plugin/issues).
+We’d love to hear your feedback! If you come across a bug or have a feature request, please let us know by submitting an issue in [GitHub Issues](https://github.com/Checkmarx/ast-visual-studio-extension/issues).
 
   
 ## Contribution
@@ -199,7 +199,7 @@ Checkmarx - Checkmarx Integrations Team
 
   
 
-Project Link: [https://github.com/Checkmarx/ast-Visual Studio-plugin](https://github.com/Checkmarx/ast-Visual Studio-plugin)
+Project Link: [https://github.com/Checkmarx/ast-visual-studio-extension](https://github.com/Checkmarx/ast-visual-studio-extension)
 
   
 
@@ -216,26 +216,26 @@ Find more integrations from our team [here](https://github.com/Checkmarx/ci-cd-i
 
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[contributors-shield]: https://img.shields.io/github/contributors/Checkmarx/ast-Visual Studio-plugin.svg
+[contributors-shield]: https://img.shields.io/github/contributors/Checkmarx/ast-visual-studio-extension.svg
 
-[contributors-url]: https://github.com/Checkmarx/ast-Visual Studio-plugin/graphs/contributors
+[contributors-url]: https://github.com/Checkmarx/ast-visual-studio-extension/graphs/contributors
 
-[forks-shield]: https://img.shields.io/github/forks/Checkmarx/ast-Visual Studio-plugin.svg
+[forks-shield]: https://img.shields.io/github/forks/Checkmarx/ast-visual-studio-extension.svg
 
-[forks-url]: https://github.com/Checkmarx/ast-Visual Studio-plugin/network/members
+[forks-url]: https://github.com/Checkmarx/ast-visual-studio-extension/network/members
 
-[stars-shield]: https://img.shields.io/github/stars/Checkmarx/ast-Visual Studio-plugin.svg
+[stars-shield]: https://img.shields.io/github/stars/Checkmarx/ast-visual-studio-extension.svg
 
-[stars-url]: https://github.com/Checkmarx/ast-Visual Studio-plugin/stargazers
+[stars-url]: https://github.com/Checkmarx/ast-visual-studio-extension/stargazers
 
-[issues-shield]: https://img.shields.io/github/issues/Checkmarx/ast-Visual Studio-plugin.svg
+[issues-shield]: https://img.shields.io/github/issues/Checkmarx/ast-visual-studio-extension.svg
 
-[issues-url]: https://github.com/Checkmarx/ast-Visual Studio-plugin/issues
+[issues-url]: https://github.com/Checkmarx/ast-visual-studio-extension/issues
 
-[license-shield]: https://img.shields.io/github/license/Checkmarx/ast-Visual Studio-plugin.svg
+[license-shield]: https://img.shields.io/github/license/Checkmarx/ast-visual-studio-extension.svg
 
-[license-url]: https://github.com/Checkmarx/ast-Visual Studio-plugin/blob/main/LICENSE
+[license-url]: https://github.com/Checkmarx/ast-visual-studio-extension/blob/main/LICENSE
 
-[install-shield]: https://img.shields.io/Visual Studio/plugin/d/17672-checkmarx-ast
+[install-shield]: https://img.shields.io/visual-studio-marketplace/d/Checkmarx.checkmarx-one-visual-studio
 
-[install-url]: https://plugins.Visual Studio.com/plugin/17672-checkmarx-ast
+[install-url]: https://marketplace.visualstudio.com/items?itemName=Checkmarx.checkmarx-one-visual-studio
