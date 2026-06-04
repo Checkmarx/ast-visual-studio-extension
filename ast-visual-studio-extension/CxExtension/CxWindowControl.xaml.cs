@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Panels;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
@@ -17,7 +17,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System;
-using ast_visual_studio_extension.CxExtension.Services;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime;
 
 namespace ast_visual_studio_extension.CxExtension
 {
@@ -29,7 +30,8 @@ namespace ast_visual_studio_extension.CxExtension
         private readonly AsyncPackage package;
         private readonly ResultVulnerabilitiesPanel resultsVulnPanel;
         private CancellationTokenSource typingCts;
-        private ASCAService _ascaService;
+
+        private bool _CxAssistDataLoaded = false;
 
         public CxWindowControl(AsyncPackage package)
         {
@@ -37,14 +39,16 @@ namespace ast_visual_studio_extension.CxExtension
 
             this.package = package;
 
+            // Subscribe to tab selection changed event to populate CxAssist data when tab is first shown
+            MainTabControl.SelectionChanged += MainTabControl_SelectionChanged;
+
             resultInfoPanel = new ResultInfoPanel(this);
 
             resultsVulnPanel = new ResultVulnerabilitiesPanel(package, this);
 
             ResultsTreePanel resultsTreePanel = new ResultsTreePanel(package, this, resultInfoPanel, resultsVulnPanel);
 
-            // Subscribe OnApply event in checkmarx settings window
-            CxPreferencesUI.GetInstance().OnApplySettingsEvent += CheckToolWindowPanel;
+            CxPreferencesUI.AuthStateChanged += OnAuthStateChanged;
 
             // Build CxToolbar
             cxToolbar = CxToolbar.Builder()
@@ -84,7 +88,95 @@ namespace ast_visual_studio_extension.CxExtension
 
             _ = InitializeAsync();
             cxToolbar.Init();
+            Loaded += CxWindowControl_Loaded;
         }
+
+        /// <summary>
+        /// When loaded, wire Findings tab Settings and other one-time setup.
+        /// </summary>
+        private void CxWindowControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= CxWindowControl_Loaded;
+            try
+            {
+                if (CxAssistFindingsControl != null)
+                {
+                    // Findings tab Settings button opens same Checkmarx settings as Scan Results
+                    CxAssistFindingsControl.SettingsClick += OnCxAssistSettingsClick;
+                    // Pass package so CxAssist can persist severity filter state (same as Scan Results)
+                    CxAssistFindingsControl.SetPackage(package);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CxWindowControl_Loaded: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Opens the same Checkmarx settings (options page) as Scan Results when user clicks Settings in the Findings tab.
+        /// </summary>
+        private void OnCxAssistSettingsClick(object sender, EventArgs e)
+        {
+            try
+            {
+                package?.ShowOptionPage(typeof(CxPreferencesModule));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CxWindowControl: open settings from Findings tab: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the CxAssist Findings Control from the CxAssist tab
+        /// </summary>
+        public CxAssist.UI.FindingsWindow.CxAssistFindingsControl GetCxAssistFindingsControl()
+        {
+            return CxAssistFindingsControl;
+        }
+
+        /// <summary>
+        /// Selects the Checkmarx One Assist Findings tab (e.g. from View Findings command).
+        /// </summary>
+        public void SwitchToCxAssistTab()
+        {
+            if (CxAssistFindingsTab != null && MainTabControl != null)
+                MainTabControl.SelectedItem = CxAssistFindingsTab;
+        }
+
+        private void MainTabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!ReferenceEquals(sender, MainTabControl))
+                return;
+
+            if (MainTabControl.SelectedItem != CxAssistFindingsTab || _CxAssistDataLoaded)
+                return;
+
+            _CxAssistDataLoaded = true;
+            try
+            {
+                if (CxAssistFindingsControl != null)
+                    CxAssistDisplayCoordinator.RefreshProblemWindow(CxAssistFindingsControl, null, null);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MainTabControl_SelectionChanged CxAssist refresh: {ex.Message}");
+            }
+        }
+
+        private void OnAuthStateChanged(bool isAuthenticated)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => OnAuthStateChanged(isAuthenticated));
+                return;
+            }
+
+            // Realtime registration + rescan: CxWindowPackage (PersistSettings → Resync) and logout unregister.
+            CheckToolWindowPanel();
+        }
+
         private async Task InitializeAsync()
         {
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
@@ -93,7 +185,7 @@ namespace ast_visual_studio_extension.CxExtension
             StateManager stateManager = StateManagerProvider.GetStateManager();
             cxToolbar.RefreshStates();
 
-            await RegisterAsca();
+            await RegisterRealtimeScanners(cxWrapper);
         }
 
         private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
@@ -170,30 +262,25 @@ namespace ast_visual_studio_extension.CxExtension
         }
 
 
-        private async Task RegisterAsca()
+        private Task RegisterRealtimeScanners(CxCLI.CxWrapper cxWrapper) =>
+            RealtimeScannerHost.RegisterAsync(package, cxWrapper, GetType());
+
+        /// <summary>
+        /// Public method to register realtime scanners if authenticated.
+        /// Called by SolutionEventHandler on solution open.
+        /// </summary>
+        public Task RegisterRealtimeScannersIfAuthenticatedAsync() =>
+            RealtimeScannerHost.RegisterFromPackageAsync(package, GetType());
+
+        /// <summary>
+        /// Public method to unregister realtime scanners.
+        /// Called by SolutionEventHandler on solution close.
+        /// </summary>
+        public Task UnregisterRealtimeScannersAsync() => RealtimeScannerHost.UnregisterAsync();
+
+        private void OnAssistSettingsApplied()
         {
-            try
-            {
-                var preferences = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
-                bool isAscaEnabled = preferences?.AscaCheckBox ?? false;
-
-                if (isAscaEnabled)
-                {
-                    var cxWrapper = CxUtils.GetCxWrapper(package, TreeViewResults, GetType());
-                    if (cxWrapper == null)
-                    {
-                        Debug.WriteLine("ASCA registration failed: CxWrapper is null");
-                        return;
-
-                    }
-                    _ascaService = ASCAService.GetInstance(cxWrapper);
-                    await _ascaService.InitializeASCAAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"ASCA initialization failed: {ex.Message}");
-            }
+            _ = RegisterRealtimeScannersIfAuthenticatedAsync();
         }
 
         /// <summary>
@@ -201,9 +288,10 @@ namespace ast_visual_studio_extension.CxExtension
         /// </summary>
         private void CheckToolWindowPanel()
         {
-            if (!CxUtils.AreCxCredentialsDefined(package))
+            if (!CxPreferencesUI.IsAuthenticated())
             {
-                CxPreferencesUI.GetInstance().OnApplySettingsEvent -= CheckToolWindowPanel;
+                CxPreferencesUI.AuthStateChanged -= OnAuthStateChanged;
+                _ = UnregisterRealtimeScannersOnLogoutAsync();
                 Content = new CxInitialPanel(package);
 
                 return;
@@ -223,6 +311,21 @@ namespace ast_visual_studio_extension.CxExtension
             CxToolbar.redrawExtension = true;
             cxToolbar.Init();
 
+        }
+
+        /// <summary>
+        /// JetBrains parity: GlobalScannerController.syncAll stops scanners when not authenticated.
+        /// </summary>
+        private async Task UnregisterRealtimeScannersOnLogoutAsync()
+        {
+            try
+            {
+                await UnregisterRealtimeScannersAsync();
+            }
+            catch (Exception ex)
+            {
+                OutputPaneWriter.WriteWarning($"Realtime scanners: unregister on logout failed: {ex.Message}");
+            }
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,16 +10,27 @@ namespace ast_visual_studio_extension.CxCLI
 {
     internal class Execution
     {
-        private readonly static string executablePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources", "cx.exe");
+        private const string CliExecutableName = "cx.exe";
+        private readonly static string executableDirectory = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "CxWrapper", "Resources");
+        private readonly static string executablePath = Path.Combine(executableDirectory, CliExecutableName);
 
         public static string ExecuteCommand(List<string> arguments, Func<string, string> lineParser)
         {
-            return InitProcess(arguments, lineParser);
+            return InitProcess(arguments, lineParser, throwOnNonZeroExit: true, out _);
+        }
+
+        /// <summary>
+        /// Runs the CLI and returns stdout (or stderr if stdout empty) without throwing when exit code is non-zero.
+        /// Use for realtime commands that may still print parseable JSON on partial failure.
+        /// </summary>
+        public static string ExecuteCommand(List<string> arguments, Func<string, string> lineParser, out int exitCode)
+        {
+            return InitProcess(arguments, lineParser, throwOnNonZeroExit: false, out exitCode);
         }
 
         public static string ExecuteCommand(List<string> arguments, string directory, string file)
         {
-            InitProcess(arguments, CheckValidJSONString);
+            InitProcess(arguments, CheckValidJSONString, throwOnNonZeroExit: true, out _);
 
             return File.ReadAllText(Path.Combine(directory, file));
         }
@@ -46,11 +57,16 @@ namespace ast_visual_studio_extension.CxCLI
             return isValidJsonString ? line : string.Empty;
         }
 
-        private static string InitProcess(List<string> arguments, Func<string, string> lineParser)
+        private static string InitProcess(List<string> arguments, Func<string, string> lineParser, bool throwOnNonZeroExit, out int exitCode)
         {
             string outputData = string.Empty;
             string errorData = string.Empty;
             var cliOutput = new List<string>();
+
+            if (!File.Exists(executablePath))
+            {
+                throw new CxException(1, $"Cx CLI not found at: {executablePath}. Ensure the extension is installed correctly and cx.exe is deployed.");
+            }
 
             using (var process = new Process
             {
@@ -84,12 +100,16 @@ namespace ast_visual_studio_extension.CxCLI
                 process.BeginErrorReadLine();
                 process.WaitForExit();
 
+                exitCode = process.ExitCode;
+
                 // Raise event with collected output
                 OnProcessCompleted?.Invoke(cliOutput);
 
-                if (process.ExitCode != 0)
+                string combinedForMessage = string.IsNullOrEmpty(errorData) ? outputData.Trim() : errorData.Trim();
+
+                if (exitCode != 0 && throwOnNonZeroExit)
                 {
-                    throw new CxException(process.ExitCode, string.IsNullOrEmpty(errorData) ? outputData.Trim() : errorData.Trim());
+                    throw new CxException(exitCode, combinedForMessage);
                 }
 
                 return !string.IsNullOrEmpty(outputData) ? outputData.Trim() : errorData.Trim();
@@ -102,7 +122,7 @@ namespace ast_visual_studio_extension.CxCLI
         {
             return new ProcessStartInfo
             {
-                FileName = executablePath,
+                FileName = Path.Combine(executableDirectory, CliExecutableName),
                 Arguments = BuildArguments(arguments),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

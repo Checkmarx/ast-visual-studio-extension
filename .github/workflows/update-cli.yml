@@ -5,14 +5,11 @@ on:
   repository_dispatch:
     types: [cli-version-update]
 
-permissions:
-  contents: read
-
 jobs:
   update-checkmarx-cli:
-    runs-on: cx-public-ubuntu-x64
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@v4
       - name: Get Latest Checkmarx API version
         id: checkmarx-ast-cli
         run: |
@@ -35,7 +32,7 @@ jobs:
       - name: Create Pull Request
         id: cretae_pull_request
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
-        uses: step-security/create-pull-request@50c103da2b9ca12cd5bc013fc6931051a5aa872b # v8.1.1
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c #v5
         with:
           token: ${{ secrets.AUTOMATION_TOKEN }}
           commit-message: Update checkmarx-ast-cli to ${{ steps.checkmarx-ast-cli.outputs.release_tag }}

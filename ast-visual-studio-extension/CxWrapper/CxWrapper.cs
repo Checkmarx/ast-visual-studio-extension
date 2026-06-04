@@ -1,10 +1,13 @@
-﻿using ast_visual_studio_extension.CxWrapper.Exceptions;
+using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
 using log4net;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -27,11 +30,32 @@ namespace ast_visual_studio_extension.CxCLI
             Execution.OnProcessCompleted += LogCliOutput;
         }
 
+        /// <summary>CWE-117: all messages pass through neutralization before log4net (Checkmarx Log_Forging).</summary>
+        private void LogInfoNeutralized(string message)
+        {
+            logger.Info(LogForgingSanitizer.StripLineTermination(message) ?? string.Empty);
+        }
+
+        private void LogErrorNeutralized(string message, Exception ex)
+        {
+            logger.Error(LogForgingSanitizer.StripLineTermination(message) ?? string.Empty, ex);
+        }
+
+        private void LogWarnNeutralized(string message)
+        {
+            logger.Warn(LogForgingSanitizer.StripLineTermination(message) ?? string.Empty);
+        }
+
+        private void LogDebugNeutralized(string message)
+        {
+            logger.Debug(LogForgingSanitizer.StripLineTermination(message) ?? string.Empty);
+        }
+
         private void LogCliOutput(List<string> cliOutput)
         {
             foreach (var line in cliOutput)
             {
-                logger.Info(line);
+                LogInfoNeutralized(line);
             }
         }
 
@@ -39,10 +63,35 @@ namespace ast_visual_studio_extension.CxCLI
         {
             try
             {
+                // Add agent flag to all commands
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
                 string commandLine = $"cx.exe {string.Join(" ", arguments)}";
-                logger.Info($"Executing CLI command: {commandLine}");
+                LogInfoNeutralized($"Executing CLI command: {commandLine}");
                 var result = Execution.ExecuteCommand(WithConfigArguments(arguments), resultHandler);
                 return result;
+            }
+            catch (Exception ex)
+            {
+                LogErrorNeutralized($"CLI command failed: {ex.Message}", ex);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs cx.exe and returns captured stdout (fallback: stderr) with process exit code, without throwing on non-zero exit.
+        /// </summary>
+        private string ExecuteCliCommand(List<string> arguments, Func<string, string> resultHandler, out int exitCode)
+        {
+            try
+            {
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
+                string commandLine = $"cx.exe {string.Join(" ", arguments)}";
+                logger.Info($"Executing CLI command: {commandLine}");
+                return Execution.ExecuteCommand(WithConfigArguments(arguments), resultHandler, out exitCode);
             }
             catch (Exception ex)
             {
@@ -55,15 +104,19 @@ namespace ast_visual_studio_extension.CxCLI
         {
             try
             {
+                // Add agent flag to all commands
+                arguments.Add(CxConstants.FLAG_AGENT);
+                arguments.Add(CxConstants.EXTENSION_AGENT);
+
                 string commandLine = $"cx.exe {string.Join(" ", arguments)}";
-                logger.Info(string.Format(CxConstants.LOG_CLI_COMMAND_EXECUTING, commandLine));
+                LogInfoNeutralized(string.Format(CxConstants.LOG_CLI_COMMAND_EXECUTING, commandLine));
                 var result = Execution.ExecuteCommand(WithConfigArguments(arguments), tempDir, fileName);
-                logger.Info(string.Format(CxConstants.LOG_CLI_COMMAND_COMPLETED, result?.Length ?? 0));
+                LogInfoNeutralized(string.Format(CxConstants.LOG_CLI_COMMAND_COMPLETED, result?.Length ?? 0));
                 return result;
             }
             catch (Exception ex)
             {
-                logger.Error(string.Format(CxConstants.LOG_CLI_COMMAND_ERROR, ex.Message), ex);
+                LogErrorNeutralized(string.Format(CxConstants.LOG_CLI_COMMAND_ERROR, ex.Message), ex);
                 throw;
             }
         }
@@ -73,32 +126,31 @@ namespace ast_visual_studio_extension.CxCLI
         /// </summary>
         /// <param name="fileSource">Source file path</param>
         /// <param name="ascaLatestVersion">If true, adds latest version flag</param>
-        /// <param name="agent">Agent identifier</param>
         /// <returns>CxAsca result</returns>
-        public CxAsca ScanAsca(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        public CxAsca ScanAsca(string fileSource, bool ascaLatestVersion = false)
         {
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_ASCA_SCAN_CMD, fileSource));
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_ASCA_SCAN_CMD, fileSource));
 
             List<string> arguments;
 
             if (string.IsNullOrWhiteSpace(fileSource))
             {
                 arguments = new List<string>
-        {
-            CxConstants.CLI_SCAN_CMD,
-            CxConstants.CLI_ASCA_CMD,
-            CxConstants.FLAG_ASCA_LATEST_VERSION
-        };
+                {
+                    CxConstants.CLI_SCAN_CMD,
+                    CxConstants.CLI_ASCA_CMD,
+                    CxConstants.FLAG_ASCA_LATEST_VERSION
+                };
             }
             else
             {
                 arguments = new List<string>
-        {
-            CxConstants.CLI_SCAN_CMD,
-            CxConstants.CLI_ASCA_CMD,
-            CxConstants.FLAG_FILE_SOURCE,
-            fileSource
-        };
+                {
+                    CxConstants.CLI_SCAN_CMD,
+                    CxConstants.CLI_ASCA_CMD,
+                    CxConstants.FLAG_FILE_SOURCE,
+                    fileSource
+                };
 
                 if (ascaLatestVersion)
                 {
@@ -106,35 +158,453 @@ namespace ast_visual_studio_extension.CxCLI
                 }
             }
 
-            AppendAgentToArguments(agent, arguments);
+            // Note: --agent flag is automatically added by ExecuteCliCommand
 
             string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no ASCA issues found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new CxAsca(null, false, "No issues found", new List<CxAscaDetail>(), null);
+            }
+
             return JsonConvert.DeserializeObject<CxAsca>(result);
         }
 
         /// <summary>
         /// Scan file with ASCA asynchronously
         /// </summary>
-        public async Task<CxAsca> ScanAscaAsync(string fileSource, bool ascaLatestVersion = false, string agent = null)
+        public async Task<CxAsca> ScanAscaAsync(string fileSource, bool ascaLatestVersion = false)
         {
-            return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion, agent));
+            return await Task.Run(() => ScanAsca(fileSource, ascaLatestVersion));
         }
 
-        private void AppendAgentToArguments(string agent, List<string> arguments)
+        /// <summary>
+        /// Perform OSS realtime scan on a source file or directory
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>OSS realtime scan results</returns>
+        public OssRealtimeResults OssRealtimeScan(string sourcePath, string ignoredFilePath = null)
         {
-            arguments.Add(CxConstants.FLAG_AGENT);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_OSS_REALTIME_SCAN_CMD);
+            LogInfoNeutralized($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
 
-            if (!string.IsNullOrEmpty(agent))
+            List<string> arguments = new List<string>
             {
-                arguments.Add(agent);
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_OSS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no packages/vulnerabilities found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new OssRealtimeResults(new List<OssRealtimeScanPackage>());
+            }
+
+            return JsonConvert.DeserializeObject<OssRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform OSS realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>OSS realtime scan results</returns>
+        public async Task<OssRealtimeResults> OssRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
+        {
+            return await Task.Run(() => OssRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Perform Secrets realtime scan to detect exposed secrets in source code.
+        /// Executes 'cx scan secrets-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Secrets realtime scan results containing detected secrets</returns>
+        public SecretsRealtimeResults SecretsRealtimeScan(string sourcePath, string ignoredFilePath = null)
+        {
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_SECRETS_REALTIME_SCAN_CMD);
+            LogInfoNeutralized($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_SECRETS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty response
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return new SecretsRealtimeResults(new List<Secret>());
+            }
+
+            // CLI returns array of secrets directly, not wrapped in object
+            string trimmed = result.Trim();
+            if (trimmed == "[]")
+            {
+                return new SecretsRealtimeResults(new List<Secret>());
+            }
+
+            // Check if result starts with '[' (array) - CLI returns array directly
+            if (trimmed.StartsWith("["))
+            {
+                var secrets = JsonConvert.DeserializeObject<List<Secret>>(result);
+                return new SecretsRealtimeResults(secrets ?? new List<Secret>());
+            }
+
+            // Otherwise try to deserialize as object (backward compatibility)
+            return JsonConvert.DeserializeObject<SecretsRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform Secrets realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Secrets realtime scan results containing detected secrets</returns>
+        public async Task<SecretsRealtimeResults> SecretsRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
+        {
+            return await Task.Run(() => SecretsRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Perform IAC (Infrastructure as Code) realtime scan to detect security issues in configuration files.
+        /// Executes 'cx scan iac-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>IAC realtime scan results containing detected issues</returns>
+        public IacRealtimeResults IacRealtimeScan(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_IAC_REALTIME_SCAN_CMD);
+            LogInfoNeutralized($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}, Engine: {engine ?? "default"}");
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_IAC_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            if (!string.IsNullOrEmpty(engine))
+            {
+                arguments.Add(CxConstants.FLAG_ENGINE);
+                arguments.Add(engine);
+            }
+
+            string result = ExecuteCliCommand(arguments, Execution.CheckValidJSONString);
+
+            // Handle empty array response from CLI (when no IaC issues found)
+            if (string.IsNullOrWhiteSpace(result) || result.Trim() == "[]")
+            {
+                return new IacRealtimeResults(new List<IacIssue>());
+            }
+
+            // CLI returns a JSON array at root; model uses { "Results": [...] } for object-shaped responses.
+            string trimmed = result.TrimStart();
+            if (trimmed.Length > 0 && trimmed[0] == '[')
+            {
+                var issues = JsonConvert.DeserializeObject<List<IacIssue>>(result);
+                return new IacRealtimeResults(issues ?? new List<IacIssue>());
+            }
+
+            return JsonConvert.DeserializeObject<IacRealtimeResults>(result);
+        }
+
+        /// <summary>
+        /// Perform IAC realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the source file or directory to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <param name="engine">Optional container engine to use (e.g., "docker", "podman")</param>
+        /// <returns>IAC realtime scan results containing detected issues</returns>
+        public async Task<IacRealtimeResults> IacRealtimeScanAsync(string sourcePath, string ignoredFilePath = null, string engine = null)
+        {
+            return await Task.Run(() => IacRealtimeScan(sourcePath, ignoredFilePath, engine));
+        }
+
+        /// <summary>
+        /// Check if a container engine (e.g., Docker, Podman) is installed and accessible on the system.
+        /// Runs '&lt;engineName&gt; --version' to verify the engine is available.
+        /// </summary>
+        /// <param name="engineName">The name of the container engine to check (e.g., "docker", "podman")</param>
+        /// <returns>The engine name if it is installed and accessible</returns>
+        /// <exception cref="CxException">Thrown when the engine is not installed or not accessible from the system PATH</exception>
+        public string CheckEngineExist(string engineName)
+        {
+            if (string.IsNullOrEmpty(engineName))
+            {
+                throw new ArgumentNullException(nameof(engineName), "Engine name must not be null or empty.");
+            }
+
+            // Restrict to known container engine names to prevent arbitrary command execution
+            string normalizedName = engineName.Trim().ToLowerInvariant();
+            if (normalizedName != CxConstants.DOCKER && normalizedName != CxConstants.PODMAN)
+            {
+                throw new ArgumentException($"Unsupported container engine: {engineName}. Supported engines are '{CxConstants.DOCKER}' and '{CxConstants.PODMAN}'.", nameof(engineName));
+            }
+
+            LogInfoNeutralized(string.Format(CxConstants.LOG_CHECKING_ENGINE_EXIST, normalizedName));
+
+            return CheckEngine(normalizedName);
+        }
+
+        /// <summary>
+        /// Check if a container engine is installed asynchronously
+        /// </summary>
+        /// <param name="engineName">The name of the container engine to check (e.g., "docker", "podman")</param>
+        /// <returns>True if the engine is installed and accessible, false otherwise</returns>
+        public async Task<bool> CheckEngineExistAsync(string engineName)
+        {
+            try
+            {
+                await Task.Run(() => CheckEngineExist(engineName));
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Verify that the specified container engine is installed by running '&lt;engineName&gt; --version'.
+        /// </summary>
+        /// <param name="engineName">The name of the container engine executable</param>
+        /// <returns>The engine name if verification succeeds</returns>
+        /// <exception cref="CxException">Thrown when the engine is not found or the version check fails</exception>
+        private string CheckEngine(string engineName)
+        {
+            // Map validated engine name to a hardcoded executable to prevent OS command injection.
+            // The caller (CheckEngineExist) already validates engineName against known constants,
+            // but we resolve to hardcoded strings here so no dynamic value reaches ProcessStartInfo.FileName.
+            string hardcodedFileName;
+            if (engineName == CxConstants.DOCKER)
+            {
+                hardcodedFileName = "docker";
+            }
+            else if (engineName == CxConstants.PODMAN)
+            {
+                hardcodedFileName = "podman";
             }
             else
             {
-                arguments.Add(CxConstants.EXTENSION_AGENT);
+                throw new ArgumentException($"Unsupported container engine: {engineName}.", nameof(engineName));
+            }
+
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = hardcodedFileName,
+                        Arguments = "--version",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                process.WaitForExit(5000); // 5 second timeout
+
+                if (process.ExitCode == 0)
+                {
+                    LogInfoNeutralized($"Container engine '{hardcodedFileName}' is installed and accessible.");
+                    return hardcodedFileName;
+                }
+
+                throw new CxException(1, $"{hardcodedFileName} is not installed or is not accessible from the system PATH.");
+            }
+            catch (CxException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                LogErrorNeutralized($"Failed to verify container engine '{hardcodedFileName}': {ex.Message}", ex);
+                throw new CxException(1, $"{hardcodedFileName} is not installed or is not accessible from the system PATH.");
             }
         }
 
+        /// <summary>
+        /// Perform Containers realtime scan to detect vulnerabilities in container images.
+        /// Executes 'cx scan containers-realtime -s {sourcePath}' command.
+        /// </summary>
+        /// <remarks>
+        /// The CLI does not support <c>--engine</c> for <c>containers-realtime</c> (only <c>iac-realtime</c> does).
+        /// Callers should use <see cref="CheckEngineExistAsync"/> with the user&apos;s container tool if a runtime must exist before scanning.
+        /// </remarks>
+        /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
+        public ContainersRealtimeResults ContainersRealtimeScan(string sourcePath, string ignoredFilePath = null)
+        {
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_CONTAINERS_REALTIME_SCAN_CMD);
+            LogInfoNeutralized($"Source: {sourcePath}, IgnoredFilePath: {ignoredFilePath ?? "none"}");
 
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_SCAN_CMD,
+                CxConstants.CLI_CONTAINERS_REALTIME_CMD,
+                CxConstants.FLAG_SOURCE,
+                sourcePath
+            };
+
+            if (!string.IsNullOrEmpty(ignoredFilePath))
+            {
+                arguments.Add(CxConstants.FLAG_IGNORED_FILE_PATH);
+                arguments.Add(ignoredFilePath);
+            }
+
+            // Do not use CheckValidJSONString: it parses each stdout line in isolation. The CLI can emit
+            // pretty-printed or multi-line JSON; line-by-line validation drops the payload and breaks the scan.
+            // Do not use the throwing ExecuteCliCommand path: Execution.InitProcess throws CxException on any
+            // non-zero exit, but containers-realtime may exit non-zero while still emitting JSON (or stderr-only diagnostics).
+            string result = ExecuteCliCommand(arguments, line => line, out int exitCode);
+
+            if (exitCode != 0)
+            {
+                logger.Warn($"scan containers-realtime process exited with code {exitCode}. Attempting to parse output.");
+            }
+
+            if (TryDeserializeContainersRealtime(result, out var deserialized))
+                return deserialized;
+
+            if (exitCode != 0)
+                logger.Warn("containers-realtime: could not parse CLI output after non-zero exit; returning empty results.");
+
+            return new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+        }
+
+        /// <summary>
+        /// Parses CLI JSON into <see cref="ContainersRealtimeResults"/>; returns true if empty payload or valid JSON.
+        /// </summary>
+        private static bool TryDeserializeContainersRealtime(string result, out ContainersRealtimeResults deserialized)
+        {
+            deserialized = null;
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                deserialized = new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+                return true;
+            }
+
+            // CLI may print non-JSON lines before the payload; find first { or [
+            string payload = IsolateContainersJsonPayload(result);
+
+            if (IsEmptyContainersRealtimeCliOutput(payload))
+            {
+                deserialized = new ContainersRealtimeResults(new List<ContainersRealtimeImage>());
+                return true;
+            }
+
+            try
+            {
+                string trimmed = payload.TrimStart();
+                if (trimmed.Length > 0 && trimmed[0] == '[')
+                {
+                    var images = JsonConvert.DeserializeObject<List<ContainersRealtimeImage>>(payload);
+                    deserialized = new ContainersRealtimeResults(images ?? new List<ContainersRealtimeImage>());
+                    return true;
+                }
+
+                deserialized = JsonConvert.DeserializeObject<ContainersRealtimeResults>(payload);
+                return deserialized != null;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns the substring starting at the first <c>{</c> or <c>[</c> so optional log prefixes do not break JSON parsing.
+        /// </summary>
+        private static string IsolateContainersJsonPayload(string raw)
+        {
+            var s = raw.Trim();
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (c == '{' || c == '[')
+                    return s.Substring(i);
+            }
+
+            return s;
+        }
+
+        /// <summary>
+        /// Perform Containers realtime scan asynchronously
+        /// </summary>
+        /// <param name="sourcePath">Path to the Dockerfile or docker-compose file to scan</param>
+        /// <param name="ignoredFilePath">Optional path to a file containing rules/findings to ignore</param>
+        /// <returns>Containers realtime scan results containing detected vulnerabilities</returns>
+        public async Task<ContainersRealtimeResults> ContainersRealtimeScanAsync(string sourcePath, string ignoredFilePath = null)
+        {
+            return await Task.Run(() => ContainersRealtimeScan(sourcePath, ignoredFilePath));
+        }
+
+        /// <summary>
+        /// Detects empty/no-findings payloads from <c>cx scan containers-realtime</c> (bare <c>[]</c>, empty object,
+        /// or <c>{"Images":[]}</c> / camelCase <c>images</c>).
+        /// </summary>
+        private static bool IsEmptyContainersRealtimeCliOutput(string result)
+        {
+            var trimmed = (result ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed == "[]" || trimmed == "{}")
+                return true;
+
+            try
+            {
+                var token = JToken.Parse(trimmed);
+                if (token.Type == JTokenType.Array)
+                    return !token.HasValues;
+
+                if (token.Type == JTokenType.Object)
+                {
+                    var images = token["Images"] ?? token["images"];
+                    return images is JArray arr && arr.Count == 0;
+                }
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Auth Validate command
@@ -142,7 +612,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public string AuthValidate()
         {
-            logger.Info(CxConstants.LOG_RUNNING_AUTH_VALIDATE_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_AUTH_VALIDATE_CMD);
 
             List<string> authValidateArguments = new List<string>
             {
@@ -186,7 +656,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public string GetResults(string scanId, ReportFormat reportFormat)
         {
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_RESULTS_CMD, scanId));
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_GET_RESULTS_CMD, scanId));
 
             string tempDir = Path.GetTempPath();
             // Remove backslashes at the end of path, due to paths with spaces
@@ -207,7 +677,7 @@ namespace ast_visual_studio_extension.CxCLI
                 CxConstants.FLAG_REPORT_FORMAT, reportFormat.ToString(),
                 CxConstants.FLAG_OUTPUT_NAME, fileName,
                 CxConstants.FLAG_OUTPUT_PATH, tempDir,
-                CxConstants.FLAG_AGENT, CxCLI.CxConstants.EXTENSION_AGENT,
+                // Note: --agent flag is automatically added by ExecuteCliCommand
             };
 
             string extension = string.Empty;
@@ -244,7 +714,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<Project> GetProjects(string filter)
         {
-            logger.Info(CxConstants.LOG_RUNNING_GET_PROJECTS_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_GET_PROJECTS_CMD);
 
             List<string> resultsArguments = new List<string>
             {
@@ -268,7 +738,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public Project ProjectShow(string projectId)
         {
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_PROJECT_SHOW_CMD, projectId));
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_PROJECT_SHOW_CMD, projectId));
 
             List<string> projectShowArguments = new List<string>
             {
@@ -292,7 +762,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<string> GetBranches(string projectId)
         {
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_BRANCHES_CMD, projectId));
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_GET_BRANCHES_CMD, projectId));
 
             List<string> branchesArguments = new List<string>
             {
@@ -315,7 +785,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<Scan> GetScans(string projectId, string branch)
         {
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_SCANS_FOR_BRANCH_CMD, branch));
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_GET_SCANS_FOR_BRANCH_CMD, branch));
 
             string filter = string.Format(CxConstants.FILTER_SCANS_FOR_BRANCH, projectId, branch);
 
@@ -328,7 +798,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<Scan> GetScans()
         {
-            logger.Info(CxConstants.LOG_RUNNING_GET_SCANS_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_GET_SCANS_CMD);
 
             return GetScans(string.Empty);
         }
@@ -366,7 +836,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public Scan ScanShow(string scanId)
         {
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_GET_SCAN_DETAILS_CMD, scanId));
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_GET_SCAN_DETAILS_CMD, scanId));
 
             List<string> scanArguments = new List<string>
             {
@@ -404,8 +874,8 @@ namespace ast_visual_studio_extension.CxCLI
         /// <param name="severity"></param>
         public void TriageUpdate(string projectId, string similarityId, string scanType, string state, string comment, string severity)
         {
-            logger.Info(CxConstants.LOG_RUNNING_TRIAGE_UPDATE_CMD);
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD, similarityId, state, severity));
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_TRIAGE_UPDATE_CMD);
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_TRIAGE_UPDATE_INFO_CMD, similarityId, state, severity));
 
             List<string> triageArguments = new List<string>
             {
@@ -442,8 +912,8 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<Predicate> TriageShow(string projectId, string similarityId, string scanType)
         {
-            logger.Info(CxConstants.LOG_RUNNING_TRIAGE_SHOW_CMD);
-            logger.Info(string.Format(CxConstants.LOG_RUNNING_TRIAGE_SHOW_INFO_CMD, projectId, similarityId, scanType));
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_TRIAGE_SHOW_CMD);
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_TRIAGE_SHOW_INFO_CMD, projectId, similarityId, scanType));
 
             List<string> triageArguments = new List<string>
             {
@@ -472,7 +942,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<State> TriageGetStates(bool all)
         {
-            logger.Info(CxConstants.LOG_RUNNING_TRIAGE_GET_STATES_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_TRIAGE_GET_STATES_CMD);
 
             List<string> triageArguments = new List<string>
             {
@@ -499,7 +969,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<CodeBashing> CodeBashingList(string cweId, string language, string queryName)
         {
-            logger.Info(CxConstants.LOG_RUNNING_CODEBASHING_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_CODEBASHING_CMD);
 
             List<string> codebashingArguments = new List<string>
             {
@@ -546,7 +1016,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public List<TenantSetting> TenantSettings()
         {
-            logger.Info(CxConstants.LOG_RUNNING_TENANT_SETTINGS_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_TENANT_SETTINGS_CMD);
 
             List<string> arguments = new List<string>
             {
@@ -588,6 +1058,194 @@ namespace ast_visual_studio_extension.CxCLI
         }
 
         /// <summary>
+        /// Check tenant settings for AI MCP Server enabled.
+        /// Mirrors the aiMcpServerEnabled() method in the VSCode extension JS wrapper:
+        /// runs "utils tenant", looks up key "scan.config.plugins.aiMcpServer",
+        /// and returns true only when the value is exactly "true".
+        /// </summary>
+        /// <returns>true if the tenant has AI MCP Server enabled; false if disabled or key is absent.</returns>
+        public bool AiMcpServerEnabled()
+        {
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_AI_MCP_SERVER_ENABLED_CMD);
+
+            List<TenantSetting> tenantSettings = TenantSettings();
+            string value = tenantSettings.Find(s => s.Key.Equals(CxConstants.AI_MCP_SERVER_KEY))?.Value;
+            return bool.TryParse(value, out bool result) && result;
+        }
+
+        /// <summary>
+        /// Async version of AiMcpServerEnabled.
+        /// </summary>
+        public async Task<bool> AiMcpServerEnabledAsync()
+        {
+            return await Task.Run(() => AiMcpServerEnabled());
+        }
+
+        /// <summary>
+        /// Core telemetry AI event method - matches JavaWrapper signature exactly.
+        /// Executes telemetry AI command to collect telemetry data for user interactions related to AI features.
+        /// </summary>
+        /// <param name="aiProvider">AI provider name (e.g., "Copilot")</param>
+        /// <param name="eventType">Event type (e.g., "click")</param>
+        /// <param name="subType">Event subtype (e.g., "ast-results.viewPackageDetails")</param>
+        /// <param name="engine">Engine type (e.g., "secrets")</param>
+        /// <param name="problemSeverity">Severity level (e.g., "high")</param>
+        /// <param name="scanType">Type of scan (e.g., "Oss", "Secrets", "IaC")</param>
+        /// <param name="status">Status/severity for detection logs (e.g., "High", "Critical")</param>
+        /// <param name="totalCount">Number of issues detected for the given severity</param>
+        public void TelemetryAIEvent(
+            string aiProvider,
+            string eventType,
+            string subType,
+            string engine,
+            string problemSeverity,
+            string scanType,
+            string status,
+            int totalCount)
+        {
+            LogInfoNeutralized(string.Format(CxConstants.LOG_RUNNING_TELEMETRY_AI_CMD, aiProvider, eventType, subType));
+
+            List<string> arguments = new List<string>
+            {
+                CxConstants.CLI_TELEMETRY_CMD,
+                CxConstants.CLI_TELEMETRY_AI_CMD,
+                CxConstants.FLAG_AI_PROVIDER,
+                aiProvider ?? string.Empty,
+                CxConstants.FLAG_TYPE,
+                eventType ?? string.Empty,
+                CxConstants.FLAG_SUB_TYPE,
+                subType ?? string.Empty,
+                CxConstants.FLAG_ENGINE,
+                engine ?? string.Empty,
+                CxConstants.FLAG_PROBLEM_SEVERITY,
+                problemSeverity ?? string.Empty,
+                CxConstants.FLAG_SCAN_TYPE,
+                scanType ?? string.Empty,
+                CxConstants.FLAG_STATUS,
+                status ?? string.Empty,
+                CxConstants.FLAG_TOTAL_COUNT,
+                totalCount.ToString()
+            };
+
+            // Note: --agent flag is automatically added by ExecuteCliCommand
+            ExecuteCliCommand(arguments, line => line);
+        }
+
+        /// <summary>
+        /// Logs user interaction telemetry (e.g., clicks on "Fix with AI", "View Details").
+        /// This is a convenience wrapper for user event logging.
+        /// </summary>
+        /// <param name="eventType">Event type (e.g., "click")</param>
+        /// <param name="subType">Event subtype (e.g., "fixWithAIChat", "viewDetails")</param>
+        /// <param name="engine">Engine type (e.g., "Oss", "Secrets", "IaC", "Asca", "Containers")</param>
+        /// <param name="problemSeverity">Severity level (e.g., "High", "Critical", "Medium", "Low")</param>
+        public void LogUserEventTelemetry(string eventType, string subType, string engine, string problemSeverity)
+        {
+            TelemetryAIEvent(
+                aiProvider: "Copilot",
+                eventType: eventType,
+                subType: subType,
+                engine: engine,
+                problemSeverity: problemSeverity,
+                scanType: string.Empty,
+                status: string.Empty,
+                totalCount: 0
+            );
+        }
+
+        /// <summary>
+        /// Logs scan detection telemetry (issue counts by severity).
+        /// This is a convenience wrapper for detection result logging.
+        /// </summary>
+        /// <param name="scanType">Type of scan (e.g., "Oss", "Secrets", "IaC", "Asca", "Containers")</param>
+        /// <param name="status">Severity level (e.g., "Critical", "High", "Medium", "Low")</param>
+        /// <param name="totalCount">Number of issues detected for the given severity</param>
+        public void LogDetectionTelemetry(string scanType, string status, int totalCount)
+        {
+            if (totalCount <= 0)
+            {
+                LogDebugNeutralized($"Telemetry: No issues to log for scan type: {scanType}, status: {status}");
+                return;
+            }
+
+            TelemetryAIEvent(
+                aiProvider: string.Empty,
+                eventType: string.Empty,
+                subType: string.Empty,
+                engine: string.Empty,
+                problemSeverity: string.Empty,
+                scanType: scanType,
+                status: status,
+                totalCount: totalCount
+            );
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for non-blocking telemetry logging.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void TelemetryAIEventFireAndForget(
+            string aiProvider,
+            string eventType,
+            string subType, 
+            string engine,
+            string problemSeverity,
+            string scanType,
+            string status,
+            int totalCount)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    TelemetryAIEvent(aiProvider, eventType, subType, engine, problemSeverity, scanType, status, totalCount);
+                }
+                catch (Exception ex)
+                {
+                    LogWarnNeutralized($"Telemetry: Failed to log telemetry event: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for user event telemetry.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void LogUserEventTelemetryFireAndForget(string eventType, string subType, string engine, string problemSeverity)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    LogUserEventTelemetry(eventType, subType, engine, problemSeverity);
+                }
+                catch (Exception ex)
+                {
+                    LogWarnNeutralized($"Telemetry: Failed to log user event telemetry: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Fire-and-forget version for detection telemetry.
+        /// Exceptions are caught and logged as warnings.
+        /// </summary>
+        public void LogDetectionTelemetryFireAndForget(string scanType, string status, int totalCount)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    LogDetectionTelemetry(scanType, status, totalCount);
+                }
+                catch (Exception ex)
+                {
+                    LogWarnNeutralized($"Telemetry: Failed to log detection telemetry: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
         /// Scan create command
         /// </summary>
         /// <param name="parameters"></param>
@@ -595,7 +1253,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public Scan ScanCreate(Dictionary<string, string> parameters, string additionalParameters)
         {
-            logger.Info(CxConstants.LOG_RUNNING_SCAN_CREATE_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_SCAN_CREATE_CMD);
 
             List<string> scanCreateArguments = new List<string>
             {
@@ -636,7 +1294,7 @@ namespace ast_visual_studio_extension.CxCLI
         /// <returns></returns>
         public void ScanCancel(string scanId)
         {
-            logger.Info(CxConstants.LOG_RUNNING_SCAN_CANCEL_CMD);
+            LogInfoNeutralized(CxConstants.LOG_RUNNING_SCAN_CANCEL_CMD);
 
             List<string> scanCancelArguments = new List<string>
             {
