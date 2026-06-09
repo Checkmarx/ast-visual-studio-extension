@@ -34,7 +34,7 @@ on:
 
 jobs:
   release:
-    runs-on: windows-latest
+    runs-on: cx-public-windows-x64
     outputs:
       CLI_VERSION: ${{ steps.extract_cli_version.outputs.CLI_VERSION }}
     steps:
