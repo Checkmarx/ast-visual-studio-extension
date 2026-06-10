@@ -158,7 +158,7 @@ Developer Assist is an agentic AI tool that delivers real-time context-aware pre
 
 ### Usage
 **GIF - AI Remediation with Developer Assist**
-[PLACEHOLDER]
+![AI Remediation with Developer Assist](https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/vscode_running_scan.gif "Running a Scan from the IDE")
 * Learn about using Checkmarx Developer Assist [here](https://docs.checkmarx.com/en/34965-405960-checkmarx-developer-assist.html)
 
 
