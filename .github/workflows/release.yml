@@ -81,11 +81,12 @@ jobs:
           git push origin "${tag}"
 
       - name: Increment VSIX version
-        id: vsix_version
-        uses: timheuer/vsix-version-stamp@9d38292e99e54046455bb68c6a2b5113d269a7d0 #v2
-        with:
-          manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
-          version-number: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          version="${{ inputs.tag }}"
+          manifest="ast-visual-studio-extension/source.extension.vsixmanifest"
+          sed -i "s/Version=\"[^\"]*\"/Version=\"$version\"/" "$manifest"
+          echo "Updated VSIX version to $version"
 
       - name: Restore NuGet packages
         run: msbuild -t:restore
