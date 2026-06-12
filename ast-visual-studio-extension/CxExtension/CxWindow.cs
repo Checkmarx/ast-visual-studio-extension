@@ -1,4 +1,5 @@
-﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxPreferences;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;
@@ -17,8 +18,11 @@ namespace ast_visual_studio_extension.CxExtension
             Caption = CxConstants.EXTENSION_TITLE;
 
             AsyncPackage package = context as AsyncPackage;
+            // Package init also restores session; this call covers the race where the tool window
+            // is created before package initialization finishes.
+            _ = CxPreferencesUI.TryRestoreAuthenticatedSessionAsync(package);
 
-            if (CxUtils.AreCxCredentialsDefined(package))
+            if (CxPreferencesUI.IsAuthenticated())
             {
                 Content = new CxWindowControl(package);
             }

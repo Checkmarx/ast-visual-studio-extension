@@ -10,6 +10,10 @@ namespace ast_visual_studio_extension.CxWrapper.Models
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
         public bool AscaEnabled { get; set; } = false;
+        public bool OssRealtimeEnabled { get; set; } = false;
+        public bool SecretDetectionEnabled { get; set; } = false;
+        public bool ContainersRealtimeEnabled { get; set; } = false;
+        public bool IacEnabled { get; set; } = false;
 
 
         public List<string> ToArguments()
@@ -38,6 +42,22 @@ namespace ast_visual_studio_extension.CxWrapper.Models
             {
                 throw new InvalidCLIConfigException(CxConstants.EXCEPTION_CREDENTIALS_NOT_SET);
             }
+        }
+
+        /// <summary>
+        /// Returns a sanitized string representation for logging.
+        /// Redacts sensitive fields (ApiKey, AdditionalParameters) to prevent log forging attacks.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"CxConfig {{ " +
+                   $"ApiKey=[REDACTED], " +
+                   $"AdditionalParameters=[REDACTED], " +
+                   $"AscaEnabled={AscaEnabled}, " +
+                   $"OssRealtimeEnabled={OssRealtimeEnabled}, " +
+                   $"SecretDetectionEnabled={SecretDetectionEnabled}, " +
+                   $"ContainersRealtimeEnabled={ContainersRealtimeEnabled}, " +
+                   $"IacEnabled={IacEnabled} }}";
         }
 
         public sealed class InvalidCLIConfigException : Exception

@@ -1,0 +1,237 @@
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Settings;
+using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using Microsoft.VisualStudio.Shell.Settings;
+
+namespace ast_visual_studio_extension.CxPreferences
+{
+    /// <summary>
+    /// Checkmarx One Assist Settings Page (child page)
+    /// </summary>
+    [Guid("e2527bed-dc52-4188-9e62-c8037a3fc797")]
+    public class CxOneAssistSettingsModule : DialogPage
+    {
+        private static readonly string UserPreferencesCollection = "Checkmarx/CxAssist/UserPreferences";
+
+        /// <summary>
+        /// Fired after Assist realtime-related settings are persisted (checkboxes, Apply, welcome dialog).
+        /// JetBrains parity: GlobalScannerController settingsApplied / syncAll.
+        /// </summary>
+        public static event EventHandler RealtimeAssistSettingsChanged;
+
+        public bool AscaCheckBox { get; set; } = true;
+        public bool OssRealtimeCheckBox { get; set; } = true;
+        public bool SecretDetectionRealtimeCheckBox { get; set; } = true;
+        public bool ContainersRealtimeCheckBox { get; set; } = true;
+        public bool IacRealtimeCheckBox { get; set; } = true;
+        public string ContainersTool { get; set; } = "docker";
+
+        // MCP and welcome-page state flags
+        public bool McpEnabled { get; set; } = false;
+        public bool McpStatusChecked { get; set; } = false;
+        public bool WelcomeShown { get; set; } = false;
+
+        /// <summary>
+        /// Product entitlement flags (cached during authentication). JetBrains: GlobalSettingsState DevAssist/OneAssist license.
+        /// Default true until auth flow sets them from the tenant.
+        /// </summary>
+        public bool DevAssistLicenseEnabled { get; set; } = true;
+
+        public bool OneAssistLicenseEnabled { get; set; } = true;
+
+        // Preserve user scanner preferences across MCP enable/disable transitions (persisted to registry, not DialogPage)
+        internal bool UserPreferencesSet { get; set; } = false;
+        internal bool UserPrefAscaRealtime { get; set; } = true;
+        internal bool UserPrefOssRealtime { get; set; } = true;
+        internal bool UserPrefSecretDetectionRealtime { get; set; } = true;
+        internal bool UserPrefContainersRealtime { get; set; } = true;
+        internal bool UserPrefIacRealtime { get; set; } = true;
+
+        protected override IWin32Window Window
+        {
+            get
+            {
+                CxOneAssistSettingsUI settingsUI = CxOneAssistSettingsUI.GetInstance();
+                settingsUI.Initialize(this);
+                return settingsUI;
+            }
+        }
+
+        /// <summary>
+        /// After registry reload (e.g. Options Cancel), sync the custom Assist UI from this page's properties.
+        /// Also load user preferences from registry.
+        /// </summary>
+        public override void LoadSettingsFromStorage()
+        {
+            base.LoadSettingsFromStorage();
+            LoadUserPreferencesFromRegistry();
+            try
+            {
+                CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CxOneAssistSettingsModule.LoadSettingsFromStorage UI refresh: {ex.Message}");
+            }
+        }
+        internal Microsoft.VisualStudio.Shell.Package GetOwnerPackage()
+            => GetService(typeof(Microsoft.VisualStudio.Shell.Package)) as Microsoft.VisualStudio.Shell.Package;
+
+        /// <summary>
+        /// On apply settings
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnApply(PageApplyEventArgs e)
+        {
+            // Flush UI → properties so serialization matches the Tools → Options surface (also marks page dirty via property updates when handlers ran).
+            CxOneAssistSettingsUI.GetInstance().ApplyUiToModule(this);
+            base.OnApply(e);
+            // Treat OK/Apply on Assist page as the baseline for logout / next login (per-engine toggles).
+            SaveCurrentSettingsAsUserPreferences();
+            PersistSettings();
+        }
+
+        /// <summary>
+        /// Explicitly persist all module settings to the registry and notify listeners to resync realtime scanners.
+        /// Also syncs scanner enable/disable state so ClearFindingsFromDisabledScanners() has correct state.
+        /// </summary>
+        public void PersistSettings()
+        {
+            SaveSettingsToStorage();
+            SaveUserPreferencesToRegistry();
+
+            // Sync scanner enabled/disabled state BEFORE firing the event so ClearFindingsFromDisabledScanners() has current state
+            CxAssistConstants.SetScannerEnabled(ScannerType.ASCA, AscaCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.OSS, OssRealtimeCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.Secrets, SecretDetectionRealtimeCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.Containers, ContainersRealtimeCheckBox);
+            CxAssistConstants.SetScannerEnabled(ScannerType.IaC, IacRealtimeCheckBox);
+
+            RealtimeAssistSettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void SaveCurrentSettingsAsUserPreferences()
+        {
+            UserPrefAscaRealtime = AscaCheckBox;
+            UserPrefOssRealtime = OssRealtimeCheckBox;
+            UserPrefSecretDetectionRealtime = SecretDetectionRealtimeCheckBox;
+            UserPrefContainersRealtime = ContainersRealtimeCheckBox;
+            UserPrefIacRealtime = IacRealtimeCheckBox;
+            UserPreferencesSet = true;
+            SaveUserPreferencesToRegistry();
+        }
+
+        public void ApplyUserPreferencesToRealtimeSettings()
+        {
+            AscaCheckBox = UserPrefAscaRealtime;
+            OssRealtimeCheckBox = UserPrefOssRealtime;
+            SecretDetectionRealtimeCheckBox = UserPrefSecretDetectionRealtime;
+            ContainersRealtimeCheckBox = UserPrefContainersRealtime;
+            IacRealtimeCheckBox = UserPrefIacRealtime;
+        }
+
+        public void EnableAllRealtimeScanners()
+        {
+            AscaCheckBox = true;
+            OssRealtimeCheckBox = true;
+            SecretDetectionRealtimeCheckBox = true;
+            ContainersRealtimeCheckBox = true;
+            IacRealtimeCheckBox = true;
+        }
+
+        public void DisableAllRealtimeScanners()
+        {
+            AscaCheckBox = false;
+            OssRealtimeCheckBox = false;
+            SecretDetectionRealtimeCheckBox = false;
+            ContainersRealtimeCheckBox = false;
+            IacRealtimeCheckBox = false;
+        }
+
+        /// <summary>
+        /// JetBrains <c>GlobalSettingsComponent.disableAllRealtimeScanners</c>: when MCP becomes unavailable,
+        /// turns off all engines but only snapshots preferences if the user never had a saved baseline yet.
+        /// </summary>
+        public void DisableAllRealtimeScannersWhenMcpUnavailable()
+        {
+            if (!UserPreferencesSet)
+                SaveCurrentSettingsAsUserPreferences();
+            DisableAllRealtimeScanners();
+        }
+
+        public void AutoEnableRealtimeScanners()
+        {
+            if (UserPreferencesSet)
+                ApplyUserPreferencesToRealtimeSettings();
+            else
+            {
+                EnableAllRealtimeScanners();
+                SaveCurrentSettingsAsUserPreferences();
+            }
+        }
+
+        public void DisableRealtimeScannersPreservingPreferences()
+        {
+            SaveCurrentSettingsAsUserPreferences();
+            DisableAllRealtimeScanners();
+        }
+
+        private void SaveUserPreferencesToRegistry()
+        {
+            try
+            {
+                var package = GetOwnerPackage() as AsyncPackage;
+                if (package == null)
+                    return;
+
+                var settingsManager = new ShellSettingsManager(package);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(UserPreferencesCollection))
+                    userSettingsStore.CreateCollection(UserPreferencesCollection);
+
+                userSettingsStore.SetBoolean(UserPreferencesCollection, "UserPreferencesSet", UserPreferencesSet);
+                userSettingsStore.SetBoolean(UserPreferencesCollection, "UserPrefAscaRealtime", UserPrefAscaRealtime);
+                userSettingsStore.SetBoolean(UserPreferencesCollection, "UserPrefOssRealtime", UserPrefOssRealtime);
+                userSettingsStore.SetBoolean(UserPreferencesCollection, "UserPrefSecretDetectionRealtime", UserPrefSecretDetectionRealtime);
+                userSettingsStore.SetBoolean(UserPreferencesCollection, "UserPrefContainersRealtime", UserPrefContainersRealtime);
+                userSettingsStore.SetBoolean(UserPreferencesCollection, "UserPrefIacRealtime", UserPrefIacRealtime);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save user preferences to registry: {ex.Message}");
+            }
+        }
+
+        private void LoadUserPreferencesFromRegistry()
+        {
+            try
+            {
+                var package = GetOwnerPackage() as AsyncPackage;
+                if (package == null)
+                    return;
+
+                var settingsManager = new ShellSettingsManager(package);
+                var readOnlyStore = settingsManager.GetReadOnlySettingsStore(SettingsScope.UserSettings);
+
+                if (!readOnlyStore.CollectionExists(UserPreferencesCollection))
+                    return;
+
+                UserPreferencesSet = readOnlyStore.GetBoolean(UserPreferencesCollection, "UserPreferencesSet", false);
+                UserPrefAscaRealtime = readOnlyStore.GetBoolean(UserPreferencesCollection, "UserPrefAscaRealtime", true);
+                UserPrefOssRealtime = readOnlyStore.GetBoolean(UserPreferencesCollection, "UserPrefOssRealtime", true);
+                UserPrefSecretDetectionRealtime = readOnlyStore.GetBoolean(UserPreferencesCollection, "UserPrefSecretDetectionRealtime", true);
+                UserPrefContainersRealtime = readOnlyStore.GetBoolean(UserPreferencesCollection, "UserPrefContainersRealtime", true);
+                UserPrefIacRealtime = readOnlyStore.GetBoolean(UserPreferencesCollection, "UserPrefIacRealtime", true);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load user preferences from registry: {ex.Message}");
+            }
+        }
+    }
+}

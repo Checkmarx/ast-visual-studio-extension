@@ -1,7 +1,16 @@
-﻿using ast_visual_studio_extension.CxExtension.Services;
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxPreferences.Configuration;
+using ast_visual_studio_extension.CxWrapper.Exceptions;
 using ast_visual_studio_extension.CxWrapper.Models;
 using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.VisualStudio.PlatformUI;
+using Microsoft.VisualStudio.Shell;
 
 namespace ast_visual_studio_extension.CxPreferences
 {
@@ -11,8 +20,25 @@ namespace ast_visual_studio_extension.CxPreferences
 
         public delegate void EventHandler();
         public event EventHandler OnApplySettingsEvent = delegate { };
+
         private static CxPreferencesUI Instance;
-        private static ASCAService _ascaService; 
+        private static bool _isAuthenticated;
+        internal static event Action<bool> AuthStateChanged;
+        private static int _restoreAuthInProgress;
+        private static bool _isFreshLoginInProgress = false;
+        private static bool _welcomeDialogVisible = false;
+        private bool _isValidationInProgress;
+        private bool _isInitializing;
+        private bool _hasLoaded;
+        private TreeNode _cachedAssistNode;
+        private int _cachedAssistNodeIndex = -1;
+
+        // Theme-aware colors
+        private static readonly Color SuccessColor = Color.FromArgb(0, 120, 50);
+        private static readonly Color ErrorColorLight = Color.FromArgb(160, 0, 0);
+        private static readonly Color ErrorColorDark = Color.FromArgb(200, 60, 60);
+
+        private System.Threading.CancellationTokenSource _messageDismissCts;
 
         private CxPreferencesUI()
         {
@@ -22,11 +48,31 @@ namespace ast_visual_studio_extension.CxPreferences
         public static CxPreferencesUI GetInstance()
         {
             if (Instance == null)
-            {
                 Instance = new CxPreferencesUI();
-            }
 
             return Instance;
+        }
+
+        internal static bool IsAuthenticated()
+        {
+            return _isAuthenticated;
+        }
+
+        private static void SetAuthState(bool isAuthenticated)
+        {
+            if (_isAuthenticated == isAuthenticated)
+                return;
+
+            _isAuthenticated = isAuthenticated;
+
+            try
+            {
+                AuthStateChanged?.Invoke(_isAuthenticated);
+            }
+            catch
+            {
+                // Keep auth flow resilient even if listeners fail.
+            }
         }
 
         public void ThrowEventOnApply()
@@ -34,61 +80,135 @@ namespace ast_visual_studio_extension.CxPreferences
             OnApplySettingsEvent();
         }
 
+        #region Initialization
+
         public void Initialize(CxPreferencesModule preferencesModule)
         {
+            _isInitializing = true;
+
             cxPreferencesModule = preferencesModule;
-            tbApiKey.Text = cxPreferencesModule.ApiKey;
             tbAdditionalParameters.Text = cxPreferencesModule.AdditionalParameters;
-            ascaCheckBox.Checked = cxPreferencesModule.AscaCheckBox;
-            UpdateAscaUiState();
-        }
-        private void UpdateAscaUiState()
-        {
-            label1.Visible = ascaCheckBox.Checked; // Show or hide label based on ASCA state
-        }
 
+            string savedApiKey = cxPreferencesModule.ApiKey ?? string.Empty;
 
-        private void OnApiKeyChange(object sender, EventArgs e)
-        {
-            cxPreferencesModule.ApiKey = tbApiKey.Text.Trim();
-        }
+            // Sync UI from persisted settings without treating this as user input.
+            tbApiKey.Text = savedApiKey;
 
-        private void OnAdditionalParametersChange(object sender, EventArgs e)
-        {
-            cxPreferencesModule.AdditionalParameters = tbAdditionalParameters.Text;
-        }
+            if (string.IsNullOrWhiteSpace(savedApiKey))
+                ResetAuthState();
 
-        private void OnValidateConnection(object sender, EventArgs e)
-        {
-            lblValidationResult.Text = "Validating...";
+            if (string.IsNullOrWhiteSpace(savedApiKey))
+                cxPreferencesModule.RestoreAuthenticatedSession = false;
 
-            try
+            _isValidationInProgress = false;
+
+            // Restore auth on load only when user explicitly authenticated before
+            // and did not logout afterwards.
+            if (!_isAuthenticated
+                && cxPreferencesModule.RestoreAuthenticatedSession
+                && !string.IsNullOrWhiteSpace(savedApiKey))
             {
-                CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
-                lblValidationResult.Text = cxWrapper.AuthValidate();
+                _ = ValidateApiKeyAsync(showErrorOnFailure: false);
             }
-            catch (Exception ex)
-            {
-                lblValidationResult.Text = ex.Message;
-            }
-        }
 
-        private CxConfig GetCxConfig()
-        {
-            CxConfig configuration = new CxConfig
-            {
-                ApiKey = tbApiKey.Text,
-                AdditionalParameters = tbAdditionalParameters.Text,
-            };
-
-            return configuration;
+            UpdateAuthControlsState();
+            _isInitializing = false;
         }
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
 
-            lblValidationResult.Text = string.Empty;
+            if (!_hasLoaded)
+            {
+                _hasLoaded = true;
+            }
+
+            // Always restore correct visual state on (re)open
+            UpdateAuthControlsState();
+            if (_isAuthenticated)
+                SetValidationMessage(CxConstants.AUTH_VALIDATE_SUCCESS, isSuccess: true, autoDismiss: false);
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void OnApiKeyChange(object sender, EventArgs e)
+        {
+            if (_isInitializing) return;
+
+            // Ignore programmatic changes when field is read-only
+            if (tbApiKey.ReadOnly) return;
+
+            cxPreferencesModule.ApiKey = LogForgingSanitizer.StripLineTermination(tbApiKey.Text.Trim());
+            cxPreferencesModule.RestoreAuthenticatedSession = false;
+            ResetAuthState();
+            UpdateAuthControlsState();
+        }
+
+        private void OnAdditionalParametersChange(object sender, EventArgs e)
+        {
+            cxPreferencesModule.AdditionalParameters = LogForgingSanitizer.StripLineTermination(tbAdditionalParameters.Text);
+        }
+
+        private async void OnValidateConnection(object sender, EventArgs e)
+        {
+            if (_isValidationInProgress || string.IsNullOrWhiteSpace(tbApiKey.Text))
+                return;
+
+            _isFreshLoginInProgress = true;
+            UpdateAuthControlsState();
+            SetValidationMessage(CxConstants.AUTH_VALIDATE_IN_PROGRESS, isSuccess: true);
+            await ValidateApiKeyAsync(showErrorOnFailure: true);
+        }
+
+        private void OnLogout(object sender, EventArgs e)
+        {
+            var choice = MessageBox.Show(
+                "Are you sure you want to log out?",
+                "Confirm Logout",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (choice != DialogResult.Yes)
+                return;
+
+            try
+            {
+                var mcpInstallService = new McpInstallService();
+                mcpInstallService.Uninstall(out _);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MCP cleanup on logout failed: {ex.Message}");
+            }
+
+            cxPreferencesModule.RestoreAuthenticatedSession = false;
+            ResetAuthState();
+
+            try
+            {
+                // Clear all findings immediately before any async events fire
+                CxAssistDisplayCoordinator.ClearAllFindings();
+
+                CxOneAssistSettingsModule oneAssistModule = GetOneAssistSettingsModule();
+                if (oneAssistModule != null)
+                {
+                    oneAssistModule.ContainersTool = "docker";
+                    // Force policy re-evaluation on next login so user preferences are restored
+                    oneAssistModule.McpStatusChecked = false;
+                    // Persist fires RealtimeAssistSettingsChanged → RealtimeScannerHost stops all scanners
+                    // Scanner state and preferences must survive logout intact per JetBrains parity
+                    oneAssistModule.PersistSettings();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to persist Assist settings on logout: {ex.Message}");
+            }
+            SetValidationMessage(CxConstants.AUTH_LOGOUT_SUCCESS, isSuccess: true);
+            UpdateAuthControlsState();
         }
 
         private void HelpPage_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -101,38 +221,589 @@ namespace ast_visual_studio_extension.CxPreferences
             System.Diagnostics.Process.Start("https://checkmarx.com/resource/documents/en/34965-68626-global-flags.html");
         }
 
-
-
-        private async void AscaCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void GoToAssistLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            if (!_isAuthenticated)
+            {
+                SetValidationMessage("Please authenticate first to access Checkmarx One Assist.", isSuccess: false);
+                return;
+            }
+
+            cxPreferencesModule?.GetOwnerPackage()?.ShowOptionPage(typeof(CxOneAssistSettingsModule));
+        }
+
+        #endregion
+
+        #region Authentication
+
+        private async Task ValidateApiKeyAsync(bool showErrorOnFailure)
+        {
+            if (string.IsNullOrWhiteSpace(tbApiKey.Text))
+            {
+                ResetAuthState();
+                return;
+            }
+
+            if (_isValidationInProgress)
+                return;
+
+            _isValidationInProgress = true;
+            UpdateAuthControlsState();
+
             try
             {
-                bool isChecked = ascaCheckBox.Checked;  
-                cxPreferencesModule.AscaCheckBox = isChecked;
-                UpdateAscaUiState();
-                if (isChecked)
+                await Task.Run(() =>
                 {
-                    CxCLI.CxWrapper cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
-                    _ascaService = ASCAService.GetInstance(cxWrapper);
-                    await _ascaService.InitializeASCAAsync();
+                    var cxWrapper = new CxCLI.CxWrapper(GetCxConfig(), GetType());
+                    cxWrapper.AuthValidate();
+                });
 
-                }
-                else
-                {
-                    // If ASCA is disabled, dispose the service if it exists
-                    if (_ascaService != null)
-                    {
-                        await _ascaService.UnregisterTextChangeEventsAsync();
-                    }
-                }
+                SetAuthState(true);
+                if (cxPreferencesModule != null)
+                    cxPreferencesModule.RestoreAuthenticatedSession = true;
 
+                // Success message shown inside CompleteAuthenticationSetupAsync after license check
+                _ = CompleteAuthenticationSetupAsync(GetCxConfig(), showWelcomeDialog: showErrorOnFailure);
+
+                // DO NOT update UI here - let CompleteAuthenticationSetupAsync handle it
+                // to ensure Welcome dialog flag is set before button is enabled
             }
-            catch (Exception ex)
+            catch (CxException ex) when (showErrorOnFailure)
             {
-                lblValidationResult.Text = ex.Message;
+                SetAuthState(false);
+                _isFreshLoginInProgress = false;
+                _welcomeDialogVisible = false;
+                if (cxPreferencesModule != null)
+                    cxPreferencesModule.RestoreAuthenticatedSession = false;
+                SetValidationMessage(string.Format(CxConstants.AUTH_VALIDATE_FAIL_TEMPLATE, SanitizeErrorMessage(ex.Message)), isSuccess: false);
+                _isValidationInProgress = false;
+                UpdateAuthControlsState();
+            }
+            catch (Exception ex) when (showErrorOnFailure)
+            {
+                SetAuthState(false);
+                _isFreshLoginInProgress = false;
+                _welcomeDialogVisible = false;
+                if (cxPreferencesModule != null)
+                    cxPreferencesModule.RestoreAuthenticatedSession = false;
+                SetValidationMessage(CxConstants.AUTH_VALIDATE_ERROR, isSuccess: false);
+                System.Diagnostics.Debug.WriteLine($"Authentication error: {LogForgingSanitizer.StripLineTermination(ex.Message)}");
+                _isValidationInProgress = false;
+                UpdateAuthControlsState();
+            }
+            catch
+            {
+                SetAuthState(false);
+                _isFreshLoginInProgress = false;
+                _welcomeDialogVisible = false;
+                if (cxPreferencesModule != null)
+                    cxPreferencesModule.RestoreAuthenticatedSession = false;
+                _isValidationInProgress = false;
+                UpdateAuthControlsState();
+            }
+            finally
+            {
+                _isValidationInProgress = false;
             }
         }
 
+        private void ResetAuthState()
+        {
+            SetAuthState(false);
+            _isFreshLoginInProgress = false;
+            _welcomeDialogVisible = false;
+            ClearValidationMessage();
+        }
 
+        /// <summary>
+        /// Sanitizes input from UI controls to prevent log injection.
+        /// </summary>
+        private static string SanitizeInput(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            // Remove control characters and newlines that could be used for log injection
+            return System.Text.RegularExpressions.Regex.Replace(input, @"[\r\n\t\x00-\x1F]", "");
+        }
+
+        private CxConfig GetCxConfig() => new CxConfig
+        {
+            ApiKey = SanitizeInput(tbApiKey.Text),
+            AdditionalParameters = SanitizeInput(tbAdditionalParameters.Text),
+        };
+
+        internal static CxConfig GetConfigSnapshot()
+        {
+            var ui = GetInstance();
+            if (ui.cxPreferencesModule != null)
+                return ui.cxPreferencesModule.GetCxConfig();
+
+            return new CxConfig
+            {
+                ApiKey = SanitizeInput(ui.tbApiKey.Text),
+                AdditionalParameters = SanitizeInput(ui.tbAdditionalParameters.Text),
+            };
+        }
+
+        internal static CxConfig GetCxConfigFromPackage(Package package)
+        {
+            if (package == null)
+                return new CxConfig();
+
+            var preferencesModule = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
+            if (preferencesModule != null)
+                return preferencesModule.GetCxConfig();
+
+            return new CxConfig();
+        }
+
+        internal static async Task TryRestoreAuthenticatedSessionAsync(AsyncPackage package)
+        {
+            if (package == null)
+                return;
+
+            if (Interlocked.Exchange(ref _restoreAuthInProgress, 1) == 1)
+                return;
+
+            CxPreferencesModule preferencesModule = null;
+
+            try
+            {
+                preferencesModule = package.GetDialogPage(typeof(CxPreferencesModule)) as CxPreferencesModule;
+                if (preferencesModule == null)
+                {
+                    SetAuthState(false);
+                    return;
+                }
+
+                if (!preferencesModule.RestoreAuthenticatedSession || string.IsNullOrWhiteSpace(preferencesModule.ApiKey))
+                {
+                    SetAuthState(false);
+                    return;
+                }
+
+                var config = preferencesModule.GetCxConfig();
+                await Task.Run(() =>
+                {
+                    var cxWrapper = new CxCLI.CxWrapper(config, typeof(CxPreferencesUI));
+                    cxWrapper.AuthValidate();
+                });
+
+                SetAuthState(true);
+
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                var oneAssistRestore = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                if (oneAssistRestore != null)
+                {
+                    // Load saved settings from registry before using them
+                    oneAssistRestore.LoadSettingsFromStorage();
+                }
+
+                bool previousMcpEnabled = oneAssistRestore?.McpEnabled ?? false;
+                bool mcpStatusPreviouslyChecked = oneAssistRestore?.McpStatusChecked ?? false;
+
+                bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, typeof(CxPreferencesUI));
+                if (hadAssist && oneAssistRestore != null)
+                {
+                    var installService = new McpInstallService();
+                    ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistRestore, previousMcpEnabled, mcpStatusPreviouslyChecked);
+                    if (oneAssistRestore.McpEnabled)
+                        await installService.InstallSilentlyAsync(config, typeof(CxPreferencesUI));
+
+                    // Only start scanning on restore if user has already seen the welcome dialog
+                    // (WelcomeShown = true means user has configured scanners previously)
+                    if (oneAssistRestore.WelcomeShown)
+                    {
+                        oneAssistRestore.PersistSettings();
+                        CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+                    }
+                }
+            }
+            catch
+            {
+                SetAuthState(false);
+                if (preferencesModule != null)
+                    preferencesModule.RestoreAuthenticatedSession = false;
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _restoreAuthInProgress, 0);
+            }
+        }
+
+        /// <summary>
+        /// Tenant license flags + MCP enabled (tenant check). Does not install MCP or persist.
+        /// </summary>
+        /// <returns>false if Assist settings page is missing (MCP silent-install only path).</returns>
+        private static async Task<bool> ApplyAssistTenantLicenseAndMcpFlagsAsync(AsyncPackage package, CxConfig config, Type ownerType)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+            if (oneAssistModule == null)
+            {
+                var silentInstallService = new McpInstallService();
+                await silentInstallService.InstallSilentlyAsync(config, ownerType);
+                return false;
+            }
+
+            List<TenantSetting> tenantSettings = await Task.Run(() =>
+            {
+                var w = new CxCLI.CxWrapper(config, ownerType);
+                return w.TenantSettings();
+            });
+            AssistEntitlementSync.ApplyFromSettings(tenantSettings, oneAssistModule);
+
+            var installService = new McpInstallService();
+            bool mcpEnabled = await installService.IsTenantMcpEnabledAsync(config, ownerType);
+
+            oneAssistModule.McpEnabled = mcpEnabled;
+            oneAssistModule.McpStatusChecked = true;
+
+            return true;
+        }
+
+        /// <summary>
+        /// JetBrains <c>GlobalSettingsComponent.completeAuthenticationSetup</c>: only adjust realtime toggles on
+        /// first MCP resolution or when tenant MCP flag changes — not on every re-auth (persisted toggles stay correct).
+        /// </summary>
+        private static void ApplyJetBrainsStyleRealtimeScannerPolicy(
+            CxOneAssistSettingsModule module,
+            bool previousMcpEnabled,
+            bool mcpStatusPreviouslyChecked)
+        {
+            if (module == null)
+                return;
+
+            bool mcpStatusChanged = mcpStatusPreviouslyChecked && (previousMcpEnabled != module.McpEnabled);
+
+            if (!mcpStatusPreviouslyChecked)
+            {
+                if (module.McpEnabled)
+                    module.AutoEnableRealtimeScanners();
+                else
+                    module.DisableAllRealtimeScannersWhenMcpUnavailable();
+            }
+            else if (mcpStatusChanged)
+            {
+                if (module.McpEnabled)
+                    module.AutoEnableRealtimeScanners();
+                else
+                    module.DisableAllRealtimeScannersWhenMcpUnavailable();
+            }
+        }
+
+        private async Task CompleteAuthenticationSetupAsync(CxConfig config, bool showWelcomeDialog)
+        {
+            if (config == null || string.IsNullOrWhiteSpace(config.ApiKey))
+                return;
+
+            _isFreshLoginInProgress = false;
+
+            try
+            {
+                var package = cxPreferencesModule?.GetOwnerPackage() as AsyncPackage;
+                if (package == null)
+                    return;
+
+                var oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                bool previousMcpEnabled = oneAssistModule?.McpEnabled ?? false;
+                bool mcpStatusPreviouslyChecked = oneAssistModule?.McpStatusChecked ?? false;
+
+                // Step 1: Check license (network call, can take time)
+                bool hadAssist = await ApplyAssistTenantLicenseAndMcpFlagsAsync(package, config, GetType());
+
+                // Step 2: Show success message after license check
+                SetValidationMessage(CxConstants.AUTH_VALIDATE_SUCCESS, isSuccess: true, autoDismiss: !showWelcomeDialog);
+
+                if (!hadAssist)
+                    return;
+
+                oneAssistModule = package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+                if (oneAssistModule == null)
+                    return;
+
+                if (showWelcomeDialog)
+                {
+                    // Step 3a: Show welcome dialog immediately (don't wait for MCP installation)
+                    ShowOneAssistWelcomeDialog(oneAssistModule, oneAssistModule.McpEnabled, previousMcpEnabled, mcpStatusPreviouslyChecked);
+
+                    // Step 3b: Install MCP in background while user is viewing the Welcome dialog
+                    if (oneAssistModule.McpEnabled)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var installService = new McpInstallService();
+                                await installService.InstallSilentlyAsync(config, GetType());
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Background MCP installation failed: {ex.Message}");
+                            }
+                        });
+                    }
+                }
+                else
+                {
+                    // No welcome dialog (background restore) — apply policy and persist immediately
+                    _welcomeDialogVisible = true;
+                    UpdateAuthControlsState();
+
+                    ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistModule, previousMcpEnabled, mcpStatusPreviouslyChecked);
+                    oneAssistModule.PersistSettings();
+                    CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+
+                    // Install MCP in background for restored sessions too
+                    if (oneAssistModule.McpEnabled)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var installService = new McpInstallService();
+                                await installService.InstallSilentlyAsync(config, GetType());
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Background MCP installation failed (restore): {ex.Message}");
+                            }
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"MCP auto-install skipped: {ex.Message}");
+            }
+        }
+
+        private CxOneAssistSettingsModule GetOneAssistSettingsModule()
+        {
+            try
+            {
+                var package = cxPreferencesModule?.GetOwnerPackage();
+                if (package == null)
+                    return null;
+
+                return package.GetDialogPage(typeof(CxOneAssistSettingsModule)) as CxOneAssistSettingsModule;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void ShowOneAssistWelcomeDialog(CxOneAssistSettingsModule module, bool mcpEnabled, bool previousMcpEnabled = false, bool mcpStatusPreviouslyChecked = false)
+        {
+            try
+            {
+                using (var welcomeDialog = new CxOneAssistWelcomeDialog(module, mcpEnabled))
+                {
+                    // Mark welcome dialog as visible before showing it
+                    _welcomeDialogVisible = true;
+                    UpdateAuthControlsState();
+
+                    welcomeDialog.ShowDialog(FindForm());
+                    module.WelcomeShown = true;
+                }
+
+                // After user closes welcome dialog:
+                // Step 1: Apply scanner policy based on user selection in welcome dialog
+                ApplyJetBrainsStyleRealtimeScannerPolicy(module, previousMcpEnabled, mcpStatusPreviouslyChecked);
+
+                // Step 2: Persist settings → fires RealtimeAssistSettingsChanged → starts scanning
+                module.PersistSettings();
+
+                // Step 3: Refresh checkboxes in Assist tab
+                CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to show welcome dialog: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region UI Helpers
+
+        private void UpdateAuthControlsState()
+        {
+            bool hasApiKey = !string.IsNullOrWhiteSpace(tbApiKey.Text);
+
+            // Use ReadOnly instead of Enabled=false to avoid the washed-out disabled appearance
+            tbApiKey.ReadOnly = _isAuthenticated;
+            tbApiKey.BackColor = _isAuthenticated
+                ? System.Drawing.SystemColors.Control
+                : System.Drawing.SystemColors.Window;
+
+            button1.Enabled = hasApiKey && !_isAuthenticated && !_isValidationInProgress;
+            btnLogout.Enabled = _isAuthenticated && !_isValidationInProgress && (!_isFreshLoginInProgress || _welcomeDialogVisible);
+            // Temporary: hide assist navigation link from the Authentication page.
+            goToAssistLink.Visible = false;
+
+            UpdateAssistNodeVisibility();
+        }
+
+        private void UpdateAssistNodeVisibility()
+        {
+            try
+            {
+                Control optionsHost = TopLevelControl ?? FindForm() ?? Parent;
+                if (optionsHost == null)
+                    return;
+
+                TreeView optionsTree = FindControl<TreeView>(optionsHost);
+                if (optionsTree == null)
+                    return;
+
+                const string parentNodeName = "Checkmarx One";
+                const string assistNodeName = "Checkmarx One Assist";
+
+                TreeNode parentNode = FindNodeByText(optionsTree.Nodes, parentNodeName);
+                if (parentNode == null)
+                    return;
+
+                TreeNode assistNode = FindNodeByText(parentNode.Nodes, assistNodeName);
+
+                if (!_isAuthenticated)
+                {
+                    if (assistNode != null)
+                    {
+                        _cachedAssistNode = assistNode;
+                        _cachedAssistNodeIndex = assistNode.Index;
+                        parentNode.Nodes.Remove(assistNode);
+                    }
+                    return;
+                }
+
+                if (assistNode == null && _cachedAssistNode != null)
+                {
+                    int insertIndex = _cachedAssistNodeIndex >= 0 && _cachedAssistNodeIndex <= parentNode.Nodes.Count
+                        ? _cachedAssistNodeIndex
+                        : parentNode.Nodes.Count;
+
+                    parentNode.Nodes.Insert(insertIndex, _cachedAssistNode);
+                }
+            }
+            catch
+            {
+                // Keep settings page stable even if options tree internals change between VS versions.
+            }
+        }
+
+        private static T FindControl<T>(Control root) where T : Control
+        {
+            if (root == null)
+                return null;
+
+            if (root is T match)
+                return match;
+
+            foreach (Control child in root.Controls)
+            {
+                T nested = FindControl<T>(child);
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
+        }
+
+        private static TreeNode FindNodeByText(TreeNodeCollection nodes, string text)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                if (NodeTextEquals(node.Text, text))
+                    return node;
+
+                TreeNode nested = FindNodeByText(node.Nodes, text);
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
+        }
+
+        private static bool NodeTextEquals(string left, string right)
+        {
+            string normalizedLeft = (left ?? string.Empty).Replace("&", string.Empty).Trim();
+            string normalizedRight = (right ?? string.Empty).Replace("&", string.Empty).Trim();
+
+            return string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void SetValidationMessage(string message, bool isSuccess, bool autoDismiss = true)
+        {
+            lblValidationResult.Text = message;
+            lblValidationResult.ForeColor = ResolveMessageColor(isSuccess);
+
+            if (autoDismiss)
+                _ = AutoDismissMessageAsync();
+        }
+
+        private async Task AutoDismissMessageAsync()
+        {
+            // Cancel any previously scheduled dismiss
+            _messageDismissCts?.Cancel();
+            _messageDismissCts = new System.Threading.CancellationTokenSource();
+            var token = _messageDismissCts.Token;
+
+            try
+            {
+                await Task.Delay(10000, token);
+
+                if (!token.IsCancellationRequested)
+                    ClearValidationMessage();
+            }
+            catch (TaskCanceledException)
+            {
+                // A new message replaced this one — do nothing
+            }
+        }
+
+        private void ClearValidationMessage()
+        {
+            lblValidationResult.Text = string.Empty;
+        }
+
+        private static Color ResolveMessageColor(bool isSuccess)
+        {
+            try
+            {
+                if (isSuccess) return SuccessColor;
+                return ResourceKeyToColorConverter.IsDarkTheme ? ErrorColorDark : ErrorColorLight;
+            }
+            catch
+            {
+                return isSuccess ? Color.Green : Color.Red;
+            }
+        }
+
+        private static string SanitizeErrorMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return CxConstants.AUTH_VALIDATE_CLEAR_FAIL_REASON;
+
+            string lower = message.ToLower();
+            bool isTokenError = lower.Contains("token") &&
+                (lower.Contains("malformed") || lower.Contains("decoding") ||
+                 lower.Contains("invalid") || lower.Contains("segment") || lower.Contains("decode"));
+
+            if (isTokenError)
+                return CxConstants.AUTH_VALIDATE_CLEAR_FAIL_REASON;
+
+            string firstLine = message.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+
+            return string.IsNullOrWhiteSpace(firstLine) || firstLine.Length > 100
+                ? CxConstants.AUTH_VALIDATE_CLEAR_FAIL_REASON
+                : firstLine;
+        }
+
+        #endregion
     }
 }
