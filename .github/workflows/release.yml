@@ -35,6 +35,8 @@ on:
 jobs:
   release:
     runs-on: cx-public-windows-x64
+    permissions:
+      contents: write
     outputs:
       CLI_VERSION: ${{ steps.extract_cli_version.outputs.CLI_VERSION }}
     steps:
