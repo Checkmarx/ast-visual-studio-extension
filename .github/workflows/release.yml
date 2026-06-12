@@ -87,7 +87,7 @@ jobs:
         run: |
           version="${{ inputs.tag }}"
           manifest="ast-visual-studio-extension/source.extension.vsixmanifest"
-          sed -i "s/Version=\"[^\"]*\"/Version=\"$version\"/" "$manifest"
+          sed -i "s/\(Identity[^>]*Version=\"\)[^\"]*\"/\1$version\"/" "$manifest"
           echo "Updated VSIX version to $version"
 
       - name: Restore NuGet packages
