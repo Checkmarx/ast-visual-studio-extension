@@ -32,6 +32,9 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   release:
     runs-on: cx-public-windows-x64
