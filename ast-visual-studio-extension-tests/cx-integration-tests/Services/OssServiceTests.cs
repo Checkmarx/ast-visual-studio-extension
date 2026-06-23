@@ -1,7 +1,4 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
-using ast_visual_studio_extension.CxWrapper.Models;
-using System;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
@@ -14,22 +11,10 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
     [Trait("Category", "Integration")]
     public class OssServiceTests
     {
-        private readonly CxWrapper _wrapperInstance;
-
-        public OssServiceTests()
-        {
-            var config = new CxConfig
-            {
-                ApiKey = "test-api-key"
-            };
-
-            _wrapperInstance = new CxWrapper(config, typeof(OssServiceTests));
-        }
-
         [Fact]
         public void OssService_GetInstance_ReturnsServiceInstance()
         {
-            var service = OssService.GetInstance(_wrapperInstance);
+            var service = OssService.GetInstance(null);
 
             Assert.NotNull(service);
         }
@@ -37,8 +22,8 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [Fact]
         public void OssService_GetInstance_ReturnsSingletonInstance()
         {
-            var service1 = OssService.GetInstance(_wrapperInstance);
-            var service2 = OssService.GetInstance(_wrapperInstance);
+            var service1 = OssService.GetInstance(null);
+            var service2 = OssService.GetInstance(null);
 
             Assert.Same(service1, service2);
         }
@@ -52,7 +37,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [InlineData("app.csproj")]
         public void OssService_ShouldScanFile_WithManifestFile_ReturnsTrue(string filePath)
         {
-            var service = OssService.GetInstance(_wrapperInstance);
+            var service = OssService.GetInstance(null);
 
             Assert.True(service.ShouldScanFile(filePath));
         }
@@ -64,7 +49,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [InlineData("dockerfile")]
         public void OssService_ShouldScanFile_WithNonManifestFile_ReturnsFalse(string filePath)
         {
-            var service = OssService.GetInstance(_wrapperInstance);
+            var service = OssService.GetInstance(null);
 
             Assert.False(service.ShouldScanFile(filePath));
         }
@@ -72,7 +57,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [Fact]
         public void OssService_ShouldScanFile_WithNull_ReturnsFalse()
         {
-            var service = OssService.GetInstance(_wrapperInstance);
+            var service = OssService.GetInstance(null);
 
             Assert.False(service.ShouldScanFile(null));
         }
@@ -80,10 +65,10 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [Fact]
         public async System.Threading.Tasks.Task OssService_UnregisterAsync_AllowsReinitializationAsync()
         {
-            var service1 = OssService.GetInstance(_wrapperInstance);
+            var service1 = OssService.GetInstance(null);
             await service1.UnregisterAsync();
 
-            var service2 = OssService.GetInstance(_wrapperInstance);
+            var service2 = OssService.GetInstance(null);
 
             Assert.NotSame(service1, service2);
         }
@@ -91,7 +76,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [Fact]
         public void OssService_ShouldScanFile_CaseInsensitive()
         {
-            var service = OssService.GetInstance(_wrapperInstance);
+            var service = OssService.GetInstance(null);
 
             Assert.True(service.ShouldScanFile("PACKAGE.JSON"));
             Assert.True(service.ShouldScanFile("POM.XML"));

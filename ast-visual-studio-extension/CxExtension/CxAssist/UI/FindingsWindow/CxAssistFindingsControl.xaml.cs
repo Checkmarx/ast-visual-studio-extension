@@ -498,9 +498,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
                 e.Handled = true;
                 return;
             }
-            if (treeViewItem?.DataContext is VulnerabilityNode)
+            if (treeViewItem?.DataContext is VulnerabilityNode vulnNode)
             {
                 treeViewItem.IsSelected = true;
+
+                // Secrets → "Ignore this secret in file"; others → "Ignore this vulnerability". OSS/Containers also get "Ignore all of this type".
+                if (IgnoreThisMenuItem != null)
+                    IgnoreThisMenuItem.Header = CxAssistConstants.GetIgnoreThisLabel(vulnNode.Scanner);
+                if (IgnoreAllMenuItem != null)
+                {
+                    IgnoreAllMenuItem.Header = CxAssistConstants.GetIgnoreAllLabel(vulnNode.Scanner);
+                    IgnoreAllMenuItem.Visibility = CxAssistConstants.ShouldShowIgnoreAll(vulnNode.Scanner)
+                        ? System.Windows.Visibility.Visible
+                        : System.Windows.Visibility.Collapsed;
+                }
             }
             else
             {
@@ -536,12 +547,25 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
 
         private void Ignore_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+            var node = GetSelectedVulnerability();
+            if (node == null) return;
+            var v = node.Vulnerability
+                    ?? CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
+            if (v == null) return;
+            ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore.IgnoreManager.AddIgnoredEntry(v);
+            ShowStatusBarNotification(CxAssistConstants.GetIgnoreThisSuccessMessage(v));
         }
 
         private void IgnoreAll_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+            var node = GetSelectedVulnerability();
+            if (node == null) return;
+            var v = node.Vulnerability
+                    ?? CxAssistDisplayCoordinator.FindVulnerabilityByLocation(node.FilePath, node.Line > 0 ? node.Line - 1 : 0);
+            if (v == null) return;
+            var all = CxAssistDisplayCoordinator.GetCurrentFindings() ?? new List<Core.Models.Vulnerability>();
+            ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore.IgnoreManager.AddAllIgnoredEntry(v, all);
+            ShowStatusBarNotification(CxAssistConstants.GetIgnoreAllSuccessMessage(v.Scanner));
         }
 
         private VulnerabilityNode GetSelectedVulnerability()
@@ -954,28 +978,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
             {
                 System.Diagnostics.Debug.WriteLine($"CxAssist StatusBar notification error: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Ignore selected finding (placeholder for now)
-        /// </summary>
-        private void IgnoreMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            var selectedItem = FindingsTreeView.SelectedItem;
-            if (selectedItem == null) return;
-
-            string itemName = "";
-            if (selectedItem is FileNode fileNode)
-            {
-                itemName = fileNode.FileName;
-            }
-            else if (selectedItem is VulnerabilityNode vulnNode)
-            {
-                itemName = vulnNode.DisplayText;
-            }
-
-            MessageBox.Show($"Ignore functionality coming soon!\n\nSelected: {itemName}",
-                "Ignore Finding", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         #endregion

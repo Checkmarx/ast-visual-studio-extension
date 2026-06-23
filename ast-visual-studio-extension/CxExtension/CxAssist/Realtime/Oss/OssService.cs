@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
@@ -28,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
 
         protected override ScannerType CoordinatorScannerType => ScannerType.OSS;
 
-        private OssService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
+        private OssService(Microsoft.VisualStudio.Shell.AsyncPackage package) : base(package)
         {
         }
 
@@ -159,7 +158,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
                 // Copy companion lock file (package-lock.json / yarn.lock) alongside temp file
                 CopyCompanionLockFile(sourceFilePath, Path.GetDirectoryName(tempFilePath));
 
-                var results = await _cxWrapper.OssRealtimeScanAsync(tempFilePath);
+                var results = await GetWrapper().OssRealtimeScanAsync(tempFilePath);
 
                 if (results?.Packages == null || results.Packages.Count == 0)
                 {
@@ -177,8 +176,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
             catch (Exception ex)
             {
                 OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
-                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
-                ClearDisplayForFile(sourceFilePath);
+                _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex}", ex);
+                // Only clear display if there are no existing results for this file — preserves
+                // previously-displayed findings when a transient scan failure occurs mid-session.
+                if (!CxAssistDisplayCoordinator.HasFindingsForScanner(sourceFilePath, CoordinatorScannerType))
+                    ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
         }
@@ -234,8 +236,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static OssService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
-            => GetOrCreate(() => new OssService(cxWrapper));
+        public static OssService GetInstance(Microsoft.VisualStudio.Shell.AsyncPackage package)
+            => GetOrCreate(() => new OssService(package));
 
         /// <summary>
         /// Copies companion lock files to temp directory using centralized manager.

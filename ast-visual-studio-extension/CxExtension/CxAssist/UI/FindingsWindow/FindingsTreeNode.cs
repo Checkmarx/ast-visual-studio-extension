@@ -173,6 +173,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow
         }
 
         /// <summary>
+        /// Underlying <see cref="Vulnerability"/> the node was built from. Carried on the node so context-menu
+        /// commands (Ignore this / Ignore all of this type) have the full object without a tree-wide lookup.
+        /// May be null for legacy callers that build nodes from raw fields.
+        /// </summary>
+        public Vulnerability Vulnerability { get; set; }
+
+        /// <summary>
         /// Full formatted display text: primary + " " + agent name + " [Ln N, Col M]" (used for copy, tooltips, message boxes).
         /// </summary>
         public string DisplayText

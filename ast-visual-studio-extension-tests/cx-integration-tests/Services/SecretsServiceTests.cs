@@ -1,7 +1,4 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets;
-using ast_visual_studio_extension.CxWrapper.Models;
-using System;
 using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
@@ -14,22 +11,10 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
     [Trait("Category", "Integration")]
     public class SecretsServiceTests
     {
-        private readonly CxWrapper _wrapperInstance;
-
-        public SecretsServiceTests()
-        {
-            var config = new CxConfig
-            {
-                ApiKey = "test-api-key"
-            };
-
-            _wrapperInstance = new CxWrapper(config, typeof(SecretsServiceTests));
-        }
-
         [Fact]
         public void SecretsService_GetInstance_ReturnsServiceInstance()
         {
-            var service = SecretsService.GetInstance(_wrapperInstance);
+            var service = SecretsService.GetInstance(null);
 
             Assert.NotNull(service);
         }
@@ -37,8 +22,8 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [Fact]
         public void SecretsService_GetInstance_ReturnsSingletonInstance()
         {
-            var service1 = SecretsService.GetInstance(_wrapperInstance);
-            var service2 = SecretsService.GetInstance(_wrapperInstance);
+            var service1 = SecretsService.GetInstance(null);
+            var service2 = SecretsService.GetInstance(null);
 
             Assert.Same(service1, service2);
         }
@@ -50,7 +35,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [InlineData("readme.md")]
         public void SecretsService_ShouldScanFile_WithTextFile_ReturnsTrue(string filePath)
         {
-            var service = SecretsService.GetInstance(_wrapperInstance);
+            var service = SecretsService.GetInstance(null);
 
             Assert.True(service.ShouldScanFile(filePath));
         }
@@ -60,7 +45,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [InlineData("C:\\project\\.git\\config")]
         public void SecretsService_ShouldScanFile_InExcludedPath_ReturnsFalse(string filePath)
         {
-            var service = SecretsService.GetInstance(_wrapperInstance);
+            var service = SecretsService.GetInstance(null);
 
             Assert.False(service.ShouldScanFile(filePath));
         }
@@ -68,7 +53,7 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [Fact]
         public void SecretsService_ShouldScanFile_WithNull_ReturnsFalse()
         {
-            var service = SecretsService.GetInstance(_wrapperInstance);
+            var service = SecretsService.GetInstance(null);
 
             Assert.False(service.ShouldScanFile(null));
         }
@@ -76,12 +61,11 @@ namespace ast_visual_studio_extension_tests.cx_integration_tests.Services
         [Fact]
         public async System.Threading.Tasks.Task SecretsService_UnregisterAsync_AllowsReinitializationAsync()
         {
-            var service1 = SecretsService.GetInstance(_wrapperInstance);
+            var service1 = SecretsService.GetInstance(null);
             await service1.UnregisterAsync();
 
-            var service2 = SecretsService.GetInstance(_wrapperInstance);
+            var service2 = SecretsService.GetInstance(null);
 
-            // Should be different instances after unregister
             Assert.NotSame(service1, service2);
         }
     }

@@ -171,10 +171,18 @@
     <Compile Include="CxExtension\Commands\CommandGuids.cs" />
     <Compile Include="CxExtension\Commands\ErrorListContextMenuCommand.cs" />
     <Compile Include="CxExtension\Commands\ShowFindingsWindowCommand.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Ignore\IgnoreEntry.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Ignore\IgnoreFileManager.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Ignore\IgnoreManager.cs" />
+    <Compile Include="CxExtension\CxAssist\Realtime\Ignore\IgnoreRegistryManager.cs" />
     <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\FindingsTreeNode.cs" />
     <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsWindow.cs" />
     <Compile Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsControl.xaml.cs">
       <DependentUpon>CxAssistFindingsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CxExtension\CxAssist\UI\IgnoredFindingsWindow\IgnoredFindingViewModel.cs" />
+    <Compile Include="CxExtension\CxAssist\UI\IgnoredFindingsWindow\CxAssistIgnoredFindingsControl.xaml.cs">
+      <DependentUpon>CxAssistIgnoredFindingsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="CxExtension\CxWindowControl.xaml.cs">
       <DependentUpon>CxWindowControl.xaml</DependentUpon>
@@ -210,6 +218,7 @@
     <Compile Include="CxExtension\CxAssist\Core\AssistDocumentInfoBar.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CopilotIntegration.cs" />
     <Compile Include="CxExtension\CxAssist\Core\CxAssistCopilotActions.cs" />
+    <Compile Include="CxExtension\CxAssist\Core\TelemetryService.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Prompts\CxOneAssistFixPrompts.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Prompts\ViewDetailsPrompts.cs" />
     <Compile Include="CxExtension\CxAssist\Core\Models\SeverityLevel.cs" />
@@ -471,6 +480,70 @@
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\high.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\medium.png" />
     <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\severity_count\low.png" />
+    <!-- CxAssist Ignored Findings tab (ported from ast-jetbrains-plugin common-lib/.../icons/devassist/ignored) -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\revive.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\revive-selected.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\clear-selection.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\filter_icon.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\sort_icon.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\file-icon.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\engine-chip-containers.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\engine-chip-sca.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\engine-chip-secrets.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\engine-chip-iac.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\engine-chip-sast.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\revive.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\revive-selected.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\clear-selection.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\filter_icon.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\sort_icon.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\file-icon.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\engine-chip-containers.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\engine-chip-sca.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\engine-chip-secrets.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\engine-chip-iac.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\engine-chip-sast.svg" />
+    <!-- Card icons (scanner type × severity) – ported from ast-jetbrains-plugin ignored_card/ -->
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-package-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-package-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-package-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-package-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-package-malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-secret-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-secret-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-secret-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-secret-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-secret-malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-containers-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-containers-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-containers-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-containers-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-containers-malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-vulnerability-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-vulnerability-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-vulnerability-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-vulnerability-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Dark\Ignored\Card\card-vulnerability-malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-package-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-package-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-package-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-package-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-package-malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-secret-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-secret-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-secret-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-secret-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-secret-malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-containers-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-containers-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-containers-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-containers-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-containers-malicious.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-vulnerability-critical.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-vulnerability-high.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-vulnerability-medium.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-vulnerability-low.svg" />
+    <Resource Include="CxExtension\Resources\CxAssist\Icons\Light\Ignored\Card\card-vulnerability-malicious.svg" />
     <Content Include="CxPreferences\Resources\CxPreferencesPackage.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -493,6 +566,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CxExtension\CxAssist\UI\FindingsWindow\CxAssistFindingsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CxExtension\CxAssist\UI\IgnoredFindingsWindow\CxAssistIgnoredFindingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

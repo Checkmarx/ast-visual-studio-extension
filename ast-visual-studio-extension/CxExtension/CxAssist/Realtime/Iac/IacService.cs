@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
@@ -23,7 +22,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
 
         protected override ScannerType CoordinatorScannerType => ScannerType.IaC;
 
-        private IacService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
+        private IacService(Microsoft.VisualStudio.Shell.AsyncPackage package) : base(package)
         {
         }
 
@@ -72,7 +71,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
                     return 0;
                 }
 
-                var results = await _cxWrapper.IacRealtimeScanAsync(tempFilePath);
+                var results = await GetWrapper().IacRealtimeScanAsync(tempFilePath);
 
                 if (results?.Results == null || results.Results.Count == 0)
                 {
@@ -91,7 +90,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
             {
                 OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
                 _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
-                ClearDisplayForFile(sourceFilePath);
+                if (!CxAssistDisplayCoordinator.HasFindingsForScanner(sourceFilePath, CoordinatorScannerType))
+                    ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
         }
@@ -99,7 +99,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static IacService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
-            => GetOrCreate(() => new IacService(cxWrapper));
+        public static IacService GetInstance(Microsoft.VisualStudio.Shell.AsyncPackage package)
+            => GetOrCreate(() => new IacService(package));
     }
 }

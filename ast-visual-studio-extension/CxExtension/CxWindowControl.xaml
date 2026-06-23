@@ -13,6 +13,7 @@
              xmlns:vs="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
              xmlns:cxextension="clr-namespace:ast_visual_studio_extension.CxExtension" d:DataContext="{d:DesignInstance Type=cxextension:CxWindowControl}"
              xmlns:CxAssist="clr-namespace:ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow"
+             xmlns:CxAssistIgnored="clr-namespace:ast_visual_studio_extension.CxExtension.CxAssist.UI.IgnoredFindingsWindow"
              local:VsTheme.UseVsTheme="True"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="1308"
@@ -892,24 +893,18 @@
             </TabItem.Content>
         </TabItem>
 
-        <!-- Tab 3: Ignored Findings (hidden for now) -->
-        <TabItem x:Name="IgnoredFindingsTab" Visibility="Collapsed">
+        <!-- Tab 3: Ignored Findings (Header bound to string set from code-behind to show count) -->
+        <TabItem x:Name="IgnoredFindingsTab" Header="Ignored Findings">
             <TabItem.HeaderTemplate>
                 <DataTemplate>
                     <DataTemplate.Resources>
                         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
                     </DataTemplate.Resources>
-                        <TextBlock Text="Ignored Findings" VerticalAlignment="Center" FontSize="12"/>
+                    <TextBlock Text="{Binding}" VerticalAlignment="Center" FontSize="12"/>
                 </DataTemplate>
             </TabItem.HeaderTemplate>
             <TabItem.Content>
-                <Grid Background="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowBackgroundKey}}">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="No ignored findings" FontSize="16" FontWeight="Bold"
-                                   HorizontalAlignment="Center"
-                                   Foreground="{DynamicResource {x:Static vsfx:VsBrushes.ToolWindowTextKey}}"/>
-                    </StackPanel>
-                </Grid>
+                <CxAssistIgnored:CxAssistIgnoredFindingsControl x:Name="IgnoredFindingsControl"/>
             </TabItem.Content>
         </TabItem>
     </TabControl>

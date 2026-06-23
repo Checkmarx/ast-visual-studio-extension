@@ -23,7 +23,7 @@ namespace ast_visual_studio_extension.CxPreferences
         /// </summary>
         public static event EventHandler RealtimeAssistSettingsChanged;
 
-        public bool AscaCheckBox { get; set; } = true;
+public bool AscaCheckBox { get; set; } = true;
         public bool OssRealtimeCheckBox { get; set; } = true;
         public bool SecretDetectionRealtimeCheckBox { get; set; } = true;
         public bool ContainersRealtimeCheckBox { get; set; } = true;

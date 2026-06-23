@@ -4,8 +4,8 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Iac;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets;
 using ast_visual_studio_extension.CxPreferences;
+using Microsoft.VisualStudio.Shell;
 using System.Collections.Generic;
-using CxWrapperClass = ast_visual_studio_extension.CxCLI.CxWrapper;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
 {
@@ -30,23 +30,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         {
             new ScannerRegistration("ASCA",
                 s => s.AscaCheckBox,
-                (w, s) => AscaService.GetInstance(w)),
+                (p, s) => AscaService.GetInstance(p)),
 
             new ScannerRegistration("Secrets",
                 s => s.SecretDetectionRealtimeCheckBox,
-                (w, s) => SecretsService.GetInstance(w)),
+                (p, s) => SecretsService.GetInstance(p)),
 
             new ScannerRegistration("IaC",
                 s => s.IacRealtimeCheckBox,
-                (w, s) => IacService.GetInstance(w)),
+                (p, s) => IacService.GetInstance(p)),
 
             new ScannerRegistration("Containers",
                 s => s.ContainersRealtimeCheckBox,
-                (w, s) => ContainersService.GetInstance(w, s.ContainersTool ?? "docker")),
+                (p, s) => ContainersService.GetInstance(p, s.ContainersTool ?? "docker")),
 
             new ScannerRegistration("OSS",
                 s => s.OssRealtimeCheckBox,
-                (w, s) => OssService.GetInstance(w)),
+                (p, s) => OssService.GetInstance(p)),
         };
     }
 }

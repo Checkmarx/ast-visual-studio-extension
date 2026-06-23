@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore;
 using ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow;
 using System.Linq;
 
@@ -24,7 +25,72 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     {
         private static readonly object _lock = new object();
         private static Dictionary<string, List<Vulnerability>> _fileToIssues = new Dictionary<string, List<Vulnerability>>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>
+        /// Raw, pre-filter findings keyed by normalized file path. We keep these so that toggling
+        /// ignore/revive can re-derive the visible set without re-running the scanner.
+        /// </summary>
+        private static Dictionary<string, List<Vulnerability>> _rawFileToIssues = new Dictionary<string, List<Vulnerability>>(StringComparer.OrdinalIgnoreCase);
         private static bool _themeHandlerRegistered;
+
+        // Subscribe once at type-load so ignore/revive changes always re-filter and refresh the UI.
+        static CxAssistDisplayCoordinator()
+        {
+            IgnoreFileManager.IgnoreDataChanged += OnIgnoreDataChanged;
+        }
+
+        private static List<Vulnerability> ApplyIgnoreFilter(List<Vulnerability> input)
+        {
+            if (input == null || input.Count == 0) return input ?? new List<Vulnerability>();
+            if (!IgnoreFileManager.IsInitialized) return input;
+            var result = new List<Vulnerability>(input.Count);
+            foreach (var v in input)
+                if (!IgnoreManager.IsVulnerabilityIgnored(v))
+                    result.Add(v);
+            return result;
+        }
+
+        private static void OnIgnoreDataChanged()
+        {
+            // Re-derive _fileToIssues from _rawFileToIssues using the new ignore set, then refresh UI.
+            IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
+            var filesToRender = new Dictionary<string, List<Vulnerability>>(StringComparer.OrdinalIgnoreCase);
+
+            lock (_lock)
+            {
+                _fileToIssues.Clear();
+                foreach (var kv in _rawFileToIssues)
+                {
+                    var filtered = ApplyIgnoreFilter(kv.Value);
+                    if (filtered != null && filtered.Count > 0)
+                        _fileToIssues[kv.Key] = filtered;
+                    filesToRender[kv.Key] = filtered ?? new List<Vulnerability>();
+                }
+                var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in _fileToIssues)
+                    copy[kv.Key] = new List<Vulnerability>(kv.Value);
+                snapshot = copy;
+            }
+
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    foreach (var kv in filesToRender)
+                    {
+                        var buffer = CxAssistGlyphTaggerProvider.ResolveBufferForOpenFile(kv.Key);
+                        if (buffer != null)
+                            await ApplyGutterAndErrorTaggersToBufferCoreAsync(buffer, kv.Value);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "DisplayCoordinator.OnIgnoreDataChanged.UI");
+            }
+
+            IssuesUpdated?.Invoke(snapshot);
+        }
 
         /// <summary>
         /// Subscribes to AssistIconLoader.ThemeChanged so all open taggers re-render
@@ -141,13 +207,39 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Finds a vulnerability by Id in the current findings (e.g. from Error List task HelpKeyword).
+        /// Returns true if there are any raw (pre-filter) findings for the given file and scanner.
+        /// Used to avoid clearing display on transient scan failures when results already exist.
+        /// </summary>
+        public static bool HasFindingsForScanner(string filePath, ScannerType scanner)
+        {
+            if (string.IsNullOrEmpty(filePath)) return false;
+            string key;
+            try { key = Path.GetFullPath(filePath); }
+            catch { key = filePath; }
+            lock (_lock)
+            {
+                return _rawFileToIssues.TryGetValue(key, out var list) &&
+                       list != null && list.Any(v => v.Scanner == scanner);
+            }
+        }
+
+        /// <summary>
+        /// Finds a vulnerability by Id in the raw findings (including ignored items, for context menu operations).
+        /// Used by Error List task HelpKeyword to recover the vulnerability even if it's been ignored.
+        /// Falls back to filtered findings if not found in raw.
         /// </summary>
         public static Vulnerability FindVulnerabilityById(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
             lock (_lock)
             {
+                // Search raw findings first (includes ignored items)
+                foreach (var list in _rawFileToIssues.Values)
+                {
+                    var v = list?.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
+                    if (v != null) return v;
+                }
+                // Fallback to filtered findings
                 foreach (var list in _fileToIssues.Values)
                 {
                     var v = list?.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.OrdinalIgnoreCase));
@@ -158,7 +250,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Finds the first vulnerability at the given location (for Error List selection by document + line).
+        /// Finds the first vulnerability at the given location in raw findings (including ignored items).
+        /// Used by Error List selection to recover vulnerability for context menu even if ignored.
+        /// Falls back to filtered findings if not found in raw.
         /// </summary>
         /// <param name="documentPath">Full path of the file (normalized for comparison).</param>
         /// <param name="zeroBasedLine">0-based line number (Error List uses 0-based).</param>
@@ -170,8 +264,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             catch { key = documentPath; }
             lock (_lock)
             {
+                // Search raw findings first (includes ignored items)
+                if (_rawFileToIssues.TryGetValue(key, out var rawList) && rawList != null)
+                {
+                    var v = rawList.FirstOrDefault(v =>
+                        CxAssistConstants.To0BasedLineForEditor(v.Scanner, v.LineNumber) == zeroBasedLine);
+                    if (v != null) return v;
+                }
+                // Fallback to filtered findings
                 if (!_fileToIssues.TryGetValue(key, out var list) || list == null) return null;
-                // Match by 0-based line: Vulnerability.LineNumber is 1-based, convert for comparison.
                 return list.FirstOrDefault(v =>
                     CxAssistConstants.To0BasedLineForEditor(v.Scanner, v.LineNumber) == zeroBasedLine);
             }
@@ -288,9 +389,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 return;
 
             // Filter out findings from disabled scanners (aligned with JetBrains DevAssistFileListener.getScanIssuesForEnabledScanner)
-            var list = vulnerabilities != null
+            var rawList = vulnerabilities != null
                 ? vulnerabilities.FindAll(v => CxAssistConstants.IsScannerEnabled(v.Scanner))
                 : new List<Vulnerability>();
+            var list = ApplyIgnoreFilter(rawList);
 
             if (vulnerabilities == null || vulnerabilities.Count == 0)
                 CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.NO_VULNERABILITIES_FOR_FILE, filePath ?? "unknown"));
@@ -310,6 +412,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
                 lock (_lock)
                 {
+                    if (rawList.Count == 0)
+                        _rawFileToIssues.Remove(key);
+                    else
+                        _rawFileToIssues[key] = new List<Vulnerability>(rawList);
+
                     if (list.Count == 0)
                         _fileToIssues.Remove(key);
                     else
@@ -431,11 +538,24 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
             lock (_lock)
             {
+                // Track raw (unfiltered) findings so an ignore/revive can re-derive the visible set later.
+                _rawFileToIssues.TryGetValue(key, out var rawExisting);
+                var mergedRaw = rawExisting != null
+                    ? rawExisting.Where(v => v.Scanner != scanner).ToList()
+                    : new List<Vulnerability>();
+                mergedRaw.AddRange(incoming);
+                if (mergedRaw.Count == 0)
+                    _rawFileToIssues.Remove(key);
+                else
+                    _rawFileToIssues[key] = mergedRaw;
+
+                var incomingVisible = ApplyIgnoreFilter(incoming);
+
                 _fileToIssues.TryGetValue(key, out var existing);
                 var merged = existing != null
                     ? existing.Where(v => v.Scanner != scanner).ToList()
                     : new List<Vulnerability>();
-                merged.AddRange(incoming);
+                merged.AddRange(incomingVisible);
 
                 mergedForUi = new List<Vulnerability>(merged);
                 if (merged.Count == 0)
@@ -447,6 +567,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 foreach (var kv in _fileToIssues)
                     copy[kv.Key] = new List<Vulnerability>(kv.Value);
                 snapshot = copy;
+            }
+
+            // Update stored line numbers for ignored entries when code changes shift line numbers (JetBrains parity).
+            if (scanner == ScannerType.ASCA)
+            {
+                // ASCA: match by ProblematicLine content (survives line shifts).
+                IgnoreManager.UpdateLineNumbersForFile(filePath, incoming);
+                IgnoreManager.RemoveIgnoreEntriesForFileIfEmpty(filePath, incoming);
+            }
+            else
+            {
+                // OSS/Secrets/IaC/Containers: match by key, update line, remove stale entries.
+                IgnoreManager.UpdateLineNumbersForIgnoredEntries(filePath, scanner, incoming);
             }
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.DECORATING_UI_FOR_FILE, mergedForUi.Count, filePath));
@@ -480,15 +613,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 return;
 
             // Filter out findings from disabled scanners (aligned with UpdateFindings)
-            var list = vulnerabilities != null
+            var rawList = vulnerabilities != null
                 ? vulnerabilities.FindAll(v => CxAssistConstants.IsScannerEnabled(v.Scanner))
                 : new List<Vulnerability>();
+            var list = ApplyIgnoreFilter(rawList);
 
             IReadOnlyDictionary<string, List<Vulnerability>> snapshot;
             lock (_lock)
             {
                 string key = NormalizePath(filePath);
                 if (string.IsNullOrEmpty(key)) return;
+
+                if (rawList.Count == 0)
+                    _rawFileToIssues.Remove(key);
+                else
+                    _rawFileToIssues[key] = new List<Vulnerability>(rawList);
 
                 if (list.Count == 0)
                     _fileToIssues.Remove(key);
@@ -517,12 +656,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             lock (_lock)
             {
                 _fileToIssues.Clear();
+                _rawFileToIssues.Clear();
                 foreach (var kv in issuesByFile)
                 {
                     if (string.IsNullOrEmpty(kv.Key) || kv.Value == null) continue;
                     string key = NormalizePath(kv.Key);
                     if (string.IsNullOrEmpty(key)) continue;
-                    _fileToIssues[key] = new List<Vulnerability>(kv.Value);
+                    _rawFileToIssues[key] = new List<Vulnerability>(kv.Value);
+                    var filtered = ApplyIgnoreFilter(kv.Value);
+                    if (filtered.Count > 0)
+                        _fileToIssues[key] = filtered;
                 }
                 var copy = new Dictionary<string, List<Vulnerability>>(_fileToIssues.Count, StringComparer.OrdinalIgnoreCase);
                 foreach (var kv in _fileToIssues)
@@ -546,6 +689,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             {
                 filesToClear.AddRange(_fileToIssues.Keys);
                 _fileToIssues.Clear();
+                _rawFileToIssues.Clear();
                 snapshot = new Dictionary<string, List<Vulnerability>>(StringComparer.OrdinalIgnoreCase);
             }
 
@@ -594,6 +738,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
             lock (_lock)
             {
+                // Keep _rawFileToIssues in sync so a later ignore-list change doesn't resurrect disabled-scanner findings.
+                foreach (var filePath in _rawFileToIssues.Keys.ToList())
+                {
+                    var rawList = _rawFileToIssues[filePath];
+                    if (rawList == null) continue;
+                    var filteredRaw = rawList.Where(v => CxAssistConstants.IsScannerEnabled(v.Scanner)).ToList();
+                    if (filteredRaw.Count == 0)
+                        _rawFileToIssues.Remove(filePath);
+                    else if (filteredRaw.Count < rawList.Count)
+                        _rawFileToIssues[filePath] = filteredRaw;
+                }
+
                 // Iterate all files and remove vulnerabilities from disabled scanners
                 foreach (var filePath in _fileToIssues.Keys.ToList())
                 {

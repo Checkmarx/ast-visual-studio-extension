@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
@@ -23,7 +22,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
 
         protected override ScannerType CoordinatorScannerType => ScannerType.Secrets;
 
-        private SecretsService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper) : base(cxWrapper)
+        private SecretsService(Microsoft.VisualStudio.Shell.AsyncPackage package) : base(package)
         {
         }
 
@@ -73,7 +72,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
                     return 0;
                 }
 
-                var results = await _cxWrapper.SecretsRealtimeScanAsync(tempFilePath);
+                var results = await GetWrapper().SecretsRealtimeScanAsync(tempFilePath);
 
                 if (results?.Secrets == null || results.Secrets.Count == 0)
                 {
@@ -92,7 +91,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
             {
                 OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
                 _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
-                ClearDisplayForFile(sourceFilePath);
+                if (!CxAssistDisplayCoordinator.HasFindingsForScanner(sourceFilePath, CoordinatorScannerType))
+                    ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
         }
@@ -100,7 +100,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Secrets
         /// <summary>
         /// Gets or creates the singleton instance.
         /// </summary>
-        public static SecretsService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
-            => GetOrCreate(() => new SecretsService(cxWrapper));
+        public static SecretsService GetInstance(Microsoft.VisualStudio.Shell.AsyncPackage package)
+            => GetOrCreate(() => new SecretsService(package));
     }
 }

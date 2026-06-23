@@ -221,7 +221,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         #region GetIgnoreThisLabel
 
         [Fact]
-        public void GetIgnoreThisLabel_Secrets_ReturnsSecretLabel()
+        public void GetIgnoreThisLabel_Secrets_ReturnsSecretInFileLabel()
         {
             Assert.Equal("Ignore this secret in file", CxAssistConstants.GetIgnoreThisLabel(ScannerType.Secrets));
         }

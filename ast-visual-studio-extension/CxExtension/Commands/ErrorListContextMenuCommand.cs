@@ -6,6 +6,8 @@ using EnvDTE;
 using EnvDTE80;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 
 namespace ast_visual_studio_extension.CxExtension.Commands
@@ -32,9 +34,9 @@ namespace ast_visual_studio_extension.CxExtension.Commands
 
             AddCommand(FixCommandId, OnFixWithAssist);
             AddCommand(ViewDetailsCommandId, OnViewDetails);
-            // TODO: Ignore feature not yet implemented - hidden for now
-            // AddCommand(IgnoreThisCommandId, OnIgnoreThis, v => CxAssistConstants.GetIgnoreThisLabel(v.Scanner));
-            // AddCommand(IgnoreAllCommandId, OnIgnoreAll, v => CxAssistConstants.GetIgnoreAllLabel(v.Scanner));
+            AddCommand(IgnoreThisCommandId, OnIgnoreThis, v => CxAssistConstants.GetIgnoreThisLabel(v.Scanner));
+            AddCommand(IgnoreAllCommandId, OnIgnoreAll, v => CxAssistConstants.GetIgnoreAllLabel(v.Scanner),
+                v => CxAssistConstants.ShouldShowIgnoreAll(v.Scanner));
         }
 
         public static ErrorListContextMenuCommand Instance { get; private set; }
@@ -53,8 +55,10 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             var cmd = new OleMenuCommand(invokeHandler, id);
             cmd.BeforeQueryStatus += (s, e) =>
             {
+                CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: BeforeQueryStatus called for command {commandId}");
                 var v = GetSelectedCxAssistVulnerability();
                 bool visible = v != null && (isVisible == null || isVisible(v));
+                CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Command {commandId} - vulnerability={v?.Title ?? "null"}, visible={visible}");
                 cmd.Visible = cmd.Enabled = visible;
                 if (getText != null && v != null)
                     cmd.Text = getText(v);
@@ -74,50 +78,98 @@ namespace ast_visual_studio_extension.CxExtension.Commands
                 var errorList = Package.GetGlobalService(typeof(SVsErrorList)) as IVsTaskList2;
                 if (errorList != null)
                 {
+                    CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu: IVsTaskList2 available");
                     if (errorList.EnumSelectedItems(out var enumItems) == 0 && enumItems != null)
                     {
                         var items = new IVsTaskItem[1];
                         var fetchedArray = new uint[1];
                         if (enumItems.Next(1, items, fetchedArray) == 0 && fetchedArray[0] > 0 && items[0] != null)
                         {
+                            CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu: Found selected item");
                             // Selected item may be our ErrorTask (has HelpKeyword, Document, Line)
                             if (items[0] is ErrorTask et)
                             {
+                                CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Selected is ErrorTask - HelpKeyword='{et.HelpKeyword}', Document='{et.Document}', Line={et.Line}");
                                 if (!string.IsNullOrEmpty(et.HelpKeyword) && et.HelpKeyword.StartsWith(CxAssistErrorListSync.HelpKeywordPrefix, StringComparison.OrdinalIgnoreCase))
                                 {
                                     string id = et.HelpKeyword.Substring(CxAssistErrorListSync.HelpKeywordPrefix.Length).Trim();
-                                    return CxAssistDisplayCoordinator.FindVulnerabilityById(id);
+                                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Extracted ID={id}");
+                                    var v = CxAssistDisplayCoordinator.FindVulnerabilityById(id);
+                                    if (v != null)
+                                    {
+                                        CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Found vulnerability: {v.Title}");
+                                        return v;
+                                    }
+                                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Vulnerability not found by ID");
                                 }
+
                                 if (!string.IsNullOrEmpty(et.Document) && et.Line >= 0)
-                                    return CxAssistDisplayCoordinator.FindVulnerabilityByLocation(et.Document, et.Line);
+                                {
+                                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Trying location lookup: {et.Document}:{et.Line}");
+                                    var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(et.Document, et.Line);
+                                    if (v != null)
+                                    {
+                                        CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Found by location: {v.Title}");
+                                        return v;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Item not ErrorTask, type={items[0]?.GetType().Name ?? "null"}");
                             }
                         }
                     }
                 }
+                else
+                {
+                    CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu: IVsTaskList2 not available");
+                }
 
-                // Fallback: use DTE ErrorList - selected item is often the one with focus
+                // Fallback: use DTE ErrorList - iterate through all items to find selected one
                 var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
                 if (dte?.ToolWindows?.ErrorList?.ErrorItems != null)
                 {
                     var errors = dte.ToolWindows.ErrorList.ErrorItems;
+                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Fallback DTE method - {errors.Count} error items");
+
                     if (errors.Count >= 1)
                     {
                         try
                         {
-                            var first = errors.Item(1);
-                            string file = first.FileName;
-                            int line = first.Line;
-                            if (!string.IsNullOrEmpty(file) && line >= 0)
-                                return CxAssistDisplayCoordinator.FindVulnerabilityByLocation(file, line > 0 ? line - 1 : 0);
+                            // Iterate through items to find CxAssist ones
+                            for (int i = 1; i <= errors.Count; i++)
+                            {
+                                var item = errors.Item(i);
+                                if (item == null) continue;
+
+                                string file = item.FileName;
+                                int line = item.Line;
+                                if (!string.IsNullOrEmpty(file))
+                                {
+                                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Checking item {i} - {file}:{line}");
+                                    var v = CxAssistDisplayCoordinator.FindVulnerabilityByLocation(file, line > 0 ? line - 1 : 0);
+                                    if (v != null)
+                                    {
+                                        CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Found vulnerability at item {i}");
+                                        return v;
+                                    }
+                                }
+                            }
                         }
-                        catch { /* Item might not be accessible */ }
+                        catch (Exception ex)
+                        {
+                            CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Error iterating items: {ex.Message}");
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "ErrorListContextMenu.GetSelectedCxAssistVulnerability");
+                CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu: Exception in GetSelectedCxAssistVulnerability: {ex.Message}");
             }
+            CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu: Failed to find CxAssist vulnerability");
             return null;
         }
 
@@ -146,7 +198,27 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                try
+                {
+                    CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu.OnIgnoreThis: Handler called");
+                    var v = GetSelectedCxAssistVulnerability();
+                    if (v == null)
+                    {
+                        CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu.OnIgnoreThis: No vulnerability found");
+                        return;
+                    }
+                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu.OnIgnoreThis: Ignoring {v.Title}");
+                    IgnoreManager.AddIgnoredEntry(v);
+                    var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+                    if (dte?.StatusBar != null)
+                        dte.StatusBar.Text = CxAssistConstants.GetIgnoreThisSuccessMessage(v);
+                    CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu.OnIgnoreThis: Success");
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "ErrorListContextMenu.OnIgnoreThis");
+                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu.OnIgnoreThis: Exception - {ex.Message}");
+                }
             });
         }
 
@@ -155,7 +227,28 @@ namespace ast_visual_studio_extension.CxExtension.Commands
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                try
+                {
+                    CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu.OnIgnoreAll: Handler called");
+                    var v = GetSelectedCxAssistVulnerability();
+                    if (v == null)
+                    {
+                        CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu.OnIgnoreAll: No vulnerability found");
+                        return;
+                    }
+                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu.OnIgnoreAll: Ignoring all of type {v.Scanner}");
+                    var all = CxAssistDisplayCoordinator.GetCurrentFindings() ?? new List<Vulnerability>();
+                    IgnoreManager.AddAllIgnoredEntry(v, all);
+                    var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+                    if (dte?.StatusBar != null)
+                        dte.StatusBar.Text = CxAssistConstants.GetIgnoreAllSuccessMessage(v.Scanner);
+                    CxAssistOutputPane.WriteToOutputPane("ErrorListContextMenu.OnIgnoreAll: Success");
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "ErrorListContextMenu.OnIgnoreAll");
+                    CxAssistOutputPane.WriteToOutputPane($"ErrorListContextMenu.OnIgnoreAll: Exception - {ex.Message}");
+                }
             });
         }
     }

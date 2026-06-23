@@ -42,6 +42,9 @@ namespace ast_visual_studio_extension.CxExtension
             // Subscribe to tab selection changed event to populate CxAssist data when tab is first shown
             MainTabControl.SelectionChanged += MainTabControl_SelectionChanged;
 
+            // Update Ignored Findings count badge whenever the list changes
+            ast_visual_studio_extension.CxExtension.CxAssist.UI.IgnoredFindingsWindow.CxAssistIgnoredFindingsControl.CountChanged += OnIgnoredCountChanged;
+
             resultInfoPanel = new ResultInfoPanel(this);
 
             resultsVulnPanel = new ResultVulnerabilitiesPanel(package, this);
@@ -165,6 +168,16 @@ namespace ast_visual_studio_extension.CxExtension
             }
         }
 
+        private void OnIgnoredCountChanged(int count)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => OnIgnoredCountChanged(count)));
+                return;
+            }
+            IgnoredFindingsTab.Header = count > 0 ? $"Ignored Findings ({count})" : "Ignored Findings";
+        }
+
         private void OnAuthStateChanged(bool isAuthenticated)
         {
             if (!Dispatcher.CheckAccess())
@@ -185,7 +198,7 @@ namespace ast_visual_studio_extension.CxExtension
             StateManager stateManager = StateManagerProvider.GetStateManager();
             cxToolbar.RefreshStates();
 
-            await RegisterRealtimeScanners(cxWrapper);
+            await RegisterRealtimeScanners();
         }
 
         private Dictionary<MenuItem, State> CreateStateMenuItems(List<State> states)
@@ -262,8 +275,8 @@ namespace ast_visual_studio_extension.CxExtension
         }
 
 
-        private Task RegisterRealtimeScanners(CxCLI.CxWrapper cxWrapper) =>
-            RealtimeScannerHost.RegisterAsync(package, cxWrapper, GetType());
+        private Task RegisterRealtimeScanners() =>
+            RealtimeScannerHost.RegisterAsync(package, GetType());
 
         /// <summary>
         /// Public method to register realtime scanners if authenticated.

@@ -99,7 +99,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             Line = line1Based,
                             Column = first.ColumnNumber,
                             FilePath = first.FilePath,
-                            Scanner = ScannerType.IaC
+                            Scanner = ScannerType.IaC,
+                            Vulnerability = first
                         });
                     }
                     else
@@ -112,7 +113,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             Line = line1Based,
                             Column = first.ColumnNumber,
                             FilePath = first.FilePath,
-                            Scanner = ScannerType.IaC
+                            Scanner = ScannerType.IaC,
+                            Vulnerability = first
                         });
                     }
                 }
@@ -132,7 +134,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             Line = first.LineNumber,
                             Column = first.ColumnNumber,
                             FilePath = first.FilePath,
-                            Scanner = ScannerType.ASCA
+                            Scanner = ScannerType.ASCA,
+                            Vulnerability = first
                         });
                     }
                     else
@@ -145,7 +148,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             Line = first.LineNumber,
                             Column = first.ColumnNumber,
                             FilePath = first.FilePath,
-                            Scanner = ScannerType.ASCA
+                            Scanner = ScannerType.ASCA,
+                            Vulnerability = first
                         });
                     }
                 }
@@ -165,7 +169,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Line = v.LineNumber,
                         Column = v.ColumnNumber,
                         FilePath = v.FilePath,
-                        Scanner = ScannerType.OSS
+                        Scanner = ScannerType.OSS,
+                        Vulnerability = v
                     });
                 }
 
@@ -182,7 +187,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Line = v.LineNumber,
                         Column = v.ColumnNumber,
                         FilePath = v.FilePath,
-                        Scanner = ScannerType.Secrets
+                        Scanner = ScannerType.Secrets,
+                        Vulnerability = v
                     });
                 }
 
@@ -199,7 +205,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Line = v.LineNumber,
                         Column = v.ColumnNumber,
                         FilePath = v.FilePath,
-                        Scanner = ScannerType.Containers
+                        Scanner = ScannerType.Containers,
+                        Vulnerability = v
                     });
                 }
 

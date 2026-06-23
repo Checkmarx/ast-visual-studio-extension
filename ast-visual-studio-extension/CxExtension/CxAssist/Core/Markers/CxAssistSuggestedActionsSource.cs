@@ -71,13 +71,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 var actions = new List<ISuggestedAction>
                 {
                     new FixWithCxOneAssistSuggestedAction(vulnerability),
-                    new ViewDetailsSuggestedAction(vulnerability)
-                    // TODO: Ignore feature not yet implemented - hidden for now
-                    // new IgnoreThisVulnerabilitySuggestedAction(vulnerability)
+                    new ViewDetailsSuggestedAction(vulnerability),
+                    new IgnoreThisVulnerabilitySuggestedAction(vulnerability)
                 };
-                // TODO: Ignore feature not yet implemented - hidden for now
-                // if (CxAssistConstants.ShouldShowIgnoreAll(vulnerability.Scanner))
-                //     actions.Add(new IgnoreAllOfThisTypeSuggestedAction(vulnerability));
+                if (CxAssistConstants.ShouldShowIgnoreAll(vulnerability.Scanner))
+                    actions.Add(new IgnoreAllOfThisTypeSuggestedAction(vulnerability));
                 return new[] { new SuggestedActionSet(actions) };
             }
             catch (Exception ex)
