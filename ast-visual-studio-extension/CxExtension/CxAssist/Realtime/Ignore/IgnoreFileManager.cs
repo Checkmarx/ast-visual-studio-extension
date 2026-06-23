@@ -490,10 +490,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
 
                         case ScannerType.Secrets:
                             foreach (var f in activeFiles)
+                                // Only include Title; SecretValue is excluded to prevent privacy violation
                                 items.Add(new TempItem
                                 {
-                                    Title = entry.Title,
-                                    SecretValue = entry.SecretValue
+                                    Title = entry.Title
                                 });
                             break;
 
