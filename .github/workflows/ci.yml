@@ -6,7 +6,7 @@ permissions: {}
 
 jobs:
   integration-tests:
-    runs-on: cx-public-windows-x64
+    runs-on: cx-public-windows-2022-x64
     permissions:
       contents: write
     steps:
