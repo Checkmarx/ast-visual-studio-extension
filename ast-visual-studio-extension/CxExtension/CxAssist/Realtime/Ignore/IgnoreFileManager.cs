@@ -76,7 +76,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
                 _solutionRoot = null;
                 _ignoreData = new Dictionary<string, IgnoreEntry>(StringComparer.Ordinal);
             }
-            RaiseChanged();
         }
 
         /// <summary>Whether <see cref="Initialize"/> has been called with a valid solution root.</summary>
@@ -307,11 +306,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
             if (removed) RaiseChanged();
         }
 
-        /// <summary>Saves current in-memory data to disk without raising IgnoreDataChanged (used for silent line-number updates).</summary>
+        /// <summary>Saves current in-memory data to disk without raising IgnoreDataChanged. Call <see cref="RaiseChanged"/> separately when the UI also needs to refresh.</summary>
         public static void ForceSaveToDisk()
         {
             lock (_lock) { SaveToDiskLocked(); }
         }
+
+        /// <summary>Raises <see cref="IgnoreDataChanged"/> so subscribers (e.g. Ignored Findings tab) refresh.</summary>
+        public static void NotifyChanged() => RaiseChanged();
 
         /// <summary>Normalizes <paramref name="filePath"/> to a forward-slash, solution-relative path.</summary>
         public static string NormalizePath(string filePath)

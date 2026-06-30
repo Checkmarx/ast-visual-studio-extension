@@ -41,6 +41,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
             CxAssistOutputPane.WriteToOutputPane($"RTS-Ignore: Ignoring {key}");
             IgnoreFileManager.UpsertEntry(key, entry);
             CxAssistOutputPane.WriteToOutputPane($"RTS-Ignore: Successfully added ignore entry for issue: {title}");
+            TriggerRescanForVulnerability(vuln);
             return key;
         }
 
@@ -78,6 +79,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
 
             IgnoreFileManager.UpsertEntry(key, entry);
             CxAssistOutputPane.WriteToOutputPane($"RTS-Ignore: Successfully added ignore entry for issue: {title}");
+            // Trigger rescan of all affected files so gutter icons, findings tree, and error list update.
+            TriggerRescanForEntry(entry);
             return key;
         }
 
@@ -192,6 +195,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
                     : System.IO.Path.Combine(root, fileRef.Path.Replace('/', System.IO.Path.DirectorySeparatorChar));
                 _ = RealtimeScannerHost.TriggerFileScanAsync(fullPath);
             }
+        }
+
+        /// <summary>
+        /// Triggers a rescan of the file associated with <paramref name="vuln"/> so that the gutter
+        /// icon, findings tree, and Error List refresh immediately after the ignore entry is saved.
+        /// </summary>
+        private static void TriggerRescanForVulnerability(Vulnerability vuln)
+        {
+            if (string.IsNullOrEmpty(vuln?.FilePath)) return;
+            _ = RealtimeScannerHost.TriggerFileScanAsync(vuln.FilePath);
         }
 
         private static void ShowReviveUndoNotification(string key, IgnoreEntry revived, int fileCount)
@@ -363,7 +376,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
             foreach (var v in freshAscaFindings ?? Enumerable.Empty<Vulnerability>())
             {
                 if (v.Scanner != ScannerType.ASCA) continue;
-                string line = TryReadTrimmedLine(v.FilePath, v.LineNumber);
+                // JetBrains parity: ProblematicLine is returned by the CLI scan result and is
+                // always populated by VulnerabilityMapper.FromAsca. Fall back to disk read only if missing.
+                string line = !string.IsNullOrEmpty(v.ProblematicLine)
+                    ? v.ProblematicLine
+                    : TryReadTrimmedLine(v.FilePath, v.LineNumber);
                 if (!string.IsNullOrEmpty(line)) stillPresentLines.Add(line);
             }
             bool changed = IgnoreFileManager.PruneStaleFileReferences(relativePath, stillPresentLines);
@@ -438,6 +455,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
             if (hasChanges || keysToRemove.Count > 0)
             {
                 IgnoreFileManager.ForceSaveToDisk();
+                IgnoreFileManager.NotifyChanged();
                 CxAssistOutputPane.WriteToOutputPane($"RTS-Ignore: Saved line number updates for {scanner} entries in {relativePath}");
             }
         }
@@ -462,11 +480,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
                     if (!string.Equals(fileRef.Path, relativePath, StringComparison.OrdinalIgnoreCase)) continue;
                     if (string.IsNullOrEmpty(fileRef.ProblematicLine)) continue;
 
-                    // Find fresh finding whose trimmed source line matches the stored content
+                    // Find fresh finding whose trimmed source line matches the stored content.
+                    // JetBrains parity: ProblematicLine is returned by the CLI scan result and is
+                    // always populated by VulnerabilityMapper.FromAsca. Fall back to disk read only if missing.
                     var match = freshFindings?.FirstOrDefault(v =>
                         v.Scanner == ScannerType.ASCA &&
                         v.LineNumber > 0 &&
-                        string.Equals(TryReadTrimmedLine(v.FilePath, v.LineNumber), fileRef.ProblematicLine, StringComparison.Ordinal));
+                        string.Equals(
+                            !string.IsNullOrEmpty(v.ProblematicLine) ? v.ProblematicLine : TryReadTrimmedLine(v.FilePath, v.LineNumber),
+                            fileRef.ProblematicLine,
+                            StringComparison.Ordinal));
 
                     if (match != null && match.LineNumber != fileRef.Line)
                     {
@@ -480,6 +503,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
             if (anyChanged)
             {
                 IgnoreFileManager.ForceSaveToDisk();
+                IgnoreFileManager.NotifyChanged();
                 CxAssistOutputPane.WriteToOutputPane($"RTS-Ignore: Saved updated line numbers for file: {relativePath}");
             }
         }
@@ -592,7 +616,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
                 Line = vuln.LineNumber > 0 ? vuln.LineNumber : (int?)null
             };
             if (vuln.Scanner == ScannerType.ASCA)
-                fileRef.ProblematicLine = TryReadTrimmedLine(vuln.FilePath, vuln.LineNumber);
+            {
+                // JetBrains parity: ProblematicLine is returned directly by the CLI in the scan result.
+                // Prefer it over a disk read so that ignoring an unsaved (moved) vulnerability stores
+                // the correct source-line content for future content-based matching.
+                fileRef.ProblematicLine = !string.IsNullOrEmpty(vuln.ProblematicLine)
+                    ? vuln.ProblematicLine
+                    : TryReadTrimmedLine(vuln.FilePath, vuln.LineNumber);
+            }
             return fileRef;
         }
 
@@ -652,7 +683,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore
 
                 case ScannerType.ASCA:
                     if (!Eq(entry.Title, ResolveTitle(vuln))) return false;
-                    string current = TryReadTrimmedLine(vuln.FilePath, vuln.LineNumber);
+                    // JetBrains parity: prefer ProblematicLine from the CLI scan result (always populated
+                    // by VulnerabilityMapper.FromAsca). Fall back to disk read only if missing.
+                    string current = !string.IsNullOrEmpty(vuln.ProblematicLine)
+                        ? vuln.ProblematicLine
+                        : TryReadTrimmedLine(vuln.FilePath, vuln.LineNumber);
                     if (string.IsNullOrEmpty(current))
                     {
                         // Fall back to active file ref's stored line content (JetBrains parity).
