@@ -1,9 +1,11 @@
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Language.Intellisense;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -169,11 +171,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         public void Invoke(CancellationToken cancellationToken)
         {
+            var v = _vulnerability;
             System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
-                    MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                    string key = IgnoreManager.AddIgnoredEntry(v);
+                    CxAssistOutputPane.WriteToOutputPane($"Ignored: {v.Title} ({v.Scanner}) key={key}");
+                    try
+                    {
+                        var dte = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider
+                            .GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+                        if (dte?.StatusBar != null)
+                            dte.StatusBar.Text = CxAssistConstants.GetIgnoreThisSuccessMessage(v);
+                    }
+                    catch { }
                 }
                 catch (Exception ex)
                 {
@@ -223,11 +235,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         public void Invoke(CancellationToken cancellationToken)
         {
+            var v = _vulnerability;
             System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
             {
                 try
                 {
-                    MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
+                    var all = CxAssistDisplayCoordinator.GetCurrentFindings() ?? new List<Vulnerability>();
+                    string key = IgnoreManager.AddAllIgnoredEntry(v, all);
+                    CxAssistOutputPane.WriteToOutputPane($"Ignored all of type: {v.Title} ({v.Scanner}) key={key}");
                 }
                 catch (Exception ex)
                 {

@@ -142,9 +142,9 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         public void BuildSCARemediationPrompt_ContainsRemediationSteps()
         {
             var result = CxOneAssistFixPrompts.BuildSCARemediationPrompt("lodash", "4.17.19", "npm", "High");
-            Assert.Contains("Step 1", result);
-            Assert.Contains("Step 2", result);
             Assert.Contains("PackageRemediation", result);
+            Assert.Contains("EXECUTION", result);
+            Assert.Contains("VERIFICATION", result);
         }
 
         #endregion
@@ -389,7 +389,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         public void BuildContainersRemediationPrompt_ContainsStep3Output()
         {
             var result = CxOneAssistFixPrompts.BuildContainersRemediationPrompt("yaml", "nginx", "latest", "High");
-            Assert.Contains("Step 3", result);
+            Assert.Contains("VERIFICATION", result);
             Assert.Contains("OUTPUT", result);
         }
 
@@ -414,6 +414,54 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             var result = CxOneAssistFixPrompts.BuildASCARemediationPrompt("rule", "desc", "High", null, 1);
             Assert.NotNull(result);
             Assert.Contains("rule", result);
+        }
+
+        #endregion
+
+        #region BOFA Fallback
+
+        [Fact]
+        public void BuildSCARemediationPrompt_ContainsBofaFallbackInstructions()
+        {
+            var result = CxOneAssistFixPrompts.BuildSCARemediationPrompt("lodash", "4.17.19", "npm", "High");
+            Assert.Contains("not available", result);
+            Assert.Contains("Automated Remediation Unavailable", result);
+            Assert.Contains("AI-Generated Remediation Guidance", result);
+        }
+
+        [Fact]
+        public void BuildSecretRemediationPrompt_ContainsBofaFallbackInstructions()
+        {
+            var result = CxOneAssistFixPrompts.BuildSecretRemediationPrompt("api-key", "desc", "High");
+            Assert.Contains("not available", result);
+            Assert.Contains("Automated Remediation Unavailable", result);
+        }
+
+        [Fact]
+        public void BuildContainersRemediationPrompt_ContainsBofaFallbackInstructions()
+        {
+            var result = CxOneAssistFixPrompts.BuildContainersRemediationPrompt("dockerfile", "nginx", "latest", "Critical");
+            Assert.Contains("not available", result);
+            Assert.Contains("Automated Remediation Unavailable", result);
+            Assert.Contains("AI-Generated Remediation Guidance", result);
+        }
+
+        [Fact]
+        public void BuildIACRemediationPrompt_ContainsBofaFallbackInstructions()
+        {
+            var result = CxOneAssistFixPrompts.BuildIACRemediationPrompt(
+                "Issue", "Desc", "High", "tf", "expected", "actual", 5);
+            Assert.Contains("not available", result);
+            Assert.Contains("Automated Remediation Unavailable", result);
+        }
+
+        [Fact]
+        public void BuildASCARemediationPrompt_ContainsBofaFallbackInstructions()
+        {
+            var result = CxOneAssistFixPrompts.BuildASCARemediationPrompt(
+                "sql-injection", "SQL injection", "High", "Use parameterized queries", 10);
+            Assert.Contains("not available", result);
+            Assert.Contains("Automated Remediation Unavailable", result);
         }
 
         #endregion

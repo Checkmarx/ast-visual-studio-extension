@@ -1,7 +1,7 @@
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
 using ast_visual_studio_extension.CxPreferences;
+using Microsoft.VisualStudio.Shell;
 using System;
-using CxWrapperClass = ast_visual_studio_extension.CxCLI.CxWrapper;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
 {
@@ -30,14 +30,14 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         public Func<CxOneAssistSettingsModule, bool> IsEnabled { get; }
 
         /// <summary>
-        /// Creates the scanner instance given a wrapper and settings.
+        /// Creates the scanner instance given a package and settings.
         /// </summary>
-        public Func<CxWrapperClass, CxOneAssistSettingsModule, IRealtimeScannerService> Factory { get; }
+        public Func<AsyncPackage, CxOneAssistSettingsModule, IRealtimeScannerService> Factory { get; }
 
         public ScannerRegistration(
             string name,
             Func<CxOneAssistSettingsModule, bool> isEnabled,
-            Func<CxWrapperClass, CxOneAssistSettingsModule, IRealtimeScannerService> factory)
+            Func<AsyncPackage, CxOneAssistSettingsModule, IRealtimeScannerService> factory)
         {
             Name = name;
             IsEnabled = isEnabled;

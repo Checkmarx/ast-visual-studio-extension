@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 using ast_visual_studio_extension.CxExtension.Utils;
@@ -27,7 +26,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
     /// </summary>
     public abstract class BaseRealtimeScannerService : IRealtimeScannerService
     {
-        protected readonly ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
+        protected Microsoft.VisualStudio.Shell.AsyncPackage _package;
         protected readonly ILog _logger;
         private readonly RealtimeFileScanScheduler _debounceScheduler;
         private const int SCAN_TIMEOUT_MS = 60000;
@@ -130,9 +129,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
         }
 
-        protected BaseRealtimeScannerService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper)
+        /// <summary>
+        /// JetBrains parity: CxWrapperFactory.build() is called fresh on every scan.
+        /// VS equivalent: build a new CxWrapper from current persisted settings each time.
+        /// This ensures AdditionalParameters and ApiKey changes take effect on the next scan
+        /// without requiring scanner restart or clearing existing findings.
+        /// </summary>
+        protected ast_visual_studio_extension.CxCLI.CxWrapper GetWrapper()
+            => CxUtils.GetCxWrapper(_package, GetType());
+
+        protected BaseRealtimeScannerService(Microsoft.VisualStudio.Shell.AsyncPackage package)
         {
-            _cxWrapper = cxWrapper;
+            _package = package;
             _logger = LogManager.GetLogger(GetType());
             try
             {
@@ -565,8 +573,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             }
             catch (Exception ex)
             {
-                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
-                _logger.Error($"{ScannerName} scanner: scan error - {ex.Message}", ex);
+                string detail = ex.Message;
+                if (ex.InnerException != null && string.IsNullOrWhiteSpace(ex.Message))
+                    detail = ex.InnerException.Message;
+                if (string.IsNullOrWhiteSpace(detail))
+                    detail = ex.GetType().Name;
+                OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {detail}");
+                _logger.Error($"{ScannerName} scanner: scan error - {ex}", ex);
                 return 0;
             }
             finally
@@ -647,7 +660,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
             if (issueCount <= 0) return;
             try
             {
-                _cxWrapper.LogDetectionTelemetryFireAndForget($"Realtime{ScannerName}", "IssuesFound", issueCount);
+                GetWrapper()?.LogDetectionTelemetryFireAndForget($"Realtime{ScannerName}", "IssuesFound", issueCount);
             }
             catch
             {

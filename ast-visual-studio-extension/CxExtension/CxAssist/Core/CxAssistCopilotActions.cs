@@ -18,6 +18,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static void SendFixWithAssist(Vulnerability v, IReadOnlyList<Vulnerability> sameLineVulns = null)
         {
             if (v == null) return;
+            TelemetryService.LogFixWithCxOneAssist(v);
             string issueDesc = v.Title ?? v.Description ?? "unknown";
             string filePath = v.FilePath ?? "unknown";
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_CALLED, "Fix", issueDesc));
@@ -53,6 +54,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public static void SendViewDetails(Vulnerability v, IReadOnlyList<Vulnerability> relatedVulns = null)
         {
             if (v == null) return;
+            TelemetryService.LogViewDetails(v);
             string issueDesc = v.Title ?? v.Description ?? "unknown";
             string filePath = v.FilePath ?? "unknown";
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_CALLED, "View details", issueDesc));

@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
 {
@@ -20,6 +21,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
     {
         private readonly ITextBuffer _buffer;
         private readonly Dictionary<int, List<Vulnerability>> _vulnerabilitiesByLine;
+        private HashSet<int> _ignoredLinesByLine = new HashSet<int>();
 
         public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
 
@@ -33,7 +35,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         {
             var result = new List<ITagSpan<CxAssistGlyphTag>>();
 
-            if (spans == null || spans.Count == 0 || _vulnerabilitiesByLine.Count == 0)
+            if (spans == null || spans.Count == 0 || (_vulnerabilitiesByLine.Count == 0 && _ignoredLinesByLine.Count == 0))
                 return result;
 
             ITextSnapshot snapshot = null;
@@ -77,6 +79,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                                 result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
                             }
                         }
+                        else if (_ignoredLinesByLine.Contains(lineNumber))
+                        {
+                            var line = snapshot.GetLineFromLineNumber(lineNumber);
+                            if (HasNonWhitespaceContent(snapshot, line))
+                            {
+                                var lineSpan = new SnapshotSpan(snapshot, line.Start, line.Length);
+                                var tag = new CxAssistGlyphTag("Ignored", "This vulnerability is ignored", null);
+                                result.Add(new TagSpan<CxAssistGlyphTag>(lineSpan, tag));
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -100,14 +112,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         private void UpdateVulnerabilitiesCore(List<Vulnerability> vulnerabilities)
         {
             _vulnerabilitiesByLine.Clear();
+            _ignoredLinesByLine = new HashSet<int>();
 
             var snapshot = _buffer.CurrentSnapshot;
+            int lineCount = snapshot.LineCount;
+
             if (vulnerabilities != null)
             {
-                int lineCount = snapshot.LineCount;
                 foreach (var vuln in vulnerabilities)
                 {
-                    // Gutter on first line only: use first location's line when Locations is set, else LineNumber.
                     int gutterLine1Based = (vuln.Locations != null && vuln.Locations.Count > 0)
                         ? vuln.Locations[0].Line
                         : vuln.LineNumber;
@@ -117,6 +130,39 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
                     if (!_vulnerabilitiesByLine.ContainsKey(lineNumber))
                         _vulnerabilitiesByLine[lineNumber] = new List<Vulnerability>();
                     _vulnerabilitiesByLine[lineNumber].Add(vuln);
+                }
+            }
+
+            // Build ignored-lines overlay: lines with ignored entries but no active vulnerability icon.
+            if (IgnoreFileManager.IsInitialized)
+            {
+                try
+                {
+                    string filePath = null;
+                    if (_buffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument doc))
+                        filePath = doc.FilePath;
+
+                    if (!string.IsNullOrEmpty(filePath))
+                    {
+                        string relativePath = IgnoreFileManager.NormalizePath(filePath);
+                        foreach (var entry in IgnoreFileManager.GetAllEntryList())
+                        {
+                            if (entry?.Files == null) continue;
+                            foreach (var fileRef in entry.Files)
+                            {
+                                if (!fileRef.Active || !fileRef.Line.HasValue) continue;
+                                if (!string.Equals(fileRef.Path, relativePath, StringComparison.OrdinalIgnoreCase)) continue;
+                                if (!CxAssistConstants.IsLineInRange(fileRef.Line.Value, lineCount)) continue;
+                                int ignoredLine = CxAssistConstants.To0BasedLineForEditor(entry.Type, fileRef.Line.Value);
+                                if (!_vulnerabilitiesByLine.ContainsKey(ignoredLine))
+                                    _ignoredLinesByLine.Add(ignoredLine);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "GlyphTagger.BuildIgnoredLines");
                 }
             }
 
@@ -131,6 +177,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.GutterIcons
         public void ClearVulnerabilities()
         {
             _vulnerabilitiesByLine.Clear();
+            _ignoredLinesByLine = new HashSet<int>();
 
             var snapshot = _buffer.CurrentSnapshot;
             var entireSpan = new SnapshotSpan(snapshot, 0, snapshot.Length);

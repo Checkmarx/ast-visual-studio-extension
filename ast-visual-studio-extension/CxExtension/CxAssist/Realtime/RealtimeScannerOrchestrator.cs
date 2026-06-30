@@ -1,4 +1,4 @@
-using ast_visual_studio_extension.CxCLI;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Interfaces;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Oss;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
@@ -23,8 +23,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
     {
         private static readonly ILog _logger = LogManager.GetLogger(typeof(RealtimeScannerOrchestrator));
         private readonly List<IRealtimeScannerService> _scanners = new List<IRealtimeScannerService>();
+
+        internal IReadOnlyList<IRealtimeScannerService> GetScanners() => _scanners;
         private ManifestFileWatcher _manifestWatcher;
-        private ast_visual_studio_extension.CxCLI.CxWrapper _cxWrapper;
+        private Microsoft.VisualStudio.Shell.AsyncPackage _package;
         private CxOneAssistSettingsModule _settings;
 
         /// <summary>
@@ -32,15 +34,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         /// Reads the settings module to determine which scanners are enabled,
         /// creates instances, and calls InitializeAsync on each.
         /// </summary>
-        public async Task InitializeAsync(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, CxOneAssistSettingsModule settings)
+        public async Task InitializeAsync(Microsoft.VisualStudio.Shell.AsyncPackage package, CxOneAssistSettingsModule settings)
         {
-            if (cxWrapper == null || settings == null) return;
+            if (package == null || settings == null) return;
 
             if (!ShouldInitializeRealtimeScanners(settings))
                 return;
 
             // Store for later use in enable/disable operations
-            _cxWrapper = cxWrapper;
+            _package = package;
             _settings = settings;
 
             try
@@ -52,7 +54,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     if (!registration.IsEnabled(settings))
                         continue;
 
-                    var scanner = registration.Factory(cxWrapper, settings);
+                    var scanner = registration.Factory(package, settings);
                     await scanner.InitializeAsync();
                     _scanners.Add(scanner);
                 }
@@ -65,6 +67,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
 
                 var solutionRoot = GetSolutionDirectory();
 
+                // Initialize ignore-list manager so quick-fix actions and tree filtering have data.
+                IgnoreFileManager.Initialize(solutionRoot);
+
+                // Note: IgnoreDataChanged does NOT trigger a CLI rescan (JetBrains parity).
+                // CxAssistDisplayCoordinator.OnIgnoreDataChanged already re-filters raw findings
+                // in-memory and refreshes gutter/error list without invoking the CLI again.
+                // Triggering a full rescan here caused race conditions where the OSS CLI was
+                // called concurrently by the ignore handler and the manifest file watcher,
+                // leading to silent non-zero exits that wiped valid findings from the display.
+
                 // Start manifest file watcher to detect dependency/config changes
                 StartManifestFileWatcher(solutionRoot);
 
@@ -72,11 +84,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
 
                 try
                 {
-                    cxWrapper.LogUserEventTelemetryFireAndForget(
-                        "AssistRealtime",
-                        "OrchestratorInitialized",
-                        _scanners.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        "Info");
+                    CxUtils.GetCxWrapper(package, typeof(RealtimeScannerOrchestrator))
+                        ?.LogUserEventTelemetryFireAndForget(
+                            "AssistRealtime",
+                            "OrchestratorInitialized",
+                            _scanners.Count.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            "Info");
                 }
                 catch
                 {
@@ -278,7 +291,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
         /// </summary>
         public async Task EnableScannerAsync(string scannerName)
         {
-            if (string.IsNullOrEmpty(scannerName) || _cxWrapper == null || _settings == null)
+            if (string.IsNullOrEmpty(scannerName) || _package == null || _settings == null)
                 return;
 
             try
@@ -289,7 +302,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime
                     return; // Already enabled or not found
 
                 // Create and initialize the scanner
-                var scanner = registration.Factory(_cxWrapper, _settings);
+                var scanner = registration.Factory(_package, _settings);
                 await scanner.InitializeAsync();
                 _scanners.Add(scanner);
 

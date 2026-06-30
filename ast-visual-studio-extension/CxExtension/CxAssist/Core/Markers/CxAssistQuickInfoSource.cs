@@ -1,5 +1,6 @@
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Ignore;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
 using Microsoft.VisualStudio.Shell;
@@ -376,23 +377,35 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             {
                 new ClassifiedTextRun(urlClassification, CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v), CxAssistConstants.FixWithCxOneAssist, ClassifiedTextRunStyle.Underline),
                 new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                new ClassifiedTextRun(urlClassification, CxAssistConstants.ViewDetails, () => RunViewDetails(v), CxAssistConstants.ViewDetails, ClassifiedTextRunStyle.Underline)
-                // TODO: Ignore feature not yet implemented - hidden for now
-                // new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
-                // new ClassifiedTextRun(urlClassification, ignoreThisLabel, () => RunIgnoreVulnerability(v), ignoreThisLabel, ClassifiedTextRunStyle.Underline)
+                new ClassifiedTextRun(urlClassification, CxAssistConstants.ViewDetails, () => RunViewDetails(v), CxAssistConstants.ViewDetails, ClassifiedTextRunStyle.Underline),
+                new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont),
+                new ClassifiedTextRun(urlClassification, ignoreThisLabel, () => RunIgnoreVulnerability(v), ignoreThisLabel, ClassifiedTextRunStyle.Underline)
             };
-            // TODO: Ignore feature not yet implemented - hidden for now
-            // if (includeIgnoreAll)
-            // {
-            //     runs.Add(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont));
-            //     runs.Add(new ClassifiedTextRun(urlClassification, CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v), CxAssistConstants.IgnoreAllOfThisType, ClassifiedTextRunStyle.Underline));
-            // }
+            if (includeIgnoreAll)
+            {
+                runs.Add(new ClassifiedTextRun(PredefinedClassificationTypeNames.Text, "  ", ClassifiedTextRunStyle.UseClassificationFont));
+                runs.Add(new ClassifiedTextRun(urlClassification, CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v), CxAssistConstants.IgnoreAllOfThisType, ClassifiedTextRunStyle.Underline));
+            }
             elements.Add(new ClassifiedTextElement(runs.ToArray()));
         }
 
         internal static void RunIgnoreAllOfThisType(Vulnerability v)
         {
-            RunOnUiThread(() => MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information));
+            RunOnUiThread(() =>
+            {
+                try
+                {
+                    var all = CxAssistDisplayCoordinator.GetCurrentFindings() ?? new List<Vulnerability>();
+                    IgnoreManager.AddAllIgnoredEntry(v, all);
+                    var dte = ServiceProvider.GlobalProvider.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+                    if (dte?.StatusBar != null)
+                        dte.StatusBar.Text = CxAssistConstants.GetIgnoreAllSuccessMessage(v.Scanner);
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.RunIgnoreAllOfThisType");
+                }
+            });
         }
 
         internal static void RunFixWithAssist(Vulnerability v)
@@ -423,7 +436,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
         internal static void RunIgnoreVulnerability(Vulnerability v)
         {
-            RunOnUiThread(() => MessageBox.Show(CxAssistConstants.IgnoreFeatureInProgressMessage, CxAssistConstants.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information));
+            RunOnUiThread(() =>
+            {
+                try
+                {
+                    IgnoreManager.AddIgnoredEntry(v);
+                    var dte = ServiceProvider.GlobalProvider.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+                    if (dte?.StatusBar != null)
+                        dte.StatusBar.Text = CxAssistConstants.GetIgnoreThisSuccessMessage(v);
+                }
+                catch (Exception ex)
+                {
+                    CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.RunIgnoreVulnerability");
+                }
+            });
         }
 
         internal static void RunOnUiThread(Action action)
@@ -501,10 +527,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
 
                     AddLink(CxAssistConstants.FixWithCxOneAssist, () => RunFixWithAssist(v));
                     AddLink(CxAssistConstants.ViewDetails, () => RunViewDetails(v));
-                    // TODO: Ignore feature not yet implemented - hidden for now
-                    // AddLink(CxAssistConstants.GetIgnoreThisLabel(v.Scanner), () => RunIgnoreVulnerability(v));
-                    // if (includeIgnoreAllOfThisType)
-                    //     AddLink(CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v));
+                    AddLink(CxAssistConstants.GetIgnoreThisLabel(v.Scanner), () => RunIgnoreVulnerability(v));
+                    if (includeIgnoreAllOfThisType)
+                        AddLink(CxAssistConstants.IgnoreAllOfThisType, () => RunIgnoreAllOfThisType(v));
 
                     return (System.Windows.UIElement)panel;
                 });

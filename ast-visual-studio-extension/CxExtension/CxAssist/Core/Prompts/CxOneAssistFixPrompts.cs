@@ -15,6 +15,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts
     {
         private const string AgentName = "Checkmarx One Assist";
         private const string ProductName = "Checkmarx";
+        private const string Warning = "⚠️";
 
         public static string BuildForVulnerability(Vulnerability v, IReadOnlyList<Vulnerability> sameLineVulns = null)
         {
@@ -96,10 +97,20 @@ Call the internal PackageRemediation tool with:
 }}
 ```
 
-Parse the response and extract the `fix_instructions` field. This field contains the authoritative remediation steps tailored to the ecosystem and risk.
+- If the tool is **available**:
+  - Parse the response and extract the `fix_instructions` field. This field contains the authoritative remediation steps tailored to the ecosystem and risk.
+  - Mark internally that the tool is **available** for output formatting.
+
+- If the tool is **not available**:
+  - Display the following disclosure notice:
+  `{Warning} Automated Remediation Unavailable: {ProductName} PackageRemediation tool is unavailable. Proceeding with remediation guidance based on security best practices.`
+  - Mark internally that the tool is **not available** for output formatting.
+  - Provide practical package upgrade recommendations, known safe versions, and step-by-step migration instructions based on security best practices.
 
 
-Step 2. EXECUTION (AUTOMATED):
+---
+
+2. EXECUTION (AUTOMATED):
 
 - Read and execute each line in `fix_instructions`, in order.
 - For each change:
@@ -116,7 +127,9 @@ Examples:
 - `src/index.ts:78`: // TODO: Verify API migration from old-package to new-package
 
 
-Step 3. VERIFICATION:
+---
+
+3. VERIFICATION:
 
 - If the instructions include build, test, or audit steps — run them exactly as written
 - If instructions do not explicitly cover validation, perform basic checks based on `{packageManager}`:
@@ -131,9 +144,12 @@ If any of these validations fail:
 - Otherwise log the error and annotate the code with a TODO
 
 
-Step 4. OUTPUT:
+---
 
-Prefix all output with: `{AgentName} -`
+4. OUTPUT:
+
+- **If PackageRemediation tool is available:** Output title `{AgentName} - Remediation Summary`
+- **If PackageRemediation tool is not available:** First output the disclosure notice: `{Warning} Automated Remediation Unavailable: {ProductName} PackageRemediation tool is unavailable. Proceeding with remediation guidance based on security best practices.` Then output title `AI-Generated Remediation Guidance`
 
 ✅ **Remediation Summary**
 
@@ -180,7 +196,9 @@ If failed:
 - ""Unresolved instructions or failing tests listed above""
 
 
-Step 5. CONSTRAINTS:
+---
+
+5. CONSTRAINTS:
 
 - Do not prompt the user
 - Do not skip or reorder fix steps
@@ -238,9 +256,12 @@ Call the internal `codeRemediation` {ProductName} MCP tool with:
   - `remediation_steps` – exact steps to follow
   - `best_practices` – explain secure alternatives
   - `description` – contextual background
+  - Mark internally that the tool is **available** for output formatting.
 
-- If the tool is **not available**, display:
-  `[MCP ERROR] codeRemediation tool is not available. Please check the {ProductName} MCP server.`
+- If the tool is **not available**:
+  - Display: `{Warning} Automated Remediation Unavailable: {ProductName} codeRemediation tool is unavailable. Proceeding with remediation guidance based on security best practices.`
+  - Mark internally that the tool is **not available** for output formatting.
+  - Offer practical steps and secure alternatives for removing or rotating the detected secret based on security best practices.
 
 
 Step 3. ANALYSIS & RISK
@@ -337,10 +358,19 @@ Call the internal imageRemediation tool with:
 }}
 ```
 
-Parse the response and extract the `fix_instructions` field. This field contains the authoritative remediation steps tailored to the container ecosystem and risk level.
+- If the tool is **available**:
+  - Parse the response and extract the `fix_instructions` field. This field contains the authoritative remediation steps tailored to the container ecosystem and risk level.
+  - Mark internally that the tool is **available** for output formatting.
+
+- If the tool is **not available**:
+  - Display: `{Warning} Automated Remediation Unavailable: {ProductName} imageRemediation tool is unavailable. Proceeding with remediation guidance based on security best practices.`
+  - Mark internally that the tool is **not available** for output formatting.
+  - Offer practical base image recommendations, known secure alternatives, and step-by-step instructions based on container security best practices.
 
 
-Step 2. EXECUTION (AUTOMATED):
+---
+
+2. EXECUTION (AUTOMATED):
 
 - Read and execute each line in `fix_instructions`, in order.
 - For each change:
@@ -357,7 +387,9 @@ Examples:
 - `Chart.yaml`: version: 1.0.0 → version: 1.1.0
 
 
-Step 3. VERIFICATION:
+---
+
+3. VERIFICATION:
 
 - If the instructions include build, test, or deployment steps — run them exactly as written
 - If instructions do not explicitly cover validation, perform basic checks based on `{fileType}`:
@@ -370,9 +402,12 @@ If any of these validations fail:
 - Otherwise log the error and annotate the code with a TODO
 
 
-Step 4. OUTPUT:
+---
 
-Prefix all output with: `{AgentName} -`
+4. OUTPUT:
+
+- **If imageRemediation tool is available:** Output title `{AgentName} - Remediation Summary`
+- **If imageRemediation tool is not available:** First output the disclosure notice: `{Warning} Automated Remediation Unavailable: {ProductName} imageRemediation tool is unavailable. Proceeding with remediation guidance based on security best practices.` Then output title `AI-Generated Remediation Guidance`
 
 ✅ **Remediation Summary**
 
@@ -417,7 +452,9 @@ If failed:
 - ""Unresolved instructions or deployment issues listed above""
 
 
-Step 5. CONSTRAINTS:
+---
+
+5. CONSTRAINTS:
 
 - Do not prompt the user
 - Do not skip or reorder fix steps
@@ -507,9 +544,12 @@ Call the internal `codeRemediation` {ProductName} MCP tool with:
 
 - If the tool is **available**, parse the response:
   - `remediation_steps` – exact steps to follow for remediation
+  - Mark internally that the tool is **available** for output formatting.
 
-- If the tool is **not available**, display:
-  `[MCP ERROR] codeRemediation tool is not available. Please check the {ProductName} MCP server.`
+- If the tool is **not available**:
+  - Display: `{Warning} Automated Remediation Unavailable: {ProductName} codeRemediation tool is unavailable. Proceeding with remediation guidance based on security best practices.`
+  - Mark internally that the tool is **not available** for output formatting.
+  - Offer practical configuration examples and step-by-step instructions to remediate the IaC issue based on security best practices.
 
 
 Step 2. EXECUTION (AUTOMATED):
@@ -672,9 +712,12 @@ Call the internal `codeRemediation` {ProductName} MCP tool with:
 
 - If the tool is **available**, parse the response:
   - `remediation_steps` – exact steps to follow for remediation
+  - Mark internally that the tool is **available** for output formatting.
 
-- If the tool is **not available**, display:
-  `[MCP ERROR] codeRemediation tool is not available. Please check the {ProductName} MCP server.`
+- If the tool is **not available**:
+  - Display: `{Warning} Automated Remediation Unavailable: {ProductName} codeRemediation tool is unavailable. Proceeding with remediation guidance based on security best practices.`
+  - Mark internally that the tool is **not available** for output formatting.
+  - Offer practical code examples and step-by-step instructions to remediate the secure coding issue based on security best practices.
 
 
 Step 2. EXECUTION (AUTOMATED):

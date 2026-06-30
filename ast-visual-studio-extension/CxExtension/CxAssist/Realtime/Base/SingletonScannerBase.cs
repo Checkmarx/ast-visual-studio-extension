@@ -1,5 +1,5 @@
 using System;
-using CxWrapperClass = ast_visual_studio_extension.CxCLI.CxWrapper;
+using Microsoft.VisualStudio.Shell;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
 {
@@ -18,7 +18,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base
         private static volatile T _instance;
         private static readonly object _lock = new object();
 
-        protected SingletonScannerBase(CxWrapperClass cxWrapper) : base(cxWrapper)
+        protected SingletonScannerBase(AsyncPackage package) : base(package)
         {
         }
 

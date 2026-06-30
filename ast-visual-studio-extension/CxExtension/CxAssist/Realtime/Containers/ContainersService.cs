@@ -1,4 +1,3 @@
-using ast_visual_studio_extension.CxCLI;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Base;
@@ -25,7 +24,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
 
         protected override ScannerType CoordinatorScannerType => ScannerType.Containers;
 
-        private ContainersService(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker") : base(cxWrapper)
+        private ContainersService(Microsoft.VisualStudio.Shell.AsyncPackage package, string containersTool = "docker") : base(package)
         {
             _containersTool = containersTool ?? "docker";
         }
@@ -81,7 +80,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
             try
             {
                 // Check if Docker/Podman is available first
-                bool engineExists = await _cxWrapper.CheckEngineExistAsync(_containersTool);
+                bool engineExists = await GetWrapper().CheckEngineExistAsync(_containersTool);
                 if (!engineExists)
                 {
                     OutputPaneWriter.WriteError($"{ScannerName} scanner: {_containersTool} is not available. Please ensure Docker or Podman is installed and running.");
@@ -96,7 +95,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
                 }
 
                 // CLI: cx scan containers-realtime has no --engine; _containersTool is only used for CheckEngineExistAsync above.
-                var results = await _cxWrapper.ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
+                var results = await GetWrapper().ContainersRealtimeScanAsync(tempFilePath, ignoredFilePath: null);
 
             if (results == null)
             {
@@ -121,7 +120,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
             {
                 OutputPaneWriter.WriteError($"{ScannerName} scanner: failed to scan {Path.GetFileName(sourceFilePath)} - {ex.Message}");
                 _logger.Warn($"{ScannerName} scanner: scan error on {Path.GetFileName(sourceFilePath)}: {ex.Message}", ex);
-                ClearDisplayForFile(sourceFilePath);
+                if (!CxAssistDisplayCoordinator.HasFindingsForScanner(sourceFilePath, CoordinatorScannerType))
+                    ClearDisplayForFile(sourceFilePath);
                 return 0;
             }
         }
@@ -131,10 +131,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Containers
         /// If tool parameter changes (e.g. docker → podman), the instance is reset
         /// to ensure the new tool is used on next GetOrCreate.
         /// </summary>
-        public static ContainersService GetInstance(ast_visual_studio_extension.CxCLI.CxWrapper cxWrapper, string containersTool = "docker")
+        public static ContainersService GetInstance(Microsoft.VisualStudio.Shell.AsyncPackage package, string containersTool = "docker")
         {
             containersTool = string.IsNullOrEmpty(containersTool) ? "docker" : containersTool;
-            return GetOrCreate(() => new ContainersService(cxWrapper, containersTool));
+            return GetOrCreate(() => new ContainersService(package, containersTool));
         }
     }
 }

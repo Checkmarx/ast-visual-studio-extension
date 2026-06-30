@@ -109,7 +109,10 @@ namespace ast_visual_studio_extension.CxCLI
 
                 if (exitCode != 0 && throwOnNonZeroExit)
                 {
-                    throw new CxException(exitCode, combinedForMessage);
+                    string detail = string.IsNullOrWhiteSpace(combinedForMessage)
+                        ? $"CLI exited with code {exitCode} (no output)"
+                        : $"CLI exited with code {exitCode}: {combinedForMessage}";
+                    throw new CxException(exitCode, detail);
                 }
 
                 return !string.IsNullOrEmpty(outputData) ? outputData.Trim() : errorData.Trim();

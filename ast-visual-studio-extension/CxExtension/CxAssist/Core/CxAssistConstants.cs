@@ -264,18 +264,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// <summary>Non-modal when paste/focus into Copilot input failed.</summary>
         public const string CopilotPromptPrepareFailedInfoBarMessage = "Unable to prepare prompt in Copilot.";
 
-        /// <summary>Context menu / Error List / Quick Info / Quick Fix: "Ignore this [finding type]" label based on scanner.</summary>
+        /// <summary>Context menu / Error List / Quick Info / Quick Fix: scanner-specific ignore label (VS Code / JetBrains parity).</summary>
         public static string GetIgnoreThisLabel(ScannerType scanner)
         {
-            switch (scanner)
-            {
-                case ScannerType.Secrets: return "Ignore this secret in file";
-                case ScannerType.Containers:
-                case ScannerType.ASCA:
-                case ScannerType.IaC:
-                case ScannerType.OSS:
-                default: return "Ignore this vulnerability";
-            }
+            return scanner == ScannerType.Secrets ? "Ignore this secret in file" : "Ignore this vulnerability";
         }
 
         /// <summary>True only for OSS and Containers; Secret, ASCA, IaC show only "Ignore this" (no "Ignore all").</summary>
@@ -301,6 +293,42 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 case ScannerType.ASCA: return "ASCA violation ignored.";
                 case ScannerType.OSS:
                 default: return "Vulnerability ignored.";
+            }
+        }
+
+        /// <summary>Entity-named success message after "Ignore this", e.g. "lodash@4.17.21 ignored" (JetBrains parity).</summary>
+        public static string GetIgnoreThisSuccessMessage(Vulnerability v)
+        {
+            if (v == null) return "Vulnerability ignored";
+            switch (v.Scanner)
+            {
+                case ScannerType.OSS:
+                {
+                    string pkg = string.IsNullOrEmpty(v.PackageName) ? "package" : v.PackageName;
+                    string ver = string.IsNullOrEmpty(v.PackageVersion) ? "" : $"@{v.PackageVersion}";
+                    return $"{pkg}{ver} ignored";
+                }
+                case ScannerType.Containers:
+                {
+                    string img = string.IsNullOrEmpty(v.PackageName) ? "image" : v.PackageName;
+                    string tag = string.IsNullOrEmpty(v.PackageVersion) ? "" : $":{v.PackageVersion}";
+                    return $"{img}{tag} ignored";
+                }
+                case ScannerType.ASCA:
+                {
+                    string rule = !string.IsNullOrEmpty(v.Title) ? v.Title
+                                : (!string.IsNullOrEmpty(v.RuleName) ? v.RuleName : "rule");
+                    return $"Rule '{rule}' ignored";
+                }
+                case ScannerType.Secrets:
+                    return "Secret ignored";
+                case ScannerType.IaC:
+                {
+                    string title = string.IsNullOrEmpty(v.Title) ? "finding" : v.Title;
+                    return $"IaC '{title}' ignored";
+                }
+                default:
+                    return "Vulnerability ignored";
             }
         }
 

@@ -102,6 +102,9 @@ namespace ast_visual_studio_extension.CxExtension
                 // Initialize Error List sync so findings appear in both Findings window and VS Error List
                 _CxAssistErrorListSync = new CxAssistErrorListSync();
                 _CxAssistErrorListSync.Start();
+
+                // Register Error List context menu commands (Ignore, Fix, View Details)
+                await ErrorListContextMenuCommand.InitializeAsync(this);
                 Debug.WriteLine("CxWindowPackage: Error List sync initialized");
 
                 // JetBrains GlobalScannerController.settingsApplied → syncAll: resync realtime when Assist prefs change (no tool window required).
