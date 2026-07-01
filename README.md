@@ -22,7 +22,7 @@
   <p align="center">
     <a href="https://docs.checkmarx.com/en/34965-68739-installing-and-setting-up-the-checkmarx-one-visual-studio-extension.html"><strong>Explore the docs »</strong></a>
     <br />
-    <a href="https://marketplace.visualstudio.com/items?itemName=Checkmarx.checkmarx-one-visual-studio"><strong>Marketplace »</strong></a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=checkmarx.astVisualStudioExtension"><strong>Marketplace »</strong></a>
   </p>
 </p>
 <p  align="center">
@@ -236,6 +236,6 @@ Find more integrations from our team [here](https://github.com/Checkmarx/ci-cd-i
 
 [license-url]: https://github.com/Checkmarx/ast-visual-studio-extension/blob/main/LICENSE
 
-[install-shield]: https://img.shields.io/visual-studio-marketplace/d/Checkmarx.checkmarx-one-visual-studio
+[install-shield]: https://vsmarketplacebadges.dev/installs-short/checkmarx.astVisualStudioExtension.svg
 
-[install-url]: https://marketplace.visualstudio.com/items?itemName=Checkmarx.checkmarx-one-visual-studio
+[install-url]: https://marketplace.visualstudio.com/items?itemName=checkmarx.astVisualStudioExtension
