@@ -236,6 +236,6 @@ Find more integrations from our team [here](https://github.com/Checkmarx/ci-cd-i
 
 [license-url]: https://github.com/Checkmarx/ast-visual-studio-extension/blob/main/LICENSE
 
-[install-shield]: https://img.shields.io/visual-studio-marketplace/d/checkmarx.astVisualStudioExtension
+[install-shield]: https://vsmarketplacebadges.dev/installs-short/checkmarx.astVisualStudioExtension.svg
 
 [install-url]: https://marketplace.visualstudio.com/items?itemName=checkmarx.astVisualStudioExtension
