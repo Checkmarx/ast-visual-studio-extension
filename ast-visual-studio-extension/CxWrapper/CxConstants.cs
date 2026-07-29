@@ -3,7 +3,7 @@ namespace ast_visual_studio_extension.CxCLI
     public static class CxConstants
     {
         /** GENERAL **/
-        public static string EXTENSION_AGENT => "Visual Studio";
+        public static string EXTENSION_AGENT => $"Visual Studio_{typeof(CxConstants).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
         public static string LIMIT_FILTER => "limit=10000";
         public static string JSON_FORMAT_VALUE => "json";
         public static string FILTER_SCANS_FOR_BRANCH => "project-id={0},branch={1},limit=10000,statuses=Completed";
