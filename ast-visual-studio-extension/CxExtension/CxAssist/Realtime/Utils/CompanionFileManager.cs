@@ -95,6 +95,37 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 {
                     "bower.json",
                     new[] { "bower-lock.json" }
+                },
+                // Python (extended patterns)
+                {
+                    "pyproject.toml",
+                    new[] { "poetry.lock", "pdm.lock" }
+                },
+                {
+                    "setup.py",
+                    new[] { "requirements.txt", "setup.cfg" }
+                },
+                {
+                    "setup.cfg",
+                    new[] { "requirements.txt" }
+                },
+                // Gradle (extended patterns)
+                {
+                    ".gradle",
+                    new[] { "gradle.lockfile" }
+                },
+                {
+                    ".gradle.kts",
+                    new[] { "gradle.lockfile" }
+                },
+                {
+                    "libs.versions.toml",
+                    new[] { "gradle.lockfile" }
+                },
+                // SBT (Scala)
+                {
+                    ".sbt",
+                    new[] { "gradle.lockfile" }
                 }
             };
 

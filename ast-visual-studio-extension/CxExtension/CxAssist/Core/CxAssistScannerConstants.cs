@@ -11,30 +11,68 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistScannerConstants
     {
-        // --- OSS: Manifest file patterns (JetBrains MANIFEST_FILE_PATTERNS + extended for all package managers) ---
-        // **/Directory.Packages.props, **/packages.config, **/pom.xml, **/package.json,
-        // **/requirements.txt, **/go.mod, **/Gemfile, **/composer.json, **/pubspec.yaml,
-        // **/Podfile, **/Package.swift, **/Cartfile, **/bower.json, **/pyproject.toml, **/*.csproj
+        // --- OSS: Manifest file patterns (aligned with ast-vscode-extension feature/release-manifest-parser) ---
+        // .NET: Directory.Packages.props, packages.config, *.csproj
+        // Maven: pom.xml
+        // npm: package.json
+        // Bower: bower.json
+        // Python: requirements*.txt, constraints.txt, constraints-*.txt, pyproject.toml, setup.cfg, setup.py
+        // Go: go.mod
+        // Gradle: *.gradle, *.gradle.kts, libs.versions.toml
+        // SBT: *.sbt
+        // iOS CocoaPods: Podfile, *.podspec, *.podspec.json
+        // iOS Carthage: Cartfile, Cartfile.private
+        // Swift Package Manager: Package.swift, Package@swift-*.swift
+        // Dart/Flutter: pubspec.yaml
+        // Ruby: Gemfile
+        // PHP Composer: composer.json
         public static readonly IReadOnlyList<string> ManifestFilePatterns = new[]
         {
+            // .NET
             "Directory.Packages.props",
             "packages.config",
+            // Maven
             "pom.xml",
+            // npm
             "package.json",
+            // Bower
+            "bower.json",
+            // Python
             "requirements.txt",
+            "constraints.txt",
+            "pyproject.toml",
+            "setup.cfg",
+            "setup.py",
+            // Go
             "go.mod",
-            "Gemfile",
-            "composer.json",
-            "pubspec.yaml",
+            // Gradle
+            // (handled separately with ManifestGradleSuffix and ManifestLibsVersionsToml)
+            // SBT
+            // (handled separately with ManifestSbtSuffix)
+            // iOS CocoaPods
             "Podfile",
-            "Package.swift",
+            // (*.podspec handled with extension matching)
+            // iOS Carthage
             "Cartfile",
             "Cartfile.private",
-            "bower.json",
-            "pyproject.toml"
+            // Swift Package Manager
+            "Package.swift",
+            // (Package@swift-*.swift handled separately)
+            // Dart/Flutter
+            "pubspec.yaml",
+            // Ruby
+            "Gemfile",
+            // PHP Composer
+            "composer.json"
         };
 
         public static readonly string ManifestCsprojSuffix = ".csproj";
+        public static readonly string ManifestPodspecSuffix = ".podspec";
+        public static readonly string ManifestGradleSuffix = ".gradle";
+        public static readonly string ManifestGradleKtsSuffix = ".gradle.kts";
+        public static readonly string ManifestSbtSuffix = ".sbt";
+        public static readonly string ManifestLibsVersionsToml = "libs.versions.toml";
+        public static readonly string ManifestPackageSwiftGlob = "Package@swift-*.swift";
 
         // --- Containers (JetBrains CONTAINERS_FILE_PATTERNS) ---
         // **/dockerfile, **/dockerfile-*, **/dockerfile.*, **/docker-compose.yml, **/docker-compose.yaml,
@@ -83,7 +121,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return !normalized.Contains(NodeModulesPathSegment) && !filePath.Contains(NodeModulesPathSegmentBackslash);
         }
 
-        /// <summary>True if path matches OSS manifest patterns (JetBrains isManifestFilePatternMatching).</summary>
+        /// <summary>True if path matches OSS manifest patterns (aligned with ast-vscode-extension).</summary>
         public static bool IsManifestFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath)) return false;
@@ -91,13 +129,75 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             var fileName = Path.GetFileName(normalized);
             if (string.IsNullOrEmpty(fileName)) return false;
             var fileNameLower = fileName.ToLowerInvariant();
+
+            // Exact filename matches
             foreach (var pattern in ManifestFilePatterns)
             {
                 if (fileNameLower.Equals(pattern, StringComparison.OrdinalIgnoreCase))
                     return true;
             }
+
+            // Extension-based matches
             if (fileNameLower.EndsWith(ManifestCsprojSuffix, StringComparison.OrdinalIgnoreCase))
                 return true;
+            if (fileNameLower.EndsWith(ManifestPodspecSuffix, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (fileNameLower.EndsWith(ManifestGradleSuffix, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (fileNameLower.EndsWith(ManifestGradleKtsSuffix, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (fileNameLower.EndsWith(ManifestSbtSuffix, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (fileNameLower.Equals(ManifestLibsVersionsToml, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Pattern-based matches (requirements*.txt, constraints*.txt, Package@swift-*.swift)
+            if (MatchesRequirementsPattern(fileNameLower))
+                return true;
+            if (MatchesConstraintsPattern(fileNameLower))
+                return true;
+            if (MatchesPackageSwiftPattern(fileNameLower))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>Matches requirement*.txt pattern (requirements.txt, requirements-dev.txt, etc.)</summary>
+        public static bool MatchesRequirementsPattern(string fileName)
+        {
+            var lowerName = fileName.ToLowerInvariant();
+            return (lowerName.StartsWith("requirements", StringComparison.OrdinalIgnoreCase) &&
+                    lowerName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) ||
+                   lowerName == "requirements.txt";
+        }
+
+        /// <summary>Matches constraints*.txt pattern (constraints.txt, constraints-dev.txt, etc.)</summary>
+        public static bool MatchesConstraintsPattern(string fileName)
+        {
+            var lowerName = fileName.ToLowerInvariant();
+            return (lowerName.StartsWith("constraints", StringComparison.OrdinalIgnoreCase) &&
+                    lowerName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>Matches Package@swift-*.swift glob pattern</summary>
+        public static bool MatchesPackageSwiftPattern(string fileName)
+        {
+            var lowerName = fileName.ToLowerInvariant();
+            return lowerName.StartsWith("package@swift-", StringComparison.OrdinalIgnoreCase) &&
+                   lowerName.EndsWith(".swift", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Matches manifest file name glob pattern (used for wildcard manifest checks)</summary>
+        public static bool MatchesManifestFileNameGlob(string fileName, string glob)
+        {
+            if (string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(glob)) return false;
+            var lowerName = fileName.ToLowerInvariant();
+            var lowerGlob = glob.ToLowerInvariant();
+
+            // Simple glob matching for Package@swift-*.swift pattern
+            if (lowerGlob == "package@swift-*.swift")
+                return MatchesPackageSwiftPattern(lowerName);
+
             return false;
         }
 

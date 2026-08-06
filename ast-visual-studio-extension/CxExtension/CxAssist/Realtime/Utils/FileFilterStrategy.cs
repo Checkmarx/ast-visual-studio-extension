@@ -233,14 +233,41 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     {
         private static readonly HashSet<string> ManifestFileNames = new(StringComparer.OrdinalIgnoreCase)
         {
-            "directory.packages.props", "packages.config", "pom.xml", "package.json", "requirements.txt", "go.mod",
-            "gemfile", "composer.json", "pubspec.yaml", "podfile", "package.swift", "cartfile", "cartfile.private",
-            "bower.json", "pyproject.toml"
+            // .NET
+            "directory.packages.props", "packages.config",
+            // Maven
+            "pom.xml",
+            // npm
+            "package.json",
+            // Bower
+            "bower.json",
+            // Python
+            "requirements.txt", "constraints.txt", "pyproject.toml", "setup.cfg", "setup.py",
+            // Go
+            "go.mod",
+            // iOS CocoaPods
+            "podfile",
+            // iOS Carthage
+            "cartfile", "cartfile.private",
+            // Swift Package Manager
+            "package.swift",
+            // Dart/Flutter
+            "pubspec.yaml",
+            // Ruby
+            "gemfile",
+            // PHP Composer
+            "composer.json",
+            // Gradle
+            "libs.versions.toml"
         };
 
         private static readonly HashSet<string> ManifestExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            ".csproj"
+            ".csproj",       // .NET
+            ".podspec",      // iOS CocoaPods
+            ".gradle",       // Gradle
+            ".gradle.kts",   // Gradle (Kotlin)
+            ".sbt"           // SBT (Scala)
         };
 
         public bool ShouldScanFile(string filePath)
@@ -250,13 +277,30 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
             var fileName = Path.GetFileName(filePath);
             var ext = Path.GetExtension(filePath);
+            var fileNameLower = fileName.ToLowerInvariant();
 
-            return ManifestFileNames.Contains(fileName) || ManifestExtensions.Contains(ext);
+            // Exact name matches
+            if (ManifestFileNames.Contains(fileName))
+                return true;
+
+            // Extension matches
+            if (ManifestExtensions.Contains(ext))
+                return true;
+
+            // Pattern matches: requirements*.txt, constraints*.txt, Package@swift-*.swift
+            if ((fileNameLower.StartsWith("requirements") || fileNameLower.StartsWith("constraints")) &&
+                fileNameLower.EndsWith(".txt"))
+                return true;
+
+            if (fileNameLower.StartsWith("package@swift-") && fileNameLower.EndsWith(".swift"))
+                return true;
+
+            return false;
         }
 
         public string GetFilterDescription()
         {
-            return "OSS: Dependency manifests (npm, maven, gradle, .NET, go, python, ruby, php, dart, cocoapods, carthage, swift, bower)";
+            return "OSS: Dependency manifests (15+ package managers including npm, maven, gradle, .NET, go, python, ruby, php, dart, cocoapods, carthage, swift, bower, sbt)";
         }
     }
 
