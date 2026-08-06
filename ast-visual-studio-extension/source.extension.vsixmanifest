@@ -6,7 +6,7 @@
         <Description xml:space="preserve">The Checkmarx One Visual Studio plugin enables you to import results from a Checkmarx One scan directly into your IDE. You can view the vulnerabilities that were identified in your source code and navigate directly to the vulnerable code in the editor. </Description>
         <License>LICENSE.txt</License>
         <Icon>CxExtension\Resources\checkmarx-80.png</Icon>
-        <Tags>security, checkmarx, sast, sca, kics</Tags>
+        <Tags>AppSec, Containers, Developer Assist, IaC, OSS, Real-time Scanning, SAST, SCA, Secrets, Secure Coding, security, checkmarx, kics</Tags>
         <Preview>false</Preview>
     </Metadata>
     <Installation>
