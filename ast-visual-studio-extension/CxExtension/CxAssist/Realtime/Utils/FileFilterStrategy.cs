@@ -233,7 +233,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     {
         private static readonly HashSet<string> ManifestFileNames = new(StringComparer.OrdinalIgnoreCase)
         {
-            "directory.packages.props", "packages.config", "pom.xml", "package.json", "requirements.txt", "go.mod"
+            "directory.packages.props", "packages.config", "pom.xml", "package.json", "requirements.txt", "go.mod",
+            "gemfile", "composer.json", "pubspec.yaml", "podfile", "package.swift", "cartfile", "cartfile.private",
+            "bower.json", "pyproject.toml"
         };
 
         private static readonly HashSet<string> ManifestExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -254,7 +256,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 
         public string GetFilterDescription()
         {
-            return "OSS: Dependency manifests (Directory.Packages.props, packages.config, pom.xml, package.json, requirements.txt, go.mod, *.csproj)";
+            return "OSS: Dependency manifests (npm, maven, gradle, .NET, go, python, ruby, php, dart, cocoapods, carthage, swift, bower)";
         }
     }
 

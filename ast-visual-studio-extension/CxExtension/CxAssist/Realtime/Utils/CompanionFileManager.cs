@@ -65,6 +65,36 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 {
                     "composer.json",
                     new[] { "composer.lock" }
+                },
+                // Dart/Pub
+                {
+                    "pubspec.yaml",
+                    new[] { "pubspec.lock" }
+                },
+                // Swift/CocoaPods
+                {
+                    "Podfile",
+                    new[] { "Podfile.lock" }
+                },
+                // Swift Package Manager
+                {
+                    "Package.swift",
+                    new[] { "Package.resolved" }
+                },
+                // Carthage
+                {
+                    "Cartfile",
+                    new[] { "Cartfile.resolved" }
+                },
+                // Carthage private
+                {
+                    "Cartfile.private",
+                    new[] { "Cartfile.resolved" }
+                },
+                // Bower
+                {
+                    "bower.json",
+                    new[] { "bower-lock.json" }
                 }
             };
 

@@ -11,9 +11,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistScannerConstants
     {
-        // --- OSS: Manifest file patterns (JetBrains MANIFEST_FILE_PATTERNS) ---
+        // --- OSS: Manifest file patterns (JetBrains MANIFEST_FILE_PATTERNS + extended for all package managers) ---
         // **/Directory.Packages.props, **/packages.config, **/pom.xml, **/package.json,
-        // **/requirements.txt, **/go.mod, **/*.csproj
+        // **/requirements.txt, **/go.mod, **/Gemfile, **/composer.json, **/pubspec.yaml,
+        // **/Podfile, **/Package.swift, **/Cartfile, **/bower.json, **/pyproject.toml, **/*.csproj
         public static readonly IReadOnlyList<string> ManifestFilePatterns = new[]
         {
             "Directory.Packages.props",
@@ -21,7 +22,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             "pom.xml",
             "package.json",
             "requirements.txt",
-            "go.mod"
+            "go.mod",
+            "Gemfile",
+            "composer.json",
+            "pubspec.yaml",
+            "Podfile",
+            "Package.swift",
+            "Cartfile",
+            "Cartfile.private",
+            "bower.json",
+            "pyproject.toml"
         };
 
         public static readonly string ManifestCsprojSuffix = ".csproj";
