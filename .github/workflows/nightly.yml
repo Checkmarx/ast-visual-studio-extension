@@ -46,9 +46,8 @@ jobs:
     name: Build and Release Nightly Build
     needs: delete-tag
     if: ${{needs.check-dependabot-commits.outputs.isDependabot == 'false'}}
-    uses: Checkmarx/ast-visual-studio-extension/.github/workflows/release.yml@main # zizmor: ignore[unpinned-uses]
+    uses: Checkmarx/ast-visual-studio-extension/.github/workflows/release.yml@d304ff732c580861840432747d6c28c1f5f7b932
     with:
       tag: "2.0.0-nightly"
       dev: true
       cliTag: "2.0.0-nightly"
-    secrets: inherit # zizmor: ignore[secrets-inherit]

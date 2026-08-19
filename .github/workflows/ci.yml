@@ -9,7 +9,8 @@ concurrency:
 permissions: {}
 
 jobs:
-  integration-tests: # zizmor: ignore[anonymous-definition]
+  integration-tests:
+    name: Integration Tests
     runs-on: cx-public-windows-2022-x64
     permissions:
       contents: read
