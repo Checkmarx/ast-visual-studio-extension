@@ -4,23 +4,29 @@ on:
   issues:
     types: [opened, closed]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
 jobs:
   notify_jira:
     if: github.event.action == 'opened'
     name: Notify Jira
-    uses: Checkmarx/plugins-release-workflow/.github/workflows/jira_notify.yml@main
+    uses: Checkmarx/plugins-release-workflow/.github/workflows/jira_notify.yml@main # zizmor: ignore[unpinned-uses]
     with:
       title: ${{ github.event.issue.title }}
       body: ${{ github.event.issue.body }}
       html_url: ${{ github.event.issue.html_url }}
       repo: ${{ github.event.repository.full_name }}
-    secrets: inherit
+    secrets: inherit # zizmor: ignore[secrets-inherit]
 
   close_jira:
     if: github.event.action == 'closed'
     name: Close Jira
-    uses: Checkmarx/plugins-release-workflow/.github/workflows/jira_close.yml@main
+    uses: Checkmarx/plugins-release-workflow/.github/workflows/jira_close.yml@main # zizmor: ignore[unpinned-uses]
     with:
       issue_number: ${{ github.event.issue.number }}
       repo: ${{ github.event.repository.full_name }}
-    secrets: inherit
+    secrets: inherit # zizmor: ignore[secrets-inherit]

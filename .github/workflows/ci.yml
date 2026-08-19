@@ -2,16 +2,22 @@ name: Checkmarx One visual studio extension CI
 
 on: [ pull_request, workflow_dispatch ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions: {}
 
 jobs:
-  integration-tests:
+  integration-tests: # zizmor: ignore[anonymous-definition]
     runs-on: cx-public-windows-2022-x64
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Fetch Sources
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
 
       - name: Setup VSTest
         uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
