@@ -20,12 +20,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         // Go: go.mod
         // Gradle: *.gradle, *.gradle.kts, libs.versions.toml
         // SBT: *.sbt
-        // iOS CocoaPods: Podfile, *.podspec, *.podspec.json
-        // iOS Carthage: Cartfile, Cartfile.private
-        // Swift Package Manager: Package.swift, Package@swift-*.swift
-        // Dart/Flutter: pubspec.yaml
         // Ruby: Gemfile
         // PHP Composer: composer.json
+        // NOTE (aligned with ast-jetbrains-plugin #452): iOS CocoaPods (Podfile, *.podspec, *.podspec.json),
+        // iOS Carthage (Cartfile, Cartfile.private), Swift Package Manager (Package.swift, Package@swift-*.swift)
+        // and Dart/Flutter (pubspec.yaml) OSS realtime scanning will be enabled in a future release — kept
+        // commented below rather than removed.
         public static readonly IReadOnlyList<string> ManifestFilePatterns = new[]
         {
             // .NET
@@ -50,16 +50,16 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             // SBT
             // (handled separately with ManifestSbtSuffix)
             // iOS CocoaPods
-            "Podfile",
+            // "Podfile",
             // (*.podspec handled with extension matching)
             // iOS Carthage
-            "Cartfile",
-            "Cartfile.private",
+            // "Cartfile",
+            // "Cartfile.private",
             // Swift Package Manager
-            "Package.swift",
+            // "Package.swift",
             // (Package@swift-*.swift handled separately)
             // Dart/Flutter
-            "pubspec.yaml",
+            // "pubspec.yaml",
             // Ruby
             "Gemfile",
             // PHP Composer
@@ -140,8 +140,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             // Extension-based matches
             if (fileNameLower.EndsWith(ManifestCsprojSuffix, StringComparison.OrdinalIgnoreCase))
                 return true;
-            if (fileNameLower.EndsWith(ManifestPodspecSuffix, StringComparison.OrdinalIgnoreCase))
-                return true;
+            // *.podspec deferred to a future release (iOS CocoaPods — see ast-jetbrains-plugin #452)
             if (fileNameLower.EndsWith(ManifestGradleSuffix, StringComparison.OrdinalIgnoreCase))
                 return true;
             if (fileNameLower.EndsWith(ManifestGradleKtsSuffix, StringComparison.OrdinalIgnoreCase))
@@ -151,13 +150,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             if (fileNameLower.Equals(ManifestLibsVersionsToml, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            // Pattern-based matches (requirements*.txt, constraints*.txt, Package@swift-*.swift)
+            // Pattern-based matches (requirements*.txt, constraints*.txt)
             if (MatchesRequirementsPattern(fileNameLower))
                 return true;
             if (MatchesConstraintsPattern(fileNameLower))
                 return true;
-            if (MatchesPackageSwiftPattern(fileNameLower))
-                return true;
+            // Package@swift-*.swift deferred to a future release (Swift Package Manager — see ast-jetbrains-plugin #452)
 
             return false;
         }

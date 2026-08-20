@@ -231,6 +231,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     /// </summary>
     public class OssFileFilterStrategy : IFileFilterStrategy
     {
+        // NOTE (aligned with ast-jetbrains-plugin #452): iOS CocoaPods (Podfile, *.podspec), iOS Carthage
+        // (Cartfile, Cartfile.private), Swift Package Manager (Package.swift, Package@swift-*.swift) and
+        // Dart/Flutter (pubspec.yaml) OSS realtime scanning will be enabled in a future release — kept
+        // commented below rather than removed.
         private static readonly HashSet<string> ManifestFileNames = new(StringComparer.OrdinalIgnoreCase)
         {
             // .NET
@@ -246,13 +250,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             // Go
             "go.mod",
             // iOS CocoaPods
-            "podfile",
+            // "podfile",
             // iOS Carthage
-            "cartfile", "cartfile.private",
+            // "cartfile", "cartfile.private",
             // Swift Package Manager
-            "package.swift",
+            // "package.swift",
             // Dart/Flutter
-            "pubspec.yaml",
+            // "pubspec.yaml",
             // Ruby
             "gemfile",
             // PHP Composer
@@ -264,7 +268,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
         private static readonly HashSet<string> ManifestExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".csproj",       // .NET
-            ".podspec",      // iOS CocoaPods
+            // ".podspec",   // iOS CocoaPods — deferred, see note above
             ".gradle",       // Gradle
             ".gradle.kts",   // Gradle (Kotlin)
             ".sbt"           // SBT (Scala)
@@ -276,31 +280,33 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 return false;
 
             var fileName = Path.GetFileName(filePath);
-            var ext = Path.GetExtension(filePath);
             var fileNameLower = fileName.ToLowerInvariant();
 
             // Exact name matches
             if (ManifestFileNames.Contains(fileName))
                 return true;
 
-            // Extension matches
-            if (ManifestExtensions.Contains(ext))
-                return true;
+            // Extension matches (suffix-based since ".gradle.kts" is a compound extension
+            // that Path.GetExtension would truncate to just ".kts")
+            foreach (var manifestExt in ManifestExtensions)
+            {
+                if (fileNameLower.EndsWith(manifestExt, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
 
-            // Pattern matches: requirements*.txt, constraints*.txt, Package@swift-*.swift
+            // Pattern matches: requirements*.txt, constraints*.txt
             if ((fileNameLower.StartsWith("requirements") || fileNameLower.StartsWith("constraints")) &&
                 fileNameLower.EndsWith(".txt"))
                 return true;
 
-            if (fileNameLower.StartsWith("package@swift-") && fileNameLower.EndsWith(".swift"))
-                return true;
+            // Package@swift-*.swift deferred to a future release — see note above
 
             return false;
         }
 
         public string GetFilterDescription()
         {
-            return "OSS: Dependency manifests (15+ package managers including npm, maven, gradle, .NET, go, python, ruby, php, dart, cocoapods, carthage, swift, bower, sbt)";
+            return "OSS: Dependency manifests (npm, maven, gradle, sbt, .NET, go, python, ruby, php, bower)";
         }
     }
 
