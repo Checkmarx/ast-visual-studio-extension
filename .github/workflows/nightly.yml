@@ -1,14 +1,15 @@
 name: Nightly Release
 
-permissions:
-  id-token: write
-  contents: write
-  packages: write
-
 on:
   push:
     branches:
       - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
 
 jobs:
   check-dependabot-commits:
@@ -16,6 +17,8 @@ jobs:
     outputs:
       isDependabot: ${{ steps.check-dependabot.outputs.dependabotExists }}
     runs-on: cx-public-ubuntu-x64
+    permissions:
+      contents: read
     steps:
       - name: Check if dependabot commits exist
         id: check-dependabot
@@ -24,9 +27,12 @@ jobs:
         run: echo "dependabotExists=$(echo $GITHUB_CONTEXT | jq '.event.commits[0].author | any(. == "dependabot[bot]")')" >> $GITHUB_OUTPUT
 
   delete-tag:
+    name: Delete Previous Release Tag
     runs-on: cx-public-ubuntu-x64
     needs: check-dependabot-commits
     if: ${{needs.check-dependabot-commits.outputs.isDependabot == 'false'}}
+    permissions:
+      contents: write  # for delete-tag-and-release action
     steps:
       - name: Delete release
         uses: dev-drprasad/delete-tag-and-release@82600feb9527126eca69833f07bafe53279bd9b4 #v1.1
@@ -37,11 +43,11 @@ jobs:
           tag_name: 2.0.0-nightly
 
   nightly:
+    name: Build and Release Nightly Build
     needs: delete-tag
     if: ${{needs.check-dependabot-commits.outputs.isDependabot == 'false'}}
-    uses: Checkmarx/ast-visual-studio-extension/.github/workflows/release.yml@main
+    uses: Checkmarx/ast-visual-studio-extension/.github/workflows/release.yml@d304ff732c580861840432747d6c28c1f5f7b932
     with:
       tag: "2.0.0-nightly"
       dev: true
       cliTag: "2.0.0-nightly"
-    secrets: inherit
