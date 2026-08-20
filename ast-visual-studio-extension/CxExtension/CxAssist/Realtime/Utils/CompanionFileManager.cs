@@ -65,6 +65,67 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 {
                     "composer.json",
                     new[] { "composer.lock" }
+                },
+                // Dart/Pub
+                {
+                    "pubspec.yaml",
+                    new[] { "pubspec.lock" }
+                },
+                // Swift/CocoaPods
+                {
+                    "Podfile",
+                    new[] { "Podfile.lock" }
+                },
+                // Swift Package Manager
+                {
+                    "Package.swift",
+                    new[] { "Package.resolved" }
+                },
+                // Carthage
+                {
+                    "Cartfile",
+                    new[] { "Cartfile.resolved" }
+                },
+                // Carthage private
+                {
+                    "Cartfile.private",
+                    new[] { "Cartfile.resolved" }
+                },
+                // Bower
+                {
+                    "bower.json",
+                    new[] { "bower-lock.json" }
+                },
+                // Python (extended patterns)
+                {
+                    "pyproject.toml",
+                    new[] { "poetry.lock", "pdm.lock" }
+                },
+                {
+                    "setup.py",
+                    new[] { "requirements.txt", "setup.cfg" }
+                },
+                {
+                    "setup.cfg",
+                    new[] { "requirements.txt" }
+                },
+                // Gradle (extended patterns)
+                {
+                    ".gradle",
+                    new[] { "gradle.lockfile" }
+                },
+                {
+                    ".gradle.kts",
+                    new[] { "gradle.lockfile" }
+                },
+                {
+                    "libs.versions.toml",
+                    new[] { "gradle.lockfile" }
+                },
+                // SBT (Scala)
+                {
+                    ".sbt",
+                    new[] { "gradle.lockfile" }
                 }
             };
 
