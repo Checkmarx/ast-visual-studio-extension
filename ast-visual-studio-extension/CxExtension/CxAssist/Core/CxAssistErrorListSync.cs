@@ -112,9 +112,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     int displayLine = entry.Line + 1; // 1-based for description text to match Findings
                     string fullDescription = $"{entry.DisplayText} {CxAssistConstants.DisplayName} [Ln {displayLine}, Col {entry.Column}]";
 
-                    // For package.json files, use Line = -1 to prevent squiggle rendering in editor
-                    bool isPackageJson = !string.IsNullOrEmpty(filePath) && filePath.EndsWith("package.json", StringComparison.OrdinalIgnoreCase);
-                    int taskLine = isPackageJson ? -1 : entry.Line;
+                    // For JSON dependency manifests (package.json, bower.json, composer.json), use Line = -1
+                    // to prevent squiggle rendering in editor — CLI-reported line/column for these can be
+                    // unreliable, so the Findings tree/description text (entry.Line/entry.Column) remains
+                    // the source of truth instead of an editor squiggle.
+                    bool isJsonManifest = !string.IsNullOrEmpty(filePath) &&
+                        (filePath.EndsWith("package.json", StringComparison.OrdinalIgnoreCase) ||
+                         filePath.EndsWith("bower.json", StringComparison.OrdinalIgnoreCase) ||
+                         filePath.EndsWith("composer.json", StringComparison.OrdinalIgnoreCase));
+                    int taskLine = isJsonManifest ? -1 : entry.Line;
 
                     var task = new ErrorTask
                     {
