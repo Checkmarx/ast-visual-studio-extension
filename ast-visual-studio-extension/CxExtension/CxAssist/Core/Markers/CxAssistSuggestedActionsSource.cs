@@ -47,7 +47,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                     var tagger = CxAssistErrorTaggerProvider.GetTaggerForBuffer(_textBuffer);
                     if (tagger == null) return false;
                     var list = tagger.GetVulnerabilitiesForLine(lineNumber);
-                    return list != null && list.Count > 0;
+                    return list != null && list.Any(v => CxAssistConstants.IsProblem(v.Severity));
                 }
                 catch (Exception ex)
                 {
@@ -67,7 +67,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 var list = tagger.GetVulnerabilitiesForLine(lineNumber);
                 if (list == null || list.Count == 0) return Enumerable.Empty<SuggestedActionSet>();
 
-                var vulnerability = list[0];
+                // Only offer Fix/View/Ignore actions for actual problems, not Ok/Unknown gutter-only entries.
+                var vulnerability = list.FirstOrDefault(v => CxAssistConstants.IsProblem(v.Severity));
+                if (vulnerability == null) return Enumerable.Empty<SuggestedActionSet>();
+
                 var actions = new List<ISuggestedAction>
                 {
                     new FixWithCxOneAssistSuggestedAction(vulnerability),
