@@ -3,13 +3,18 @@ on:
   pull_request:
     types: [opened]
 
-permissions:
-  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   pr-labeler:
+    name: Add PR Labels
     permissions:
-      pull-requests: write  # for TimonVS/pr-labeler-action to add labels in PR
+      pull-requests: write  # for pr-labeler-action to add labels in PR
+      contents: read
     runs-on: cx-public-ubuntu-x64
     steps:
       - uses: step-security/pr-labeler-action@ef1aaf0814c671e210aced271e5973b598049990 # v5.0.5

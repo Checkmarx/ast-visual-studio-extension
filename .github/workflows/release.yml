@@ -32,11 +32,18 @@ on:
         required: false
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
 jobs:
   release:
+    name: Build and Release VSIX
     runs-on: cx-public-windows-2022-x64
     permissions:
-      contents: write
+      contents: write  # for git push tag and create release
     outputs:
       CLI_VERSION: ${{ steps.extract_cli_version.outputs.CLI_VERSION }}
     steps:
@@ -44,6 +51,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: Add MSBuild to PATH
         uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
@@ -56,10 +64,12 @@ jobs:
 
       - name: Download CLI
         if: inputs.cliTag
-        shell: bash 
+        shell: bash
+        env:
+          CLI_TAG: ${{ inputs.cliTag }}
         run: |
           chmod +x ./.github/scripts/update_cli.sh
-          ./.github/scripts/update_cli.sh ${{ inputs.cliTag }}
+          ./.github/scripts/update_cli.sh "${CLI_TAG}"
 
       - name: Extract CLI version
         id: extract_cli_version
@@ -72,11 +82,13 @@ jobs:
           
       - name: Tag
         shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
-          echo ${{ inputs.tag }}
-          tag=${{ inputs.tag }}
-          echo "RELEASE_VERSION=${{ inputs.tag }}" >> $GITHUB_ENV
-          message='${{ inputs.tag }}'
+          echo "${TAG}"
+          tag="${TAG}"
+          echo "RELEASE_VERSION=${TAG}" >> $GITHUB_ENV
+          message="${TAG}"
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git tag -a "${tag}" -m "${message}"
@@ -84,8 +96,10 @@ jobs:
 
       - name: Increment VSIX version
         shell: bash
+        env:
+          VERSION: ${{ inputs.tag }}
         run: |
-          version="${{ inputs.tag }}"
+          version="${VERSION}"
           manifest="ast-visual-studio-extension/source.extension.vsixmanifest"
           sed -i "s/\(Identity[^>]*Version=\"\)[^\"]*\"/\1$version\"/" "$manifest"
           echo "Updated VSIX version to $version"
