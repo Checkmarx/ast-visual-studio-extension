@@ -11,21 +11,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
     /// </summary>
     internal static class CxAssistScannerConstants
     {
-        // --- OSS: Manifest file patterns (aligned with ast-vscode-extension feature/release-manifest-parser) ---
-        // .NET: Directory.Packages.props, packages.config, *.csproj
-        // Maven: pom.xml
-        // npm: package.json
-        // Bower: bower.json
-        // Python: requirements*.txt, constraints.txt, constraints-*.txt, pyproject.toml, setup.cfg, setup.py
-        // Go: go.mod
-        // Gradle: *.gradle, *.gradle.kts, libs.versions.toml
-        // SBT: *.sbt
-        // Ruby: Gemfile
-        // PHP Composer: composer.json
-        // NOTE (aligned with ast-jetbrains-plugin #452): iOS CocoaPods (Podfile, *.podspec, *.podspec.json),
-        // iOS Carthage (Cartfile, Cartfile.private), Swift Package Manager (Package.swift, Package@swift-*.swift)
-        // and Dart/Flutter (pubspec.yaml) OSS realtime scanning will be enabled in a future release — kept
-        // commented below rather than removed.
+        // Manifest file patterns aligned with ast-vscode-extension feature/release-manifest-parser.
+        // Gradle and SBT are scanned via extension matching (ManifestGradleSuffix, ManifestGradleKtsSuffix,
+        // ManifestSbtSuffix, ManifestLibsVersionsToml) rather than exact file names, so they aren't listed here.
+        // iOS CocoaPods, iOS Carthage, Swift Package Manager, and Dart/Flutter are not yet supported
         public static readonly IReadOnlyList<string> ManifestFilePatterns = new[]
         {
             // .NET
@@ -45,21 +34,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             "setup.py",
             // Go
             "go.mod",
-            // Gradle
-            // (handled separately with ManifestGradleSuffix and ManifestLibsVersionsToml)
-            // SBT
-            // (handled separately with ManifestSbtSuffix)
-            // iOS CocoaPods
-            // "Podfile",
-            // (*.podspec handled with extension matching)
-            // iOS Carthage
-            // "Cartfile",
-            // "Cartfile.private",
-            // Swift Package Manager
-            // "Package.swift",
-            // (Package@swift-*.swift handled separately)
-            // Dart/Flutter
-            // "pubspec.yaml",
             // Ruby
             "Gemfile",
             // PHP Composer
