@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using ast_visual_studio_extension.CxExtension.CxAssist.Core;
+
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
 {
     /// <summary>
@@ -231,25 +233,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
     /// </summary>
     public class OssFileFilterStrategy : IFileFilterStrategy
     {
-        private static readonly HashSet<string> ManifestFileNames = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "directory.packages.props", "packages.config", "pom.xml", "package.json", "requirements.txt", "go.mod"
-        };
-
-        private static readonly HashSet<string> ManifestExtensions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".csproj"
-        };
-
+        // Manifest patterns (file names, extensions, and glob patterns) live in CxAssistScannerConstants,
+        // shared with CxAssistScannerConstants.IsManifestFile so this list isn't maintained in two places.
         public bool ShouldScanFile(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath))
-                return false;
-
-            var fileName = Path.GetFileName(filePath);
-            var ext = Path.GetExtension(filePath);
-
-            return ManifestFileNames.Contains(fileName) || ManifestExtensions.Contains(ext);
+            return CxAssistScannerConstants.IsManifestFile(filePath);
         }
 
         public string GetFilterDescription()

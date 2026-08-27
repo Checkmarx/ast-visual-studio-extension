@@ -28,6 +28,15 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         internal const bool UseRichHover = true;
 
         /// <summary>
+        /// The Quick Info session whose content is currently on screen, if any. Set by
+        /// <see cref="CxAssistAsyncQuickInfoSource"/> right before building content and cleared on
+        /// dismissal. Read only by the action links (Fix, View details, Ignore, ...) below when clicked,
+        /// so they can close the popup — at most one session can be visible/interactive at a time, so this
+        /// is always the right one by the time a click happens.
+        /// </summary>
+        internal static IAsyncQuickInfoSession CurrentSession { get; set; }
+
+        /// <summary>
         /// Builds Quick Info content for all vulnerabilities on the line (reference-style: grouped by scanner, engine-specific layout).
         /// Single vuln: one scanner block. Multiple same scanner: OSS/Containers show severity counts; ASCA/IAC show per-vuln rows. Multiple scanners: one section per scanner.
         /// </summary>
@@ -389,10 +398,30 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
             elements.Add(new ClassifiedTextElement(runs.ToArray()));
         }
 
+        /// <summary>
+        /// Dismisses the currently-visible Quick Info popup, if any, so clicking an action link
+        /// (Fix, View details, Ignore, ...) closes the hover instead of leaving it open over the code.
+        /// Best-effort: failure to dismiss is not worth surfacing, the action itself still proceeds.
+        /// </summary>
+        private static void DismissCurrentSession()
+        {
+            var session = CurrentSession;
+            if (session == null) return;
+            try
+            {
+                _ = session.DismissAsync();
+            }
+            catch (Exception ex)
+            {
+                CxAssistErrorHandler.LogAndSwallow(ex, "QuickInfo.DismissCurrentSession");
+            }
+        }
+
         internal static void RunIgnoreAllOfThisType(Vulnerability v)
         {
             RunOnUiThread(() =>
             {
+                DismissCurrentSession();
                 try
                 {
                     var all = CxAssistDisplayCoordinator.GetCurrentFindings() ?? new List<Vulnerability>();
@@ -412,6 +441,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         {
             RunOnUiThread(() =>
             {
+                DismissCurrentSession();
                 // For IaC/ASCA from popup: send ONLY this vulnerability, not all on the line
                 // Pass empty list to prevent auto-resolve in SendFixWithAssist
                 var sameLineVulns = (v.Scanner == Models.ScannerType.IaC || v.Scanner == Models.ScannerType.ASCA)
@@ -425,6 +455,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         {
             RunOnUiThread(() =>
             {
+                DismissCurrentSession();
                 // For IaC/ASCA from popup: send ONLY this vulnerability, not all on the line
                 // Pass list with only this vulnerability to prevent auto-resolve in SendViewDetails
                 var relatedVulns = (v.Scanner == Models.ScannerType.IaC || v.Scanner == Models.ScannerType.ASCA)
@@ -438,6 +469,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
         {
             RunOnUiThread(() =>
             {
+                DismissCurrentSession();
                 try
                 {
                     IgnoreManager.AddIgnoredEntry(v);

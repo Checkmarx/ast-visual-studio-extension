@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils;
 
 namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts
 {
@@ -26,7 +27,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts
                     return BuildSCARemediationPrompt(
                         v.PackageName ?? v.Title ?? "",
                         v.PackageVersion ?? "",
-                        v.PackageManager ?? "npm",
+                        PackageManagerMapper.MapToRemediationFormat(v.PackageManager ?? "npm"),
                         CxAssistConstants.GetRichSeverityName(v.Severity));
                 case ScannerType.Secrets:
                     return BuildSecretRemediationPrompt(
@@ -133,11 +134,18 @@ Examples:
 
 - If the instructions include build, test, or audit steps — run them exactly as written
 - If instructions do not explicitly cover validation, perform basic checks based on `{packageManager}`:
-  - `npm`: `npx tsc --noEmit`, `npm run build`, `npm test`
+  - `npm`: `npx tsc --noEmit`, `npm run build`, `npm test` (**IMPORTANT:** If you detect the file is `bower.json`, use `bower install`, `bower list` instead)
   - `go`: `go build ./...`, `go test ./...`
   - `maven`: `mvn compile`, `mvn test`
   - `pypi`: `python -c ""import {packageName}""`, `pytest`
   - `nuget`: `dotnet build`, `dotnet test`
+  - `bower` (`bower.json`): `bower install`, `bower list`
+  - `rubygems` (`Gemfile`): `bundle install`, `bundle exec rspec`
+  - `composer` (`composer.json`): `composer install`, `composer validate`, `vendor/bin/phpunit` (**NOTE:** `packagist` means composer package manager)
+  - `swift` (`Package.swift`): `swift build`, `swift test`
+  - `cocoapods` (`Podfile`/`Podfile.lock`): `pod install --repo-update`, `xcodebuild test`
+  - `carthage` (`Cartfile.resolved`): `carthage update --platform ios`, `carthage build`
+  - `pub`/`dart` (`pubspec.yaml`/`pubspec.lock`): `dart pub get`, `dart test` (use `flutter pub get`, `flutter test` instead if this is a Flutter project)
 
 If any of these validations fail:
 - Attempt to fix the issue if it's obvious

@@ -112,9 +112,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     int displayLine = entry.Line + 1; // 1-based for description text to match Findings
                     string fullDescription = $"{entry.DisplayText} {CxAssistConstants.DisplayName} [Ln {displayLine}, Col {entry.Column}]";
 
-                    // For package.json files, use Line = -1 to prevent squiggle rendering in editor
-                    bool isPackageJson = !string.IsNullOrEmpty(filePath) && filePath.EndsWith("package.json", StringComparison.OrdinalIgnoreCase);
-                    int taskLine = isPackageJson ? -1 : entry.Line;
+                    int taskLine = IsJsonManifest(filePath) ? -1 : entry.Line;
 
                     var task = new ErrorTask
                     {
@@ -134,6 +132,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.ERROR_LIST_SYNCED, _errorListProvider.Tasks.Count, issuesByFile.Count));
+        }
+
+        /// <summary>
+        /// True for JSON dependency manifests (package.json, bower.json, composer.json). Used to force
+        /// Line = -1 and prevent squiggle rendering in the editor — CLI-reported line/column for these can be
+        /// unreliable, so the Findings tree/description text (entry.Line/entry.Column) remains the source of
+        /// truth instead of an editor squiggle.
+        /// </summary>
+        private static bool IsJsonManifest(string filePath)
+        {
+            return !string.IsNullOrEmpty(filePath) &&
+                (filePath.EndsWith("package.json", StringComparison.OrdinalIgnoreCase) ||
+                 filePath.EndsWith("bower.json", StringComparison.OrdinalIgnoreCase) ||
+                 filePath.EndsWith("composer.json", StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

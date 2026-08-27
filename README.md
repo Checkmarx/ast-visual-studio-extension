@@ -156,6 +156,9 @@ Developer Assist is an agentic AI tool that delivers real-time context-aware pre
 5. Optionally, adjust Checkmarx Developer Assist settings.
 6. For **Visual Studio 2022** we recommend setting GitHub Copilot Chat to **Agent mode** in order to streamline the workflow. 
 
+**GIF - Getting Started with Developer Assist**
+![Getting Started with Developer Assist](https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/Visual_Studio_Getting_Started_with_Developer_Assist.gif "Getting Started with Developer Assist")
+
 ### Usage
 **GIF - AI Remediation with Developer Assist**
 ![AI Remediation with Developer Assist](https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/Visual_Studio_AI_Remediation_with_Developer_Assist.gif "Running a Scan from the IDE")

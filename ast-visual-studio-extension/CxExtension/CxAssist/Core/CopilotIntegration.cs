@@ -535,7 +535,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         if (agentMode)
                         {
                             Log("Agent mode detected — auto-submitting prompt");
-                            PerformPasteAndSubmit();
+                            if (!PerformPasteAndSubmit())
+                                ShowCopilotPromptPrepareFailedMessage(assistDocumentFrame);
                             return;
                         }
 
@@ -564,7 +565,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// Uses only DTE commands and SendKeys — no Thread.Sleep, no blocking
         /// UI Automation tree scans.
         /// </summary>
-        private static void PerformPasteAndSubmit()
+        /// <returns>True if the paste was sent to the Copilot input; false if aborted because focus could not be confirmed.</returns>
+        private static bool PerformPasteAndSubmit()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -574,14 +576,22 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 TryExecuteDteCommands(OpenChatCommands);
                 Log("Re-focused Copilot Chat before paste");
 
+                if (!TryEnsureCopilotInputFocused())
+                {
+                    Log("Aborting paste+submit: could not confirm Copilot input has keyboard focus");
+                    return false;
+                }
+
                 PasteAndSubmitViaSendKeys();
 
                 Log("Paste + submit completed");
+                return true;
             }
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.PerformPasteAndSubmit");
                 ShowAssistNotification(CxAssistConstants.CopilotPromptPrepareFailedInfoBarMessage, isError: true);
+                return false;
             }
         }
 
@@ -614,6 +624,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
         /// <summary>
         /// Pastes the prompt from the clipboard into Copilot input without sending (no Enter).
+        /// Aborts (returns false) rather than pasting if keyboard focus cannot be confirmed to be
+        /// on the Copilot input — e.g. the user clicked into a code editor or another window while
+        /// the automation delay was pending. SendKeys is focus-relative, not window-targeted, so a
+        /// blind paste in that case would land in whatever the user is now focused on.
         /// </summary>
         private static bool InsertPromptWithoutSubmitting()
         {
@@ -621,12 +635,87 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             try
             {
                 TryExecuteDteCommands(OpenChatCommands);
+
+                if (!TryEnsureCopilotInputFocused())
+                {
+                    Log("Aborting paste: could not confirm Copilot input has keyboard focus");
+                    return false;
+                }
+
                 System.Windows.Forms.SendKeys.SendWait("^v");
                 return true;
             }
             catch (Exception ex)
             {
                 CxAssistErrorHandler.LogAndSwallow(ex, "CopilotIntegration.InsertPromptWithoutSubmitting");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns true when the element that currently has real OS keyboard focus looks like the
+        /// Copilot Chat input (same heuristic as <see cref="FocusCopilotInput"/>). If it doesn't,
+        /// makes one attempt to re-focus the Copilot input and re-checks. This guards against the
+        /// user having clicked into a different window/document during the automation delay, which
+        /// would otherwise cause the subsequent SendKeys paste to land wherever the user's focus is
+        /// now — since SendKeys targets focus, not a specific window.
+        /// </summary>
+        private static bool TryEnsureCopilotInputFocused()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                if (IsFocusedElementLikelyCopilotInput())
+                    return true;
+
+                Log("Focused element does not look like Copilot input, attempting re-focus");
+
+                var vsProcess = Process.GetCurrentProcess();
+                AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                if (vsWindow != null)
+                    FocusCopilotInput(vsWindow);
+
+                return IsFocusedElementLikelyCopilotInput();
+            }
+            catch (Exception ex)
+            {
+                Log("TryEnsureCopilotInputFocused failed: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks whether <see cref="AutomationElement.FocusedElement"/> matches the same
+        /// edit/name heuristics used to locate the Copilot Chat input in <see cref="FocusCopilotInput"/>.
+        /// </summary>
+        private static bool IsFocusedElementLikelyCopilotInput()
+        {
+            try
+            {
+                AutomationElement focused = AutomationElement.FocusedElement;
+                if (focused == null) return false;
+
+                string ct = focused.Current.ControlType?.ProgrammaticName ?? "";
+                string name = focused.Current.Name ?? "";
+
+                bool likelyEdit = ct.IndexOf("Edit", StringComparison.OrdinalIgnoreCase) >= 0
+                    || ct.IndexOf("Document", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                bool nameHint = !string.IsNullOrEmpty(name) && (
+                    name.IndexOf("type", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("message", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("chat", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("prompt", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("copilot", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    name.IndexOf("ask", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                bool result = likelyEdit && nameHint;
+                Log("IsFocusedElementLikelyCopilotInput: ct='" + ct + "' name='" + name + "' -> " + result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Log("IsFocusedElementLikelyCopilotInput failed: " + ex.Message);
                 return false;
             }
         }

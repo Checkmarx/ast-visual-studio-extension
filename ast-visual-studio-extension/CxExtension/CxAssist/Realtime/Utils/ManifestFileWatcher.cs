@@ -23,6 +23,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             "out", "target", "__pycache__", ".pytest_cache"
         };
 
+        // NOTE (aligned with ast-jetbrains-plugin #452): Dart/Flutter (pubspec.yaml/pubspec.lock) OSS realtime
+        // scanning will be enabled in a future release — kept commented below rather than removed.
         private static readonly HashSet<string> ManifestFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "package.json", "yarn.lock", "package-lock.json", "npm-shrinkwrap.json",
@@ -31,10 +33,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
             "go.mod", "go.sum",
             "packages.config",
             "Gemfile", "Gemfile.lock",
-            "build.gradle",
+            "build.gradle", "build.gradle.kts",
             "composer.json", "composer.lock",
             "Cargo.toml", "Cargo.lock",
-            "pubspec.yaml", "pubspec.lock",
+            // "pubspec.yaml", "pubspec.lock",
             "Pipfile", "Pipfile.lock",
             "mix.exs", "mix.lock",
             ".checkmarxignore", ".checkmarxIgnoredTempList"

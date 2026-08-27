@@ -86,7 +86,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_unit_test
         [Fact]
         public void EXTENSION_AGENT_HasCorrectValue()
         {
-            Assert.Equal("Visual Studio", CxConstants.EXTENSION_AGENT);
+            Assert.StartsWith("Visual Studio/", CxConstants.EXTENSION_AGENT);
+            Assert.Matches(@"^Visual Studio/\d+\.\d+\.\d+$", CxConstants.EXTENSION_AGENT);
         }
 
         [Fact]
