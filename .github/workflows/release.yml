@@ -42,6 +42,7 @@ jobs:
   release:
     name: Build and Release VSIX
     runs-on: cx-public-windows-2022-x64
+    environment: release
     permissions:
       contents: write  # for git push tag and create release
     outputs:
@@ -80,19 +81,28 @@ jobs:
           echo "CLI_VERSION=$CLI_VERSION" >> $GITHUB_ENV
           echo "::set-output name=CLI_VERSION::$CLI_VERSION"
           
-      - name: Tag
+      - name: Set release version
         shell: bash
         env:
           TAG: ${{ inputs.tag }}
         run: |
           echo "${TAG}"
-          tag="${TAG}"
           echo "RELEASE_VERSION=${TAG}" >> $GITHUB_ENV
-          message="${TAG}"
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git tag -a "${tag}" -m "${message}"
-          git push origin "${tag}"
+
+      - name: Tag
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          TAG: ${{ inputs.tag }}
+        with:
+          script: |
+            const tag = process.env.TAG;
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${tag}`,
+              sha: context.sha
+            });
+            core.info(`Created tag ${tag} at ${context.sha}`);
 
       - name: Increment VSIX version
         shell: bash
