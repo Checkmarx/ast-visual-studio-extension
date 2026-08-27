@@ -127,11 +127,18 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                     {
                         _sessionsWithCxAssistContent.Remove(session);
                     }
+                    if (CxAssistQuickInfoSource.CurrentSession == session)
+                        CxAssistQuickInfoSource.CurrentSession = null;
                     session.StateChanged -= OnSessionStateChanged;
                 }
             }
 
             session.StateChanged += OnSessionStateChanged;
+
+            // Record the session so action links (Fix, View details, Ignore, ...) built below can dismiss
+            // the popup when clicked. Only one Quick Info session can be visible/interactive at a time, so
+            // this is always the session whose content is currently on screen by the time a link is clicked.
+            CxAssistQuickInfoSource.CurrentSession = session;
 
             object content = CxAssistQuickInfoSource.BuildQuickInfoContentForLine(issuesOnly);
             if (content == null)
@@ -140,6 +147,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core.Markers
                 {
                     _sessionsWithCxAssistContent.Remove(session);
                 }
+                if (CxAssistQuickInfoSource.CurrentSession == session)
+                    CxAssistQuickInfoSource.CurrentSession = null;
                 session.StateChanged -= OnSessionStateChanged;
                 return null;
             }
