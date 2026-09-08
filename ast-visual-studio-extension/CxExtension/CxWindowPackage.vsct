@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
 	<Extern href="stdidcmd.h"/>
@@ -15,14 +15,34 @@
 					<CommandName>Checkmarx extension toolbar</CommandName>
 				</Strings>
 			</Menu>
+			<Menu guid="guidCxWindowPackageCmdSet" id="CxAssistToolsMenu" type="Menu" priority="0x0600">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+				<Strings>
+					<ButtonText>CxAssist</ButtonText>
+					<CommandName>CxAssist</CommandName>
+				</Strings>
+			</Menu>
 		</Menus>
 
 		<Groups>
 			<Group guid="guidCxWindowPackageCmdSet" id="MyMenuGroup" priority="0x0600">
 				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
 			</Group>
+			<Group guid="guidCxWindowPackageCmdSet" id="CxAssistToolsGroup" priority="0x0100">
+				<Parent guid="guidCxWindowPackageCmdSet" id="CxAssistToolsMenu"/>
+				<Strings>
+					<CommandName>CxAssist</CommandName>
+				</Strings>
+			</Group>
 			<Group guid="guidCxWindowPackageCmdSet" id="TWToolbarGroup" priority="0x0000">
 				<Parent guid="guidCxWindowPackageCmdSet" id="TWToolbar" />
+			</Group>
+			<!-- Error List context menu: place commands directly (no submenu); Visible/Enabled set in code when CxAssist finding selected -->
+			<Group guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup" priority="0x0300">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ERRORLIST"/>
+				<Strings>
+					<CommandName>Checkmarx One Assist</CommandName>
+				</Strings>
 			</Group>
 		</Groups>
 
@@ -32,6 +52,48 @@
 				<Icon guid="CxImages" id="cxlogo" />
 				<Strings>
 					<ButtonText>Checkmarx</ButtonText>
+				</Strings>
+			</Button>
+			<!-- ShowFindingsWindowCommand - DISABLED: Command still works programmatically but not visible in menu -->
+			<!--
+			<Button guid="guidShowFindingsWindowCommandSet" id="ShowFindingsWindowCommandId" priority="0x0101" type="Button">
+				<Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+				<Icon guid="CxImages" id="cxlogo" />
+				<Strings>
+					<ButtonText>Checkmarx Findings</ButtonText>
+				</Strings>
+			</Button>
+			-->
+			<!-- Error List context menu: Fix, View details (visible when a CxAssist finding is selected) -->
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListFixId" priority="0x0100" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<Strings>
+					<ButtonText>Fix with Checkmarx One Assist</ButtonText>
+					<CommandName>Fix with Checkmarx One Assist</CommandName>
+				</Strings>
+			</Button>
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListViewDetailsId" priority="0x0200" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<Strings>
+					<ButtonText>View details</ButtonText>
+					<CommandName>View details</CommandName>
+				</Strings>
+			</Button>
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListIgnoreThisId" priority="0x0300" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<CommandFlag>TextChanges</CommandFlag>
+				<Strings>
+					<ButtonText>Ignore this vulnerability</ButtonText>
+					<CommandName>Ignore this vulnerability</CommandName>
+				</Strings>
+			</Button>
+			<Button guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListIgnoreAllId" priority="0x0400" type="Button">
+				<Parent guid="guidCxAssistErrorListCmdSet" id="CxAssistErrorListGroup"/>
+				<CommandFlag>DefaultInvisible</CommandFlag>
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<Strings>
+					<ButtonText>Ignore all of this type</ButtonText>
+					<CommandName>Ignore all of this type</CommandName>
 				</Strings>
 			</Button>
 		</Buttons>
@@ -47,6 +109,8 @@
 		<GuidSymbol name="guidCxWindowPackageCmdSet" value="{e46cd6d8-268d-4e77-9074-071e72a25f39}">
 			<IDSymbol name="CxWindowCommandId" value="0x0100" />
 			<IDSymbol name="MyMenuGroup" value="0x1020" />
+			<IDSymbol name="CxAssistToolsMenu" value="0x1060" />
+			<IDSymbol name="CxAssistToolsGroup" value="0x1061" />
 			<IDSymbol name="CxWindowCmdId" value="0x0101" />
 			<IDSymbol name="TWToolbar" value="0x1000" />
 			<IDSymbol name="TWToolbarGroup" value="0x1050" />
@@ -54,6 +118,20 @@
 
 		<GuidSymbol name="CxImages" value="{cca5f138-eee9-4fc7-8f65-fce867b52e22}">
 			<IDSymbol name="cxlogo" value="1" />
+		</GuidSymbol>
+
+		<!-- ShowFindingsWindowCommand - POC for AST-133228, tool command only -->
+		<GuidSymbol name="guidShowFindingsWindowCommandSet" value="{a6e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e3f}">
+			<IDSymbol name="ShowFindingsWindowCommandId" value="0x0110" />
+		</GuidSymbol>
+
+		<!-- CxAssist Error List context menu: Group parented to IDM_VS_CTXT_ERRORLIST (vsshlids.h); commands visible when CxAssist finding selected -->
+		<GuidSymbol name="guidCxAssistErrorListCmdSet" value="{b7e8b6e3-8e3e-4e3e-8e3e-8e3e8e3e8e40}">
+			<IDSymbol name="CxAssistErrorListGroup" value="0x0201" />
+			<IDSymbol name="CxAssistErrorListFixId" value="0x0210" />
+			<IDSymbol name="CxAssistErrorListViewDetailsId" value="0x0211" />
+			<IDSymbol name="CxAssistErrorListIgnoreThisId" value="0x0212" />
+			<IDSymbol name="CxAssistErrorListIgnoreAllId" value="0x0213" />
 		</GuidSymbol>
 	</Symbols>
 </CommandTable>

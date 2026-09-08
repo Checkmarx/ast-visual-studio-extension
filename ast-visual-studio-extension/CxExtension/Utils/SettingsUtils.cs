@@ -1,4 +1,4 @@
-﻿using ast_visual_studio_extension.CxExtension.Enums;
+using ast_visual_studio_extension.CxExtension.Enums;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
@@ -10,6 +10,13 @@ namespace ast_visual_studio_extension.CxExtension.Utils
     public class SettingsUtils
     {
         public static readonly string severityCollection = "Checkmarx/Filter/Severity";
+        /// <summary>Collection for CxAssist Findings tab severity filters (includes Malicious); shared Critical/High/Medium/Low with Scan Results via severityCollection.</summary>
+        public static readonly string cxAssistMaliciousKey = "Malicious";
+        public static readonly string cxAssistSeverityCollection = "Checkmarx/CxAssist/Filter/Severity";
+        public static readonly Dictionary<object, bool> cxAssistSeverityDefaultValues = new Dictionary<object, bool>
+        {
+            { cxAssistMaliciousKey, true },
+        };
         public static readonly string dependencyFiltersCollection = "Checkmarx/Filter/DependencyFilters";
         public static readonly string stateCollection = "Checkmarx/Filter/State";
         public static readonly string groupByCollection = "Checkmarx/GroupBy";
@@ -45,10 +52,13 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         public static readonly Dictionary<object, bool> groupByDefaultValues = new Dictionary<object, bool>
         {
             { GroupBy.ENGINE, false },
-            { GroupBy.FILE, false },
             { GroupBy.SEVERITY, true },
+            { GroupBy.VULNERABILITY_TYPE, false },
             { GroupBy.STATE, false },
-            { GroupBy.QUERY_NAME, true },
+            { GroupBy.STATUS, false },
+            { GroupBy.Language, false },
+            { GroupBy.FILE, false },
+            { GroupBy.DIRECT_DEPENDENCY, false },
         };
 
         public static void Store(AsyncPackage package, string collection, object property, Dictionary<object, bool> defaults)

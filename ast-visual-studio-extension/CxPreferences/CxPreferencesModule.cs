@@ -1,4 +1,5 @@
-﻿using ast_visual_studio_extension.CxWrapper.Models;
+﻿using ast_visual_studio_extension.CxExtension.Utils;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell;
 using System;
 using System.Runtime.InteropServices;
@@ -11,7 +12,7 @@ namespace ast_visual_studio_extension.CxPreferences
     {
         public string ApiKey { get; set; }
         public string AdditionalParameters { get; set; }
-        public bool AscaCheckBox { get; set; } = true;
+        public bool RestoreAuthenticatedSession { get; set; }
 
         protected override IWin32Window Window
         {
@@ -30,8 +31,10 @@ namespace ast_visual_studio_extension.CxPreferences
         protected override void OnApply(PageApplyEventArgs e)
         {
             base.OnApply(e);
-            CxPreferencesUI.GetInstance().ThrowEventOnApply();
         }
+
+        internal Microsoft.VisualStudio.Shell.Package GetOwnerPackage()
+            => GetService(typeof(Microsoft.VisualStudio.Shell.Package)) as Microsoft.VisualStudio.Shell.Package;
 
         /// <summary>
         /// Get Checkmarx configuration
@@ -41,20 +44,10 @@ namespace ast_visual_studio_extension.CxPreferences
         {
             CxConfig configuration = new CxConfig
             {
-                ApiKey = ApiKey,
-                AdditionalParameters = AdditionalParameters,
-                AscaEnabled = AscaCheckBox // Add the ASCA setting to configuration
+                ApiKey = LogForgingSanitizer.StripLineTermination(ApiKey),
+                AdditionalParameters = LogForgingSanitizer.StripLineTermination(AdditionalParameters)
             };
             return configuration;
-        }
-
-        /// <summary>
-        /// Checks if ASCA scanning is enabled in preferences
-        /// </summary>
-        /// <returns>True if ASCA is enabled, false otherwise</returns>
-        public bool IsAscaEnabled()
-        {
-            return AscaCheckBox;
         }
     }
 }

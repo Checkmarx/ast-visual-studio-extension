@@ -16,8 +16,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         {
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: "",
-                ascaLatestVersion: true,
-                agent: CxConstants.EXTENSION_AGENT
+                ascaLatestVersion: true
             );
             Assert.NotNull(result);
             Assert.Contains("asca engine is running successfully", result.Message);
@@ -33,8 +32,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             // Act
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: filePath,
-                ascaLatestVersion: false,
-                agent: CxConstants.EXTENSION_AGENT
+                ascaLatestVersion: false
             );
 
             // Assert
@@ -52,8 +50,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             // Act
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: filePath,
-                ascaLatestVersion: false,
-                agent: CxConstants.EXTENSION_AGENT
+                ascaLatestVersion: false
             );
 
             // Assert
@@ -71,8 +68,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             // Act
             CxAsca result = cxWrapper.ScanAsca(
                 fileSource: filePath,
-                ascaLatestVersion: false,
-                agent: CxConstants.EXTENSION_AGENT
+                ascaLatestVersion: false
             );
 
             // Assert

@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace ast_visual_studio_extension.CxExtension.Utils
 {
@@ -31,7 +32,39 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         }
 
         internal static async void OpenFileAsync(object sender, RoutedEventArgs e) {
-            FileNode node = (((sender as Hyperlink).Parent as TextBlock).Parent as ListViewItem).Tag as FileNode;
+            var hyperlink = sender as Hyperlink;
+            if (hyperlink == null) return;
+
+            // Get parent TextBlock
+            var textBlock = LogicalTreeHelper.GetParent(hyperlink) as TextBlock;
+            if (textBlock == null) return;
+
+            DependencyObject current = textBlock;
+            FileNode node = null;
+
+            // Walk up the visual tree to find ListViewItem or StackPanel that has Tag with FileNode
+            while (current != null)
+            {
+                if (current is ListViewItem listViewItem && listViewItem.Tag is FileNode)
+                {
+                    node = listViewItem.Tag as FileNode;
+                    break;
+                }
+                else if (current is StackPanel stackPanel && stackPanel.Tag is FileNode)
+                {
+                    node = stackPanel.Tag as FileNode;
+                    break;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            if (node == null)
+            {
+                // Could not find a FileNode in parent elements, handle error or return
+                return;
+            }
+
             EnvDTE.DTE dte = GetDTE();
 
             if (dte.Solution == null || dte.Solution.FullName.IsNullOrEmpty())
@@ -67,20 +100,22 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
                 List<string> allFiles = new List<string>();
 
-                allFiles.AddRange(await
-                    GetAllProjectFilesAsync(Path.GetDirectoryName(dte.Solution.FullName), partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" }));
+                if (!string.IsNullOrEmpty(dte.Solution.FullName))
+                {
+                    allFiles.AddRange(await
+                        GetAllProjectFilesAsync(dte.Solution.FullName, partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" }));
+                }
 
                 if (allFiles.Count == 0) { 
                     foreach (EnvDTE.Project project in dte.Solution.Projects)
                     {
                         if (!await IsProjectLoadedAsync(project)) continue;
 
-                        FileInfo projectFileInfo = new FileInfo(project.FullName);
-                        string projectPath = Directory.GetParent(projectFileInfo.Directory.FullName).FullName;
-
-                        string[] files = await GetAllProjectFilesAsync(projectPath, partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" });
-
-                        allFiles.AddRange(files);
+                        if (!string.IsNullOrEmpty(dte.Solution.FullName))
+                        {
+                            string[] files = await GetAllProjectFilesAsync(dte.Solution.FullName, partialFileLocation, new string[] { "bin", "obj", "packages", "node_modules", ".git", ".vs" });
+                            allFiles.AddRange(files);
+                        }
                     }
                 }
 
@@ -118,6 +153,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
         {
             List<string> files = new List<string>();
 
+            // Validate the input path
+            if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+            {
+                return Array.Empty<string>();
+            }
+
             string[] topLevelFiles = await Task.Run(() => Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly));
             files.AddRange(topLevelFiles.Where(file => file.EndsWith(pathString)));
 
@@ -125,8 +166,12 @@ namespace ast_visual_studio_extension.CxExtension.Utils
             {
                 if (!excludedDirectories.Contains(Path.GetFileName(directory)))
                 {
-                    string[] subdirectoryFiles = await GetAllProjectFilesAsync(directory, pathString, excludedDirectories);
-                    files.AddRange(subdirectoryFiles);
+                    // Validate subdirectory exists before recursive call
+                    if (Directory.Exists(directory))
+                    {
+                        string[] subdirectoryFiles = await GetAllProjectFilesAsync(directory, pathString, excludedDirectories);
+                        files.AddRange(subdirectoryFiles);
+                    }
                 }
             }
 
@@ -161,7 +206,7 @@ namespace ast_visual_studio_extension.CxExtension.Utils
 
         internal static string PrepareFileName(string partialFileLocation)
         {
-            if (partialFileLocation[0] == '/')
+            if (!string.IsNullOrEmpty(partialFileLocation) &&partialFileLocation[0] == '/')
             {
                 partialFileLocation = partialFileLocation.Substring(1);
             }

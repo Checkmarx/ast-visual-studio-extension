@@ -133,7 +133,14 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             foreach (Result result in allResults)
             {
-                string displayName = result.Data.QueryName ?? result.Id;
+                string formatted = ResultUtils.FormatFilenameLine(result.Data?.FileName, result.Data?.Line, result.Data?.RuleName);
+                string displayName = !string.IsNullOrEmpty(result.Data?.QueryName) ? result.Data.QueryName :
+                                    !string.IsNullOrEmpty(formatted) ? formatted :
+                                    !string.IsNullOrEmpty(result.Id) ? result.Id :
+                                    result.VulnerabilityDetails?.CveName;
+
+                displayName = ResultUtils.HandleFileNameAndLine(result, displayName).Replace("\n", " ");
+
 
                 TreeViewItem item = new TreeViewItem
                 {

@@ -4,7 +4,7 @@ using Xunit;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxExtension.Enums;
 
-namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
+namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
 {
     public class UIUtilsTests
     {
@@ -20,7 +20,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extansion_test
 
                 Assert.NotNull(result);
                 Assert.IsType<TextBlock>(result);
-                Assert.Contains("Test__Item", result.Tag.ToString());
+                Assert.Contains("Test_Item", result.Tag.ToString());
             });
         }
 

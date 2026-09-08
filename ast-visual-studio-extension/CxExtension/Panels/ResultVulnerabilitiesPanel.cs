@@ -1,3 +1,4 @@
+using ast_visual_studio_extension.CxExtension.Enums;
 using ast_visual_studio_extension.CxExtension.Toolbar;
 using ast_visual_studio_extension.CxExtension.Utils;
 using ast_visual_studio_extension.CxWrapper.Models;
@@ -43,29 +44,41 @@ namespace ast_visual_studio_extension.CxExtension.Panels
 
             cxWindowUI.VulnerabilitiesList.Items.Clear();
 
-            switch (result.Type)
+            switch (EngineTypeExtensions.FromEngineString(result.Type))
             {
-                case "sast":
+                case EngineType.SAST:
                     cxWindowUI.LearnMorePanelTitle.Children.Clear();
                     cxWindowUI.RemediationPanelTitle.Children.Clear();
                     BuildAttackVectorPanel();
                     cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Visible;
                     cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
                     learnMore = null;
+                    cxWindowUI.VulnerabilitiesTabItem.Visibility = Visibility.Visible;
+                    cxWindowUI.VulnerabilitiesTabItem.IsSelected = true;
                     break;
-                case "sca":
+                case EngineType.SCA:
                     BuildPackageDataPanel();
                     cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Hidden;
                     cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Visible;
                     break;
-                case "kics":
+                case EngineType.KICS:
                     BuildVulnerabilityLocation();
                     cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Hidden;
                     cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Visible;
                     break;
+                case EngineType.SCS_SECRET_DETECTION:
+                    cxWindowUI.LearnMorePanelTitle.Children.Clear();
+                    cxWindowUI.RemediationPanelTitle.Children.Clear();
+                    BuildAttackVectorPanel();
+                    cxWindowUI.VulnerabilitiesTabItem.Visibility = Visibility.Collapsed;
+                    cxWindowUI.TriageSeverityCombobox.Visibility= Visibility.Collapsed;
+                    cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Visible;
+                    learnMore = null;
+                    cxWindowUI.LearnMore.IsSelected = true;
+                    cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
+                    SecretDetectionDetailsLearnMoreTab();
+                    break;
             }
-
-            cxWindowUI.VulnerabilitiesTabItem.IsSelected = true;
         }
 
         /// <summary>
@@ -178,19 +191,23 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             if (learnMore != null) return;
 
             CxCLI.CxWrapper cxWrapper = CxUtils.GetCxWrapper(cxToolbar.Package, cxToolbar.ResultsTree, GetType());
-            
+
+            ClearPanels();
+
             if (cxWrapper == null)
             {
-                AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.NO_INFORMATION);
-                AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
+                ShowNoInformation();
                 return;
-            };
+            }
 
-            cxWindowUI.LearnMorePanelTitle.Children.Clear();
-            cxWindowUI.RemediationPanelTitle.Children.Clear();
+            if (result.Type == EngineTypeExtensions.ToEngineString(EngineType.SCS_SECRET_DETECTION))
+            {
+                SecretDetectionDetailsLearnMoreTab(); 
+                SecretDetectionDetailsRemediationTab();
+                return;
+            }
 
-            AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.LOADING_INFORMATION);
-            AddTextWithTitle(cxWindowUI.RemediationPanelTitle,CxConstants.LOADING_INFORMATION);
+            ShowLoading();
 
             await Task.Run(() =>
             {
@@ -203,53 +220,71 @@ namespace ast_visual_studio_extension.CxExtension.Panels
                     CxUtils.DisplayMessageInInfoBar(cxToolbar.Package, string.Format(CxConstants.ERROR_GETTING_LEARNMORE, ex.Message), KnownMonikers.StatusError);
                 }
             });
-            cxWindowUI.LearnMorePanelTitle.Children.Clear();
-            cxWindowUI.RemediationPanelTitle.Children.Clear();
 
-            if (learnMore != null)
+            ClearPanels();
+
+            if (learnMore == null || learnMore.Count == 0)
             {
-                foreach (var learnInfo in learnMore)
+                ShowNoInformation();
+                learnMore = new List<LearnMore>();
+                return;
+            }
+
+            foreach (var learnInfo in learnMore)
+            {
+                AddSectionWithText(cxWindowUI.LearnMorePanelTitle, CxConstants.RISK, learnInfo.risk);
+                AddSectionWithText(cxWindowUI.LearnMorePanelTitle, CxConstants.CAUSE, learnInfo.cause);
+                AddSectionWithText(cxWindowUI.LearnMorePanelTitle, CxConstants.GENERAL_RECOMENDATIONS, learnInfo.generalRecommendations);
+
+                if (learnInfo.samples == null || learnInfo.samples.Count == 0)
                 {
-                    AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.RISK);
-                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.risk);
-                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
+                    AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
+                    continue;
+                }
 
-                    AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.CAUSE);
-                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.cause);
-                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
+                foreach (var sample in learnInfo.samples)
+                {
+                    AddSectionTitle(cxWindowUI.RemediationPanelTitle,
+                        string.Format(CxConstants.CODE_SAMPLE_TITLE, sample.title, sample.progLanguage));
 
-                    AddSectionTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.GENERAL_RECOMENDATIONS);
-                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, learnInfo.generalRecommendations);
-                    AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, string.Empty);
-
-                    if (learnInfo.samples == null || learnInfo.samples.Count == 0)
+                    TextBox codeTextBox = new TextBox
                     {
-                        AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
-                        continue;
-                    }
-
-                    foreach (var sample in learnInfo.samples)
-                    {
-                        AddSectionTitle(cxWindowUI.RemediationPanelTitle, string.Format(CxConstants.CODE_SAMPLE_TITLE, sample.title, sample.progLanguage));
-                        TextBox codeTextBox = new TextBox
-                        {
-                            Text = sample.code.Trim(),
-                            IsReadOnly = true,
-                            TextWrapping = TextWrapping.WrapWithOverflow,
-                            Margin = new Thickness(10, 5, 0, 0)
-                        };
-                        cxWindowUI.RemediationPanelTitle.Children.Add(codeTextBox);
-                        AddTextWithTitle(cxWindowUI.RemediationPanelTitle, string.Empty);
-                    }
+                        Text = sample.code.Trim(),
+                        IsReadOnly = true,
+                        TextWrapping = TextWrapping.WrapWithOverflow,
+                        Margin = new Thickness(10, 5, 0, 0)
+                    };
+                    cxWindowUI.RemediationPanelTitle.Children.Add(codeTextBox);
+                    AddTextWithTitle(cxWindowUI.RemediationPanelTitle, string.Empty);
                 }
             }
-            else
-            {
-                AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.NO_INFORMATION);
-                AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
-                learnMore = new List<LearnMore>();
-            }
         }
+
+        private void ClearPanels()
+        {
+            cxWindowUI.LearnMorePanelTitle.Children.Clear();
+            cxWindowUI.RemediationPanelTitle.Children.Clear();
+        }
+
+        private void ShowNoInformation()
+        {
+            AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.NO_INFORMATION);
+            AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
+        }
+
+        private void ShowLoading()
+        {
+            AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.LOADING_INFORMATION);
+            AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.LOADING_INFORMATION);
+        }
+
+        private void AddSectionWithText(StackPanel panel, string title, string content)
+        {
+            AddSectionTitle(panel, title);
+            AddTextWithTitle(panel, content);
+            AddTextWithTitle(panel, string.Empty);
+        }
+
         /// <summary>
         /// Add section title
         /// </summary>
@@ -285,13 +320,12 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             text = WebUtility.HtmlDecode(text);
             TextBlock textBlock = new TextBlock
             {
-                Text = text.Trim(),
+                Text = text,
                 TextWrapping = TextWrapping.WrapWithOverflow,
                 Margin = new Thickness(10, 5, 0, 0)
             };
             return textBlock;
         }
-
 
         /// <summary>
         /// Clear result vulnerabilities panel
@@ -301,5 +335,33 @@ namespace ast_visual_studio_extension.CxExtension.Panels
             cxWindowUI.VulnerabilitiesPanel.Visibility = Visibility.Hidden;
             cxWindowUI.SastVulnerabilitiesPanel.Visibility = Visibility.Hidden;
         }
+
+        public void SecretDetectionDetailsRemediationTab()
+        {
+            var remediation = result?.Data?.Remediation;
+
+            if (string.IsNullOrEmpty(remediation))
+            {
+                AddTextWithTitle(cxWindowUI.RemediationPanelTitle, CxConstants.NO_INFORMATION);
+                return;
+            }
+
+            AddTextWithTitle(cxWindowUI.RemediationPanelTitle, remediation);
+        }
+
+        private void SecretDetectionDetailsLearnMoreTab()
+        {
+            var ruleDescription = result?.Data?.RuleDescription;
+
+            if (string.IsNullOrEmpty(ruleDescription))
+            {
+                AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, CxConstants.NO_INFORMATION);
+                return;
+            }
+
+            AddTextWithTitle(cxWindowUI.LearnMorePanelTitle, ruleDescription);
+        }
+
+
     }
 }

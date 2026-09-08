@@ -5,11 +5,22 @@ on:
   repository_dispatch:
     types: [cli-version-update]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
 jobs:
   update-checkmarx-cli:
-    runs-on: ubuntu-latest
+    name: Update Checkmarx CLI
+    runs-on: cx-public-ubuntu-x64
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
       - name: Get Latest Checkmarx API version
         id: checkmarx-ast-cli
         run: |
@@ -21,18 +32,20 @@ jobs:
           RELEASE_TAG: ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
         run: |
           # Update current release
-          echo ${{ steps.checkmarx-ast-cli.outputs.release_tag }} > checkmarx-ast-cli.version
+          echo "${RELEASE_TAG}" > checkmarx-ast-cli.version
       - name: Download latest cli and update branch
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
+        env:
+          RELEASE_TAG: ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
         run: |
           # Update binaries
           chmod +x ./.github/scripts/update_cli.sh
-          ./.github/scripts/update_cli.sh ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
+          ./.github/scripts/update_cli.sh "${RELEASE_TAG}"
 
       - name: Create Pull Request
         id: cretae_pull_request
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c #v5
+        uses: step-security/create-pull-request@50c103da2b9ca12cd5bc013fc6931051a5aa872b # v8.1.1
         with:
           token: ${{ secrets.AUTOMATION_TOKEN }}
           commit-message: Update checkmarx-ast-cli to ${{ steps.checkmarx-ast-cli.outputs.release_tag }}

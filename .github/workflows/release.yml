@@ -32,19 +32,30 @@ on:
         required: false
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
 jobs:
   release:
-    runs-on: windows-latest
+    name: Build and Release VSIX
+    runs-on: cx-public-windows-2022-x64
+    environment: release
+    permissions:
+      contents: write  # for git push tag and create release
     outputs:
       CLI_VERSION: ${{ steps.extract_cli_version.outputs.CLI_VERSION }}
     steps:
       - name: Fetch Sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@1ff57057b5cfdc39105cd07a01d78e9b0ea0c14c #v1.3.1
+        uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
         with:
           vs-version: '17.2'
       
@@ -54,10 +65,12 @@ jobs:
 
       - name: Download CLI
         if: inputs.cliTag
-        shell: bash 
+        shell: bash
+        env:
+          CLI_TAG: ${{ inputs.cliTag }}
         run: |
           chmod +x ./.github/scripts/update_cli.sh
-          ./.github/scripts/update_cli.sh ${{ inputs.cliTag }}
+          ./.github/scripts/update_cli.sh "${CLI_TAG}"
 
       - name: Extract CLI version
         id: extract_cli_version
@@ -68,24 +81,38 @@ jobs:
           echo "CLI_VERSION=$CLI_VERSION" >> $GITHUB_ENV
           echo "::set-output name=CLI_VERSION::$CLI_VERSION"
           
-      - name: Tag
+      - name: Set release version
         shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
-          echo ${{ inputs.tag }}
-          tag=${{ inputs.tag }}
-          echo "RELEASE_VERSION=${{ inputs.tag }}" >> $GITHUB_ENV
-          message='${{ inputs.tag }}'
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git tag -a "${tag}" -m "${message}"
-          git push origin "${tag}"
+          echo "${TAG}"
+          echo "RELEASE_VERSION=${TAG}" >> $GITHUB_ENV
+
+      - name: Tag
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          TAG: ${{ inputs.tag }}
+        with:
+          script: |
+            const tag = process.env.TAG;
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${tag}`,
+              sha: context.sha
+            });
+            core.info(`Created tag ${tag} at ${context.sha}`);
 
       - name: Increment VSIX version
-        id: vsix_version
-        uses: timheuer/vsix-version-stamp@9d38292e99e54046455bb68c6a2b5113d269a7d0 #v2
-        with:
-          manifest-file: ast-visual-studio-extension\source.extension.vsixmanifest
-          version-number: ${{ inputs.tag }}
+        shell: bash
+        env:
+          VERSION: ${{ inputs.tag }}
+        run: |
+          version="${VERSION}"
+          manifest="ast-visual-studio-extension/source.extension.vsixmanifest"
+          sed -i "s/\(Identity[^>]*Version=\"\)[^\"]*\"/\1$version\"/" "$manifest"
+          echo "Updated VSIX version to $version"
 
       - name: Restore NuGet packages
         run: msbuild -t:restore
@@ -94,30 +121,30 @@ jobs:
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
 
       - name: Create Release
-        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 #v0.1.15
+        uses: step-security/action-gh-release@277bfa82abcfdb73e5bbb19e213fd76532ee2be5 # v3.0.0
         with:
           tag_name: ${{ inputs.tag }}
           prerelease: ${{ inputs.dev }}
           generate_release_notes: true
           files: '**/Release/ast-visual-studio-extension.vsix'
 
-      - name: Publish Release
-        uses: cezarypiatek/VsixPublisherAction@9c6b58b5955df9901a6e9834be1d0a94cd54aeba #1.0
-        if: inputs.dev == false
-        with:
-          extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
-          publish-manifest-file: '.\vs-publish.json'
-          personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
+      # - name: Publish Release
+      #   uses: cezarypiatek/VsixPublisherAction@9c6b58b5955df9901a6e9834be1d0a94cd54aeba #1.0
+      #   if: inputs.dev == false
+      #   with:
+      #     extension-file: '.\ast-visual-studio-extension\bin\Release\ast-visual-studio-extension.vsix'
+      #     publish-manifest-file: '.\vs-publish.json'
+      #     personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
 
-  notify:
-    if: inputs.dev == false
-    needs: release
-    uses: Checkmarx/plugins-release-workflow/.github/workflows/release-notify.yml@main
-    with:
-      product_name: Visual Studio
-      release_version: ${{ inputs.tag }}
-      cli_release_version: ${{ needs.release.outputs.CLI_VERSION }}
-      release_author: "Phoenix Team"
-      release_url: https://github.com/Checkmarx/ast-visual-studio-extension/releases/tag/${{ inputs.tag }}
-      jira_product_name: VISUAL_STUDIO
-    secrets: inherit
+  # notify:
+  #   if: inputs.dev == false
+  #   needs: release
+  #   uses: Checkmarx/plugins-release-workflow/.github/workflows/release-notify.yml@main
+  #   with:
+  #     product_name: Visual Studio
+  #     release_version: ${{ inputs.tag }}
+  #     cli_release_version: ${{ needs.release.outputs.CLI_VERSION }}
+  #     release_author: "Sypher Team"
+  #     release_url: https://github.com/Checkmarx/ast-visual-studio-extension/releases/tag/${{ inputs.tag }}
+  #     jira_product_name: VISUAL_STUDIO
+  #   secrets: inherit

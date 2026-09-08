@@ -9,5 +9,8 @@ namespace ast_visual_studio_extension.CxWrapper.Models
 
         [JsonProperty("isDevelopmentDependency")]
         public bool IsDevelopmentDependency { get; set; }
+
+        [JsonProperty("typeOfDependency")]
+        public string TypeOfDependency { get; set; }
     }
 }
