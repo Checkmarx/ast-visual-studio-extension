@@ -1289,7 +1289,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return false;
         }
 
-        /// <summary>Clears a leftover Copilot Chat draft so NewThread isn't a no-op; never falls back to an unverified Edit/Document control, since that could be the code editor.</summary>
+        /// <summary>Returns true if name looks like an open source file (e.g. "CopilotIntegration.cs") rather than a chat control, since a file's title can itself contain "chat"/"copilot"/"prompt"/etc.</summary>
+        private static bool LooksLikeSourceFileName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            int dot = name.LastIndexOf('.');
+            if (dot <= 0 || dot == name.Length - 1) return false;
+            int end = dot + 1;
+            while (end < name.Length && char.IsLetterOrDigit(name[end])) end++;
+            int extLength = end - (dot + 1);
+            return extLength >= 1 && extLength <= 6;
+        }
+
+        /// <summary>Clears a leftover Copilot Chat draft so NewThread isn't a no-op; skips file-named controls and unverified elements, since either could be the code editor.</summary>
         private static bool ClearCopilotInputDraft(AutomationElement root)
         {
             try
@@ -1312,6 +1324,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         if (!likelyEdit) continue;
 
                         string name = el.Current.Name ?? "";
+                        if (LooksLikeSourceFileName(name)) continue;
+
                         bool nameHint = !string.IsNullOrEmpty(name) && (
                             name.IndexOf("type", StringComparison.OrdinalIgnoreCase) >= 0 ||
                             name.IndexOf("message", StringComparison.OrdinalIgnoreCase) >= 0 ||
