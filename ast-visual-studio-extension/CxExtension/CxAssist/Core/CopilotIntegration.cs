@@ -1289,18 +1289,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return false;
         }
 
-        /// <summary>
-        /// Clears any leftover draft text in the Copilot Chat input box so the subsequent
-        /// DTE NewThread command isn't a no-op. Copilot's NewThread handler silently
-        /// preserves the current thread when the input has unsubmitted typing — which is
-        /// exactly what's left behind by a paste-only Ask-mode click — so without this
-        /// step the second remediate click lands in the same chat.
-        ///
-        /// Tries <see cref="ValuePattern"/>.<c>SetValue("")</c> first because it never sends
-        /// keystrokes and therefore cannot touch the code editor. Falls back to focusing the
-        /// located input element and sending Ctrl+A + Delete; focus is set on the located
-        /// chat input only (no broad fallback), so keystrokes are safe.
-        /// </summary>
+        /// <summary>Clears a leftover Copilot Chat draft so NewThread isn't a no-op; never falls back to an unverified Edit/Document control, since that could be the code editor.</summary>
         private static bool ClearCopilotInputDraft(AutomationElement root)
         {
             try
@@ -1308,7 +1297,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 if (root == null) return false;
 
                 AutomationElement input = null;
-                AutomationElement editFallback = null;
                 var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
                 for (int i = 0; i < all.Count; i++)
                 {
@@ -1337,7 +1325,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             input = el;
                             break;
                         }
-                        if (editFallback == null) editFallback = el;
                     }
                     catch (Exception ex)
                     {
@@ -1345,10 +1332,9 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     }
                 }
 
-                if (input == null) input = editFallback;
                 if (input == null)
                 {
-                    Log("ClearCopilotInputDraft: no chat input element found");
+                    Log("ClearCopilotInputDraft: no verified chat input element found, skipping clear");
                     return false;
                 }
 
