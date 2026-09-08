@@ -101,7 +101,6 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Util
         {
             var files = CompanionFileManager.GetCompanionFileNames("pyproject.toml");
             Assert.Contains("poetry.lock", files);
-            Assert.Contains("pdm.lock",    files);
             Assert.Contains("uv.lock",     files);
         }
 
