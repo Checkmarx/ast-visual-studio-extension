@@ -643,13 +643,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         bool modeMatches = requiredMode == RequiredCopilotMode.Agent ? agentMode : !agentMode;
                         if (modeMatches)
                         {
-                            Log(requiredMode + " mode detected — auto-submitting prompt");
                             if (!PerformPasteAndSubmit())
                                 ShowCopilotPromptPrepareFailedMessage(assistDocumentFrame);
                             return;
                         }
 
-                        Log(requiredMode + " mode not detected — pasting prompt without auto-submit");
                         bool inserted = InsertPromptWithoutSubmitting();
                         if (!newThreadStarted)
                         {
