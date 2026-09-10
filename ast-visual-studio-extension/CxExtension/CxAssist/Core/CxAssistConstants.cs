@@ -253,13 +253,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         public const string CopilotChatOpenFailedInfoBarMessage =
             "Could not open GitHub Copilot Chat. Your prompt was copied to the clipboard—open Copilot Chat manually, paste the prompt, switch to Agent mode, then submit.";
 
-        /// <summary>Non-modal when the user is not in Agent mode; prompt was pasted without sending.</summary>
+        /// <summary>Non-modal when Fix with Checkmarx One Assist is used outside Agent mode; prompt was pasted without sending.</summary>
         public const string CopilotNotAgentModeInfoBarMessage =
-            "GitHub Copilot Chat is not in Agent mode. Your prompt is ready in Copilot Chat—switch to Agent mode, then submit.";
+            "Fix with Checkmarx One Assist requires GitHub Copilot Chat's Agent mode. Your prompt is ready in Copilot Chat—switch to Agent mode, then submit.";
 
-        /// <summary>Non-modal for VS 2026+; mode detection is unavailable so prompt is pasted without auto-submit in any mode.</summary>
+        /// <summary>Non-modal when View details is used outside Ask mode; prompt was pasted without sending.</summary>
+        public const string CopilotNotAskModeInfoBarMessage =
+            "View details requires GitHub Copilot Chat's Ask mode. Your prompt is ready in Copilot Chat—switch to Ask mode, then submit.";
+
+        /// <summary>Non-modal for VS 2026+; mode detection is unavailable so prompt is pasted without auto-submit in any mode (Fix with Checkmarx One Assist, requires Agent mode).</summary>
         public const string CopilotPasteOnlyVs2026InfoBarMessage =
             "Prompt pasted into GitHub Copilot Chat. Please switch to Agent mode (Ignore if already in Agent mode) and press Enter to submit.";
+
+        /// <summary>Non-modal for VS 2026+; mode detection is unavailable so prompt is pasted without auto-submit in any mode (View details, requires Ask mode).</summary>
+        public const string CopilotPasteOnlyAskModeVs2026InfoBarMessage =
+            "Prompt pasted into GitHub Copilot Chat. Please switch to Ask mode (Ignore if already in Ask mode) and press Enter to submit.";
 
         /// <summary>Non-modal when paste/focus into Copilot input failed.</summary>
         public const string CopilotPromptPrepareFailedInfoBarMessage = "Unable to prepare prompt in Copilot.";
