@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup VSTest
-        uses: Malcolmnixon/Setup-VSTest@e29792f6ec069e574dc43f73a13c9ce66669a317 #v4
+        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
 
       - name: Add MSBuild to PATH
         uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
