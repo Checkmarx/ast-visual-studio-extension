@@ -279,7 +279,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 }
                 catch (Exception ex)
                 {
-                    Log("ClearAndSubmitPendingCopilotDraft: ValuePattern clear failed: " + ex.Message);
+                    Log("Could not clear the Copilot Chat draft via ValuePattern, will try the SendKeys fallback: " + ex.Message);
                 }
 
                 if (!clearedViaValuePattern)
@@ -298,7 +298,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     }
                     catch (Exception ex)
                     {
-                        Log("ClearAndSubmitPendingCopilotDraft: SendKeys fallback failed: " + ex.Message);
+                        Log("Could not clear the Copilot Chat draft via SendKeys; leftover draft text may cause the next new-thread request to reuse the current chat: " + ex.Message);
                     }
                 }
 
@@ -903,13 +903,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     }
                     catch (Exception exWindow)
                     {
-                        Log("PinCopilotChatWindow: window inspection failed: " + exWindow.Message);
+                        Log("Could not inspect a Visual Studio tool window while looking for Copilot Chat, skipping it: " + exWindow.Message);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log("PinCopilotChatWindow failed: " + ex.Message);
+                Log("Could not pin the Copilot Chat window; it may auto-hide during automation: " + ex.Message);
             }
         }
 
