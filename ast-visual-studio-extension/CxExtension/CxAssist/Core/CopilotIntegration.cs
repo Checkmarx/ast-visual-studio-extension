@@ -274,7 +274,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         {
                             vp.SetValue(string.Empty);
                             clearedViaValuePattern = true;
-                            Log("ClearAndSubmitPendingCopilotDraft: cleared leftover draft via ValuePattern");
                         }
                     }
                 }
@@ -296,7 +295,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         System.Windows.Forms.SendKeys.SendWait("{DELETE}");
                         System.Threading.Thread.Sleep(50);
                         hasDraft = true;
-                        Log("ClearAndSubmitPendingCopilotDraft: cleared leftover draft via SendKeys fallback");
                     }
                     catch (Exception ex)
                     {
@@ -305,15 +303,11 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 }
 
                 if (!hasDraft)
-                {
-                    Log("ClearAndSubmitPendingCopilotDraft: no unsubmitted draft found");
                     return;
-                }
 
                 input.SetFocus();
                 System.Threading.Thread.Sleep(120);
                 System.Windows.Forms.SendKeys.SendWait("{ENTER}");
-                Log("ClearAndSubmitPendingCopilotDraft: submitted cleared draft so NewThread won't no-op");
             }
             catch (Exception ex)
             {
@@ -906,7 +900,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         if (window.AutoHides)
                         {
                             window.AutoHides = false;
-                            Log("Pinned Copilot Chat window (disabled auto-hide): '" + caption + "'");
                         }
                         return;
                     }
@@ -915,8 +908,6 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         Log("PinCopilotChatWindow: window inspection failed: " + exWindow.Message);
                     }
                 }
-
-                Log("PinCopilotChatWindow: Copilot window not found among dte.Windows");
             }
             catch (Exception ex)
             {
