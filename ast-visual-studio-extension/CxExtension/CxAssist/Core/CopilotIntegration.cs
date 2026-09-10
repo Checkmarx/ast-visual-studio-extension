@@ -97,10 +97,20 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         {
             "GitHub.Copilot.Chat.NewThread",
             "GitHub.Copilot.Chat.New",
-            "GitHub.Copilot.Chat.ClearHistory"
         };
 
         // ==================== Result Types ====================
+
+        /// <summary>
+        /// Which Copilot Chat mode a prompt is expected to be submitted in.
+        /// "Fix with Checkmarx One Assist" requires Agent mode (it asks Copilot to edit files).
+        /// "View details" requires Ask mode (it only asks Copilot to explain, not edit).
+        /// </summary>
+        public enum RequiredCopilotMode
+        {
+            Agent,
+            Ask
+        }
 
         /// <summary>
         /// Result of a Copilot integration operation.
@@ -225,6 +235,93 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
+        /// If the Copilot Chat input currently has unsubmitted draft text, clears it and submits
+        /// before requesting a new thread. GitHub.Copilot.Chat.NewThread/New silently keep the
+        /// current thread when the input has unsubmitted typing — DTE.ExecuteCommand still reports
+        /// success, so the caller can't tell the difference — which otherwise causes the next paste
+        /// to land in the same, still-drafting chat instead of a fresh one.
+        ///
+        /// Tries <see cref="ValuePattern"/>.<c>SetValue("")</c> first — zero risk of typing into the
+        /// wrong control, since it never sends keystrokes. Copilot Chat's real input is a modern
+        /// rich-text editor that typically does NOT expose ValuePattern, so this alone leaves the
+        /// draft untouched in practice; when ValuePattern is unavailable or reports no value, falls
+        /// back to focusing the SAME already-located input (never a broader search) and sending
+        /// Ctrl+A + Delete. Scoping the keystrokes to the element FindCopilotInputElement already
+        /// matched by control type and name hint keeps this safe from the historical bug where a
+        /// broad fallback selected the code editor instead.
+        /// </summary>
+        private static void ClearAndSubmitPendingCopilotDraft()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                var vsProcess = Process.GetCurrentProcess();
+                AutomationElement vsWindow = AutomationElement.FromHandle(vsProcess.MainWindowHandle);
+                if (vsWindow == null) return;
+
+                AutomationElement input = FindCopilotInputElement(vsWindow);
+                if (input == null) return;
+
+                bool hasDraft = false;
+                bool clearedViaValuePattern = false;
+                try
+                {
+                    if (input.TryGetCurrentPattern(ValuePattern.Pattern, out object vpObj))
+                    {
+                        var vp = (ValuePattern)vpObj;
+                        hasDraft = !string.IsNullOrEmpty(vp.Current.Value);
+                        if (hasDraft && !vp.Current.IsReadOnly)
+                        {
+                            vp.SetValue(string.Empty);
+                            clearedViaValuePattern = true;
+                            Log("ClearAndSubmitPendingCopilotDraft: cleared leftover draft via ValuePattern");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("ClearAndSubmitPendingCopilotDraft: ValuePattern clear failed: " + ex.Message);
+                }
+
+                if (!clearedViaValuePattern)
+                {
+                    // ValuePattern wasn't available/didn't apply — fall back to keystrokes, but only
+                    // ever on this same, already-located input element.
+                    try
+                    {
+                        input.SetFocus();
+                        System.Threading.Thread.Sleep(120);
+                        System.Windows.Forms.SendKeys.SendWait("^a");
+                        System.Threading.Thread.Sleep(50);
+                        System.Windows.Forms.SendKeys.SendWait("{DELETE}");
+                        System.Threading.Thread.Sleep(50);
+                        hasDraft = true;
+                        Log("ClearAndSubmitPendingCopilotDraft: cleared leftover draft via SendKeys fallback");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("ClearAndSubmitPendingCopilotDraft: SendKeys fallback failed: " + ex.Message);
+                    }
+                }
+
+                if (!hasDraft)
+                {
+                    Log("ClearAndSubmitPendingCopilotDraft: no unsubmitted draft found");
+                    return;
+                }
+
+                input.SetFocus();
+                System.Threading.Thread.Sleep(120);
+                System.Windows.Forms.SendKeys.SendWait("{ENTER}");
+                Log("ClearAndSubmitPendingCopilotDraft: submitted cleared draft so NewThread won't no-op");
+            }
+            catch (Exception ex)
+            {
+                Log("ClearAndSubmitPendingCopilotDraft error: " + ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Whether Copilot Chat appears to be in Agent mode (VS 2022 vs newer UIs differ; heuristics apply for major version 19+).
         /// VS 2026: Mode detection is unreliable via UI Automation, so we assume Agent mode is active.
         /// </summary>
@@ -263,9 +360,10 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         /// <param name="prompt">The prompt to send to Copilot.</param>
         /// <param name="clipboardFallbackMessage">Message shown if only clipboard copy succeeded.</param>
-        public static bool SendPromptToCopilot(string prompt, string clipboardFallbackMessage)
+        /// <param name="requiredMode">The Copilot Chat mode this prompt expects to be submitted in (Agent for Fix, Ask for View details).</param>
+        public static bool SendPromptToCopilot(string prompt, string clipboardFallbackMessage, RequiredCopilotMode requiredMode = RequiredCopilotMode.Agent)
         {
-            IntegrationResult result = SendPromptToCopilotDetailed(prompt, clipboardFallbackMessage);
+            IntegrationResult result = SendPromptToCopilotDetailed(prompt, clipboardFallbackMessage, requiredMode);
             return result != null && result.Result != OperationResult.Failed;
         }
 
@@ -274,7 +372,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// </summary>
         /// <param name="prompt">The prompt to send to Copilot.</param>
         /// <param name="clipboardFallbackMessage">Message shown if only clipboard copy succeeded.</param>
-        public static IntegrationResult SendPromptToCopilotDetailed(string prompt, string clipboardFallbackMessage)
+        /// <param name="requiredMode">The Copilot Chat mode this prompt expects to be submitted in (Agent for Fix, Ask for View details).</param>
+        public static IntegrationResult SendPromptToCopilotDetailed(string prompt, string clipboardFallbackMessage, RequiredCopilotMode requiredMode = RequiredCopilotMode.Agent)
         {
             if (string.IsNullOrWhiteSpace(prompt))
                 return IntegrationResult.Fail("Prompt is empty");
@@ -317,8 +416,12 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
 
                 Log("Copilot Chat opened, scheduling automation sequence");
 
+                // Pin immediately so the pane can't auto-hide before the scheduled automation
+                // steps below run against it (see PinCopilotChatWindow for why this matters).
+                PinCopilotChatWindow();
+
                 // Step 4: Schedule the automation sequence after UI renders
-                ScheduleAutomatedPromptEntry(prompt, assistDocumentFrame);
+                ScheduleAutomatedPromptEntry(prompt, assistDocumentFrame, requiredMode);
 
                 return IntegrationResult.PartialSuccess(
                     "Copilot Chat opened, automation in progress...");
@@ -374,14 +477,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             return null;
         }
 
-        private static void ShowCopilotNotAgentModeUserMessage(IVsWindowFrame assistDocumentFrame)
+        /// <summary>
+        /// Shows a non-modal warning that the prompt was pasted but not submitted because Copilot
+        /// Chat is not in the mode this action requires (Agent for Fix, Ask for View details).
+        /// </summary>
+        private static void ShowCopilotWrongModeUserMessage(IVsWindowFrame assistDocumentFrame, RequiredCopilotMode requiredMode)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            string message = requiredMode == RequiredCopilotMode.Agent
+                ? CxAssistConstants.CopilotNotAgentModeInfoBarMessage
+                : CxAssistConstants.CopilotNotAskModeInfoBarMessage;
             AssistDocumentInfoBar.TryShowWarning(
                 assistDocumentFrame,
-                CxAssistConstants.CopilotNotAgentModeInfoBarMessage,
+                message,
                 () => ShowAssistNotification(
-                    CxAssistConstants.CopilotNotAgentModeInfoBarMessage,
+                    message,
                     isError: false,
                     useWarningSeverity: true));
         }
@@ -441,20 +551,23 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         /// Shows VS 2026 paste-only workflow message in the info bar.
         /// Used when mode detection is unavailable and prompt is pasted without auto-submit.
         /// </summary>
-        private static void ShowCopilotPasteOnlyVs2026Message(IVsWindowFrame assistDocumentFrame)
+        private static void ShowCopilotPasteOnlyVs2026Message(IVsWindowFrame assistDocumentFrame, RequiredCopilotMode requiredMode)
         {
             if (assistDocumentFrame == null) return;
             ThreadHelper.ThrowIfNotOnUIThread();
+            string message = requiredMode == RequiredCopilotMode.Agent
+                ? CxAssistConstants.CopilotPasteOnlyVs2026InfoBarMessage
+                : CxAssistConstants.CopilotPasteOnlyAskModeVs2026InfoBarMessage;
             AssistDocumentInfoBar.TryShowWarning(
                 assistDocumentFrame,
-                CxAssistConstants.CopilotPasteOnlyVs2026InfoBarMessage,
+                message,
                 () => ShowAssistNotification(
-                    CxAssistConstants.CopilotPasteOnlyVs2026InfoBarMessage,
+                    message,
                     isError: false,
                     useWarningSeverity: true));
         }
 
-        private static void ScheduleAutomatedPromptEntry(string prompt, IVsWindowFrame assistDocumentFrame)
+        private static void ScheduleAutomatedPromptEntry(string prompt, IVsWindowFrame assistDocumentFrame, RequiredCopilotMode requiredMode)
         {
             ScheduleOnIdle(Timing.CopilotOpenDelayMs, () =>
             {
@@ -462,20 +575,19 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 {
                     int vsMajor = GetVisualStudioMajorVersion();
 
-                    // Clear any leftover draft from a prior Ask-mode click. Without this the
-                    // DTE NewThread command below silently preserves the existing thread
-                    // because Copilot's handler refuses to discard unsubmitted typing.
-                    try
-                    {
-                        var vsProc0 = Process.GetCurrentProcess();
-                        AutomationElement wnd0 = AutomationElement.FromHandle(vsProc0.MainWindowHandle);
-                        if (wnd0 != null)
-                            ClearCopilotInputDraft(wnd0);
-                    }
-                    catch (Exception exClear)
-                    {
-                        Log("ClearCopilotInputDraft: " + exClear.Message);
-                    }
+                    // Re-assert the pin: the window may not have been registered in dte.Windows
+                    // yet when PinCopilotChatWindow() first ran right after OpenCopilotChat(), and
+                    // if the user clicked back into the editor during this delay an unpinned pane
+                    // would already have auto-hidden by now, collapsing the input the steps below
+                    // (focus, paste) all depend on.
+                    PinCopilotChatWindow();
+
+                    // NewThread only actually creates a new thread when the input has no
+                    // unsubmitted draft — if the user left text typed but unsent in the current
+                    // chat, NewThread silently keeps that thread instead (DTE.ExecuteCommand still
+                    // reports success either way, so the no-op is otherwise undetectable). Clear
+                    // and submit any pending draft first so NewThread actually switches.
+                    ClearAndSubmitPendingCopilotDraft();
 
                     // Always start a new chat thread FIRST, before any mode detection or paste.
                     // Each remediate click must land in a fresh session so that on repeat clicks
@@ -522,25 +634,28 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             if (!inserted)
                                 ShowCopilotPromptPrepareFailedMessage(assistDocumentFrame);
                             else
-                                ShowCopilotPasteOnlyVs2026Message(assistDocumentFrame);
+                                ShowCopilotPasteOnlyVs2026Message(assistDocumentFrame, requiredMode);
                         });
                         return;
                     }
 
-                    // VS 2022 and earlier: detect chat mode AFTER the new thread is open,
-                    // then paste-and-submit (Agent) or paste-only (Ask).
+                    // VS 2022 and earlier: detect chat mode AFTER the new thread is open, then
+                    // paste-and-submit if the detected mode matches what this action requires
+                    // (Agent for Fix, Ask for View details), or paste-only with a mode-specific
+                    // warning otherwise.
                     ScheduleOnIdle(delayAfterThread, () =>
                     {
                         bool agentMode = IsAgentMode();
-                        if (agentMode)
+                        bool modeMatches = requiredMode == RequiredCopilotMode.Agent ? agentMode : !agentMode;
+                        if (modeMatches)
                         {
-                            Log("Agent mode detected — auto-submitting prompt");
+                            Log(requiredMode + " mode detected — auto-submitting prompt");
                             if (!PerformPasteAndSubmit())
                                 ShowCopilotPromptPrepareFailedMessage(assistDocumentFrame);
                             return;
                         }
 
-                        Log("Agent mode not detected — pasting prompt without auto-submit");
+                        Log(requiredMode + " mode not detected — pasting prompt without auto-submit");
                         bool inserted = InsertPromptWithoutSubmitting();
                         if (!newThreadStarted)
                         {
@@ -550,7 +665,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         if (!inserted)
                             ShowCopilotPromptPrepareFailedMessage(assistDocumentFrame);
                         else
-                            ShowCopilotNotAgentModeUserMessage(assistDocumentFrame);
+                            ShowCopilotWrongModeUserMessage(assistDocumentFrame, requiredMode);
                     });
                 }
                 catch (Exception ex)
@@ -762,6 +877,51 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Pins the Copilot Chat tool window (disables auto-hide) so it cannot collapse when the
+        /// user clicks back into the editor while the automated prompt entry is still pending.
+        /// Without this, an unpinned Copilot pane auto-hides on focus loss, which both hides the
+        /// UI Automation input the later paste/submit steps depend on and can leave the DTE
+        /// NewThread command operating on a collapsed window. Best-effort: failures are logged and
+        /// swallowed since pinning is a convenience, not a requirement for the clipboard fallback.
+        /// </summary>
+        private static void PinCopilotChatWindow()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            try
+            {
+                var dte = GetDte();
+                if (dte?.Windows == null) return;
+
+                foreach (EnvDTE.Window window in dte.Windows)
+                {
+                    try
+                    {
+                        string caption = window.Caption ?? "";
+                        if (caption.IndexOf("Copilot", StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        if (window.AutoHides)
+                        {
+                            window.AutoHides = false;
+                            Log("Pinned Copilot Chat window (disabled auto-hide): '" + caption + "'");
+                        }
+                        return;
+                    }
+                    catch (Exception exWindow)
+                    {
+                        Log("PinCopilotChatWindow: window inspection failed: " + exWindow.Message);
+                    }
+                }
+
+                Log("PinCopilotChatWindow: Copilot window not found among dte.Windows");
+            }
+            catch (Exception ex)
+            {
+                Log("PinCopilotChatWindow failed: " + ex.Message);
+            }
         }
 
         // ==================== Availability Check ====================
@@ -1290,25 +1450,38 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
         }
 
         /// <summary>
-        /// Clears any leftover draft text in the Copilot Chat input box so the subsequent
-        /// DTE NewThread command isn't a no-op. Copilot's NewThread handler silently
-        /// preserves the current thread when the input has unsubmitted typing — which is
-        /// exactly what's left behind by a paste-only Ask-mode click — so without this
-        /// step the second remediate click lands in the same chat.
-        ///
-        /// Tries <see cref="ValuePattern"/>.<c>SetValue("")</c> first because it never sends
-        /// keystrokes and therefore cannot touch the code editor. Falls back to focusing the
-        /// located input element and sending Ctrl+A + Delete; focus is set on the located
-        /// chat input only (no broad fallback), so keystrokes are safe.
+        /// Returns true if name looks like an open source file (e.g. "CopilotIntegration.cs") rather
+        /// than a chat control, since a file's title can itself contain "chat"/"copilot"/"prompt"/etc.
         /// </summary>
-        private static bool ClearCopilotInputDraft(AutomationElement root)
+        private static bool LooksLikeSourceFileName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            int dot = name.LastIndexOf('.');
+            if (dot <= 0 || dot == name.Length - 1) return false;
+            int end = dot + 1;
+            while (end < name.Length && char.IsLetterOrDigit(name[end])) end++;
+            int extLength = end - (dot + 1);
+            return extLength >= 1 && extLength <= 6;
+        }
+
+        /// <summary>
+        /// Locates the Copilot Chat text input area, purely read-only — never calls SetFocus or
+        /// sends keystrokes. Used to inspect/clear the input (e.g. via ValuePattern or a scoped
+        /// SendKeys fallback) without risking keyboard input landing on the wrong control.
+        ///
+        /// Unlike <see cref="FocusCopilotInput"/> (which OR's control-type and name-hint, safe there
+        /// because callers only paste after independently confirming focus via
+        /// <see cref="IsFocusedElementLikelyCopilotInput"/>), this requires BOTH an Edit/Document
+        /// control type AND a chat-like name, and excludes file-named controls — because callers of
+        /// this method may run Ctrl+A + Delete on whatever is returned even when it's not currently
+        /// focused, so a broader match here could select the code editor.
+        /// </summary>
+        private static AutomationElement FindCopilotInputElement(AutomationElement root)
         {
             try
             {
-                if (root == null) return false;
+                if (root == null) return null;
 
-                AutomationElement input = null;
-                AutomationElement editFallback = null;
                 var all = root.FindAll(TreeScope.Descendants, System.Windows.Automation.Condition.TrueCondition);
                 for (int i = 0; i < all.Count; i++)
                 {
@@ -1324,6 +1497,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                         if (!likelyEdit) continue;
 
                         string name = el.Current.Name ?? "";
+                        if (LooksLikeSourceFileName(name)) continue;
+
                         bool nameHint = !string.IsNullOrEmpty(name) && (
                             name.IndexOf("type", StringComparison.OrdinalIgnoreCase) >= 0 ||
                             name.IndexOf("message", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -1331,68 +1506,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                             name.IndexOf("prompt", StringComparison.OrdinalIgnoreCase) >= 0 ||
                             name.IndexOf("copilot", StringComparison.OrdinalIgnoreCase) >= 0 ||
                             name.IndexOf("ask", StringComparison.OrdinalIgnoreCase) >= 0);
+                        if (!nameHint) continue;
 
-                        if (nameHint)
-                        {
-                            input = el;
-                            break;
-                        }
-                        if (editFallback == null) editFallback = el;
+                        return el;
                     }
                     catch (Exception ex)
                     {
-                        Log("ClearCopilotInputDraft: enumeration iteration failed: " + ex.Message);
+                        Log("UI Automation: FindCopilotInputElement enumeration failed: " + ex.Message);
                     }
-                }
-
-                if (input == null) input = editFallback;
-                if (input == null)
-                {
-                    Log("ClearCopilotInputDraft: no chat input element found");
-                    return false;
-                }
-
-                // Strategy 1: ValuePattern.SetValue("") — zero risk of typing into the editor.
-                try
-                {
-                    if (input.TryGetCurrentPattern(ValuePattern.Pattern, out object vpObj))
-                    {
-                        var vp = (ValuePattern)vpObj;
-                        if (!vp.Current.IsReadOnly)
-                        {
-                            vp.SetValue(string.Empty);
-                            Log("ClearCopilotInputDraft: cleared via ValuePattern");
-                            return true;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log("ClearCopilotInputDraft: ValuePattern failed: " + ex.Message);
-                }
-
-                // Strategy 2: focus the located input (NOT a broad focusable element) and SendKeys.
-                try
-                {
-                    input.SetFocus();
-                    System.Threading.Thread.Sleep(120);
-                    System.Windows.Forms.SendKeys.SendWait("^a");
-                    System.Threading.Thread.Sleep(50);
-                    System.Windows.Forms.SendKeys.SendWait("{DELETE}");
-                    System.Threading.Thread.Sleep(50);
-                    Log("ClearCopilotInputDraft: cleared via SendKeys");
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    Log("ClearCopilotInputDraft: SendKeys fallback failed: " + ex.Message);
                 }
             }
             catch (Exception ex)
             {
-                Log("ClearCopilotInputDraft error: " + ex.Message);
+                Log("UI Automation: FindCopilotInputElement error: " + ex.Message);
             }
-            return false;
+            return null;
         }
 
         // ==================== Clipboard ====================

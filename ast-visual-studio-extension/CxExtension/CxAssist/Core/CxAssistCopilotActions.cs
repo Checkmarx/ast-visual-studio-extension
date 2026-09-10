@@ -36,7 +36,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_STARTED, v.Scanner, issueDesc, filePath));
-            bool sent = CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotFixFallbackMessage);
+            bool sent = CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotFixFallbackMessage, CopilotIntegration.RequiredCopilotMode.Agent);
             if (sent)
                 CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.REMEDIATION_SENT_COPILOT, v.Scanner, issueDesc, filePath));
             else
@@ -75,7 +75,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
             }
 
             CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.VIEW_DETAILS_STARTED, v.Scanner, issueDesc, filePath));
-            bool sent = CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotViewDetailsFallbackMessage);
+            bool sent = CopilotIntegration.SendPromptToCopilot(prompt, CxAssistConstants.CopilotViewDetailsFallbackMessage, CopilotIntegration.RequiredCopilotMode.Ask);
             if (sent)
                 CxAssistOutputPane.WriteToOutputPane(string.Format(CxAssistConstants.VIEW_DETAILS_SENT_COPILOT, v.Scanner, issueDesc, filePath));
             else
