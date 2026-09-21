@@ -45,8 +45,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 return new ObservableCollection<FileNode>();
 
             var grouped = issuesOnly
-                .GroupBy(v => string.IsNullOrEmpty(v.FilePath) ? fallbackPath : v.FilePath)
-                .OrderBy(g => g.Key);
+                .GroupBy(v => string.IsNullOrEmpty(v.FilePath) ? fallbackPath : v.FilePath);
 
             var fileNodes = new ObservableCollection<FileNode>();
 
@@ -210,8 +209,8 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                     });
                 }
 
-                // Sort by line then column (reference order)
-                foreach (var n in nodesToAdd.OrderBy(n => n.Line).ThenBy(n => n.Column))
+                // Sort by severity (most severe first), then by line then column (line/column as tiebreaker)
+                foreach (var n in nodesToAdd.OrderBy(SeverityRank).ThenBy(n => n.Line).ThenBy(n => n.Column))
                     fileNode.Vulnerabilities.Add(n);
 
                 // Severity counts for badges
@@ -229,7 +228,33 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 fileNodes.Add(fileNode);
             }
 
-            return fileNodes;
+            // Sort files by their most severe finding (highest severity first), then alphabetically by path
+            var sortedFiles = new ObservableCollection<FileNode>(fileNodes
+                .OrderBy(HighestSeverityRank)
+                .ThenBy(f => f.FilePath, StringComparer.OrdinalIgnoreCase));
+            return sortedFiles;
+        }
+
+        /// <summary>
+        /// Severity rank used to order findings: lower value = more severe (Malicious=0, Critical=1, ... Info=8).
+        /// </summary>
+        private static int SeverityRank(VulnerabilityNode node)
+        {
+            if (node?.Vulnerability != null)
+                return (int)node.Vulnerability.Severity;
+            if (node == null || string.IsNullOrEmpty(node.Severity))
+                return (int)SeverityLevel.Info;
+            return Enum.TryParse(node.Severity, true, out SeverityLevel level) ? (int)level : (int)SeverityLevel.Info;
+        }
+
+        /// <summary>
+        /// Rank of a file node based on its most severe vulnerability; used to sort files with the most severe first.
+        /// </summary>
+        private static int HighestSeverityRank(FileNode fileNode)
+        {
+            if (fileNode?.Vulnerabilities == null || fileNode.Vulnerabilities.Count == 0)
+                return (int)SeverityLevel.Info;
+            return fileNode.Vulnerabilities.Min(SeverityRank);
         }
     }
 }
