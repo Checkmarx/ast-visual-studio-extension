@@ -54,8 +54,15 @@ namespace ast_visual_studio_extension.CxPreferences
             containersCheckBox.Checked = cxOneAssistSettingsModule.ContainersRealtimeCheckBox;
             iacCheckBox.Checked = cxOneAssistSettingsModule.IacRealtimeCheckBox;
             cmbContainersTool.SelectedItem = cxOneAssistSettingsModule.ContainersTool ?? "docker";
+            SetMcpAuthModeRadios(cxOneAssistSettingsModule.McpAuthMode);
 
             ApplyAuthenticationState(CxPreferencesUI.IsAuthenticated());
+        }
+
+        private void SetMcpAuthModeRadios(McpAuthMode mode)
+        {
+            rbMcpAuthOAuth.Checked = mode == McpAuthMode.OAuth;
+            rbMcpAuthApiKey.Checked = mode != McpAuthMode.OAuth;
         }
 
         private void EnsureAuthSubscription()
@@ -97,6 +104,7 @@ namespace ast_visual_studio_extension.CxPreferences
                 containersCheckBox.Checked = false;
                 iacCheckBox.Checked = false;
                 cmbContainersTool.SelectedItem = "docker";
+                rbMcpAuthApiKey.Checked = true;
 
                 SetMcpStatus("Please authenticate first before using Checkmarx One Assist settings.", isSuccess: false, autoDismiss: false);
                 return;
@@ -106,6 +114,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 CxPreferencesUI.GetCxConfigFromPackage(cxOneAssistSettingsModule?.GetOwnerPackage() as Package)?.ApiKey);
             lnkInstallMcp.Enabled = hasApiKey && !_isMcpInstallInProgress && mcpEnabled;
             lnkEditMcp.Enabled = true;
+            rbMcpAuthApiKey.Enabled = hasApiKey && mcpEnabled;
+            rbMcpAuthOAuth.Enabled = hasApiKey && mcpEnabled;
 
             if (!hasApiKey)
                 SetMcpStatus("Please authenticate first before installing MCP.", isSuccess: false, autoDismiss: false);
@@ -132,6 +142,7 @@ namespace ast_visual_studio_extension.CxPreferences
             containersCheckBox.Checked = cxOneAssistSettingsModule.ContainersRealtimeCheckBox;
             iacCheckBox.Checked = cxOneAssistSettingsModule.IacRealtimeCheckBox;
             cmbContainersTool.SelectedItem = cxOneAssistSettingsModule.ContainersTool ?? "docker";
+            SetMcpAuthModeRadios(cxOneAssistSettingsModule.McpAuthMode);
 
             // AuthStateChanged can run before tenant MCP flags are written; sync Install MCP / status from module.
             ApplyAuthenticationState(CxPreferencesUI.IsAuthenticated());
@@ -148,6 +159,9 @@ namespace ast_visual_studio_extension.CxPreferences
 
             if (!CxPreferencesUI.IsAuthenticated())
                 return;
+
+            // MCP auth mode is independent of the realtime-scanner enablement below.
+            module.McpAuthMode = rbMcpAuthOAuth.Checked ? McpAuthMode.OAuth : McpAuthMode.ApiKey;
 
             // Only allow scanner changes when MCP is enabled
             if (!module.McpEnabled)
@@ -172,6 +186,8 @@ namespace ast_visual_studio_extension.CxPreferences
             cmbContainersTool.Enabled = enabled;
             lnkInstallMcp.Enabled = enabled;
             lnkEditMcp.Enabled = enabled;
+            rbMcpAuthApiKey.Enabled = enabled;
+            rbMcpAuthOAuth.Enabled = enabled;
         }
 
         /// <summary>
@@ -256,6 +272,20 @@ namespace ast_visual_studio_extension.CxPreferences
             SyncAssistUiToModuleProperties();
         }
 
+        private void RbMcpAuthApiKey_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
+                return;
+            DebounceSyncAssistUi();
+        }
+
+        private void RbMcpAuthOAuth_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
+                return;
+            DebounceSyncAssistUi();
+        }
+
         private async void LnkInstallMcp_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             if (!CxPreferencesUI.IsAuthenticated())
@@ -282,7 +312,7 @@ namespace ast_visual_studio_extension.CxPreferences
             try
             {
                 var installService = new McpInstallService();
-                McpInstallResult result = await installService.InstallAsync(config, GetType());
+                McpInstallResult result = await installService.InstallAsync(config, cxOneAssistSettingsModule.McpAuthMode, GetType());
 
                 SetMcpStatus(result.Message, isSuccess: result.Success, autoDismiss: result.Success);
             }

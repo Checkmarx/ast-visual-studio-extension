@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxPreferences.Configuration;
 using Microsoft.VisualStudio.Shell.Settings;
 
 namespace ast_visual_studio_extension.CxPreferences
@@ -34,6 +35,12 @@ public bool AscaCheckBox { get; set; } = true;
         public bool McpEnabled { get; set; } = false;
         public bool McpStatusChecked { get; set; } = false;
         public bool WelcomeShown { get; set; } = false;
+
+        /// <summary>
+        /// User's chosen authentication mode for the MCP server entry in .mcp.json.
+        /// Independent of CLI authentication, which always uses the API key.
+        /// </summary>
+        public McpAuthMode McpAuthMode { get; set; } = McpAuthMode.ApiKey;
 
         /// <summary>
         /// Product entitlement flags (cached during authentication). JetBrains: GlobalSettingsState DevAssist/OneAssist license.

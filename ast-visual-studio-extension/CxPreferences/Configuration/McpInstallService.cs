@@ -1,6 +1,7 @@
 using ast_visual_studio_extension.CxWrapper.Models;
 using System;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Json;
 using System.Threading.Tasks;
 
@@ -21,7 +22,12 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
         public Task<McpInstallResult> InstallAsync(CxConfig config, Type ownerType)
         {
-            return Task.Run(() => Install(config, ownerType));
+            return InstallAsync(config, McpAuthMode.ApiKey, ownerType);
+        }
+
+        public Task<McpInstallResult> InstallAsync(CxConfig config, McpAuthMode authMode, Type ownerType)
+        {
+            return Task.Run(() => Install(config, authMode, ownerType));
         }
 
         public Task<bool> IsTenantMcpEnabledAsync(CxConfig config, Type ownerType)
@@ -31,9 +37,14 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
         public Task<bool> InstallSilentlyAsync(CxConfig config, Type ownerType)
         {
+            return InstallSilentlyAsync(config, McpAuthMode.ApiKey, ownerType);
+        }
+
+        public Task<bool> InstallSilentlyAsync(CxConfig config, McpAuthMode authMode, Type ownerType)
+        {
             return Task.Run(() =>
             {
-                var result = Install(config, ownerType, silentMode: true);
+                var result = Install(config, authMode, ownerType, silentMode: true);
                 return result.Success;
             });
         }
@@ -57,10 +68,15 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
         private McpInstallResult Install(CxConfig config, Type ownerType)
         {
-            return Install(config, ownerType, silentMode: false);
+            return Install(config, McpAuthMode.ApiKey, ownerType, silentMode: false);
         }
 
-        private McpInstallResult Install(CxConfig config, Type ownerType, bool silentMode)
+        private McpInstallResult Install(CxConfig config, McpAuthMode authMode, Type ownerType)
+        {
+            return Install(config, authMode, ownerType, silentMode: false);
+        }
+
+        private McpInstallResult Install(CxConfig config, McpAuthMode authMode, Type ownerType, bool silentMode)
         {
             if (config == null)
             {
@@ -97,8 +113,15 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                     };
                 }
 
-                string mcpUrl = ResolveMcpUrl(config.ApiKey);
-                bool changed = _configManager.InstallOrUpdate(config.ApiKey, mcpUrl, out string configPath);
+                string mcpUrl = authMode == McpAuthMode.OAuth
+                    ? ResolveMcpUrlForOAuth(config.ApiKey)
+                    : ResolveMcpUrl(config.ApiKey);
+                bool changed;
+                string configPath;
+                if (authMode == McpAuthMode.OAuth)
+                    changed = _configManager.InstallOrUpdateOAuth(mcpUrl, out configPath);
+                else
+                    changed = _configManager.InstallOrUpdate(config.ApiKey, mcpUrl, out configPath);
 
                 return new McpInstallResult
                 {
@@ -106,7 +129,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                     Changed = changed,
                     ConfigPath = configPath,
                     Message = changed
-                        ? "MCP configuration installed successfully."
+                        ? (authMode == McpAuthMode.OAuth
+                            ? "MCP configuration installed. Visual Studio will prompt you to sign in via your browser the first time the Checkmarx MCP server is used."
+                            : "MCP configuration installed successfully.")
                         : "MCP configuration is already up to date."
                 };
             }
@@ -155,6 +180,48 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             {
                 return McpConfigManager.DefaultMcpUrl;
             }
+        }
+
+        /// <summary>
+        /// OAuth-mode variant of <see cref="ResolveMcpUrl"/>. The MCP endpoint is served from a
+        /// different host than the API-key JWT issuer (the IAM host), so the issuer host must be
+        /// mapped. Kept separate so the existing API-key path's URL resolution is unchanged.
+        /// </summary>
+        internal static string ResolveMcpUrlForOAuth(string apiKey)
+        {
+            try
+            {
+                string issuer = TryGetIssuer(apiKey);
+                if (string.IsNullOrWhiteSpace(issuer))
+                    return McpConfigManager.DefaultMcpUrl;
+
+                if (!Uri.TryCreate(issuer, UriKind.Absolute, out Uri issuerUri))
+                    return McpConfigManager.DefaultMcpUrl;
+
+                string authority = ResolveMcpAuthority(issuerUri.Authority);
+                return issuerUri.Scheme + "://" + authority + "/api/security-mcp/mcp";
+            }
+            catch
+            {
+                return McpConfigManager.DefaultMcpUrl;
+            }
+        }
+
+        /// <summary>
+        /// Maps the IAM host to the host that serves the security MCP endpoint.
+        /// On Checkmarx cloud environments (&lt;env&gt;.cxast.net) the MCP endpoint is served from the
+        /// "ast-master-components" host in place of the IAM host (e.g.
+        /// iam-dev.dev.cxast.net -&gt; ast-master-components.dev.cxast.net). A naive "iam" -&gt; "ast"
+        /// label swap yields ast-dev.dev.cxast.net, which does not resolve in DNS. Other (non-cxast)
+        /// environments keep the legacy "iam" -&gt; "ast" mapping.
+        /// </summary>
+        private static string ResolveMcpAuthority(string authority)
+        {
+            Match cxastMatch = Regex.Match(authority, @"^iam(?:-[^.]+)?\.(?<envAndDomain>[^.]+\.cxast\.net)$", RegexOptions.IgnoreCase);
+            if (cxastMatch.Success)
+                return "ast-master-components." + cxastMatch.Groups["envAndDomain"].Value;
+
+            return Regex.Replace(authority, "^iam(?=[.-])", "ast");
         }
 
         private static string TryGetIssuer(string token)

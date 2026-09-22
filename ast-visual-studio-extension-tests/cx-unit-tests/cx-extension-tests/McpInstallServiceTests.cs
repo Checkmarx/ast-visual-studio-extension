@@ -115,6 +115,43 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
+        public void ResolveMcpUrl_WithDevIamPrefix_LeavesHostUnchanged()
+        {
+            // Locks in existing API-key-mode behavior: "iam-dev." is not "iam." so no replacement occurs.
+            string payload = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"iss\":\"https://iam-dev.dev.cxast.net\"}"));
+            string token = "header." + payload.TrimEnd('=').Replace('+', '-').Replace('/', '_') + ".signature";
+            var url = McpInstallService.ResolveMcpUrl(token);
+            Assert.Contains("iam-dev.dev.cxast.net", url);
+        }
+
+        [Fact]
+        public void ResolveMcpUrlForOAuth_WithDevIamPrefix_ResolvesAstMasterComponents()
+        {
+            string payload = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"iss\":\"https://iam-dev.dev.cxast.net\"}"));
+            string token = "header." + payload.TrimEnd('=').Replace('+', '-').Replace('/', '_') + ".signature";
+            var url = McpInstallService.ResolveMcpUrlForOAuth(token);
+            Assert.Equal("https://ast-master-components.dev.cxast.net/api/security-mcp/mcp", url);
+            Assert.DoesNotContain("iam", url);
+        }
+
+        [Fact]
+        public void ResolveMcpUrlForOAuth_WithPlainIamPrefix_ReplacesWithAst()
+        {
+            string payload = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"iss\":\"https://iam.checkmarx.net\"}"));
+            string token = "header." + payload.TrimEnd('=').Replace('+', '-').Replace('/', '_') + ".signature";
+            var url = McpInstallService.ResolveMcpUrlForOAuth(token);
+            Assert.Contains("ast.checkmarx.net", url);
+            Assert.DoesNotContain("iam.", url);
+        }
+
+        [Fact]
+        public void ResolveMcpUrlForOAuth_WithInvalidApiKey_ReturnsDefault()
+        {
+            var url = McpInstallService.ResolveMcpUrlForOAuth("");
+            Assert.Equal(McpConfigManager.DefaultMcpUrl, url);
+        }
+
+        [Fact]
         public void IsTenantMcpEnabled_WithNullConfig_ReturnsFalse()
         {
             var service = new McpInstallService();
@@ -164,6 +201,20 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             var method = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(CxConfig), typeof(Type) }, null);
             var result = method.Invoke(service, new object[] { config, typeof(McpInstallServiceTests) });
 
+            Assert.False(((McpInstallResult)result).Success);
+        }
+
+        [Fact]
+        public void Install_WithOAuthModeAndAuthError_ReturnsFalse()
+        {
+            var mockConfigManager = new Mock<McpConfigManager>();
+            var service = new McpInstallService(mockConfigManager.Object);
+            var config = new CxConfig { ApiKey = "valid-key" };
+
+            var method = service.GetType().GetMethod("Install", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(CxConfig), typeof(McpAuthMode), typeof(Type) }, null);
+            var result = method.Invoke(service, new object[] { config, McpAuthMode.OAuth, typeof(McpInstallServiceTests) });
+
+            // Auth against the real CxWrapper will fail in a unit test environment regardless of auth mode.
             Assert.False(((McpInstallResult)result).Success);
         }
 

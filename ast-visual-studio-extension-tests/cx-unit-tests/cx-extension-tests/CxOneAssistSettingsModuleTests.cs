@@ -151,5 +151,20 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             Assert.False(module.ContainersRealtimeCheckBox);
             Assert.True(module.IacRealtimeCheckBox);
         }
+
+        [Fact]
+        public void McpAuthMode_DefaultsToApiKey()
+        {
+            var module = CreateModule();
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.ApiKey, module.McpAuthMode);
+        }
+
+        [Fact]
+        public void McpAuthMode_CanBeSetToOAuth()
+        {
+            var module = CreateModule();
+            module.McpAuthMode = ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth;
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth, module.McpAuthMode);
+        }
     }
 }

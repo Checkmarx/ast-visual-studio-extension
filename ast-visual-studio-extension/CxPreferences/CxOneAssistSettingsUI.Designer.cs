@@ -37,6 +37,8 @@ namespace ast_visual_studio_extension.CxPreferences
             this.mcpGroupBox = new System.Windows.Forms.GroupBox();
             this.lblMcpStatus = new System.Windows.Forms.Label();
             this.lblMcpDescription = new System.Windows.Forms.Label();
+            this.rbMcpAuthApiKey = new System.Windows.Forms.RadioButton();
+            this.rbMcpAuthOAuth = new System.Windows.Forms.RadioButton();
             this.lnkInstallMcp = new System.Windows.Forms.LinkLabel();
             this.lnkEditMcp = new System.Windows.Forms.LinkLabel();
             this.spacer1 = new System.Windows.Forms.Panel();
@@ -235,7 +237,7 @@ namespace ast_visual_studio_extension.CxPreferences
 
             TableLayoutPanel mcpLayout = new TableLayoutPanel();
             mcpLayout.ColumnCount = 1;
-            mcpLayout.RowCount = 4;
+            mcpLayout.RowCount = 5;
             mcpLayout.Dock = DockStyle.Top;
             mcpLayout.AutoSize = true;
             // CRITICAL: Force column to 100% width
@@ -245,6 +247,24 @@ namespace ast_visual_studio_extension.CxPreferences
             this.lblMcpDescription.Text = "The Model Context Protocol (MCP) provides advanced contextual analysis for secure coding.";
             this.lblMcpDescription.Dock = DockStyle.Fill;
             this.lblMcpDescription.Margin = new Padding(0, 0, 5, 5);
+
+            this.rbMcpAuthApiKey.AutoSize = true;
+            this.rbMcpAuthApiKey.Text = "API Key";
+            this.rbMcpAuthApiKey.Checked = true;
+            this.rbMcpAuthApiKey.Margin = new Padding(0, 0, 15, 5);
+            this.rbMcpAuthApiKey.CheckedChanged += new System.EventHandler(this.RbMcpAuthApiKey_CheckedChanged);
+
+            this.rbMcpAuthOAuth.AutoSize = true;
+            this.rbMcpAuthOAuth.Text = "OAuth (sign in via browser)";
+            this.rbMcpAuthOAuth.Margin = new Padding(0, 0, 5, 5);
+            this.rbMcpAuthOAuth.CheckedChanged += new System.EventHandler(this.RbMcpAuthOAuth_CheckedChanged);
+
+            FlowLayoutPanel mcpAuthModeFlow = new FlowLayoutPanel();
+            mcpAuthModeFlow.FlowDirection = FlowDirection.LeftToRight;
+            mcpAuthModeFlow.AutoSize = true;
+            mcpAuthModeFlow.Margin = new Padding(0, 0, 0, 5);
+            mcpAuthModeFlow.Controls.Add(this.rbMcpAuthApiKey);
+            mcpAuthModeFlow.Controls.Add(this.rbMcpAuthOAuth);
 
             this.lnkInstallMcp.AutoSize = true;
             this.lnkInstallMcp.Text = "Install MCP";
@@ -258,9 +278,10 @@ namespace ast_visual_studio_extension.CxPreferences
             this.lblMcpStatus.Text = "";
 
             mcpLayout.Controls.Add(this.lblMcpDescription, 0, 0);
-            mcpLayout.Controls.Add(this.lnkInstallMcp, 0, 1);
-            mcpLayout.Controls.Add(this.lnkEditMcp, 0, 2);
-            mcpLayout.Controls.Add(this.lblMcpStatus, 0, 3);
+            mcpLayout.Controls.Add(mcpAuthModeFlow, 0, 1);
+            mcpLayout.Controls.Add(this.lnkInstallMcp, 0, 2);
+            mcpLayout.Controls.Add(this.lnkEditMcp, 0, 3);
+            mcpLayout.Controls.Add(this.lblMcpStatus, 0, 4);
             this.mcpGroupBox.Controls.Add(mcpLayout);
 
             // Responsive Wrapping Logic: Updates MaximumSize when the container resizes
@@ -324,6 +345,8 @@ namespace ast_visual_studio_extension.CxPreferences
         private System.Windows.Forms.GroupBox mcpGroupBox;
         private System.Windows.Forms.Label lblMcpStatus;
         private System.Windows.Forms.Label lblMcpDescription;
+        private System.Windows.Forms.RadioButton rbMcpAuthApiKey;
+        private System.Windows.Forms.RadioButton rbMcpAuthOAuth;
         private System.Windows.Forms.LinkLabel lnkInstallMcp;
         private System.Windows.Forms.LinkLabel lnkEditMcp;
         private System.Windows.Forms.Panel spacer1;

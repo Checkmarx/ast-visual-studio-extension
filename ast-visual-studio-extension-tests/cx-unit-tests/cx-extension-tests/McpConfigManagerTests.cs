@@ -285,6 +285,62 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
+        public void BuildCheckmarxServerOAuth_ContainsTypeAndUrl()
+        {
+            var method = typeof(McpConfigManager).GetMethod("BuildCheckmarxServerOAuth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var server = (JObject)method.Invoke(null, new object[] { "https://test-url.com" });
+
+            Assert.NotNull(server);
+            Assert.Equal("http", server["type"].ToString().Trim('"'));
+            Assert.Equal("https://test-url.com", server["url"].ToString().Trim('"'));
+            Assert.False(server.ContainsKey("command"));
+            Assert.False(server.ContainsKey("args"));
+            Assert.DoesNotContain("Authorization", server.ToString());
+        }
+
+        [Fact]
+        public void InstallOrUpdateOAuth_WritesConfigAndReturnsChanged()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile), "{}");
+                var mgr = new TestableConfigManager(tempFile);
+
+                var changed = mgr.InstallOrUpdateOAuth("https://oauth-url.com", out string configPath);
+                Assert.True(changed);
+                Assert.True(File.Exists(configPath));
+                string json = File.ReadAllText(configPath);
+                Assert.Contains("Checkmarx", json);
+                Assert.Contains("\"type\": \"http\"", json);
+                Assert.DoesNotContain("Authorization", json);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void InstallOrUpdateOAuth_WithNullUrl_UsesDefaultUrl()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile), "{}");
+                var mgr = new TestableConfigManager(tempFile);
+
+                mgr.InstallOrUpdateOAuth(null, out string configPath);
+                string json = File.ReadAllText(configPath);
+                Assert.Contains(McpConfigManager.DefaultMcpUrl, json);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
         public void ReadConfig_WithNonexistentFile_ReturnsEmptyObject()
         {
             var method = typeof(McpConfigManager).GetMethod("ReadConfig", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);

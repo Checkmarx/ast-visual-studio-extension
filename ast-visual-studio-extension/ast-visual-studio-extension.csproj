@@ -248,6 +248,7 @@
     <Compile Include="CxPreferences\CxOneAssistWelcomeDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="CxPreferences\Configuration\McpAuthMode.cs" />
     <Compile Include="CxPreferences\Configuration\McpConfigManager.cs" />
     <Compile Include="CxPreferences\Configuration\McpInstallResult.cs" />
     <Compile Include="CxPreferences\Configuration\AssistEntitlementSync.cs" />

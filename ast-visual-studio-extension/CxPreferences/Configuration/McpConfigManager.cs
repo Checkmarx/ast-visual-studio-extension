@@ -57,6 +57,44 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return changed;
         }
 
+        public virtual bool InstallOrUpdateOAuth(string mcpUrl, out string configPath)
+        {
+            if (string.IsNullOrWhiteSpace(mcpUrl))
+                mcpUrl = DefaultMcpUrl;
+
+            configPath = GetMcpConfigPath();
+
+            JObject root = ReadConfig(configPath);
+
+            // Ensure 'inputs' key exists and is a JArray
+            if (!root.ContainsKey("inputs") || !(root["inputs"] is JArray))
+                root["inputs"] = new JArray();
+
+            // Ensure 'servers' key exists and is a JObject
+            JObject servers = null;
+            if (root.ContainsKey("servers") && root["servers"] is JObject)
+            {
+                servers = root["servers"] as JObject;
+            }
+            else
+            {
+                servers = new JObject();
+                root["servers"] = servers;
+            }
+
+            JObject desiredServer = BuildCheckmarxServerOAuth(mcpUrl);
+            JToken existingServer = servers[ServerName];
+
+            bool changed = existingServer == null || existingServer.ToString() != desiredServer.ToString();
+            if (changed)
+            {
+                servers[ServerName] = desiredServer;
+                WriteConfig(configPath, root);
+            }
+
+            return changed;
+        }
+
         internal virtual bool RemoveCheckmarxServer(out string configPath)
         {
             configPath = GetMcpConfigPath();
@@ -87,6 +125,19 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                     "--header",
                     "cx-origin:VisualStudio",
                     "--verbose"
+                }
+            };
+        }
+
+        private static JObject BuildCheckmarxServerOAuth(string mcpUrl)
+        {
+            return new JObject
+            {
+                ["type"] = "http",
+                ["url"] = mcpUrl,
+                ["headers"] = new JObject
+                {
+                    ["cx-origin"] = "VisualStudio"
                 }
             };
         }
