@@ -199,7 +199,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                     return McpConfigManager.DefaultMcpUrl;
 
                 string authority = ResolveMcpAuthority(issuerUri.Authority);
-                return issuerUri.Scheme + "://" + authority + "/api/security-mcp/mcp";
+                string mcpBase = issuerUri.Scheme + "://" + authority + "/api/security-mcp/mcp";
+                string realm = TryGetRealm(issuerUri);
+                return string.IsNullOrWhiteSpace(realm) ? mcpBase : mcpBase + "/" + realm;
             }
             catch
             {
@@ -222,6 +224,28 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 return "ast-master-components." + cxastMatch.Groups["envAndDomain"].Value;
 
             return Regex.Replace(authority, "^iam(?=[.-])", "ast");
+        }
+
+        /// <summary>
+        /// Extracts the Keycloak realm from the issuer URI (e.g. "/auth/realms/master-sypher").
+        /// The tenant-scoped MCP endpoint ("/api/security-mcp/mcp/&lt;realm&gt;") is the only one whose
+        /// Protected Resource Metadata advertises an authorization server, which is required for
+        /// Visual Studio / GitHub Copilot OAuth DCR discovery.
+        /// </summary>
+        private static string TryGetRealm(Uri issuerUri)
+        {
+            if (issuerUri == null || string.IsNullOrWhiteSpace(issuerUri.AbsolutePath))
+                return null;
+
+            string[] segments = issuerUri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            int realmsIndex = Array.FindIndex(segments, s => string.Equals(s, "realms", StringComparison.OrdinalIgnoreCase));
+            if (realmsIndex >= 0 && realmsIndex + 1 < segments.Length)
+            {
+                string realm = segments[realmsIndex + 1];
+                return string.IsNullOrWhiteSpace(realm) ? null : realm;
+            }
+
+            return null;
         }
 
         private static string TryGetIssuer(string token)

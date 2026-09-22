@@ -135,6 +135,15 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
+        public void ResolveMcpUrlForOAuth_WithDevTenantRealmPath_ResolvesTenantScopedMcpEndpoint()
+        {
+            string payload = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"iss\":\"https://iam-dev.dev.cxast.net/auth/realms/master-sypher\"}"));
+            string token = "header." + payload.TrimEnd('=').Replace('+', '-').Replace('/', '_') + ".signature";
+            var url = McpInstallService.ResolveMcpUrlForOAuth(token);
+            Assert.Equal("https://ast-master-components.dev.cxast.net/api/security-mcp/mcp/master-sypher", url);
+        }
+
+        [Fact]
         public void ResolveMcpUrlForOAuth_WithPlainIamPrefix_ReplacesWithAst()
         {
             string payload = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"iss\":\"https://iam.checkmarx.net\"}"));
