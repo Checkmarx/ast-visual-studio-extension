@@ -86,7 +86,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Core
                 foreach (var lineGroup in iacVulns.GroupBy(v => v.LineNumber))
                 {
                     var list = lineGroup.ToList();
-                    var first = list[0];
+                    var first = list.OrderBy(x => x.Severity).First();
                     int line1Based = CxAssistConstants.To1BasedLineForDte(ScannerType.IaC, first.LineNumber);
                     if (list.Count > 1)
                     {

@@ -128,6 +128,40 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             Assert.Equal(2, result[0].Vulnerabilities.Count);
         }
 
+        [Fact]
+        public void BuildFileNodes_MultipleIacSameLine_UsesHighestSeverity()
+        {
+            var vulns = new List<Vulnerability>
+            {
+                new Vulnerability("V1", "Issue1", "Desc1", SeverityLevel.Low, ScannerType.IaC, 5, 1, @"C:\src\dockerfile"),
+                new Vulnerability("V2", "Issue2", "Desc2", SeverityLevel.Critical, ScannerType.IaC, 5, 1, @"C:\src\dockerfile"),
+                new Vulnerability("V3", "Issue3", "Desc3", SeverityLevel.Medium, ScannerType.IaC, 5, 1, @"C:\src\dockerfile")
+            };
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
+
+            Assert.Equal("Critical", result[0].Vulnerabilities[0].Severity);
+            Assert.Equal("V2", result[0].Vulnerabilities[0].Vulnerability.Id);
+        }
+
+        [Fact]
+        public void BuildFileNodes_IacRows_SortedBySeverityThenLine()
+        {
+            var path = @"C:\src\main.tf";
+            var vulns = new List<Vulnerability>
+            {
+                new Vulnerability("V1", "Low only", "Desc", SeverityLevel.Low, ScannerType.IaC, 2, 1, path),
+                new Vulnerability("V2", "Low first", "Desc", SeverityLevel.Low, ScannerType.IaC, 8, 1, path),
+                new Vulnerability("V3", "High second", "Desc", SeverityLevel.High, ScannerType.IaC, 8, 1, path),
+                new Vulnerability("V4", "Medium only", "Desc", SeverityLevel.Medium, ScannerType.IaC, 4, 1, path)
+            };
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
+
+            Assert.Equal(new[] { "High", "Medium", "Low" }, result[0].Vulnerabilities.Select(v => v.Severity).ToArray());
+            Assert.Equal(new[] { 8, 4, 2 }, result[0].Vulnerabilities.Select(v => v.Line).ToArray());
+        }
+
         #endregion
 
         #region Multi-File Grouping
