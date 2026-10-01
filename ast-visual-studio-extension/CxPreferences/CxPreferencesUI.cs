@@ -410,7 +410,7 @@ namespace ast_visual_studio_extension.CxPreferences
                     var installService = new McpInstallService();
                     ApplyJetBrainsStyleRealtimeScannerPolicy(oneAssistRestore, previousMcpEnabled, mcpStatusPreviouslyChecked);
                     if (oneAssistRestore.McpEnabled)
-                        await installService.InstallSilentlyAsync(config, oneAssistRestore.McpAuthMode, typeof(CxPreferencesUI));
+                        await installService.InstallSilentlyAsync(config, oneAssistRestore.GetMcpConnectionSettings(), typeof(CxPreferencesUI));
 
                     // Only start scanning on restore if user has already seen the welcome dialog
                     // (WelcomeShown = true means user has configured scanners previously)
@@ -533,13 +533,13 @@ namespace ast_visual_studio_extension.CxPreferences
                     // Step 3b: Install MCP in background while user is viewing the Welcome dialog
                     if (oneAssistModule.McpEnabled)
                     {
-                        McpAuthMode authMode = oneAssistModule.McpAuthMode;
+                        McpConnectionSettings connectionSettings = oneAssistModule.GetMcpConnectionSettings();
                         _ = Task.Run(async () =>
                         {
                             try
                             {
                                 var installService = new McpInstallService();
-                                await installService.InstallSilentlyAsync(config, authMode, GetType());
+                                await installService.InstallSilentlyAsync(config, connectionSettings, GetType());
                             }
                             catch (Exception ex)
                             {
@@ -561,13 +561,13 @@ namespace ast_visual_studio_extension.CxPreferences
                     // Install MCP in background for restored sessions too
                     if (oneAssistModule.McpEnabled)
                     {
-                        McpAuthMode authMode = oneAssistModule.McpAuthMode;
+                        McpConnectionSettings connectionSettings = oneAssistModule.GetMcpConnectionSettings();
                         _ = Task.Run(async () =>
                         {
                             try
                             {
                                 var installService = new McpInstallService();
-                                await installService.InstallSilentlyAsync(config, authMode, GetType());
+                                await installService.InstallSilentlyAsync(config, connectionSettings, GetType());
                             }
                             catch (Exception ex)
                             {

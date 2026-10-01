@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json.Linq;
 
@@ -9,6 +10,11 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
     {
         internal const string ServerName = "Checkmarx";
         internal const string DefaultMcpUrl = "https://ast-master-components.dev.cxast.net/api/security-mcp/mcp";
+
+        // Pinned so behavior (and the token-cache layout McpRemoteSessionCache relies on) only changes when bumped here.
+        internal const string MCP_REMOTE_PACKAGE = "mcp-remote@0.14.3";
+        internal const string ORIGIN_HEADER = "cx-origin:VisualStudio";
+        private const string AUTHORIZATION_HEADER_PREFIX = "Authorization:";
 
         public virtual string GetMcpConfigPath()
         {
@@ -95,6 +101,29 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return changed;
         }
 
+        /// <summary>
+        /// URL of the installed Checkmarx entry when it is an OAuth bridge (mcp-remote without an
+        /// Authorization header); null for an API-key entry, a hand-edited entry or no entry.
+        /// </summary>
+        internal virtual string GetInstalledOAuthServerUrl()
+        {
+            JObject root = ReadConfig(GetMcpConfigPath());
+            JArray args = (root["servers"] as JObject)?[ServerName]?["args"] as JArray;
+            if (args == null)
+                return null;
+
+            string[] values = args.Select(a => a?.ToString() ?? string.Empty).ToArray();
+            int packageIndex = Array.FindIndex(values, v => v.StartsWith("mcp-remote", StringComparison.OrdinalIgnoreCase));
+            if (packageIndex < 0 || packageIndex + 1 >= values.Length)
+                return null;
+
+            if (values.Any(v => v.StartsWith(AUTHORIZATION_HEADER_PREFIX, StringComparison.OrdinalIgnoreCase)))
+                return null;
+
+            string url = values[packageIndex + 1];
+            return Uri.TryCreate(url, UriKind.Absolute, out _) ? url : null;
+        }
+
         internal virtual bool RemoveCheckmarxServer(out string configPath)
         {
             configPath = GetMcpConfigPath();
@@ -116,14 +145,15 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 ["command"] = "npx",
                 ["args"] = new JArray
                 {
-                    "mcp-remote",
+                    "-y",
+                    MCP_REMOTE_PACKAGE,
                     mcpUrl,
                     "--transport",
                     "http-first",
                     "--header",
-                    "Authorization:" + apiKey,
+                    AUTHORIZATION_HEADER_PREFIX + apiKey,
                     "--header",
-                    "cx-origin:VisualStudio",
+                    ORIGIN_HEADER,
                     "--verbose"
                 }
             };
@@ -133,11 +163,17 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         {
             return new JObject
             {
-                ["type"] = "http",
-                ["url"] = mcpUrl,
-                ["headers"] = new JObject
+                ["command"] = "npx",
+                ["args"] = new JArray
                 {
-                    ["cx-origin"] = "VisualStudio"
+                    "-y",
+                    MCP_REMOTE_PACKAGE,
+                    mcpUrl,
+                    "--transport",
+                    "http-first",
+                    "--header",
+                    ORIGIN_HEADER,
+                    "--verbose"
                 }
             };
         }

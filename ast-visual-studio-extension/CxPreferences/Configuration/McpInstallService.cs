@@ -9,25 +9,47 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 {
     internal class McpInstallService
     {
+        private const string MCP_PATH = "/api/security-mcp/mcp";
+
+        private static readonly Regex TenantPattern = new Regex(@"^[A-Za-z0-9][A-Za-z0-9._-]*$");
+        private static readonly Regex SafeAuthorityPattern = new Regex(@"^[A-Za-z0-9.-]+(:[0-9]{1,5})?$");
+        private static readonly Regex SafePathPattern = new Regex(@"^(/[A-Za-z0-9._~-]+)*$");
+        private static readonly Regex SafeOAuthMcpUrlPattern = new Regex(@"^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~-]+)+$");
+        private static readonly Regex IamLabelPattern = new Regex(@"(?<prefix>^|\.)iam(?=[.-])", RegexOptions.IgnoreCase);
+
         private readonly McpConfigManager _configManager;
+        private readonly McpRemoteSessionCache _sessionCache;
+        private readonly Func<bool> _isNpxAvailable;
 
         public McpInstallService() : this(new McpConfigManager())
         {
         }
 
         internal McpInstallService(McpConfigManager configManager)
+            : this(configManager, new McpRemoteSessionCache())
+        {
+        }
+
+        internal McpInstallService(McpConfigManager configManager, McpRemoteSessionCache sessionCache)
+            : this(configManager, sessionCache, McpPrerequisites.IsNpxAvailable)
+        {
+        }
+
+        internal McpInstallService(McpConfigManager configManager, McpRemoteSessionCache sessionCache, Func<bool> isNpxAvailable)
         {
             _configManager = configManager;
+            _sessionCache = sessionCache;
+            _isNpxAvailable = isNpxAvailable;
         }
 
         public Task<McpInstallResult> InstallAsync(CxConfig config, Type ownerType)
         {
-            return InstallAsync(config, McpAuthMode.ApiKey, ownerType);
+            return InstallAsync(config, McpConnectionSettings.Default, ownerType);
         }
 
-        public Task<McpInstallResult> InstallAsync(CxConfig config, McpAuthMode authMode, Type ownerType)
+        public Task<McpInstallResult> InstallAsync(CxConfig config, McpConnectionSettings settings, Type ownerType)
         {
-            return Task.Run(() => Install(config, authMode, ownerType));
+            return Task.Run(() => Install(config, settings, ownerType));
         }
 
         public Task<bool> IsTenantMcpEnabledAsync(CxConfig config, Type ownerType)
@@ -37,14 +59,14 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
         public Task<bool> InstallSilentlyAsync(CxConfig config, Type ownerType)
         {
-            return InstallSilentlyAsync(config, McpAuthMode.ApiKey, ownerType);
+            return InstallSilentlyAsync(config, McpConnectionSettings.Default, ownerType);
         }
 
-        public Task<bool> InstallSilentlyAsync(CxConfig config, McpAuthMode authMode, Type ownerType)
+        public Task<bool> InstallSilentlyAsync(CxConfig config, McpConnectionSettings settings, Type ownerType)
         {
             return Task.Run(() =>
             {
-                var result = Install(config, authMode, ownerType, silentMode: true);
+                var result = Install(config, settings, ownerType, silentMode: true);
                 return result.Success;
             });
         }
@@ -68,15 +90,15 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
         private McpInstallResult Install(CxConfig config, Type ownerType)
         {
-            return Install(config, McpAuthMode.ApiKey, ownerType, silentMode: false);
+            return Install(config, McpConnectionSettings.Default, ownerType, silentMode: false);
         }
 
-        private McpInstallResult Install(CxConfig config, McpAuthMode authMode, Type ownerType)
+        private McpInstallResult Install(CxConfig config, McpConnectionSettings settings, Type ownerType)
         {
-            return Install(config, authMode, ownerType, silentMode: false);
+            return Install(config, settings, ownerType, silentMode: false);
         }
 
-        private McpInstallResult Install(CxConfig config, McpAuthMode authMode, Type ownerType, bool silentMode)
+        private McpInstallResult Install(CxConfig config, McpConnectionSettings settings, Type ownerType, bool silentMode)
         {
             if (config == null)
             {
@@ -96,6 +118,36 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 };
             }
 
+            // Both entry shapes run through npx. Silent installs keep writing the entry (as before) so it works
+            // once Node.js is installed; an explicit install explains why VS would fail to start it.
+            if (!silentMode && !_isNpxAvailable())
+            {
+                return new McpInstallResult
+                {
+                    Success = false,
+                    Message = McpPrerequisites.NPX_MISSING_MESSAGE
+                };
+            }
+
+            bool isOAuth = (settings ?? McpConnectionSettings.Default).AuthMode == McpAuthMode.OAuth;
+            string mcpUrl;
+            if (isOAuth)
+            {
+                // Validate the configured OAuth server URL / tenant before spending CLI round-trips.
+                if (!TryResolveMcpUrlForOAuth(config.ApiKey, settings.OAuthServerUrl, settings.OAuthTenant, out mcpUrl, out string urlError))
+                {
+                    return new McpInstallResult
+                    {
+                        Success = false,
+                        Message = urlError
+                    };
+                }
+            }
+            else
+            {
+                mcpUrl = ResolveMcpUrl(config.ApiKey);
+            }
+
             try
             {
                 var wrapper = new CxCLI.CxWrapper(config, ownerType ?? GetType());
@@ -113,26 +165,37 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                     };
                 }
 
-                string mcpUrl = authMode == McpAuthMode.OAuth
-                    ? ResolveMcpUrlForOAuth(config.ApiKey)
-                    : ResolveMcpUrl(config.ApiKey);
+                string previousOAuthUrl = _configManager.GetInstalledOAuthServerUrl();
+
                 bool changed;
                 string configPath;
-                if (authMode == McpAuthMode.OAuth)
+                if (isOAuth)
                     changed = _configManager.InstallOrUpdateOAuth(mcpUrl, out configPath);
                 else
                     changed = _configManager.InstallOrUpdate(config.ApiKey, mcpUrl, out configPath);
+
+                // A replaced OAuth entry (mode switched or URL changed) must not leave its sign-in behind.
+                if (previousOAuthUrl != null && !(isOAuth && string.Equals(previousOAuthUrl, mcpUrl, StringComparison.OrdinalIgnoreCase)))
+                    _sessionCache.ClearTokens(previousOAuthUrl);
+
+                if (isOAuth)
+                {
+                    // The server answers a dead cached token with a 401 lacking WWW-Authenticate, which sends the
+                    // browser to a 404 page. Silent installs (VS start, login) drop only sessions that can no longer
+                    // work; an explicit install is a user-initiated reconnect and starts a fresh sign-in.
+                    if (silentMode)
+                        _sessionCache.ClearExpiredTokens(mcpUrl);
+                    else
+                        _sessionCache.ClearTokens(mcpUrl);
+                }
 
                 return new McpInstallResult
                 {
                     Success = true,
                     Changed = changed,
                     ConfigPath = configPath,
-                    Message = changed
-                        ? (authMode == McpAuthMode.OAuth
-                            ? "MCP configuration installed. Visual Studio will prompt you to sign in via your browser the first time the Checkmarx MCP server is used."
-                            : "MCP configuration installed successfully.")
-                        : "MCP configuration is already up to date."
+                    McpUrl = mcpUrl,
+                    Message = BuildInstallMessage(isOAuth, changed, mcpUrl)
                 };
             }
             catch (Exception ex)
@@ -145,11 +208,27 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             }
         }
 
+        private static string BuildInstallMessage(bool isOAuth, bool changed, string mcpUrl)
+        {
+            if (!isOAuth)
+                return changed ? "MCP configuration installed successfully." : "MCP configuration is already up to date.";
+
+            return changed
+                ? "MCP configuration installed for " + mcpUrl + "."
+                : "MCP configuration for " + mcpUrl + " is already up to date.";
+        }
+
         public bool Uninstall(out string message)
         {
             try
             {
+                string oauthUrl = _configManager.GetInstalledOAuthServerUrl();
                 bool changed = _configManager.RemoveCheckmarxServer(out string configPath);
+
+                // Logging out must also end the OAuth sign-in, which mcp-remote keeps outside .mcp.json.
+                if (oauthUrl != null)
+                    _sessionCache.ClearTokens(oauthUrl);
+
                 message = changed
                     ? "Removed Checkmarx MCP configuration from " + configPath
                     : "No Checkmarx MCP configuration found.";
@@ -173,8 +252,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 if (!Uri.TryCreate(issuer, UriKind.Absolute, out Uri issuerUri))
                     return McpConfigManager.DefaultMcpUrl;
 
-                string authority = issuerUri.Authority.Replace("iam.", "ast.");
-                return issuerUri.Scheme + "://" + authority + "/api/security-mcp/mcp";
+                // The IAM host does not serve MCP (404); map it the same way as OAuth mode. The API-key entry
+                // keeps the base endpoint, which accepts API keys.
+                return issuerUri.Scheme + "://" + ResolveMcpAuthority(issuerUri.Authority) + MCP_PATH;
             }
             catch
             {
@@ -183,39 +263,149 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         }
 
         /// <summary>
-        /// OAuth-mode variant of <see cref="ResolveMcpUrl"/>. The MCP endpoint is served from a
-        /// different host than the API-key JWT issuer (the IAM host), so the issuer host must be
-        /// mapped. Kept separate so the existing API-key path's URL resolution is unchanged.
+        /// Validates only the user-entered OAuth Server URL / Tenant; blank values are valid (derived later).
         /// </summary>
-        internal static string ResolveMcpUrlForOAuth(string apiKey)
+        internal static bool TryValidateOAuthOverrides(string serverUrl, string tenant, out string error)
+        {
+            return TryParseOAuthOverrides(serverUrl, tenant, out _, out _, out error);
+        }
+
+        /// <summary>
+        /// Builds the tenant-scoped OAuth MCP URL "&lt;server&gt;/api/security-mcp/mcp/&lt;tenant&gt;".
+        /// A configured server URL / tenant wins; a blank one is derived from the API-key JWT issuer.
+        /// There is deliberately no fallback URL: the base endpoint cannot complete OAuth (its protected-resource
+        /// metadata lists no authorization server) and a guessed host would point users at the wrong environment.
+        /// </summary>
+        /// <returns>false (with a user-facing <paramref name="error"/>) when a value is invalid or cannot be determined.</returns>
+        internal static bool TryResolveMcpUrlForOAuth(string apiKey, string serverUrl, string tenant, out string mcpUrl, out string error)
+        {
+            mcpUrl = null;
+            if (!TryParseOAuthOverrides(serverUrl, tenant, out string serverBase, out string resolvedTenant, out error))
+                return false;
+
+            if (serverBase == null || resolvedTenant == null)
+            {
+                Uri issuerUri = TryGetIssuerUri(apiKey);
+                if (issuerUri != null)
+                {
+                    serverBase ??= issuerUri.Scheme + "://" + ResolveMcpAuthority(issuerUri.Authority);
+                    resolvedTenant ??= TryGetRealm(issuerUri);
+                }
+            }
+
+            if (serverBase == null || resolvedTenant == null)
+            {
+                error = "Could not determine the MCP " + (serverBase == null ? "server URL" : "tenant")
+                    + " from your API key. Enter the Server URL and Tenant for OAuth.";
+                return false;
+            }
+
+            string candidate = serverBase + MCP_PATH + "/" + resolvedTenant;
+            if (!IsSafeOAuthMcpUrl(candidate))
+            {
+                error = "Could not determine a valid https MCP URL from your API key. Enter the Server URL and Tenant for OAuth.";
+                return false;
+            }
+
+            mcpUrl = candidate;
+            return true;
+        }
+
+        /// <summary>
+        /// Shape of every OAuth MCP URL this extension writes or launches. It is placed on a cmd.exe command line
+        /// (npx is a .cmd shim), so only characters that are inert for cmd are allowed.
+        /// </summary>
+        internal static bool IsSafeOAuthMcpUrl(string mcpUrl)
+        {
+            return !string.IsNullOrWhiteSpace(mcpUrl) && SafeOAuthMcpUrlPattern.IsMatch(mcpUrl);
+        }
+
+        private static bool TryParseOAuthOverrides(string serverUrl, string tenant, out string serverBase, out string resolvedTenant, out string error)
+        {
+            serverBase = null;
+            resolvedTenant = null;
+            error = null;
+
+            string tenantFromUrl = null;
+            if (!string.IsNullOrWhiteSpace(serverUrl) && !TryNormalizeServerUrl(serverUrl, out serverBase, out tenantFromUrl))
+            {
+                error = "Invalid MCP server URL. Enter your Checkmarx One https:// URL, e.g. https://eu.ast.checkmarx.net.";
+                return false;
+            }
+
+            resolvedTenant = string.IsNullOrWhiteSpace(tenant) ? tenantFromUrl : tenant.Trim();
+            if (resolvedTenant != null && !TenantPattern.IsMatch(resolvedTenant))
+            {
+                error = "Invalid tenant name. Use only letters, digits, '.', '_' or '-'.";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Accepts either the Checkmarx One base URL or a pasted MCP endpoint URL
+        /// (".../api/security-mcp/mcp[/&lt;tenant&gt;]") and returns the base without a trailing slash.
+        /// </summary>
+        private static bool TryNormalizeServerUrl(string serverUrl, out string serverBase, out string tenantFromUrl)
+        {
+            serverBase = null;
+            tenantFromUrl = null;
+
+            string candidate = serverUrl.Trim();
+            if (!candidate.Contains("://"))
+                candidate = "https://" + candidate;
+
+            // mcp-remote refuses plain http for non-localhost servers, so only https is usable here.
+            if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri uri)
+                || uri.Scheme != Uri.UriSchemeHttps
+                || !string.IsNullOrEmpty(uri.UserInfo)
+                || !string.IsNullOrEmpty(uri.Query)
+                || !string.IsNullOrEmpty(uri.Fragment)
+                || !SafeAuthorityPattern.IsMatch(uri.Authority))
+                return false;
+
+            string path = uri.AbsolutePath.TrimEnd('/');
+            int mcpPathIndex = path.IndexOf(MCP_PATH, StringComparison.OrdinalIgnoreCase);
+            int mcpPathEnd = mcpPathIndex + MCP_PATH.Length;
+            if (mcpPathIndex >= 0 && (path.Length == mcpPathEnd || path[mcpPathEnd] == '/'))
+            {
+                string rest = path.Substring(mcpPathEnd).Trim('/');
+                tenantFromUrl = rest.Length == 0 ? null : rest;
+                path = path.Substring(0, mcpPathIndex);
+            }
+
+            // The URL ends up on a command line (npx), so only plain path characters are accepted.
+            if (!SafePathPattern.IsMatch(path))
+                return false;
+
+            serverBase = uri.Scheme + "://" + uri.Authority + path;
+            return true;
+        }
+
+        private static Uri TryGetIssuerUri(string apiKey)
         {
             try
             {
                 string issuer = TryGetIssuer(apiKey);
-                if (string.IsNullOrWhiteSpace(issuer))
-                    return McpConfigManager.DefaultMcpUrl;
-
-                if (!Uri.TryCreate(issuer, UriKind.Absolute, out Uri issuerUri))
-                    return McpConfigManager.DefaultMcpUrl;
-
-                string authority = ResolveMcpAuthority(issuerUri.Authority);
-                string mcpBase = issuerUri.Scheme + "://" + authority + "/api/security-mcp/mcp";
-                string realm = TryGetRealm(issuerUri);
-                return string.IsNullOrWhiteSpace(realm) ? mcpBase : mcpBase + "/" + realm;
+                return !string.IsNullOrWhiteSpace(issuer) && Uri.TryCreate(issuer, UriKind.Absolute, out Uri issuerUri)
+                    ? issuerUri
+                    : null;
             }
             catch
             {
-                return McpConfigManager.DefaultMcpUrl;
+                return null;
             }
         }
 
         /// <summary>
-        /// Maps the IAM host to the host that serves the security MCP endpoint.
+        /// Maps the IAM host to the host that serves the security MCP endpoint (the IAM host itself returns 404).
         /// On Checkmarx cloud environments (&lt;env&gt;.cxast.net) the MCP endpoint is served from the
         /// "ast-master-components" host in place of the IAM host (e.g.
         /// iam-dev.dev.cxast.net -&gt; ast-master-components.dev.cxast.net). A naive "iam" -&gt; "ast"
-        /// label swap yields ast-dev.dev.cxast.net, which does not resolve in DNS. Other (non-cxast)
-        /// environments keep the legacy "iam" -&gt; "ast" mapping.
+        /// label swap yields ast-dev.dev.cxast.net, which does not resolve in DNS. Other environments swap
+        /// the "iam" DNS label wherever it sits (iam.checkmarx.net -&gt; ast.checkmarx.net,
+        /// eu.iam.checkmarx.net -&gt; eu.ast.checkmarx.net).
         /// </summary>
         private static string ResolveMcpAuthority(string authority)
         {
@@ -223,7 +413,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             if (cxastMatch.Success)
                 return "ast-master-components." + cxastMatch.Groups["envAndDomain"].Value;
 
-            return Regex.Replace(authority, "^iam(?=[.-])", "ast");
+            return IamLabelPattern.Replace(authority, "${prefix}ast", 1);
         }
 
         /// <summary>

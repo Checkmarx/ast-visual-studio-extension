@@ -250,6 +250,10 @@
     </Compile>
     <Compile Include="CxPreferences\Configuration\McpAuthMode.cs" />
     <Compile Include="CxPreferences\Configuration\McpConfigManager.cs" />
+    <Compile Include="CxPreferences\Configuration\McpConnectionSettings.cs" />
+    <Compile Include="CxPreferences\Configuration\McpRemoteSessionCache.cs" />
+    <Compile Include="CxPreferences\Configuration\McpOAuthSignIn.cs" />
+    <Compile Include="CxPreferences\Configuration\McpPrerequisites.cs" />
     <Compile Include="CxPreferences\Configuration\McpInstallResult.cs" />
     <Compile Include="CxPreferences\Configuration\AssistEntitlementSync.cs" />
     <Compile Include="CxPreferences\Configuration\McpInstallService.cs" />

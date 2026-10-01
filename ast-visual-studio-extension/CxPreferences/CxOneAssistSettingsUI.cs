@@ -54,15 +54,49 @@ namespace ast_visual_studio_extension.CxPreferences
             containersCheckBox.Checked = cxOneAssistSettingsModule.ContainersRealtimeCheckBox;
             iacCheckBox.Checked = cxOneAssistSettingsModule.IacRealtimeCheckBox;
             cmbContainersTool.SelectedItem = cxOneAssistSettingsModule.ContainersTool ?? "docker";
-            SetMcpAuthModeRadios(cxOneAssistSettingsModule.McpAuthMode);
+            SetMcpConnectionControls(cxOneAssistSettingsModule);
 
             ApplyAuthenticationState(CxPreferencesUI.IsAuthenticated());
         }
 
-        private void SetMcpAuthModeRadios(McpAuthMode mode)
+        private void SetMcpConnectionControls(CxOneAssistSettingsModule module)
         {
-            rbMcpAuthOAuth.Checked = mode == McpAuthMode.OAuth;
-            rbMcpAuthApiKey.Checked = mode != McpAuthMode.OAuth;
+            rbMcpAuthOAuth.Checked = module.McpAuthMode == McpAuthMode.OAuth;
+            rbMcpAuthApiKey.Checked = module.McpAuthMode != McpAuthMode.OAuth;
+            txtMcpOAuthServerUrl.Text = module.McpOAuthServerUrl ?? string.Empty;
+            txtMcpOAuthTenant.Text = module.McpOAuthTenant ?? string.Empty;
+            UpdateMcpOAuthFieldsEnabled();
+        }
+
+        private void ApplyMcpConnectionUiToModule(CxOneAssistSettingsModule module)
+        {
+            module.McpAuthMode = rbMcpAuthOAuth.Checked ? McpAuthMode.OAuth : McpAuthMode.ApiKey;
+            module.McpOAuthServerUrl = txtMcpOAuthServerUrl.Text.Trim();
+            module.McpOAuthTenant = txtMcpOAuthTenant.Text.Trim();
+        }
+
+        private void UpdateMcpOAuthFieldsEnabled()
+        {
+            bool enabled = rbMcpAuthOAuth.Enabled && rbMcpAuthOAuth.Checked;
+            txtMcpOAuthServerUrl.Enabled = enabled;
+            txtMcpOAuthTenant.Enabled = enabled;
+        }
+
+        /// <summary>
+        /// Validates the OAuth server URL / tenant fields. Only relevant while OAuth mode is selected.
+        /// </summary>
+        internal bool TryValidateMcpConnection(out string error)
+        {
+            error = null;
+            if (!CxPreferencesUI.IsAuthenticated() || !rbMcpAuthOAuth.Checked)
+                return true;
+
+            return McpInstallService.TryValidateOAuthOverrides(txtMcpOAuthServerUrl.Text, txtMcpOAuthTenant.Text, out error);
+        }
+
+        internal void ShowMcpValidationError(string error)
+        {
+            SetMcpStatus(error, isSuccess: false, autoDismiss: false);
         }
 
         private void EnsureAuthSubscription()
@@ -104,7 +138,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 containersCheckBox.Checked = false;
                 iacCheckBox.Checked = false;
                 cmbContainersTool.SelectedItem = "docker";
-                rbMcpAuthApiKey.Checked = true;
+                // MCP auth mode / OAuth URL / tenant are not reset here: they are user preferences that must
+                // survive logout, and a stale "API Key" radio would be written back to the module on next Apply.
 
                 SetMcpStatus("Please authenticate first before using Checkmarx One Assist settings.", isSuccess: false, autoDismiss: false);
                 return;
@@ -116,6 +151,7 @@ namespace ast_visual_studio_extension.CxPreferences
             lnkEditMcp.Enabled = true;
             rbMcpAuthApiKey.Enabled = hasApiKey && mcpEnabled;
             rbMcpAuthOAuth.Enabled = hasApiKey && mcpEnabled;
+            UpdateMcpOAuthFieldsEnabled();
 
             if (!hasApiKey)
                 SetMcpStatus("Please authenticate first before installing MCP.", isSuccess: false, autoDismiss: false);
@@ -142,7 +178,7 @@ namespace ast_visual_studio_extension.CxPreferences
             containersCheckBox.Checked = cxOneAssistSettingsModule.ContainersRealtimeCheckBox;
             iacCheckBox.Checked = cxOneAssistSettingsModule.IacRealtimeCheckBox;
             cmbContainersTool.SelectedItem = cxOneAssistSettingsModule.ContainersTool ?? "docker";
-            SetMcpAuthModeRadios(cxOneAssistSettingsModule.McpAuthMode);
+            SetMcpConnectionControls(cxOneAssistSettingsModule);
 
             // AuthStateChanged can run before tenant MCP flags are written; sync Install MCP / status from module.
             ApplyAuthenticationState(CxPreferencesUI.IsAuthenticated());
@@ -160,8 +196,8 @@ namespace ast_visual_studio_extension.CxPreferences
             if (!CxPreferencesUI.IsAuthenticated())
                 return;
 
-            // MCP auth mode is independent of the realtime-scanner enablement below.
-            module.McpAuthMode = rbMcpAuthOAuth.Checked ? McpAuthMode.OAuth : McpAuthMode.ApiKey;
+            // MCP connection settings are independent of the realtime-scanner enablement below.
+            ApplyMcpConnectionUiToModule(module);
 
             // Only allow scanner changes when MCP is enabled
             if (!module.McpEnabled)
@@ -188,6 +224,7 @@ namespace ast_visual_studio_extension.CxPreferences
             lnkEditMcp.Enabled = enabled;
             rbMcpAuthApiKey.Enabled = enabled;
             rbMcpAuthOAuth.Enabled = enabled;
+            UpdateMcpOAuthFieldsEnabled();
         }
 
         /// <summary>
@@ -274,12 +311,21 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void RbMcpAuthApiKey_CheckedChanged(object sender, EventArgs e)
         {
+            UpdateMcpOAuthFieldsEnabled();
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
             DebounceSyncAssistUi();
         }
 
         private void RbMcpAuthOAuth_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateMcpOAuthFieldsEnabled();
+            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
+                return;
+            DebounceSyncAssistUi();
+        }
+
+        private void TxtMcpOAuthSetting_TextChanged(object sender, EventArgs e)
         {
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
@@ -305,6 +351,18 @@ namespace ast_visual_studio_extension.CxPreferences
                 return;
             }
 
+            if (!TryValidateMcpConnection(out string validationError))
+            {
+                SetMcpStatus(validationError, isSuccess: false, autoDismiss: false);
+                return;
+            }
+
+            // Read the form directly (the module sync is debounced) and commit the MCP connection settings,
+            // so the silent reinstall on next login/restore writes the same entry even if Options is cancelled.
+            ApplyMcpConnectionUiToModule(cxOneAssistSettingsModule);
+            cxOneAssistSettingsModule.SaveMcpConnectionSettingsToRegistry();
+            McpConnectionSettings connectionSettings = cxOneAssistSettingsModule.GetMcpConnectionSettings();
+
             _isMcpInstallInProgress = true;
             lnkInstallMcp.Enabled = false;
             SetMcpStatus("Installing MCP configuration...", isSuccess: true, autoDismiss: false);
@@ -312,9 +370,19 @@ namespace ast_visual_studio_extension.CxPreferences
             try
             {
                 var installService = new McpInstallService();
-                McpInstallResult result = await installService.InstallAsync(config, cxOneAssistSettingsModule.McpAuthMode, GetType());
+                McpInstallResult result = await installService.InstallAsync(config, connectionSettings, GetType());
 
-                SetMcpStatus(result.Message, isSuccess: result.Success, autoDismiss: result.Success);
+                bool isOAuth = connectionSettings.AuthMode == McpAuthMode.OAuth;
+                if (result.Success && isOAuth)
+                {
+                    // Sign in now rather than when Copilot first starts the server: VS gives an MCP server ~60 s to
+                    // initialize, which a first browser sign-in can exceed.
+                    SetMcpStatus(result.Message + " Complete the sign-in in your browser...", isSuccess: true, autoDismiss: false);
+                    result = await new McpOAuthSignIn().SignInAsync(result.McpUrl);
+                }
+
+                // Keep the OAuth message (it contains the endpoint URL) visible so it can be checked.
+                SetMcpStatus(result.Message, isSuccess: result.Success, autoDismiss: result.Success && !isOAuth);
             }
             finally
             {

@@ -166,5 +166,32 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             module.McpAuthMode = ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth;
             Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth, module.McpAuthMode);
         }
+
+        [Fact]
+        public void GetMcpConnectionSettings_ReflectsModuleValues()
+        {
+            var module = CreateModule();
+            module.McpAuthMode = ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth;
+            module.McpOAuthServerUrl = "https://ast-master-components.dev.cxast.net";
+            module.McpOAuthTenant = "master-sypher";
+
+            var settings = module.GetMcpConnectionSettings();
+
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth, settings.AuthMode);
+            Assert.Equal("https://ast-master-components.dev.cxast.net", settings.OAuthServerUrl);
+            Assert.Equal("master-sypher", settings.OAuthTenant);
+        }
+
+        [Fact]
+        public void GetMcpConnectionSettings_WithUnsetOAuthValues_ReturnsEmptyStrings()
+        {
+            var module = CreateModule();
+
+            var settings = module.GetMcpConnectionSettings();
+
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.ApiKey, settings.AuthMode);
+            Assert.Equal(string.Empty, settings.OAuthServerUrl);
+            Assert.Equal(string.Empty, settings.OAuthTenant);
+        }
     }
 }

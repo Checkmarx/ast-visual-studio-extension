@@ -39,6 +39,11 @@ namespace ast_visual_studio_extension.CxPreferences
             this.lblMcpDescription = new System.Windows.Forms.Label();
             this.rbMcpAuthApiKey = new System.Windows.Forms.RadioButton();
             this.rbMcpAuthOAuth = new System.Windows.Forms.RadioButton();
+            this.lblMcpOAuthServerUrl = new System.Windows.Forms.Label();
+            this.txtMcpOAuthServerUrl = new System.Windows.Forms.TextBox();
+            this.lblMcpOAuthTenant = new System.Windows.Forms.Label();
+            this.txtMcpOAuthTenant = new System.Windows.Forms.TextBox();
+            this.lblMcpOAuthHint = new System.Windows.Forms.Label();
             this.lnkInstallMcp = new System.Windows.Forms.LinkLabel();
             this.lnkEditMcp = new System.Windows.Forms.LinkLabel();
             this.spacer1 = new System.Windows.Forms.Panel();
@@ -237,7 +242,7 @@ namespace ast_visual_studio_extension.CxPreferences
 
             TableLayoutPanel mcpLayout = new TableLayoutPanel();
             mcpLayout.ColumnCount = 1;
-            mcpLayout.RowCount = 5;
+            mcpLayout.RowCount = 6;
             mcpLayout.Dock = DockStyle.Top;
             mcpLayout.AutoSize = true;
             // CRITICAL: Force column to 100% width
@@ -266,6 +271,44 @@ namespace ast_visual_studio_extension.CxPreferences
             mcpAuthModeFlow.Controls.Add(this.rbMcpAuthApiKey);
             mcpAuthModeFlow.Controls.Add(this.rbMcpAuthOAuth);
 
+            this.lblMcpOAuthServerUrl.AutoSize = true;
+            this.lblMcpOAuthServerUrl.Text = "Server URL:";
+            this.lblMcpOAuthServerUrl.Anchor = AnchorStyles.Left;
+            this.lblMcpOAuthServerUrl.Margin = new Padding(0, 0, 5, 5);
+
+            this.txtMcpOAuthServerUrl.Dock = DockStyle.Fill;
+            this.txtMcpOAuthServerUrl.Margin = new Padding(0, 0, 0, 5);
+            this.txtMcpOAuthServerUrl.TextChanged += new System.EventHandler(this.TxtMcpOAuthSetting_TextChanged);
+
+            this.lblMcpOAuthTenant.AutoSize = true;
+            this.lblMcpOAuthTenant.Text = "Tenant:";
+            this.lblMcpOAuthTenant.Anchor = AnchorStyles.Left;
+            this.lblMcpOAuthTenant.Margin = new Padding(0, 0, 5, 5);
+
+            this.txtMcpOAuthTenant.Dock = DockStyle.Fill;
+            this.txtMcpOAuthTenant.Margin = new Padding(0, 0, 0, 5);
+            this.txtMcpOAuthTenant.TextChanged += new System.EventHandler(this.TxtMcpOAuthSetting_TextChanged);
+
+            this.lblMcpOAuthHint.AutoSize = true;
+            this.lblMcpOAuthHint.Text = "Used only in OAuth mode, e.g. https://eu.ast.checkmarx.net. Leave blank to use the values from your API key.";
+            this.lblMcpOAuthHint.Margin = new Padding(0, 0, 0, 5);
+
+            // Indented under the OAuth radio; the URL/tenant only apply to the OAuth MCP entry.
+            TableLayoutPanel mcpOAuthLayout = new TableLayoutPanel();
+            mcpOAuthLayout.ColumnCount = 2;
+            mcpOAuthLayout.RowCount = 3;
+            mcpOAuthLayout.Dock = DockStyle.Fill;
+            mcpOAuthLayout.AutoSize = true;
+            mcpOAuthLayout.Margin = new Padding(18, 0, 0, 5);
+            mcpOAuthLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            mcpOAuthLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            mcpOAuthLayout.Controls.Add(this.lblMcpOAuthServerUrl, 0, 0);
+            mcpOAuthLayout.Controls.Add(this.txtMcpOAuthServerUrl, 1, 0);
+            mcpOAuthLayout.Controls.Add(this.lblMcpOAuthTenant, 0, 1);
+            mcpOAuthLayout.Controls.Add(this.txtMcpOAuthTenant, 1, 1);
+            mcpOAuthLayout.Controls.Add(this.lblMcpOAuthHint, 0, 2);
+            mcpOAuthLayout.SetColumnSpan(this.lblMcpOAuthHint, 2);
+
             this.lnkInstallMcp.AutoSize = true;
             this.lnkInstallMcp.Text = "Install MCP";
             this.lnkInstallMcp.LinkClicked += new LinkLabelLinkClickedEventHandler(this.LnkInstallMcp_LinkClicked);
@@ -279,9 +322,10 @@ namespace ast_visual_studio_extension.CxPreferences
 
             mcpLayout.Controls.Add(this.lblMcpDescription, 0, 0);
             mcpLayout.Controls.Add(mcpAuthModeFlow, 0, 1);
-            mcpLayout.Controls.Add(this.lnkInstallMcp, 0, 2);
-            mcpLayout.Controls.Add(this.lnkEditMcp, 0, 3);
-            mcpLayout.Controls.Add(this.lblMcpStatus, 0, 4);
+            mcpLayout.Controls.Add(mcpOAuthLayout, 0, 2);
+            mcpLayout.Controls.Add(this.lnkInstallMcp, 0, 3);
+            mcpLayout.Controls.Add(this.lnkEditMcp, 0, 4);
+            mcpLayout.Controls.Add(this.lblMcpStatus, 0, 5);
             this.mcpGroupBox.Controls.Add(mcpLayout);
 
             // Responsive Wrapping Logic: Updates MaximumSize when the container resizes
@@ -291,6 +335,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 if (targetWidth > 0 && lblMcpDescription.MaximumSize.Width != targetWidth)
                 {
                     lblMcpDescription.MaximumSize = new Size(targetWidth, 0);
+                    lblMcpStatus.MaximumSize = new Size(targetWidth, 0);
+                    lblMcpOAuthHint.MaximumSize = new Size(Math.Max(targetWidth - mcpOAuthLayout.Margin.Left, 1), 0);
                 }
             };
 
@@ -347,6 +393,11 @@ namespace ast_visual_studio_extension.CxPreferences
         private System.Windows.Forms.Label lblMcpDescription;
         private System.Windows.Forms.RadioButton rbMcpAuthApiKey;
         private System.Windows.Forms.RadioButton rbMcpAuthOAuth;
+        private System.Windows.Forms.Label lblMcpOAuthServerUrl;
+        private System.Windows.Forms.TextBox txtMcpOAuthServerUrl;
+        private System.Windows.Forms.Label lblMcpOAuthTenant;
+        private System.Windows.Forms.TextBox txtMcpOAuthTenant;
+        private System.Windows.Forms.Label lblMcpOAuthHint;
         private System.Windows.Forms.LinkLabel lnkInstallMcp;
         private System.Windows.Forms.LinkLabel lnkEditMcp;
         private System.Windows.Forms.Panel spacer1;

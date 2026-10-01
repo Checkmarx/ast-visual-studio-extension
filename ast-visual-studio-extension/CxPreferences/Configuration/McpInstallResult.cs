@@ -7,5 +7,6 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         public bool Changed { get; set; }
         public string Message { get; set; }
         public string ConfigPath { get; set; }
+        public string McpUrl { get; set; }
     }
 }
