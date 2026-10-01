@@ -285,6 +285,174 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
+        public void BuildCheckmarxServerOAuth_ContainsNpxBridgeWithoutAuthorization()
+        {
+            var method = typeof(McpConfigManager).GetMethod("BuildCheckmarxServerOAuth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var server = (JObject)method.Invoke(null, new object[] { "https://test-url.com" });
+
+            Assert.NotNull(server);
+            Assert.Equal("npx", server["command"].ToString().Trim('"'));
+            var args = (JArray)server["args"];
+            Assert.Equal("-y", args[0].ToString());
+            Assert.Equal(McpConfigManager.MCP_REMOTE_PACKAGE, args[1].ToString());
+            Assert.Contains(args, t => t.ToString().Trim('"') == "https://test-url.com");
+            Assert.Contains(args, t => t.ToString().Trim('"') == "cx-origin:VisualStudio");
+            Assert.False(server.ContainsKey("type"));
+            Assert.False(server.ContainsKey("url"));
+            Assert.False(server.ContainsKey("headers"));
+            Assert.DoesNotContain("Authorization", server.ToString());
+        }
+
+        [Fact]
+        public void InstallOrUpdateOAuth_WritesConfigAndReturnsChanged()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile), "{}");
+                var mgr = new TestableConfigManager(tempFile);
+
+                var changed = mgr.InstallOrUpdateOAuth("https://oauth-url.com", out string configPath);
+                Assert.True(changed);
+                Assert.True(File.Exists(configPath));
+                string json = File.ReadAllText(configPath);
+                Assert.Contains("Checkmarx", json);
+                Assert.Contains("\"command\": \"npx\"", json);
+                Assert.Contains("mcp-remote", json);
+                Assert.Contains("https://oauth-url.com", json);
+                Assert.DoesNotContain("Authorization", json);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void InstallOrUpdateOAuth_WritesExactlyWorkingBridgeShape()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile), "{}");
+                var mgr = new TestableConfigManager(tempFile);
+
+                const string workingUrl = "https://ast-master-components.dev.cxast.net/api/security-mcp/mcp/master-sypher";
+                mgr.InstallOrUpdateOAuth(workingUrl, out string configPath);
+
+                var root = JObject.Parse(File.ReadAllText(configPath));
+                var server = root["servers"]["Checkmarx"] as JObject;
+
+                var expected = new JObject
+                {
+                    ["command"] = "npx",
+                    ["args"] = new JArray
+                    {
+                        "-y",
+                        "mcp-remote@0.14.3",
+                        workingUrl,
+                        "--transport",
+                        "http-first",
+                        "--header",
+                        "cx-origin:VisualStudio",
+                        "--verbose"
+                    }
+                };
+
+                Assert.True(JToken.DeepEquals(expected, server), "OAuth MCP entry must match the working bridge config exactly.");
+                Assert.False(server.ToString().Contains("Authorization"));
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void InstallOrUpdate_ApiKeyEntryUsesPinnedBridge()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile), "{}");
+                var mgr = new TestableConfigManager(tempFile);
+
+                mgr.InstallOrUpdate("the-key", "https://ast.example.com/api/security-mcp/mcp", out string configPath);
+
+                var args = (JArray)JObject.Parse(File.ReadAllText(configPath))["servers"]["Checkmarx"]["args"];
+                Assert.Equal("-y", args[0].ToString());
+                Assert.Equal(McpConfigManager.MCP_REMOTE_PACKAGE, args[1].ToString());
+                Assert.Equal("https://ast.example.com/api/security-mcp/mcp", args[2].ToString());
+                Assert.Contains(args, t => t.ToString() == "Authorization:the-key");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void GetInstalledOAuthServerUrl_ReturnsUrlOnlyForOAuthEntry()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile), "{}");
+                var mgr = new TestableConfigManager(tempFile);
+                const string oauthUrl = "https://ast-master-components.dev.cxast.net/api/security-mcp/mcp/master-sypher";
+
+                Assert.Null(mgr.GetInstalledOAuthServerUrl());
+
+                mgr.InstallOrUpdateOAuth(oauthUrl, out _);
+                Assert.Equal(oauthUrl, mgr.GetInstalledOAuthServerUrl());
+
+                mgr.InstallOrUpdate("the-key", oauthUrl, out _);
+                Assert.Null(mgr.GetInstalledOAuthServerUrl());
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void GetInstalledOAuthServerUrl_RecognizesLegacyUnpinnedEntry()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile),
+                    "{\"servers\":{\"Checkmarx\":{\"command\":\"npx\",\"args\":[\"mcp-remote\",\"https://h.example.com/api/security-mcp/mcp/t\",\"--header\",\"cx-origin:VisualStudio\"]}}}");
+                var mgr = new TestableConfigManager(tempFile);
+
+                Assert.Equal("https://h.example.com/api/security-mcp/mcp/t", mgr.GetInstalledOAuthServerUrl());
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void InstallOrUpdateOAuth_WithNullUrl_UsesDefaultUrl()
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                File.WriteAllText(Path.GetFullPath(tempFile), "{}");
+                var mgr = new TestableConfigManager(tempFile);
+
+                mgr.InstallOrUpdateOAuth(null, out string configPath);
+                string json = File.ReadAllText(configPath);
+                Assert.Contains(McpConfigManager.DefaultMcpUrl, json);
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
         public void ReadConfig_WithNonexistentFile_ReturnsEmptyObject()
         {
             var method = typeof(McpConfigManager).GetMethod("ReadConfig", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
