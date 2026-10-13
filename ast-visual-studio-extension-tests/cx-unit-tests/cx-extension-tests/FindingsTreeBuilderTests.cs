@@ -128,6 +128,40 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             Assert.Equal(2, result[0].Vulnerabilities.Count);
         }
 
+        [Fact]
+        public void BuildFileNodes_MultipleIacSameLine_UsesHighestSeverity()
+        {
+            var vulns = new List<Vulnerability>
+            {
+                new Vulnerability("V1", "Issue1", "Desc1", SeverityLevel.Low, ScannerType.IaC, 5, 1, @"C:\src\dockerfile"),
+                new Vulnerability("V2", "Issue2", "Desc2", SeverityLevel.Critical, ScannerType.IaC, 5, 1, @"C:\src\dockerfile"),
+                new Vulnerability("V3", "Issue3", "Desc3", SeverityLevel.Medium, ScannerType.IaC, 5, 1, @"C:\src\dockerfile")
+            };
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
+
+            Assert.Equal("Critical", result[0].Vulnerabilities[0].Severity);
+            Assert.Equal("V2", result[0].Vulnerabilities[0].Vulnerability.Id);
+        }
+
+        [Fact]
+        public void BuildFileNodes_IacRows_SortedBySeverityThenLine()
+        {
+            var path = @"C:\src\main.tf";
+            var vulns = new List<Vulnerability>
+            {
+                new Vulnerability("V1", "Low only", "Desc", SeverityLevel.Low, ScannerType.IaC, 2, 1, path),
+                new Vulnerability("V2", "Low first", "Desc", SeverityLevel.Low, ScannerType.IaC, 8, 1, path),
+                new Vulnerability("V3", "High second", "Desc", SeverityLevel.High, ScannerType.IaC, 8, 1, path),
+                new Vulnerability("V4", "Medium only", "Desc", SeverityLevel.Medium, ScannerType.IaC, 4, 1, path)
+            };
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
+
+            Assert.Equal(new[] { "High", "Medium", "Low" }, result[0].Vulnerabilities.Select(v => v.Severity).ToArray());
+            Assert.Equal(new[] { 8, 4, 2 }, result[0].Vulnerabilities.Select(v => v.Line).ToArray());
+        }
+
         #endregion
 
         #region Multi-File Grouping
@@ -219,7 +253,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         #region Ordering
 
         [Fact]
-        public void BuildFileNodes_VulnerabilitiesOrderedByLineThenColumn()
+        public void BuildFileNodes_VulnerabilitiesOrderedBySeverityThenLine()
         {
             var vulns = new List<Vulnerability>
             {
@@ -231,8 +265,69 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
 
             Assert.Single(result);
+            var severities = result[0].Vulnerabilities.Select(v => v.Severity).ToList();
+            Assert.Equal(new[] { "High", "Medium", "Low" }, severities);
             var lines = result[0].Vulnerabilities.Select(v => v.Line).ToList();
-            Assert.Equal(new[] { 5, 10, 20 }, lines);
+            Assert.Equal(new[] { 20, 5, 10 }, lines);
+        }
+
+        [Fact]
+        public void BuildFileNodes_VulnerabilitiesSortedBySeverity_MostSevereFirst()
+        {
+            var path = @"C:\src\app.cs";
+            var vulns = new List<Vulnerability>
+            {
+                new Vulnerability("V1", "Info issue", "Desc", SeverityLevel.Info, ScannerType.ASCA, 10, 1, path),
+                new Vulnerability("V2", "Medium issue", "Desc", SeverityLevel.Medium, ScannerType.ASCA, 5, 1, path),
+                new Vulnerability("V3", "Critical issue", "Desc", SeverityLevel.Critical, ScannerType.ASCA, 3, 1, path),
+                new Vulnerability("V4", "High issue", "Desc", SeverityLevel.High, ScannerType.ASCA, 8, 1, path)
+            };
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
+
+            Assert.Single(result);
+            Assert.Equal(new[] { "Critical", "High", "Medium", "Info" }, result[0].Vulnerabilities.Select(v => v.Severity).ToArray());
+        }
+
+        [Fact]
+        public void BuildFileNodes_FilesSortedByHighestSeverity_MostSevereFirst()
+        {
+            var lowFile = new Vulnerability("V1", "Low", "Desc", SeverityLevel.Low, ScannerType.OSS, 1, 1, @"C:\src\zzz.cs");
+            var criticalFile = new Vulnerability("V2", "Critical", "Desc", SeverityLevel.Critical, ScannerType.OSS, 1, 1, @"C:\src\aaa.cs");
+            var highFile = new Vulnerability("V3", "High", "Desc", SeverityLevel.High, ScannerType.OSS, 1, 1, @"C:\src\mmm.cs");
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(new List<Vulnerability> { lowFile, criticalFile, highFile });
+
+            Assert.Equal(3, result.Count);
+            Assert.Equal("aaa.cs", result[0].FileName);
+            Assert.Equal("mmm.cs", result[1].FileName);
+            Assert.Equal("zzz.cs", result[2].FileName);
+        }
+
+        [Fact]
+        public void BuildFileNodes_FilesWithHigherSeverity_SortedFirstRegardlessOfName()
+        {
+            var fileA = new Vulnerability("V1", "Low", "Desc", SeverityLevel.Low, ScannerType.OSS, 1, 1, @"C:\src\a.cs");
+            var fileB = new Vulnerability("V2", "Critical", "Desc", SeverityLevel.Critical, ScannerType.OSS, 1, 1, @"C:\src\b.cs");
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(new List<Vulnerability> { fileA, fileB });
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal("b.cs", result[0].FileName);
+            Assert.Equal("a.cs", result[1].FileName);
+        }
+
+        [Fact]
+        public void BuildFileNodes_SameHighestSeverity_TiesOrderedByPath()
+        {
+            var fileA = new Vulnerability("V1", "Critical", "Desc", SeverityLevel.Critical, ScannerType.OSS, 1, 1, @"C:\src\b.cs");
+            var fileB = new Vulnerability("V2", "Critical", "Desc", SeverityLevel.Critical, ScannerType.OSS, 1, 1, @"C:\src\a.cs");
+
+            var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(new List<Vulnerability> { fileA, fileB });
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal("a.cs", result[0].FileName);
+            Assert.Equal("b.cs", result[1].FileName);
         }
 
         #endregion
@@ -413,27 +508,20 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
         }
 
         [Fact]
-        public void BuildFileNodes_OrderingByLineThenColumn_RespectsColumn()
+        public void BuildFileNodes_SameSeverity_OrderedByLine()
         {
-            // ASCA groups by line (same line → one node). Use different lines to get 3 nodes and assert order by line then column.
+            // Same severity rows are ordered by line as a secondary sort key.
             var vulns = new List<Vulnerability>
             {
-                new Vulnerability("V1", "Issue1", "Desc1", SeverityLevel.High, ScannerType.ASCA, 10, 20, @"C:\src\app.cs"),
-                new Vulnerability("V2", "Issue2", "Desc2", SeverityLevel.Medium, ScannerType.ASCA, 11, 5, @"C:\src\app.cs"),
-                new Vulnerability("V3", "Issue3", "Desc3", SeverityLevel.Low, ScannerType.ASCA, 12, 15, @"C:\src\app.cs")
+                new Vulnerability("V1", "Issue1", "Desc1", SeverityLevel.Medium, ScannerType.ASCA, 12, 1, @"C:\src\app.cs"),
+                new Vulnerability("V2", "Issue2", "Desc2", SeverityLevel.Medium, ScannerType.ASCA, 10, 1, @"C:\src\app.cs"),
+                new Vulnerability("V3", "Issue3", "Desc3", SeverityLevel.Medium, ScannerType.ASCA, 11, 1, @"C:\src\app.cs")
             };
 
             var result = FindingsTreeBuilder.BuildFileNodesFromVulnerabilities(vulns);
 
             Assert.Single(result);
-            var nodes = result[0].Vulnerabilities;
-            Assert.Equal(3, nodes.Count);
-            Assert.Equal(10, nodes[0].Line);
-            Assert.Equal(11, nodes[1].Line);
-            Assert.Equal(12, nodes[2].Line);
-            Assert.Equal(20, nodes[0].Column);
-            Assert.Equal(5, nodes[1].Column);
-            Assert.Equal(15, nodes[2].Column);
+            Assert.Equal(new[] { 10, 11, 12 }, result[0].Vulnerabilities.Select(v => v.Line).ToArray());
         }
 
         [Fact]
