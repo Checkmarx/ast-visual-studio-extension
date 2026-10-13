@@ -99,7 +99,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.Realtime.Utils
                 // Python (extended patterns)
                 {
                     "pyproject.toml",
-                    new[] { "poetry.lock", "pdm.lock" }
+                    new[] { "poetry.lock", "uv.lock" }
                 },
                 {
                     "setup.py",
