@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -16,10 +16,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
     /// </summary>
     internal class McpRemoteSessionCache
     {
-        // Must match the custom headers of McpConfigManager.BuildCheckmarxServerOAuth, serialized the way
-        // mcp-remote does (JSON.stringify with sorted keys).
-        private const string OAUTH_ENTRY_HEADERS_JSON = "{\"cx-origin\":\"VisualStudio\"}";
-        private const string TOKENS_FILE_SUFFIX = "_tokens.json";
+        private const string TOKENS_FILE_PATTERN = "*_tokens.json";
 
         private readonly string _authRoot;
 
@@ -34,19 +31,34 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         }
 
         /// <summary>
-        /// mcp-remote keys its cache by md5("&lt;server url&gt;|&lt;headers json&gt;"). MD5 is required for
-        /// compatibility with that file naming; it is not used for any security purpose.
+        /// mcp-remote names its cache files after a hash of the server URL, so the entry is matched on content
+        /// instead: the Keycloak realm in the token issuer is the tenant, which is the last segment of the
+        /// tenant-scoped MCP URL.
         /// </summary>
-        internal static string ComputeCacheKey(string mcpUrl)
+        internal static bool TryGetTenant(string mcpUrl, out string tenant)
         {
-            using (MD5 md5 = MD5.Create())
+            tenant = null;
+            if (!Uri.TryCreate(mcpUrl, UriKind.Absolute, out Uri uri) || uri.Segments.Length == 0)
+                return false;
+
+            tenant = uri.Segments[uri.Segments.Length - 1].Trim('/');
+            return tenant.Length > 0;
+        }
+
+        internal static bool BelongsToTenant(string tokensJson, string tenant)
+        {
+            JObject tokens;
+            try
             {
-                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(mcpUrl + "|" + OAUTH_ENTRY_HEADERS_JSON));
-                var sb = new StringBuilder(hash.Length * 2);
-                foreach (byte b in hash)
-                    sb.Append(b.ToString("x2"));
-                return sb.ToString();
+                tokens = JObject.Parse(tokensJson);
             }
+            catch (JsonException)
+            {
+                return false;
+            }
+
+            return string.Equals(TryGetJwtRealm(tokens.Value<string>("access_token")), tenant, StringComparison.Ordinal)
+                || string.Equals(TryGetJwtRealm(tokens.Value<string>("refresh_token")), tenant, StringComparison.Ordinal);
         }
 
         /// <returns>The number of cached token files removed.</returns>
@@ -65,7 +77,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         public virtual int ClearExpiredTokens(string mcpUrl)
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            return RemoveTokenFiles(mcpUrl, tokensFile => IsSessionExpired(File.ReadAllText(tokensFile), now));
+            return RemoveTokenFiles(mcpUrl, tokensJson => IsSessionExpired(tokensJson, now));
         }
 
         internal static bool IsSessionExpired(string tokensJson, DateTimeOffset now)
@@ -98,6 +110,23 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
         private static DateTimeOffset? TryGetJwtExpiry(string jwt)
         {
+            long? exp = TryGetJwtClaims(jwt)?.Value<long?>("exp");
+            return exp == null ? (DateTimeOffset?)null : DateTimeOffset.FromUnixTimeSeconds(exp.Value);
+        }
+
+        private static string TryGetJwtRealm(string jwt)
+        {
+            string issuer = TryGetJwtClaims(jwt)?.Value<string>("iss");
+            if (!Uri.TryCreate(issuer, UriKind.Absolute, out Uri issuerUri))
+                return null;
+
+            string[] segments = issuerUri.Segments.Select(s => s.Trim('/')).ToArray();
+            int realmsIndex = Array.IndexOf(segments, "realms");
+            return realmsIndex >= 0 && realmsIndex + 1 < segments.Length ? segments[realmsIndex + 1] : null;
+        }
+
+        private static JObject TryGetJwtClaims(string jwt)
+        {
             if (string.IsNullOrEmpty(jwt))
                 return null;
 
@@ -109,11 +138,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             {
                 string payload = parts[1].Replace('-', '+').Replace('_', '/');
                 payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
-                JObject claims = JObject.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(payload)));
-                long? exp = claims.Value<long?>("exp");
-                return exp == null ? (DateTimeOffset?)null : DateTimeOffset.FromUnixTimeSeconds(exp.Value);
+                return JObject.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(payload)));
             }
-            catch (Exception ex) when (ex is FormatException || ex is JsonException || ex is ArgumentOutOfRangeException)
+            catch (Exception ex) when (ex is FormatException || ex is JsonException)
             {
                 return null;
             }
@@ -121,10 +148,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
         private int RemoveTokenFiles(string mcpUrl, Func<string, bool> shouldRemove)
         {
-            if (string.IsNullOrWhiteSpace(mcpUrl) || !Directory.Exists(_authRoot))
+            if (!TryGetTenant(mcpUrl, out string tenant) || !Directory.Exists(_authRoot))
                 return 0;
 
-            string tokensFileName = ComputeCacheKey(mcpUrl) + TOKENS_FILE_SUFFIX;
             int removed = 0;
 
             try
@@ -132,11 +158,14 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 // One folder per mcp-remote storage version (e.g. "mcp-remote-v1", older "mcp-remote-0.1.x").
                 foreach (string versionDir in Directory.GetDirectories(_authRoot, "mcp-remote-*"))
                 {
-                    string tokensFile = Path.Combine(versionDir, tokensFileName);
-                    if (File.Exists(tokensFile) && shouldRemove(tokensFile))
+                    foreach (string tokensFile in Directory.GetFiles(versionDir, TOKENS_FILE_PATTERN))
                     {
-                        File.Delete(tokensFile);
-                        removed++;
+                        string tokensJson = File.ReadAllText(tokensFile);
+                        if (BelongsToTenant(tokensJson, tenant) && shouldRemove(tokensJson))
+                        {
+                            File.Delete(tokensFile);
+                            removed++;
+                        }
                     }
                 }
             }
