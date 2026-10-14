@@ -147,6 +147,7 @@ Developer Assist is an agentic AI tool that delivers real-time context-aware pre
   - Supported for **Visual Studio 2022** version 17.0+ and **Visual Studio 2026** - Community, Professional and Enterprise editions
  - A Checkmarx One account with a **Checkmarx One Assist** or **AI protection** license, and with the **Checkmarx MCP** activated for your tenant account in the Checkmarx One UI under **Settings → Plugins**. This must be done by an account admin.
  - You have **GitHub Copilot** installed and running
+ - **Node.js** (LTS) installed, with `npx` on your `PATH`. The Checkmarx MCP server runs through `npx`.
 
 ### Installation
 1. Install the **Checkmarx Developer Assist** extension from the Visual Studio Marketplace.
@@ -155,6 +156,18 @@ Developer Assist is an agentic AI tool that delivers real-time context-aware pre
 4. Enable the MCP tools by going to **Tools** → **GitHub Copilot** → **Copilot Chat** and selecting the checkbox next to each of the three Checkmarx tools.
 5. Optionally, adjust Checkmarx Developer Assist settings.
 6. For **Visual Studio 2022** we recommend setting GitHub Copilot Chat to **Agent mode** in order to streamline the workflow. 
+
+### MCP authentication: API Key or OAuth
+In **Tools → Options → Checkmarx One → Checkmarx One Assist → Checkmarx: MCP**, choose how the Checkmarx MCP server signs in:
+- **API Key** (default): the MCP server uses your extension API key.
+- **OAuth (sign in via browser)**: the MCP server signs you in with your Checkmarx One account in the browser, using OAuth with Dynamic Client Registration. Optionally, set **Server URL** (for example `https://eu.ast.checkmarx.net`) and **Tenant**. If you leave them blank, they are taken from your API key.
+
+Click **Install MCP** to apply the choice. In OAuth mode, the browser sign-in opens right away. Complete it within 3 minutes, and the Checkmarx tools are then ready in Copilot Chat. Changes saved with **OK** are also applied to the MCP configuration.
+
+**Troubleshooting OAuth**
+- *"Node.js (npx) was not found"*: install Node.js (LTS), restart Visual Studio and click **Install MCP** again.
+- *The browser shows "404" or "Page not found" when signing in*: click **Install MCP** again. This clears the previous Checkmarx MCP sign-in and starts a new one. Expired sign-ins are also cleared automatically when Visual Studio starts or when you log in.
+- Logging out of the extension also signs the MCP server out.
 
 **GIF - Getting Started with Developer Assist**
 ![Getting Started with Developer Assist](https://raw.githubusercontent.com/Checkmarx/ci-cd-integrations/main/.images/Visual_Studio_Getting_Started_with_Developer_Assist.gif "Getting Started with Developer Assist")

@@ -248,7 +248,12 @@
     <Compile Include="CxPreferences\CxOneAssistWelcomeDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="CxPreferences\Configuration\McpAuthMode.cs" />
     <Compile Include="CxPreferences\Configuration\McpConfigManager.cs" />
+    <Compile Include="CxPreferences\Configuration\McpConnectionSettings.cs" />
+    <Compile Include="CxPreferences\Configuration\McpRemoteSessionCache.cs" />
+    <Compile Include="CxPreferences\Configuration\McpOAuthSignIn.cs" />
+    <Compile Include="CxPreferences\Configuration\McpPrerequisites.cs" />
     <Compile Include="CxPreferences\Configuration\McpInstallResult.cs" />
     <Compile Include="CxPreferences\Configuration\AssistEntitlementSync.cs" />
     <Compile Include="CxPreferences\Configuration\McpInstallService.cs" />
@@ -325,7 +330,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0" />
     <PackageReference Include="MessagePack" Version="2.5.301" />
-    <PackageReference Include="log4net" Version="3.3.0" />
+    <PackageReference Include="log4net" Version="3.5.0" />
     <PackageReference Include="Microsoft.VSSDK.Vsixsigntool" Version="16.2.29116.78" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt">
       <Version>7.7.3</Version>
