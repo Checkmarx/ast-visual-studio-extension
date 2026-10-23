@@ -61,6 +61,67 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
+        public void HasValidSession_ReflectsUnexpiredTokensOfTheTenantAndWriteTime()
+        {
+            string root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                string v1 = Directory.CreateDirectory(Path.Combine(root, "mcp-remote-v1")).FullName;
+                var cache = new McpRemoteSessionCache(root);
+                Assert.False(cache.HasValidSession(DevTenantMcpUrl));
+
+                DateTimeOffset future = DateTimeOffset.UtcNow.AddHours(4);
+                File.WriteAllText(Path.Combine(v1, "other_tokens.json"), TokensJson(Jwt(future, "cx_seg"), null));
+                Assert.False(cache.HasValidSession(DevTenantMcpUrl));
+
+                File.WriteAllText(Path.Combine(v1, "aaa_tokens.json"), TokensJson(Jwt(future), null));
+                Assert.True(cache.HasValidSession(DevTenantMcpUrl));
+                Assert.True(cache.HasValidSession(DevTenantMcpUrl, DateTime.UtcNow.AddMinutes(-1)));
+                Assert.False(cache.HasValidSession(DevTenantMcpUrl, DateTime.UtcNow.AddMinutes(1)));
+
+                File.WriteAllText(Path.Combine(v1, "aaa_tokens.json"),
+                    TokensJson(Jwt(DateTimeOffset.UtcNow.AddDays(-7)), Jwt(DateTimeOffset.UtcNow.AddDays(-6))));
+                Assert.False(cache.HasValidSession(DevTenantMcpUrl));
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void ClearClientRegistration_RemovesOnlyTheTenantsClientInfoAndItsVerifiers()
+        {
+            string root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            try
+            {
+                string v1 = Directory.CreateDirectory(Path.Combine(root, "mcp-remote-v1")).FullName;
+                File.WriteAllText(Path.Combine(v1, "aaa_client_info.json"),
+                    "{\"client_id\":\"c1\",\"issuer\":\"https://iam.example.net/auth/realms/master-sypher\"}");
+                File.WriteAllText(Path.Combine(v1, "aaa_code_verifier_1.txt"), "v");
+                File.WriteAllText(Path.Combine(v1, "aaa_tokens.json"), TokensJson(Jwt(Now), null));
+                File.WriteAllText(Path.Combine(v1, "bbb_client_info.json"),
+                    "{\"client_id\":\"c2\",\"issuer\":\"https://iam.example.net/auth/realms/cx_seg\"}");
+                File.WriteAllText(Path.Combine(v1, "bbb_code_verifier_1.txt"), "v");
+                File.WriteAllText(Path.Combine(v1, "ccc_client_info.json"), "{\"client_id\":\"c3\"}");
+
+                int removed = new McpRemoteSessionCache(root).ClearClientRegistration(DevTenantMcpUrl);
+
+                Assert.Equal(1, removed);
+                Assert.False(File.Exists(Path.Combine(v1, "aaa_client_info.json")));
+                Assert.False(File.Exists(Path.Combine(v1, "aaa_code_verifier_1.txt")));
+                Assert.True(File.Exists(Path.Combine(v1, "aaa_tokens.json")));
+                Assert.True(File.Exists(Path.Combine(v1, "bbb_client_info.json")));
+                Assert.True(File.Exists(Path.Combine(v1, "bbb_code_verifier_1.txt")));
+                Assert.True(File.Exists(Path.Combine(v1, "ccc_client_info.json")));
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Fact]
         public void ClearTokens_WithMissingCacheRoot_ReturnsZero()
         {
             string root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());

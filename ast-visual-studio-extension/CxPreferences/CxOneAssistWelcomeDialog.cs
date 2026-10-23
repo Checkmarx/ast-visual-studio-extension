@@ -392,6 +392,16 @@ namespace ast_visual_studio_extension.CxPreferences
                    _settings.UserPrefIacRealtime;
         }
 
+        private string BuildMcpDescription()
+        {
+            if (!_mcpEnabled)
+                return "Checkmarx MCP is not enabled for this tenant.";
+
+            return _settings.McpAuthMode == Configuration.McpAuthMode.OAuth
+                ? "Checkmarx MCP is configured automatically using your API key details. Choose \"Install MCP\" in the Assist settings to sign in with OAuth through your browser."
+                : "Checkmarx MCP is installed automatically with your API key - no need for manual integration. You can switch to OAuth sign-in in the Assist settings.";
+        }
+
         private Panel BuildFeatureCard()
         {
             var featureCard = new TableLayoutPanel
@@ -449,9 +459,7 @@ namespace ast_visual_studio_extension.CxPreferences
                 "Get instant security feedback as you code.",
                 "See suggested fixes for vulnerabilities across open source, config, and code.",
                 "Fix faster with intelligent, context-aware remediation inside your IDE.",
-                _mcpEnabled
-                    ? "Checkmarx MCP Installed automatically - no need for manual integration"
-                    : "Checkmarx MCP is not enabled for this tenant."
+                BuildMcpDescription()
             };
             for (int i = 0; i < details.Length; i++)
             {
@@ -461,6 +469,7 @@ namespace ast_visual_studio_extension.CxPreferences
                     ForeColor = _secondaryText,
                     Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point),
                     Text = "• " + details[i],
+                    MaximumSize = new Size(620, 0),
                     Margin = new Padding(0, i == 0 ? 8 : 2, 0, 2)
                 };
                 featureCard.RowCount++;
