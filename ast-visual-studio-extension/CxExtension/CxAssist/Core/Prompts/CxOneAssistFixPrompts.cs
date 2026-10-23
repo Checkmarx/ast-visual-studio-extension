@@ -137,7 +137,8 @@ Examples:
   - `npm`: `npx tsc --noEmit`, `npm run build`, `npm test` (**IMPORTANT:** If you detect the file is `bower.json`, use `bower install`, `bower list` instead)
   - `go`: `go build ./...`, `go test ./...`
   - `maven`: `mvn compile`, `mvn test`
-  - `pypi`: `python -c ""import {packageName}""`, `pytest`
+  - `pypi`/`setuptools`: `python -c ""import {packageName}""`, `pytest`, `python -m build`
+  - `pyproject.toml` (Poetry/uv): `python -c ""import {packageName}""`, `pytest`, then `uv lock` or `poetry lock` if lock present
   - `nuget`: `dotnet build`, `dotnet test`
   - `bower` (`bower.json`): `bower install`, `bower list`
   - `rubygems` (`Gemfile`): `bundle install`, `bundle exec rspec`
