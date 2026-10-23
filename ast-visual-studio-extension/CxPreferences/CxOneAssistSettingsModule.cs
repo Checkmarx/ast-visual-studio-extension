@@ -44,16 +44,10 @@ public bool AscaCheckBox { get; set; } = true;
         /// MCP connection settings are persisted to their own registry collection (not DialogPage
         /// serialization) so "Install MCP" can commit them without applying the rest of the page.
         /// </summary>
-        internal McpAuthMode McpAuthMode { get; set; } = McpAuthMode.ApiKey;
-
-        /// <summary>Checkmarx One server URL for the OAuth MCP entry; blank = derived from the API key.</summary>
-        internal string McpOAuthServerUrl { get; set; } = string.Empty;
-
-        /// <summary>Tenant for the OAuth MCP entry; blank = derived from the API key.</summary>
-        internal string McpOAuthTenant { get; set; } = string.Empty;
+        internal McpAuthMode McpAuthMode { get; set; } = McpAuthMode.OAuth;
 
         internal McpConnectionSettings GetMcpConnectionSettings()
-            => new McpConnectionSettings(McpAuthMode, McpOAuthServerUrl, McpOAuthTenant);
+            => new McpConnectionSettings(McpAuthMode);
 
         // What the registry holds for the MCP connection; null until loaded or saved once.
         private string _persistedMcpConnectionSignature;
@@ -113,14 +107,6 @@ public bool AscaCheckBox { get; set; } = true;
         {
             CxOneAssistSettingsUI settingsUI = CxOneAssistSettingsUI.GetInstance();
 
-            // An invalid OAuth URL/tenant would otherwise be persisted and break every silent MCP reinstall.
-            if (!settingsUI.TryValidateMcpConnection(out string mcpConnectionError))
-            {
-                settingsUI.ShowMcpValidationError(mcpConnectionError);
-                e.ApplyBehavior = ApplyKind.Cancel;
-                return;
-            }
-
             string persistedMcpConnection = _persistedMcpConnectionSignature;
 
             // Flush UI → properties so serialization matches the Tools → Options surface (also marks page dirty via property updates when handlers ran).
@@ -134,7 +120,7 @@ public bool AscaCheckBox { get; set; } = true;
                 ReinstallMcpInBackground();
         }
 
-        private string McpConnectionSignature => McpAuthMode + "|" + McpOAuthServerUrl + "|" + McpOAuthTenant;
+        private string McpConnectionSignature => McpAuthMode.ToString();
 
         /// <summary>
         /// Rewrites the .mcp.json entry after the MCP connection settings changed on OK/Apply, so the change does not
@@ -318,8 +304,6 @@ public bool AscaCheckBox { get; set; } = true;
                     userSettingsStore.CreateCollection(McpConnectionCollection);
 
                 userSettingsStore.SetString(McpConnectionCollection, "McpAuthMode", McpAuthMode.ToString());
-                userSettingsStore.SetString(McpConnectionCollection, "McpOAuthServerUrl", McpOAuthServerUrl ?? string.Empty);
-                userSettingsStore.SetString(McpConnectionCollection, "McpOAuthTenant", McpOAuthTenant ?? string.Empty);
                 _persistedMcpConnectionSignature = McpConnectionSignature;
             }
             catch (Exception ex)
@@ -341,10 +325,8 @@ public bool AscaCheckBox { get; set; } = true;
 
                 if (readOnlyStore.CollectionExists(McpConnectionCollection))
                 {
-                    string authMode = readOnlyStore.GetString(McpConnectionCollection, "McpAuthMode", nameof(McpAuthMode.ApiKey));
-                    McpAuthMode = Enum.TryParse(authMode, out McpAuthMode parsed) ? parsed : McpAuthMode.ApiKey;
-                    McpOAuthServerUrl = readOnlyStore.GetString(McpConnectionCollection, "McpOAuthServerUrl", string.Empty);
-                    McpOAuthTenant = readOnlyStore.GetString(McpConnectionCollection, "McpOAuthTenant", string.Empty);
+                    string authMode = readOnlyStore.GetString(McpConnectionCollection, "McpAuthMode", nameof(McpAuthMode.OAuth));
+                    McpAuthMode = Enum.TryParse(authMode, out McpAuthMode parsed) ? parsed : McpAuthMode.OAuth;
                 }
 
                 _persistedMcpConnectionSignature = McpConnectionSignature;

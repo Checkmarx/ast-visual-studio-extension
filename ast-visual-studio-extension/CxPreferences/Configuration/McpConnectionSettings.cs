@@ -1,24 +1,18 @@
 namespace ast_visual_studio_extension.CxPreferences.Configuration
 {
     /// <summary>
-    /// How the Checkmarx MCP server entry in .mcp.json authenticates. The OAuth server URL and tenant
-    /// are only used in <see cref="McpAuthMode.OAuth"/> mode; blank values are derived from the API key.
+    /// How the Checkmarx MCP server entry in .mcp.json authenticates. In <see cref="McpAuthMode.OAuth"/> mode the
+    /// server URL and tenant are always derived from the API key used to log in to the plugin.
     /// </summary>
     internal sealed class McpConnectionSettings
     {
-        internal static readonly McpConnectionSettings Default = new McpConnectionSettings(McpAuthMode.ApiKey, null, null);
+        internal static readonly McpConnectionSettings Default = new McpConnectionSettings(McpAuthMode.OAuth);
 
-        public McpConnectionSettings(McpAuthMode authMode, string oauthServerUrl, string oauthTenant)
+        public McpConnectionSettings(McpAuthMode authMode)
         {
             AuthMode = authMode;
-            OAuthServerUrl = oauthServerUrl?.Trim() ?? string.Empty;
-            OAuthTenant = oauthTenant?.Trim() ?? string.Empty;
         }
 
         public McpAuthMode AuthMode { get; }
-
-        public string OAuthServerUrl { get; }
-
-        public string OAuthTenant { get; }
     }
 }

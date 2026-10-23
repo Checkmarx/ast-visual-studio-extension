@@ -23,6 +23,12 @@ namespace ast_visual_studio_extension.CxPreferences
         private System.Threading.Timer _scannerCheckboxDebounceTimer;
         private const int DebounceDelayMs = 300;  // Batch checkbox changes within 300ms
 
+        private const string McpApiKeyInfoMessage =
+            "API Key is token-based authentication: MCP connects using the API key you used to log in to the plugin.";
+        private const string McpOAuthInfoMessage =
+            "OAuth is browser-based authentication: you sign in through your browser when you click Install MCP. " +
+            "Node.js (npx) is required.";
+
         private static readonly Color McpSuccessColor = Color.FromArgb(0, 120, 50);
         private static readonly Color McpErrorColor = Color.FromArgb(160, 0, 0);
 
@@ -59,44 +65,46 @@ namespace ast_visual_studio_extension.CxPreferences
             ApplyAuthenticationState(CxPreferencesUI.IsAuthenticated());
         }
 
+        private bool _isLoadingMcpConnection;
+
         private void SetMcpConnectionControls(CxOneAssistSettingsModule module)
         {
-            rbMcpAuthOAuth.Checked = module.McpAuthMode == McpAuthMode.OAuth;
-            rbMcpAuthApiKey.Checked = module.McpAuthMode != McpAuthMode.OAuth;
-            txtMcpOAuthServerUrl.Text = module.McpOAuthServerUrl ?? string.Empty;
-            txtMcpOAuthTenant.Text = module.McpOAuthTenant ?? string.Empty;
-            UpdateMcpOAuthFieldsEnabled();
+            _isLoadingMcpConnection = true;
+            try
+            {
+                rbMcpAuthOAuth.Checked = module.McpAuthMode == McpAuthMode.OAuth;
+                rbMcpAuthApiKey.Checked = module.McpAuthMode != McpAuthMode.OAuth;
+                UpdateMcpAuthInfo();
+            }
+            finally
+            {
+                _isLoadingMcpConnection = false;
+            }
+        }
+
+        /// <summary>
+        /// The .mcp.json entry is only rewritten by Install MCP (or OK/Apply), so a mode switch must say so.
+        /// </summary>
+        private void NotifyMcpAuthModeChanged(object sender)
+        {
+            if (_isLoadingMcpConnection || !((RadioButton)sender).Checked
+                || cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
+                return;
+
+            string message = ReferenceEquals(sender, rbMcpAuthOAuth)
+                ? "Switched to OAuth. Click Install MCP to apply it and sign in through your browser."
+                : "Switched to API Key. Click Install MCP to apply it; no browser sign-in is needed.";
+            SetMcpStatus(message, isSuccess: true, autoDismiss: false);
         }
 
         private void ApplyMcpConnectionUiToModule(CxOneAssistSettingsModule module)
         {
             module.McpAuthMode = rbMcpAuthOAuth.Checked ? McpAuthMode.OAuth : McpAuthMode.ApiKey;
-            module.McpOAuthServerUrl = txtMcpOAuthServerUrl.Text.Trim();
-            module.McpOAuthTenant = txtMcpOAuthTenant.Text.Trim();
         }
 
-        private void UpdateMcpOAuthFieldsEnabled()
+        private void UpdateMcpAuthInfo()
         {
-            bool enabled = rbMcpAuthOAuth.Enabled && rbMcpAuthOAuth.Checked;
-            txtMcpOAuthServerUrl.Enabled = enabled;
-            txtMcpOAuthTenant.Enabled = enabled;
-        }
-
-        /// <summary>
-        /// Validates the OAuth server URL / tenant fields. Only relevant while OAuth mode is selected.
-        /// </summary>
-        internal bool TryValidateMcpConnection(out string error)
-        {
-            error = null;
-            if (!CxPreferencesUI.IsAuthenticated() || !rbMcpAuthOAuth.Checked)
-                return true;
-
-            return McpInstallService.TryValidateOAuthOverrides(txtMcpOAuthServerUrl.Text, txtMcpOAuthTenant.Text, out error);
-        }
-
-        internal void ShowMcpValidationError(string error)
-        {
-            SetMcpStatus(error, isSuccess: false, autoDismiss: false);
+            lblMcpAuthInfo.Text = rbMcpAuthOAuth.Checked ? McpOAuthInfoMessage : McpApiKeyInfoMessage;
         }
 
         private void EnsureAuthSubscription()
@@ -151,7 +159,6 @@ namespace ast_visual_studio_extension.CxPreferences
             lnkEditMcp.Enabled = true;
             rbMcpAuthApiKey.Enabled = hasApiKey && mcpEnabled;
             rbMcpAuthOAuth.Enabled = hasApiKey && mcpEnabled;
-            UpdateMcpOAuthFieldsEnabled();
 
             if (!hasApiKey)
                 SetMcpStatus("Please authenticate first before installing MCP.", isSuccess: false, autoDismiss: false);
@@ -224,7 +231,6 @@ namespace ast_visual_studio_extension.CxPreferences
             lnkEditMcp.Enabled = enabled;
             rbMcpAuthApiKey.Enabled = enabled;
             rbMcpAuthOAuth.Enabled = enabled;
-            UpdateMcpOAuthFieldsEnabled();
         }
 
         /// <summary>
@@ -311,7 +317,8 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void RbMcpAuthApiKey_CheckedChanged(object sender, EventArgs e)
         {
-            UpdateMcpOAuthFieldsEnabled();
+            UpdateMcpAuthInfo();
+            NotifyMcpAuthModeChanged(sender);
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
             DebounceSyncAssistUi();
@@ -319,14 +326,8 @@ namespace ast_visual_studio_extension.CxPreferences
 
         private void RbMcpAuthOAuth_CheckedChanged(object sender, EventArgs e)
         {
-            UpdateMcpOAuthFieldsEnabled();
-            if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
-                return;
-            DebounceSyncAssistUi();
-        }
-
-        private void TxtMcpOAuthSetting_TextChanged(object sender, EventArgs e)
-        {
+            UpdateMcpAuthInfo();
+            NotifyMcpAuthModeChanged(sender);
             if (cxOneAssistSettingsModule == null || !CxPreferencesUI.IsAuthenticated())
                 return;
             DebounceSyncAssistUi();
@@ -348,12 +349,6 @@ namespace ast_visual_studio_extension.CxPreferences
             if (string.IsNullOrWhiteSpace(config.ApiKey))
             {
                 SetMcpStatus("Please authenticate first before installing MCP.", isSuccess: false, autoDismiss: false);
-                return;
-            }
-
-            if (!TryValidateMcpConnection(out string validationError))
-            {
-                SetMcpStatus(validationError, isSuccess: false, autoDismiss: false);
                 return;
             }
 

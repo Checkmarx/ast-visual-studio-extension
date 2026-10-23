@@ -11,9 +11,6 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
     {
         private const string MCP_PATH = "/api/security-mcp/mcp";
 
-        private static readonly Regex TenantPattern = new Regex(@"^[A-Za-z0-9][A-Za-z0-9._-]*$");
-        private static readonly Regex SafeAuthorityPattern = new Regex(@"^[A-Za-z0-9.-]+(:[0-9]{1,5})?$");
-        private static readonly Regex SafePathPattern = new Regex(@"^(/[A-Za-z0-9._~-]+)*$");
         private static readonly Regex SafeOAuthMcpUrlPattern = new Regex(@"^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~-]+)+$");
         private static readonly Regex IamLabelPattern = new Regex(@"(?<prefix>^|\.)iam(?=[.-])", RegexOptions.IgnoreCase);
 
@@ -133,8 +130,8 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             string mcpUrl;
             if (isOAuth)
             {
-                // Validate the configured OAuth server URL / tenant before spending CLI round-trips.
-                if (!TryResolveMcpUrlForOAuth(config.ApiKey, settings.OAuthServerUrl, settings.OAuthTenant, out mcpUrl, out string urlError))
+                // Derive the OAuth server URL / tenant from the API key before spending CLI round-trips.
+                if (!TryResolveMcpUrlForOAuth(config.ApiKey, out mcpUrl, out string urlError))
                 {
                     return new McpInstallResult
                     {
@@ -181,12 +178,14 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 if (isOAuth)
                 {
                     // The server answers a dead cached token with a 401 lacking WWW-Authenticate, which sends the
-                    // browser to a 404 page. Silent installs (VS start, login) drop only sessions that can no longer
-                    // work; an explicit install is a user-initiated reconnect and starts a fresh sign-in.
-                    if (silentMode)
-                        _sessionCache.ClearExpiredTokens(mcpUrl);
-                    else
-                        _sessionCache.ClearTokens(mcpUrl);
+                    // browser to a 404 page, so only sessions that can no longer work are dropped. A working session
+                    // is kept (also on an explicit install) so the user is not asked to sign in again every time.
+                    _sessionCache.ClearExpiredTokens(mcpUrl);
+
+                    // Signing in again also drops the cached client registration: if the server no longer knows that
+                    // client, the browser stops at "Client not found" and the sign-in can never complete.
+                    if (!silentMode && !_sessionCache.HasValidSession(mcpUrl))
+                        _sessionCache.ClearClientRegistration(mcpUrl);
                 }
 
                 return new McpInstallResult
@@ -211,7 +210,9 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         private static string BuildInstallMessage(bool isOAuth, bool changed, string mcpUrl)
         {
             if (!isOAuth)
-                return changed ? "MCP configuration installed successfully." : "MCP configuration is already up to date.";
+                return changed
+                    ? "MCP configuration installed using API key authentication. No browser sign-in is needed."
+                    : "MCP configuration is already up to date and uses API key authentication.";
 
             return changed
                 ? "MCP configuration installed for " + mcpUrl + "."
@@ -263,47 +264,37 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         }
 
         /// <summary>
-        /// Validates only the user-entered OAuth Server URL / Tenant; blank values are valid (derived later).
-        /// </summary>
-        internal static bool TryValidateOAuthOverrides(string serverUrl, string tenant, out string error)
-        {
-            return TryParseOAuthOverrides(serverUrl, tenant, out _, out _, out error);
-        }
-
-        /// <summary>
-        /// Builds the tenant-scoped OAuth MCP URL "&lt;server&gt;/api/security-mcp/mcp/&lt;tenant&gt;".
-        /// A configured server URL / tenant wins; a blank one is derived from the API-key JWT issuer.
+        /// Builds the tenant-scoped OAuth MCP URL "&lt;server&gt;/api/security-mcp/mcp/&lt;tenant&gt;" from the
+        /// API-key JWT issuer; the user never enters a URL or tenant.
         /// There is deliberately no fallback URL: the base endpoint cannot complete OAuth (its protected-resource
         /// metadata lists no authorization server) and a guessed host would point users at the wrong environment.
         /// </summary>
-        /// <returns>false (with a user-facing <paramref name="error"/>) when a value is invalid or cannot be determined.</returns>
-        internal static bool TryResolveMcpUrlForOAuth(string apiKey, string serverUrl, string tenant, out string mcpUrl, out string error)
+        /// <returns>false (with a user-facing <paramref name="error"/>) when the values cannot be determined.</returns>
+        internal static bool TryResolveMcpUrlForOAuth(string apiKey, out string mcpUrl, out string error)
         {
             mcpUrl = null;
-            if (!TryParseOAuthOverrides(serverUrl, tenant, out string serverBase, out string resolvedTenant, out error))
-                return false;
+            error = null;
 
-            if (serverBase == null || resolvedTenant == null)
+            string serverBase = null;
+            string tenant = null;
+            Uri issuerUri = TryGetIssuerUri(apiKey);
+            if (issuerUri != null)
             {
-                Uri issuerUri = TryGetIssuerUri(apiKey);
-                if (issuerUri != null)
-                {
-                    serverBase ??= issuerUri.Scheme + "://" + ResolveMcpAuthority(issuerUri.Authority);
-                    resolvedTenant ??= TryGetRealm(issuerUri);
-                }
+                serverBase = issuerUri.Scheme + "://" + ResolveMcpAuthority(issuerUri.Authority);
+                tenant = TryGetRealm(issuerUri);
             }
 
-            if (serverBase == null || resolvedTenant == null)
+            if (serverBase == null || tenant == null)
             {
                 error = "Could not determine the MCP " + (serverBase == null ? "server URL" : "tenant")
-                    + " from your API key. Enter the Server URL and Tenant for OAuth.";
+                    + " from your API key. Please log in again with a valid API key.";
                 return false;
             }
 
-            string candidate = serverBase + MCP_PATH + "/" + resolvedTenant;
+            string candidate = serverBase + MCP_PATH + "/" + tenant;
             if (!IsSafeOAuthMcpUrl(candidate))
             {
-                error = "Could not determine a valid https MCP URL from your API key. Enter the Server URL and Tenant for OAuth.";
+                error = "Could not determine a valid https MCP URL from your API key. Please log in again with a valid API key.";
                 return false;
             }
 
@@ -318,69 +309,6 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         internal static bool IsSafeOAuthMcpUrl(string mcpUrl)
         {
             return !string.IsNullOrWhiteSpace(mcpUrl) && SafeOAuthMcpUrlPattern.IsMatch(mcpUrl);
-        }
-
-        private static bool TryParseOAuthOverrides(string serverUrl, string tenant, out string serverBase, out string resolvedTenant, out string error)
-        {
-            serverBase = null;
-            resolvedTenant = null;
-            error = null;
-
-            string tenantFromUrl = null;
-            if (!string.IsNullOrWhiteSpace(serverUrl) && !TryNormalizeServerUrl(serverUrl, out serverBase, out tenantFromUrl))
-            {
-                error = "Invalid MCP server URL. Enter your Checkmarx One https:// URL, e.g. https://eu.ast.checkmarx.net.";
-                return false;
-            }
-
-            resolvedTenant = string.IsNullOrWhiteSpace(tenant) ? tenantFromUrl : tenant.Trim();
-            if (resolvedTenant != null && !TenantPattern.IsMatch(resolvedTenant))
-            {
-                error = "Invalid tenant name. Use only letters, digits, '.', '_' or '-'.";
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Accepts either the Checkmarx One base URL or a pasted MCP endpoint URL
-        /// (".../api/security-mcp/mcp[/&lt;tenant&gt;]") and returns the base without a trailing slash.
-        /// </summary>
-        private static bool TryNormalizeServerUrl(string serverUrl, out string serverBase, out string tenantFromUrl)
-        {
-            serverBase = null;
-            tenantFromUrl = null;
-
-            string candidate = serverUrl.Trim();
-            if (!candidate.Contains("://"))
-                candidate = "https://" + candidate;
-
-            // mcp-remote refuses plain http for non-localhost servers, so only https is usable here.
-            if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri uri)
-                || uri.Scheme != Uri.UriSchemeHttps
-                || !string.IsNullOrEmpty(uri.UserInfo)
-                || !string.IsNullOrEmpty(uri.Query)
-                || !string.IsNullOrEmpty(uri.Fragment)
-                || !SafeAuthorityPattern.IsMatch(uri.Authority))
-                return false;
-
-            string path = uri.AbsolutePath.TrimEnd('/');
-            int mcpPathIndex = path.IndexOf(MCP_PATH, StringComparison.OrdinalIgnoreCase);
-            int mcpPathEnd = mcpPathIndex + MCP_PATH.Length;
-            if (mcpPathIndex >= 0 && (path.Length == mcpPathEnd || path[mcpPathEnd] == '/'))
-            {
-                string rest = path.Substring(mcpPathEnd).Trim('/');
-                tenantFromUrl = rest.Length == 0 ? null : rest;
-                path = path.Substring(0, mcpPathIndex);
-            }
-
-            // The URL ends up on a command line (npx), so only plain path characters are accepted.
-            if (!SafePathPattern.IsMatch(path))
-                return false;
-
-            serverBase = uri.Scheme + "://" + uri.Authority + path;
-            return true;
         }
 
         private static Uri TryGetIssuerUri(string apiKey)

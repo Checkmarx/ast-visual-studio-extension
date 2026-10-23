@@ -16,6 +16,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
     {
         // Interactive browser sign-in (MFA included) cannot fit the 30 s CLI timeout; it is still bounded.
         internal static readonly TimeSpan SIGN_IN_TIMEOUT = TimeSpan.FromMinutes(3);
+        private const int POLL_INTERVAL_MS = 1000;
 
         internal static bool TryBuildArguments(string mcpUrl, out string arguments)
         {
@@ -29,16 +30,32 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return true;
         }
 
+        private readonly McpRemoteSessionCache _sessionCache;
+
+        public McpOAuthSignIn() : this(new McpRemoteSessionCache())
+        {
+        }
+
+        internal McpOAuthSignIn(McpRemoteSessionCache sessionCache)
+        {
+            _sessionCache = sessionCache;
+        }
+
         public virtual Task<McpInstallResult> SignInAsync(string mcpUrl)
         {
             return Task.Run(() => SignIn(mcpUrl));
         }
 
-        private static McpInstallResult SignIn(string mcpUrl)
+        private McpInstallResult SignIn(string mcpUrl)
         {
             if (!TryBuildArguments(mcpUrl, out string arguments))
                 return Failure("Cannot start the MCP sign-in for this server URL.");
 
+            // A cached session (refreshed by mcp-remote on its own) means the user is already signed in.
+            if (_sessionCache.HasValidSession(mcpUrl))
+                return Success(mcpUrl, "You are already signed in to the Checkmarx MCP server. The MCP tools are ready in Copilot Chat.");
+
+            DateTime startedUtc = DateTime.UtcNow.AddSeconds(-1);
             var startInfo = new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "cmd.exe"), arguments)
             {
                 UseShellExecute = false,
@@ -60,16 +77,31 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
 
-                    if (!process.WaitForExit((int)SIGN_IN_TIMEOUT.TotalMilliseconds))
+                    // The client may stay running after the browser step, so success is read from the token cache
+                    // mcp-remote writes once the sign-in completes, not only from the process exit.
+                    DateTime deadlineUtc = DateTime.UtcNow + SIGN_IN_TIMEOUT;
+                    while (DateTime.UtcNow < deadlineUtc)
                     {
-                        KillProcessTree(process.Id);
-                        return Failure("The browser sign-in was not completed within "
-                            + SIGN_IN_TIMEOUT.TotalMinutes + " minutes. Click Install MCP to try again.");
+                        bool exited = process.WaitForExit(POLL_INTERVAL_MS);
+
+                        if (_sessionCache.HasValidSession(mcpUrl, startedUtc))
+                        {
+                            if (!exited)
+                                KillProcessTree(process.Id);
+                            return Success(mcpUrl, "Login successful. The Checkmarx MCP tools are ready in Copilot Chat.");
+                        }
+
+                        if (exited)
+                        {
+                            return process.ExitCode == 0
+                                ? Success(mcpUrl, "Login successful. The Checkmarx MCP tools are ready in Copilot Chat.")
+                                : Failure("The MCP sign-in did not complete (exit code " + process.ExitCode + "). Click Install MCP to try again.");
+                        }
                     }
 
-                    return process.ExitCode == 0
-                        ? new McpInstallResult { Success = true, McpUrl = mcpUrl, Message = "Signed in to " + mcpUrl + ". The Checkmarx MCP tools are ready in Copilot Chat." }
-                        : Failure("The MCP sign-in did not complete (exit code " + process.ExitCode + "). Click Install MCP to try again.");
+                    KillProcessTree(process.Id);
+                    return Failure("The browser sign-in was not completed within "
+                        + SIGN_IN_TIMEOUT.TotalMinutes + " minutes. Click Install MCP to try again.");
                 }
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
@@ -97,6 +129,11 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             {
                 Debug.WriteLine($"Failed to stop the MCP sign-in process: {ex.Message}");
             }
+        }
+
+        private static McpInstallResult Success(string mcpUrl, string message)
+        {
+            return new McpInstallResult { Success = true, McpUrl = mcpUrl, Message = message };
         }
 
         private static McpInstallResult Failure(string message)
