@@ -159,8 +159,8 @@ Developer Assist is an agentic AI tool that delivers real-time context-aware pre
 
 ### MCP authentication: API Key or OAuth
 In **Tools → Options → Checkmarx One → Checkmarx One Assist → Checkmarx: MCP**, choose how the Checkmarx MCP server signs in:
-- **API Key** (default): the MCP server uses your extension API key.
-- **OAuth (sign in via browser)**: the MCP server signs you in with your Checkmarx One account in the browser, using OAuth with Dynamic Client Registration. The MCP server URL and tenant are taken automatically from the API key you used to log in to the plugin, so there is nothing else to enter.
+- **API Key**: the MCP server uses your extension API key.
+- **OAuth (sign in via browser)** (default): the MCP server signs you in with your Checkmarx One account in the browser, using OAuth with Dynamic Client Registration. The MCP server URL and tenant are taken automatically from the API key you used to log in to the plugin, so there is nothing else to enter.
 
 Click **Install MCP** to apply the choice. In OAuth mode, the browser sign-in opens right away. Complete it within 3 minutes, and the Checkmarx tools are then ready in Copilot Chat. Changes saved with **OK** are also applied to the MCP configuration.
 

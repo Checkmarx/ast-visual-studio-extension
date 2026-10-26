@@ -352,10 +352,8 @@ namespace ast_visual_studio_extension.CxPreferences
                 return;
             }
 
-            // Read the form directly (the module sync is debounced) and commit the MCP connection settings,
-            // so the silent reinstall on next login/restore writes the same entry even if Options is cancelled.
+            // Read the form directly (the module sync is debounced).
             ApplyMcpConnectionUiToModule(cxOneAssistSettingsModule);
-            cxOneAssistSettingsModule.SaveMcpConnectionSettingsToRegistry();
             McpConnectionSettings connectionSettings = cxOneAssistSettingsModule.GetMcpConnectionSettings();
 
             _isMcpInstallInProgress = true;
@@ -366,6 +364,12 @@ namespace ast_visual_studio_extension.CxPreferences
             {
                 var installService = new McpInstallService();
                 McpInstallResult result = await installService.InstallAsync(config, connectionSettings, GetType());
+
+                // Commit the settings only once .mcp.json holds them: the silent reinstall on next login/restore then
+                // writes the same entry even if Options is cancelled, and a failed install keeps the old baseline so
+                // OK/Apply still reinstalls.
+                if (result.Success)
+                    cxOneAssistSettingsModule.SaveMcpConnectionSettingsToRegistry(connectionSettings);
 
                 bool isOAuth = connectionSettings.AuthMode == McpAuthMode.OAuth;
                 if (result.Success && isOAuth)

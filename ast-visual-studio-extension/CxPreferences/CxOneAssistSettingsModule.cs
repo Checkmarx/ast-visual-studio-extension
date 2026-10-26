@@ -120,7 +120,9 @@ public bool AscaCheckBox { get; set; } = true;
                 ReinstallMcpInBackground();
         }
 
-        private string McpConnectionSignature => McpAuthMode.ToString();
+        private string McpConnectionSignature => GetSignature(GetMcpConnectionSettings());
+
+        private static string GetSignature(McpConnectionSettings settings) => settings.AuthMode.ToString();
 
         /// <summary>
         /// Rewrites the .mcp.json entry after the MCP connection settings changed on OK/Apply, so the change does not
@@ -290,6 +292,9 @@ public bool AscaCheckBox { get; set; } = true;
         }
 
         internal void SaveMcpConnectionSettingsToRegistry()
+            => SaveMcpConnectionSettingsToRegistry(GetMcpConnectionSettings());
+
+        internal void SaveMcpConnectionSettingsToRegistry(McpConnectionSettings settings)
         {
             try
             {
@@ -303,8 +308,8 @@ public bool AscaCheckBox { get; set; } = true;
                 if (!userSettingsStore.CollectionExists(McpConnectionCollection))
                     userSettingsStore.CreateCollection(McpConnectionCollection);
 
-                userSettingsStore.SetString(McpConnectionCollection, "McpAuthMode", McpAuthMode.ToString());
-                _persistedMcpConnectionSignature = McpConnectionSignature;
+                userSettingsStore.SetString(McpConnectionCollection, "McpAuthMode", settings.AuthMode.ToString());
+                _persistedMcpConnectionSignature = GetSignature(settings);
             }
             catch (Exception ex)
             {

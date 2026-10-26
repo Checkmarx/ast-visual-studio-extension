@@ -205,6 +205,32 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
+        public void IsSessionUsable_WhenAccessTokenIsOpaqueWithoutExpiresAt_FallsBackToRefreshToken()
+        {
+            var tokens = new JObject { ["access_token"] = "opaque", ["refresh_token"] = Jwt(Now.AddHours(4)) };
+            Assert.True(McpRemoteSessionCache.IsSessionUsable(tokens.ToString(), Now));
+
+            tokens["refresh_token"] = Jwt(Now.AddHours(-1));
+            Assert.False(McpRemoteSessionCache.IsSessionUsable(tokens.ToString(), Now));
+        }
+
+        [Theory]
+        [InlineData("not json")]
+        [InlineData("{}")]
+        [InlineData("{\"access_token\":\"opaque\"}")]
+        public void IsSessionUsable_WhenExpiryIsUnknown_ReturnsFalse(string json)
+        {
+            // An unknown expiry must not count as "already signed in", or the browser sign-in would be skipped.
+            Assert.False(McpRemoteSessionCache.IsSessionUsable(json, Now));
+        }
+
+        [Fact]
+        public void IsSessionUsable_WhenAccessExpiredAndRefreshTokenIsOpaque_ReturnsFalse()
+        {
+            Assert.False(McpRemoteSessionCache.IsSessionUsable(TokensJson(Jwt(Now.AddDays(-1)), "opaque-refresh"), Now));
+        }
+
+        [Fact]
         public void ClearExpiredTokens_RemovesOnlyDeadSessions()
         {
             string root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());

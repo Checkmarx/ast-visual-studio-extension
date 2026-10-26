@@ -143,7 +143,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         }
 
         /// <summary>
-        /// True when a cached session for the tenant can still work (access or refresh token not yet expired),
+        /// True when a cached session for the tenant can still work (access or refresh token known not to be expired),
         /// so no browser sign-in is needed. When <paramref name="writtenAfterUtc"/> is given, only a token file
         /// written after that moment counts, which is how a just-completed sign-in is recognised.
         /// </summary>
@@ -164,7 +164,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                             continue;
 
                         string tokensJson = File.ReadAllText(tokensFile);
-                        if (BelongsToTenant(tokensJson, tenant) && !IsSessionExpired(tokensJson, now))
+                        if (BelongsToTenant(tokensJson, tenant) && IsSessionUsable(tokensJson, now))
                             return true;
                     }
                 }
@@ -179,6 +179,18 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         }
 
         internal static bool IsSessionExpired(string tokensJson, DateTimeOffset now)
+            => GetSessionState(tokensJson, now) == SessionState.Expired;
+
+        /// <summary>
+        /// True only when a token is known to be unexpired. A session whose expiry cannot be read is not trusted
+        /// here (the browser sign-in runs), although <see cref="IsSessionExpired"/> does not delete it either.
+        /// </summary>
+        internal static bool IsSessionUsable(string tokensJson, DateTimeOffset now)
+            => GetSessionState(tokensJson, now) == SessionState.Usable;
+
+        private enum SessionState { Usable, Expired, Unknown }
+
+        private static SessionState GetSessionState(string tokensJson, DateTimeOffset now)
         {
             JObject tokens;
             try
@@ -187,7 +199,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             }
             catch (JsonException)
             {
-                return false;
+                return SessionState.Unknown;
             }
 
             DateTimeOffset? accessExpiry = TryGetJwtExpiry(tokens.Value<string>("access_token"));
@@ -195,15 +207,18 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             if (accessExpiry == null && expiresAtMs != null)
                 accessExpiry = DateTimeOffset.FromUnixTimeMilliseconds(expiresAtMs.Value);
 
-            if (accessExpiry == null || accessExpiry > now)
-                return false;
+            if (accessExpiry > now)
+                return SessionState.Usable;
 
             string refreshToken = tokens.Value<string>("refresh_token");
             if (string.IsNullOrEmpty(refreshToken))
-                return true;
+                return accessExpiry == null ? SessionState.Unknown : SessionState.Expired;
 
             DateTimeOffset? refreshExpiry = TryGetJwtExpiry(refreshToken);
-            return refreshExpiry != null && refreshExpiry <= now;
+            if (refreshExpiry == null)
+                return SessionState.Unknown;
+
+            return refreshExpiry > now ? SessionState.Usable : SessionState.Expired;
         }
 
         private static DateTimeOffset? TryGetJwtExpiry(string jwt)
