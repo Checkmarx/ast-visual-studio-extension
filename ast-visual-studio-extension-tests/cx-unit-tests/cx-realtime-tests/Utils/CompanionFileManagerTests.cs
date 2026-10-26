@@ -97,6 +97,14 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Util
         }
 
         [Fact]
+        public void GetCompanionFileNames_PyprojectToml_ReturnsPythonLockFiles()
+        {
+            var files = CompanionFileManager.GetCompanionFileNames("pyproject.toml");
+            Assert.Contains("poetry.lock", files);
+            Assert.Contains("uv.lock",     files);
+        }
+
+        [Fact]
         public void GetCompanionFileNames_UnknownManifest_ReturnsEmptyArray()
         {
             var files = CompanionFileManager.GetCompanionFileNames("Dockerfile");
@@ -213,6 +221,24 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_realtime_tests.Util
                     Path.Combine(sourceDir, "go.mod"), targetDir);
 
                 Assert.True(File.Exists(Path.Combine(targetDir, "go.sum")));
+            }
+            finally { CleanupDir(sourceDir); CleanupDir(targetDir); }
+        }
+
+        [Fact]
+        public void CopyCompanionLockFiles_PyprojectToml_CopiesUvLock()
+        {
+            var sourceDir = CreateTempDir();
+            var targetDir = CreateTempDir();
+            try
+            {
+                File.WriteAllText(Path.Combine(sourceDir, "pyproject.toml"), "[project]");
+                File.WriteAllText(Path.Combine(sourceDir, "uv.lock"), "version = 1");
+
+                CompanionFileManager.CopyCompanionLockFiles(
+                    Path.Combine(sourceDir, "pyproject.toml"), targetDir);
+
+                Assert.True(File.Exists(Path.Combine(targetDir, "uv.lock")));
             }
             finally { CleanupDir(sourceDir); CleanupDir(targetDir); }
         }

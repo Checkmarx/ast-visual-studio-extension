@@ -151,5 +151,41 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
             Assert.False(module.ContainersRealtimeCheckBox);
             Assert.True(module.IacRealtimeCheckBox);
         }
+
+        [Fact]
+        public void McpAuthMode_DefaultsToOAuth()
+        {
+            var module = CreateModule();
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth, module.McpAuthMode);
+        }
+
+        [Fact]
+        public void McpAuthMode_CanBeSetToOAuth()
+        {
+            var module = CreateModule();
+            module.McpAuthMode = ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth;
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth, module.McpAuthMode);
+        }
+
+        [Fact]
+        public void GetMcpConnectionSettings_ReflectsModuleAuthMode()
+        {
+            var module = CreateModule();
+            module.McpAuthMode = ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth;
+
+            var settings = module.GetMcpConnectionSettings();
+
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth, settings.AuthMode);
+        }
+
+        [Fact]
+        public void GetMcpConnectionSettings_ByDefault_ReturnsOAuthMode()
+        {
+            var module = CreateModule();
+
+            var settings = module.GetMcpConnectionSettings();
+
+            Assert.Equal(ast_visual_studio_extension.CxPreferences.Configuration.McpAuthMode.OAuth, settings.AuthMode);
+        }
     }
 }

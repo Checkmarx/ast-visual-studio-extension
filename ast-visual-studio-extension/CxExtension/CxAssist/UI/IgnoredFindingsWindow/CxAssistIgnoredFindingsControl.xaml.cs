@@ -68,6 +68,21 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.IgnoredFindingsWin
             UnsubscribeVmEvents();
         }
 
+        /// <summary>
+        /// Permanently detaches this instance from the static <see cref="IgnoreFileManager.IgnoreDataChanged"/>
+        /// event. Must be called by the owning <c>CxWindowControl</c> when it is torn down (e.g. on logout,
+        /// when <c>Content</c> is swapped to a new instance) — NOT from <c>Unloaded</c>, since WPF's
+        /// <see cref="TabControl"/> fires Unloaded/Loaded on ordinary tab-switch virtualization and this
+        /// control intentionally stays subscribed across those cycles (see constructor comment). Without an
+        /// explicit call here, a torn-down instance remains a live subscriber forever: every future
+        /// ignore/revive also runs Refresh() against this invisible instance, and the visible tab's
+        /// badge/count only "catches up" whenever some unrelated event happens to reach the current one.
+        /// </summary>
+        public void DetachFromStaticEvents()
+        {
+            IgnoreFileManager.IgnoreDataChanged -= OnIgnoreDataChanged;
+        }
+
         private void OnThemeChanged()
         {
             if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(OnThemeChanged)); return; }
@@ -93,6 +108,13 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.IgnoredFindingsWin
         {
             try
             {
+                // Preserve checkbox selection across rebuilds — Refresh() runs on every
+                // IgnoreDataChanged event, so a fresh set of VMs must not silently clear
+                // what the user already checked (otherwise the "Risks selected" count and
+                // Select All state fall out of sync with what's visually checked).
+                var previouslySelectedKeys = new HashSet<string>(
+                    _items.Where(vm => vm.IsSelected).Select(vm => vm.Key), StringComparer.Ordinal);
+
                 var entries = IgnoreFileManager.GetAllEntries();
                 var rows = new List<IgnoredFindingViewModel>();
                 foreach (var kv in entries)
@@ -109,6 +131,7 @@ namespace ast_visual_studio_extension.CxExtension.CxAssist.UI.IgnoredFindingsWin
                     vm.CardIcon        = LoadCardIcon(entry.Type, entry.Severity);
                     vm.ReviveIcon      = GetCachedReviveIcon();
                     vm.FileIcon        = GetCachedFileIcon();
+                    vm.IsSelected      = previouslySelectedKeys.Contains(kv.Key);
                     rows.Add(vm);
                 }
 

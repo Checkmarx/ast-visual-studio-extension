@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
+using ast_visual_studio_extension.CxPreferences.Configuration;
+using ast_visual_studio_extension.CxWrapper.Models;
 using Microsoft.VisualStudio.Shell.Settings;
 
 namespace ast_visual_studio_extension.CxPreferences
@@ -16,6 +18,7 @@ namespace ast_visual_studio_extension.CxPreferences
     public class CxOneAssistSettingsModule : DialogPage
     {
         private static readonly string UserPreferencesCollection = "Checkmarx/CxAssist/UserPreferences";
+        private static readonly string McpConnectionCollection = "Checkmarx/CxAssist/McpConnection";
 
         /// <summary>
         /// Fired after Assist realtime-related settings are persisted (checkboxes, Apply, welcome dialog).
@@ -34,6 +37,20 @@ public bool AscaCheckBox { get; set; } = true;
         public bool McpEnabled { get; set; } = false;
         public bool McpStatusChecked { get; set; } = false;
         public bool WelcomeShown { get; set; } = false;
+
+        /// <summary>
+        /// User's chosen authentication mode for the MCP server entry in .mcp.json.
+        /// Independent of CLI authentication, which always uses the API key.
+        /// MCP connection settings are persisted to their own registry collection (not DialogPage
+        /// serialization) so "Install MCP" can commit them without applying the rest of the page.
+        /// </summary>
+        internal McpAuthMode McpAuthMode { get; set; } = McpAuthMode.OAuth;
+
+        internal McpConnectionSettings GetMcpConnectionSettings()
+            => new McpConnectionSettings(McpAuthMode);
+
+        // What the registry holds for the MCP connection; null until loaded or saved once.
+        private string _persistedMcpConnectionSignature;
 
         /// <summary>
         /// Product entitlement flags (cached during authentication). JetBrains: GlobalSettingsState DevAssist/OneAssist license.
@@ -69,6 +86,7 @@ public bool AscaCheckBox { get; set; } = true;
         {
             base.LoadSettingsFromStorage();
             LoadUserPreferencesFromRegistry();
+            LoadMcpConnectionSettingsFromRegistry();
             try
             {
                 CxOneAssistSettingsUI.GetInstance()?.RefreshCheckboxesFromModule();
@@ -87,12 +105,50 @@ public bool AscaCheckBox { get; set; } = true;
         /// <param name="e"></param>
         protected override void OnApply(PageApplyEventArgs e)
         {
+            CxOneAssistSettingsUI settingsUI = CxOneAssistSettingsUI.GetInstance();
+
+            string persistedMcpConnection = _persistedMcpConnectionSignature;
+
             // Flush UI → properties so serialization matches the Tools → Options surface (also marks page dirty via property updates when handlers ran).
-            CxOneAssistSettingsUI.GetInstance().ApplyUiToModule(this);
+            settingsUI.ApplyUiToModule(this);
             base.OnApply(e);
             // Treat OK/Apply on Assist page as the baseline for logout / next login (per-engine toggles).
             SaveCurrentSettingsAsUserPreferences();
             PersistSettings();
+
+            if (persistedMcpConnection != null && persistedMcpConnection != McpConnectionSignature)
+                ReinstallMcpInBackground();
+        }
+
+        private string McpConnectionSignature => GetSignature(GetMcpConnectionSettings());
+
+        private static string GetSignature(McpConnectionSettings settings) => settings.AuthMode.ToString();
+
+        /// <summary>
+        /// Rewrites the .mcp.json entry after the MCP connection settings changed on OK/Apply, so the change does not
+        /// wait for the next login. Silent: no browser sign-in and no session reset (Install MCP does those).
+        /// </summary>
+        private void ReinstallMcpInBackground()
+        {
+            if (!McpEnabled || !CxPreferencesUI.IsAuthenticated())
+                return;
+
+            CxConfig config = CxPreferencesUI.GetCxConfigFromPackage(GetOwnerPackage());
+            if (string.IsNullOrWhiteSpace(config?.ApiKey))
+                return;
+
+            McpConnectionSettings connectionSettings = GetMcpConnectionSettings();
+            _ = System.Threading.Tasks.Task.Run(async () =>
+            {
+                try
+                {
+                    await new McpInstallService().InstallSilentlyAsync(config, connectionSettings, typeof(CxOneAssistSettingsModule));
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"MCP reinstall after settings change failed: {ex.Message}");
+                }
+            });
         }
 
         /// <summary>
@@ -103,6 +159,7 @@ public bool AscaCheckBox { get; set; } = true;
         {
             SaveSettingsToStorage();
             SaveUserPreferencesToRegistry();
+            SaveMcpConnectionSettingsToRegistry();
 
             // Sync scanner enabled/disabled state BEFORE firing the event so ClearFindingsFromDisabledScanners() has current state
             CxAssistConstants.SetScannerEnabled(ScannerType.ASCA, AscaCheckBox);
@@ -231,6 +288,57 @@ public bool AscaCheckBox { get; set; } = true;
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to load user preferences from registry: {ex.Message}");
+            }
+        }
+
+        internal void SaveMcpConnectionSettingsToRegistry()
+            => SaveMcpConnectionSettingsToRegistry(GetMcpConnectionSettings());
+
+        internal void SaveMcpConnectionSettingsToRegistry(McpConnectionSettings settings)
+        {
+            try
+            {
+                var package = GetOwnerPackage() as AsyncPackage;
+                if (package == null)
+                    return;
+
+                var settingsManager = new ShellSettingsManager(package);
+                var userSettingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+                if (!userSettingsStore.CollectionExists(McpConnectionCollection))
+                    userSettingsStore.CreateCollection(McpConnectionCollection);
+
+                userSettingsStore.SetString(McpConnectionCollection, "McpAuthMode", settings.AuthMode.ToString());
+                _persistedMcpConnectionSignature = GetSignature(settings);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save MCP connection settings to registry: {ex.Message}");
+            }
+        }
+
+        private void LoadMcpConnectionSettingsFromRegistry()
+        {
+            try
+            {
+                var package = GetOwnerPackage() as AsyncPackage;
+                if (package == null)
+                    return;
+
+                var settingsManager = new ShellSettingsManager(package);
+                var readOnlyStore = settingsManager.GetReadOnlySettingsStore(SettingsScope.UserSettings);
+
+                if (readOnlyStore.CollectionExists(McpConnectionCollection))
+                {
+                    string authMode = readOnlyStore.GetString(McpConnectionCollection, "McpAuthMode", nameof(McpAuthMode.OAuth));
+                    McpAuthMode = Enum.TryParse(authMode, out McpAuthMode parsed) ? parsed : McpAuthMode.OAuth;
+                }
+
+                _persistedMcpConnectionSignature = McpConnectionSignature;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load MCP connection settings from registry: {ex.Message}");
             }
         }
     }
