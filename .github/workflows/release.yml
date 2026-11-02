@@ -31,6 +31,9 @@ on:
         description: 'Version of the CLI to bundle'
         required: false
         type: string
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
@@ -113,6 +116,30 @@ jobs:
           manifest="ast-visual-studio-extension/source.extension.vsixmanifest"
           sed -i "s/\(Identity[^>]*Version=\"\)[^\"]*\"/\1$version\"/" "$manifest"
           echo "Updated VSIX version to $version"
+
+      - name: Configure Echo NuGet feed
+        shell: pwsh
+        env:
+          ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
+        run: |
+          # Echo authenticates with a blank username; NuGet rejects an empty one, so a single space is used
+          $nugetDir = Join-Path $env:APPDATA "NuGet"
+          New-Item -ItemType Directory -Force -Path $nugetDir | Out-Null
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="echo" value="https://nuget.echohq.com/index.json" />
+            </packageSources>
+            <packageSourceCredentials>
+              <echo>
+                <add key="Username" value=" " />
+                <add key="ClearTextPassword" value="$env:ECHO_LIBRARIES_ACCESS_KEY" />
+              </echo>
+            </packageSourceCredentials>
+          </configuration>
+          "@ | Set-Content -Path (Join-Path $nugetDir "NuGet.Config") -Encoding utf8
 
       - name: Restore NuGet packages
         run: msbuild -t:restore
