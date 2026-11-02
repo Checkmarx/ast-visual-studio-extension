@@ -34,6 +34,30 @@ jobs:
           dotnet-version: '6.0.x'
           include-prerelease: false
 
+      - name: Configure Echo NuGet feed
+        shell: pwsh
+        env:
+          ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
+        run: |
+          # Echo authenticates with a blank username; NuGet rejects an empty one, so a single space is used
+          $nugetDir = Join-Path $env:APPDATA "NuGet"
+          New-Item -ItemType Directory -Force -Path $nugetDir | Out-Null
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="echo" value="https://nuget.echohq.com/index.json" />
+            </packageSources>
+            <packageSourceCredentials>
+              <echo>
+                <add key="Username" value=" " />
+                <add key="ClearTextPassword" value="$env:ECHO_LIBRARIES_ACCESS_KEY" />
+              </echo>
+            </packageSourceCredentials>
+          </configuration>
+          "@ | Set-Content -Path (Join-Path $nugetDir "NuGet.Config") -Encoding utf8
+
       - name: Restore NuGet packages
         run: nuget restore .
 
