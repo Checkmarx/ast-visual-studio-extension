@@ -31,9 +31,6 @@ on:
         description: 'Version of the CLI to bundle'
         required: false
         type: string
-    secrets:
-      ECHO_LIBRARIES_ACCESS_KEY:
-        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
@@ -122,9 +119,15 @@ jobs:
         env:
           ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
         run: |
+          if ([string]::IsNullOrEmpty($env:ECHO_LIBRARIES_ACCESS_KEY)) {
+            Write-Error "ECHO_LIBRARIES_ACCESS_KEY is not set (fork or Dependabot PR?)"
+            exit 1
+          }
+          # Escape so keys containing & < " ' do not break the XML
+          $key = [System.Security.SecurityElement]::Escape($env:ECHO_LIBRARIES_ACCESS_KEY)
+          # Kept in RUNNER_TEMP (not the global %APPDATA% config) so it is isolated per job and removed afterwards
+          $cfg = Join-Path $env:RUNNER_TEMP "echo.NuGet.Config"
           # Echo authenticates with a blank username; NuGet rejects an empty one, so a single space is used
-          $nugetDir = Join-Path $env:APPDATA "NuGet"
-          New-Item -ItemType Directory -Force -Path $nugetDir | Out-Null
           @"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
@@ -135,17 +138,23 @@ jobs:
             <packageSourceCredentials>
               <echo>
                 <add key="Username" value=" " />
-                <add key="ClearTextPassword" value="$env:ECHO_LIBRARIES_ACCESS_KEY" />
+                <add key="ClearTextPassword" value="$key" />
               </echo>
             </packageSourceCredentials>
           </configuration>
-          "@ | Set-Content -Path (Join-Path $nugetDir "NuGet.Config") -Encoding utf8
+          "@ | Set-Content -Path $cfg -Encoding utf8
+          "ECHO_NUGET_CONFIG=$cfg" | Add-Content -Path $env:GITHUB_ENV -Encoding utf8
 
       - name: Restore NuGet packages
-        run: msbuild -t:restore
+        run: msbuild -t:restore /p:RestoreConfigFile="$env:ECHO_NUGET_CONFIG"
       
       - name: Build
         run: msbuild .\ast-visual-studio-extension\ast-visual-studio-extension.csproj /p:Configuration=Release /p:DeployExtension=False
+
+      - name: Remove Echo NuGet config
+        if: always()
+        shell: pwsh
+        run: Remove-Item -Force -ErrorAction SilentlyContinue "$env:ECHO_NUGET_CONFIG"
 
       - name: Create Release
         uses: step-security/action-gh-release@277bfa82abcfdb73e5bbb19e213fd76532ee2be5 # v3.0.0
