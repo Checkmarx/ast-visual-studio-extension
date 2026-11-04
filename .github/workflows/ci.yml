@@ -20,8 +20,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
+      # darenm/Setup-VSTest is blocked by the org StepSecurity actions policy; locate vstest from the installed VS instead
+      - name: Add VSTest to PATH
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          $vstest = & $vswhere -latest -products * -requires Microsoft.VisualStudio.PackageGroup.TestTools.Core `
+            -find "Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" | Select-Object -First 1
+          if (-not $vstest) {
+            Write-Error "vstest.console.exe not found"
+            exit 1
+          }
+          Split-Path $vstest | Add-Content -Path $env:GITHUB_PATH -Encoding utf8
 
       - name: Add MSBuild to PATH
         uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
