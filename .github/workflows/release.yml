@@ -154,7 +154,11 @@ jobs:
       - name: Remove Echo NuGet config
         if: always()
         shell: pwsh
-        run: Remove-Item -Force -ErrorAction SilentlyContinue "$env:ECHO_NUGET_CONFIG"
+        run: |
+          # ECHO_NUGET_CONFIG is unset when an earlier step failed before the feed was configured
+          if ($env:ECHO_NUGET_CONFIG) {
+            Remove-Item -Force -ErrorAction SilentlyContinue $env:ECHO_NUGET_CONFIG
+          }
 
       - name: Create Release
         uses: step-security/action-gh-release@277bfa82abcfdb73e5bbb19e213fd76532ee2be5 # v3.0.0
