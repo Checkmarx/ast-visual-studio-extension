@@ -38,12 +38,12 @@ jobs:
         with:
           vs-version: '17.2'
           
-      # Avoids downloading from aka.ms (blocked/unreliable on the runner) when the image already ships .NET 6
-      - name: Check for .NET 6.0 Windows Desktop Runtime
+      # Avoids downloading from aka.ms (blocked by the runner egress policy); the image ships newer Windows Desktop runtimes
+      - name: Check for .NET 6.0+ Windows Desktop Runtime
         id: dotnet6
         shell: pwsh
         run: |
-          $found = (dotnet --list-runtimes 2>$null) -match '^Microsoft\.WindowsDesktop\.App 6\.0\.'
+          $found = (dotnet --list-runtimes 2>$null) -match '^Microsoft\.WindowsDesktop\.App (?:[6-9]|\d{2,})\.'
           "installed=$([bool]$found)".ToLower() | Add-Content -Path $env:GITHUB_OUTPUT -Encoding utf8
           dotnet --list-runtimes
 
@@ -97,6 +97,8 @@ jobs:
       - name: Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
+          # Lets the net6.0-windows test host run on a newer installed Windows Desktop runtime
+          DOTNET_ROLL_FORWARD: Major
         run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
 
       - name: Remove Echo NuGet config
