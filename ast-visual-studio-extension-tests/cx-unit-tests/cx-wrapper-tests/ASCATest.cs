@@ -11,7 +11,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         private readonly string TEST_DATA_PATH = "test-data";
 
 
-        [Fact]
+        [Fact(Skip = "Requires cx.exe network access, blocked by CI egress policy (AST-189414)")]
         public void TestInstallAsca()
         {
             CxAsca result = cxWrapper.ScanAsca(
@@ -23,7 +23,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
         }
         
 
-        [Fact]
+        [Fact(Skip = "Requires cx.exe network access, blocked by CI egress policy (AST-189414)")]
         public void TestScanAsca_PYVulnerable()
         {
             // Arrange
@@ -41,7 +41,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.True(result.ScanDetails.Count > 0, "Should find at least one vulnerability");
         }
 
-        [Fact]
+        [Fact(Skip = "Requires cx.exe network access, blocked by CI egress policy (AST-189414)")]
         public void TestScanAsca_NoExtension()
         {
             // Arrange
@@ -59,7 +59,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_wrapper_tests
             Assert.Equal("The file name must have an extension.", result.Error.Description);
         }
 
-        [Fact]
+        [Fact(Skip = "Requires cx.exe network access, blocked by CI egress policy (AST-189414)")]
         public void TestScanAsca_CSharpClean()
         {
             // Arrange
