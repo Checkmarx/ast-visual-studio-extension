@@ -10,6 +10,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
     /// Unit tests for CxAssistDisplayCoordinator (per-file issue storage, lookup, events).
     /// Only tests pure logic (storage, lookup, events); buffer-dependent methods are tested via integration tests.
     /// </summary>
+    [Collection("Static State Collection")]
     public class CxAssistDisplayCoordinatorTests
     {
         /// <summary>

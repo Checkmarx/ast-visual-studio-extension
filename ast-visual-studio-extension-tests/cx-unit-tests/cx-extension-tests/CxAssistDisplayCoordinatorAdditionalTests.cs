@@ -12,6 +12,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
     /// Also covers GetCachedVulnerabilitiesForFile.
     /// Note: UpdateFindings requires an ITextBuffer (VS editor type) and is covered by integration tests.
     /// </summary>
+    [Collection("Static State Collection")]
     public class CxAssistDisplayCoordinatorAdditionalTests
     {
         private static Vulnerability MakeVuln(string id, string filePath, int line = 1,

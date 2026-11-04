@@ -337,8 +337,15 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
             Assert.Contains("pom.xml", patterns);
             Assert.Contains("package.json", patterns);
             Assert.Contains("requirements.txt", patterns);
+            Assert.Contains("bower.json", patterns);
+            Assert.Contains("constraints.txt", patterns);
+            Assert.Contains("pyproject.toml", patterns);
+            Assert.Contains("setup.cfg", patterns);
+            Assert.Contains("setup.py", patterns);
             Assert.Contains("go.mod", patterns);
-            Assert.Equal(6, patterns.Count);
+            Assert.Contains("Gemfile", patterns);
+            Assert.Contains("composer.json", patterns);
+            Assert.Equal(13, patterns.Count);
         }
 
         [Fact]

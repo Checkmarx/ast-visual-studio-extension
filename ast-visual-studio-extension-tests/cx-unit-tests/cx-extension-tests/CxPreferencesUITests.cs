@@ -8,6 +8,7 @@ using Xunit;
 
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
 {
+    [Collection("Static State Collection")]
     public class CxPreferencesUITests
     {
         private static CxPreferencesModule CreateModule()
