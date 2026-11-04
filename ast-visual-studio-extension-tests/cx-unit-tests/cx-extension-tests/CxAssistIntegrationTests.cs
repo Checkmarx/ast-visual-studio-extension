@@ -8,6 +8,7 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 using ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow;
 
+
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
 {
     /// <summary>
