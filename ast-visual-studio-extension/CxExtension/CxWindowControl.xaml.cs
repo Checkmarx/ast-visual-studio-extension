@@ -304,6 +304,12 @@ namespace ast_visual_studio_extension.CxExtension
             if (!CxPreferencesUI.IsAuthenticated())
             {
                 CxPreferencesUI.AuthStateChanged -= OnAuthStateChanged;
+                // This instance (and its child CxAssistIgnoredFindingsControl) is being replaced —
+                // detach from static events now, otherwise both keep receiving IgnoreDataChanged/
+                // CountChanged forever and the next login's Ignored Findings badge only updates
+                // whenever some unrelated event happens to reach the new, currently-visible instance.
+                ast_visual_studio_extension.CxExtension.CxAssist.UI.IgnoredFindingsWindow.CxAssistIgnoredFindingsControl.CountChanged -= OnIgnoredCountChanged;
+                IgnoredFindingsControl?.DetachFromStaticEvents();
                 _ = UnregisterRealtimeScannersOnLogoutAsync();
                 Content = new CxInitialPanel(package);
 
