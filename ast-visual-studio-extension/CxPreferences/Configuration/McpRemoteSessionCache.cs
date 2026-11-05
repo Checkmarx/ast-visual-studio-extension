@@ -17,6 +17,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
     internal class McpRemoteSessionCache
     {
         private const string TOKENS_FILE_PATTERN = "*_tokens.json";
+        private const string CLIENT_INFO_FILE_PATTERN = "*_client_info.json";
 
         private readonly string _authRoot;
 
@@ -80,7 +81,116 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             return RemoveTokenFiles(mcpUrl, tokensJson => IsSessionExpired(tokensJson, now));
         }
 
+        /// <summary>
+        /// Removes the cached DCR client registration (and the half-finished sign-in files stored with it) of the
+        /// tenant. mcp-remote reuses that registration forever; when the server no longer knows the client the
+        /// browser stops at "Client not found" and no sign-in can complete until a new client is registered.
+        /// The files are named after a hash, so the entry is matched on the issuer stored in client_info.
+        /// </summary>
+        /// <returns>The number of cached registrations removed.</returns>
+        public virtual int ClearClientRegistration(string mcpUrl)
+        {
+            if (!TryGetTenant(mcpUrl, out string tenant) || !Directory.Exists(_authRoot))
+                return 0;
+
+            int removed = 0;
+
+            try
+            {
+                foreach (string versionDir in Directory.GetDirectories(_authRoot, "mcp-remote-*"))
+                {
+                    foreach (string clientInfoFile in Directory.GetFiles(versionDir, CLIENT_INFO_FILE_PATTERN))
+                    {
+                        if (!ClientInfoBelongsToTenant(File.ReadAllText(clientInfoFile), tenant))
+                            continue;
+
+                        string prefix = Path.GetFileName(clientInfoFile)
+                            .Substring(0, Path.GetFileName(clientInfoFile).Length - "client_info.json".Length);
+                        foreach (string stale in Directory.GetFiles(versionDir, prefix + "code_verifier_*.txt"))
+                            File.Delete(stale);
+
+                        File.Delete(clientInfoFile);
+                        removed++;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                // Best effort, like the token cleanup.
+                System.Diagnostics.Debug.WriteLine($"Failed to clear cached MCP OAuth client registration: {ex.Message}");
+            }
+
+            return removed;
+        }
+
+        internal static bool ClientInfoBelongsToTenant(string clientInfoJson, string tenant)
+        {
+            try
+            {
+                string issuer = JObject.Parse(clientInfoJson).Value<string>("issuer");
+                if (!Uri.TryCreate(issuer, UriKind.Absolute, out Uri issuerUri))
+                    return false;
+
+                string[] segments = issuerUri.Segments.Select(s => s.Trim('/')).ToArray();
+                int realmsIndex = Array.IndexOf(segments, "realms");
+                return realmsIndex >= 0 && realmsIndex + 1 < segments.Length
+                    && string.Equals(segments[realmsIndex + 1], tenant, StringComparison.Ordinal);
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// True when a cached session for the tenant can still work (access or refresh token known not to be expired),
+        /// so no browser sign-in is needed. When <paramref name="writtenAfterUtc"/> is given, only a token file
+        /// written after that moment counts, which is how a just-completed sign-in is recognised.
+        /// </summary>
+        public virtual bool HasValidSession(string mcpUrl, DateTime? writtenAfterUtc = null)
+        {
+            if (!TryGetTenant(mcpUrl, out string tenant) || !Directory.Exists(_authRoot))
+                return false;
+
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+
+            try
+            {
+                foreach (string versionDir in Directory.GetDirectories(_authRoot, "mcp-remote-*"))
+                {
+                    foreach (string tokensFile in Directory.GetFiles(versionDir, TOKENS_FILE_PATTERN))
+                    {
+                        if (writtenAfterUtc != null && File.GetLastWriteTimeUtc(tokensFile) <= writtenAfterUtc.Value)
+                            continue;
+
+                        string tokensJson = File.ReadAllText(tokensFile);
+                        if (BelongsToTenant(tokensJson, tenant) && IsSessionUsable(tokensJson, now))
+                            return true;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                // A token file mid-write by mcp-remote; the caller polls again.
+                System.Diagnostics.Debug.WriteLine($"Failed to read cached MCP OAuth tokens: {ex.Message}");
+            }
+
+            return false;
+        }
+
         internal static bool IsSessionExpired(string tokensJson, DateTimeOffset now)
+            => GetSessionState(tokensJson, now) == SessionState.Expired;
+
+        /// <summary>
+        /// True only when a token is known to be unexpired. A session whose expiry cannot be read is not trusted
+        /// here (the browser sign-in runs), although <see cref="IsSessionExpired"/> does not delete it either.
+        /// </summary>
+        internal static bool IsSessionUsable(string tokensJson, DateTimeOffset now)
+            => GetSessionState(tokensJson, now) == SessionState.Usable;
+
+        private enum SessionState { Usable, Expired, Unknown }
+
+        private static SessionState GetSessionState(string tokensJson, DateTimeOffset now)
         {
             JObject tokens;
             try
@@ -89,7 +199,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             }
             catch (JsonException)
             {
-                return false;
+                return SessionState.Unknown;
             }
 
             DateTimeOffset? accessExpiry = TryGetJwtExpiry(tokens.Value<string>("access_token"));
@@ -97,15 +207,18 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
             if (accessExpiry == null && expiresAtMs != null)
                 accessExpiry = DateTimeOffset.FromUnixTimeMilliseconds(expiresAtMs.Value);
 
-            if (accessExpiry == null || accessExpiry > now)
-                return false;
+            if (accessExpiry > now)
+                return SessionState.Usable;
 
             string refreshToken = tokens.Value<string>("refresh_token");
             if (string.IsNullOrEmpty(refreshToken))
-                return true;
+                return accessExpiry == null ? SessionState.Unknown : SessionState.Expired;
 
             DateTimeOffset? refreshExpiry = TryGetJwtExpiry(refreshToken);
-            return refreshExpiry != null && refreshExpiry <= now;
+            if (refreshExpiry == null)
+                return SessionState.Unknown;
+
+            return refreshExpiry > now ? SessionState.Usable : SessionState.Expired;
         }
 
         private static DateTimeOffset? TryGetJwtExpiry(string jwt)

@@ -1,3 +1,4 @@
+using System;
 using ast_visual_studio_extension.CxPreferences;
 using System.Runtime.Serialization;
 using Xunit;
@@ -44,7 +45,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         public void ApiKey_CanBeSet()
         {
             var module = CreateModule();
-            string testKey = "placeholder";
+            string testKey = Guid.NewGuid().ToString("N");
             module.ApiKey = testKey;
             Assert.Equal(testKey, module.ApiKey);
         }
@@ -69,7 +70,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         public void GetCxConfig_ReturnsConfigWithApiKeyAndParameters()
         {
             var module = CreateModule();
-            string testKey = "test-key";
+            string testKey = Guid.NewGuid().ToString("N");
             string testParams = "--test";
             module.ApiKey = testKey;
             module.AdditionalParameters = testParams;
