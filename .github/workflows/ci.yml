@@ -20,25 +20,76 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 #v1
+      # darenm/Setup-VSTest is blocked by the org StepSecurity actions policy; locate vstest from the installed VS instead
+      - name: Add VSTest to PATH
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          $vstest = & $vswhere -latest -products * -requires Microsoft.VisualStudio.PackageGroup.TestTools.Core `
+            -find "Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe" | Select-Object -First 1
+          if (-not $vstest) {
+            Write-Error "vstest.console.exe not found"
+            exit 1
+          }
+          Split-Path $vstest | Add-Content -Path $env:GITHUB_PATH -Encoding utf8
 
       - name: Add MSBuild to PATH
         uses: step-security/setup-msbuild@f01243490939309baa8e659042bec579fa10db95 # v2.0.1
         with:
           vs-version: '17.2'
           
+      # Avoids downloading from aka.ms (blocked by the runner egress policy); the image ships newer Windows Desktop runtimes
+      - name: Check for .NET 6.0+ Windows Desktop Runtime
+        id: dotnet6
+        shell: pwsh
+        run: |
+          $found = (dotnet --list-runtimes 2>$null) -match '^Microsoft\.WindowsDesktop\.App (?:[6-9]|\d{2,})\.'
+          "installed=$([bool]$found)".ToLower() | Add-Content -Path $env:GITHUB_OUTPUT -Encoding utf8
+          dotnet --list-runtimes
+
       - name: Install .NET 6.0 Windows Desktop Runtime
+        if: steps.dotnet6.outputs.installed != 'true'
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: '6.0.x'
           include-prerelease: false
 
+      - name: Configure Echo NuGet feed
+        shell: pwsh
+        env:
+          ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
+        run: |
+          if ([string]::IsNullOrEmpty($env:ECHO_LIBRARIES_ACCESS_KEY)) {
+            Write-Error "ECHO_LIBRARIES_ACCESS_KEY is not set (fork or Dependabot PR?)"
+            exit 1
+          }
+          # Escape so keys containing & < " ' do not break the XML
+          $key = [System.Security.SecurityElement]::Escape($env:ECHO_LIBRARIES_ACCESS_KEY)
+          # Kept in RUNNER_TEMP (not the global %APPDATA% config) so it is isolated per job and removed afterwards
+          $cfg = Join-Path $env:RUNNER_TEMP "echo.NuGet.Config"
+          # Echo authenticates with a blank username; NuGet rejects an empty one, so a single space is used
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="echo" value="https://nuget.echohq.com/index.json" />
+            </packageSources>
+            <packageSourceCredentials>
+              <echo>
+                <add key="Username" value=" " />
+                <add key="ClearTextPassword" value="$key" />
+              </echo>
+            </packageSourceCredentials>
+          </configuration>
+          "@ | Set-Content -Path $cfg -Encoding utf8
+          "ECHO_NUGET_CONFIG=$cfg" | Add-Content -Path $env:GITHUB_ENV -Encoding utf8
+
       - name: Restore NuGet packages
-        run: nuget restore .
+        run: nuget restore . -ConfigFile "$env:ECHO_NUGET_CONFIG"
 
       - name: Restore
-        run: dotnet restore . 
+        run: dotnet restore . --configfile "$env:ECHO_NUGET_CONFIG"
       
       - name: Build
         run: msbuild /p:Configuration=Release /p:DeployExtension=False
@@ -46,6 +97,15 @@ jobs:
       - name: Tests
         env:
           CX_APIKEY: ${{ secrets.CX_APIKEY }}
+          # Lets the net6.0-windows test host run on a newer installed Windows Desktop runtime
+          DOTNET_ROLL_FORWARD: Major
         run: vstest.console.exe /InIsolation .\ast-visual-studio-extension-tests\bin\Release\net60-windows\ast-visual-studio-extension-tests.dll
-        
-       
+
+      - name: Remove Echo NuGet config
+        if: always()
+        shell: pwsh
+        run: |
+          # ECHO_NUGET_CONFIG is unset when an earlier step failed before the feed was configured
+          if ($env:ECHO_NUGET_CONFIG) {
+            Remove-Item -Force -ErrorAction SilentlyContinue $env:ECHO_NUGET_CONFIG
+          }

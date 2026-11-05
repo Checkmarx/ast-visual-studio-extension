@@ -12,6 +12,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
     /// Unit tests for <see cref="IgnoreManager"/> — per-scanner add + isIgnored matching, addAll expansion,
     /// revive flow. Each test owns a temp solution root.
     /// </summary>
+    [Collection("Static State Collection")]
     public class IgnoreManagerTests : IDisposable
     {
         private readonly string _root;

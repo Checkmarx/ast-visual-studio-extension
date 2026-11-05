@@ -8,12 +8,14 @@ using ast_visual_studio_extension.CxExtension.CxAssist.Core.Models;
 using ast_visual_studio_extension.CxExtension.CxAssist.Core.Prompts;
 using ast_visual_studio_extension.CxExtension.CxAssist.UI.FindingsWindow;
 
+
 namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
 {
     /// <summary>
     /// Integration tests for CxAssist: multi-component flows (MockData → TreeBuilder → Coordinator, Prompts).
     /// No VS or WPF required; tests use in-memory APIs only.
     /// </summary>
+    [Collection("Static State Collection")]
     public class CxAssistIntegrationTests
     {
         private static void ClearCoordinator()

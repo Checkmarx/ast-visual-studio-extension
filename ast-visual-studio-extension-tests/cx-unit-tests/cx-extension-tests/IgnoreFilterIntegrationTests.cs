@@ -14,6 +14,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
     /// Integration tests that drive the ignore pipeline end-to-end through <see cref="CxAssistDisplayCoordinator"/>:
     /// scanner posts findings → coordinator filters via <see cref="IgnoreManager"/> → revive resurfaces filtered findings.
     /// </summary>
+    [Collection("Static State Collection")]
     public class IgnoreFilterIntegrationTests : IDisposable
     {
         private readonly string _root;
