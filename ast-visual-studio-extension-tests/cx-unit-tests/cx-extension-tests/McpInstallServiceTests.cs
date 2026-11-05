@@ -189,11 +189,24 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         [Theory]
         [InlineData("https://eu.ast.checkmarx.net/a&calc", "cx_seg")]
         [InlineData("https://eu.ast.checkmarx.net/a%20b", "cx_seg")]
-        [InlineData("https://user:pw@eu.ast.checkmarx.net", "cx_seg")]
         [InlineData("https://eu.ast.checkmarx.net", "t&x")]
         public void TryValidateOAuthOverrides_RejectsCommandLineUnsafeInput(string serverUrl, string tenant)
         {
             Assert.False(McpInstallService.TryValidateOAuthOverrides(serverUrl, tenant, out string error));
+            Assert.NotNull(error);
+        }
+
+        [Fact]
+        public void TryValidateOAuthOverrides_RejectsUrlWithUserInfo()
+        {
+            // Built at runtime so no credential-bearing URL literal lives in source control
+            string serverUrl = new UriBuilder(Uri.UriSchemeHttps, "eu.ast.checkmarx.net")
+            {
+                UserName = "user",
+                Password = Guid.NewGuid().ToString("N")
+            }.Uri.ToString();
+
+            Assert.False(McpInstallService.TryValidateOAuthOverrides(serverUrl, "cx_seg", out string error));
             Assert.NotNull(error);
         }
 
