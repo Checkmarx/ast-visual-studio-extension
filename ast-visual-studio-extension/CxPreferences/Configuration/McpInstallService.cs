@@ -10,6 +10,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
     internal class McpInstallService
     {
         private const string MCP_PATH = "/api/security-mcp/mcp";
+        private const string DEV_MCP_BASE_URL = "https://ast-master-components.dev.cxast.net";
 
         private static readonly Regex TenantPattern = new Regex(@"^[A-Za-z0-9][A-Za-z0-9._-]*$");
         private static readonly Regex SafeAuthorityPattern = new Regex(@"^[A-Za-z0-9.-]+(:[0-9]{1,5})?$");
@@ -254,7 +255,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
 
                 // The IAM host does not serve MCP (404); map it the same way as OAuth mode. The API-key entry
                 // keeps the base endpoint, which accepts API keys.
-                return issuerUri.Scheme + "://" + ResolveMcpAuthority(issuerUri.Authority) + MCP_PATH;
+                return ResolveMcpBaseUrl(issuerUri) + MCP_PATH;
             }
             catch
             {
@@ -288,7 +289,7 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
                 Uri issuerUri = TryGetIssuerUri(apiKey);
                 if (issuerUri != null)
                 {
-                    serverBase ??= issuerUri.Scheme + "://" + ResolveMcpAuthority(issuerUri.Authority);
+                    serverBase ??= ResolveMcpBaseUrl(issuerUri);
                     resolvedTenant ??= TryGetRealm(issuerUri);
                 }
             }
@@ -399,21 +400,27 @@ namespace ast_visual_studio_extension.CxPreferences.Configuration
         }
 
         /// <summary>
-        /// Maps the IAM host to the host that serves the security MCP endpoint (the IAM host itself returns 404).
-        /// On Checkmarx cloud environments (&lt;env&gt;.cxast.net) the MCP endpoint is served from the
-        /// "ast-master-components" host in place of the IAM host (e.g.
-        /// iam-dev.dev.cxast.net -&gt; ast-master-components.dev.cxast.net). A naive "iam" -&gt; "ast"
-        /// label swap yields ast-dev.dev.cxast.net, which does not resolve in DNS. Other environments swap
-        /// the "iam" DNS label wherever it sits (iam.checkmarx.net -&gt; ast.checkmarx.net,
-        /// eu.iam.checkmarx.net -&gt; eu.ast.checkmarx.net).
+        /// Maps the JWT issuer to the base URL that serves the security MCP endpoint (the IAM host itself returns 404).
+        /// <list type="bullet">
+        /// <item>Dev/staging IAM ("iam-dev", Checkmarx internal): the dev MCP backend
+        /// (ast-master-components.dev.cxast.net). The multi-tenant rewrite and the single-tenant fallback
+        /// would otherwise produce a non-existent dev host.</item>
+        /// <item>Multi-tenant ("iam.checkmarx.*"): iam.checkmarx.net -&gt; ast.checkmarx.net,
+        /// eu.iam.checkmarx.net -&gt; eu.ast.checkmarx.net.</item>
+        /// <item>Single-tenant: the issuer hostname is the API base.</item>
+        /// </list>
         /// </summary>
-        private static string ResolveMcpAuthority(string authority)
+        private static string ResolveMcpBaseUrl(Uri issuerUri)
         {
-            Match cxastMatch = Regex.Match(authority, @"^iam(?:-[^.]+)?\.(?<envAndDomain>[^.]+\.cxast\.net)$", RegexOptions.IgnoreCase);
-            if (cxastMatch.Success)
-                return "ast-master-components." + cxastMatch.Groups["envAndDomain"].Value;
+            string hostname = issuerUri.Host;
 
-            return IamLabelPattern.Replace(authority, "${prefix}ast", 1);
+            if (hostname.IndexOf("iam-dev", StringComparison.OrdinalIgnoreCase) >= 0)
+                return DEV_MCP_BASE_URL;
+
+            if (hostname.IndexOf("iam.checkmarx", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "https://" + IamLabelPattern.Replace(hostname, "${prefix}ast", 1);
+
+            return "https://" + hostname;
         }
 
         /// <summary>
