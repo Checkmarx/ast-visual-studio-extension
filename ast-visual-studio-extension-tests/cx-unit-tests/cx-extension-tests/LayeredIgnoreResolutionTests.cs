@@ -14,6 +14,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
     /// 2. Repository root (.vs/.checkmarxIgnored)
     /// 3. Windows Registry (user-level)
     /// </summary>
+    [Collection("Static State Collection")]
     public class LayeredIgnoreResolutionTests : IDisposable
     {
         private readonly string _root;

@@ -12,6 +12,7 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_tests
     /// Unit tests for <see cref="IgnoreFileManager"/> — file lifecycle, normalize path, upsert merge,
     /// revive flag flip. Each test gets a fresh temp directory so the FileSystemWatcher binding doesn't leak.
     /// </summary>
+    [Collection("Static State Collection")]
     public class IgnoreFileManagerTests : IDisposable
     {
         private readonly string _root;
