@@ -72,12 +72,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Fact]
-        public void ResolveMcpUrl_WithIamPrefix_ReplaceWithAst()
+        public void ResolveMcpUrl_WithSingleTenantIssuer_UsesIssuerHostAsIs()
         {
             string payload = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"iss\":\"https://iam.example.com\"}"));
             string token = "header." + payload.TrimEnd('=').Replace('+', '-').Replace('/', '_') + ".signature";
             var url = McpInstallService.ResolveMcpUrl(token);
-            Assert.Contains("ast.example.com", url);
+            Assert.Equal("https://iam.example.com/api/security-mcp/mcp", url);
         }
 
         [Fact]
@@ -104,8 +104,12 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         }
 
         [Theory]
-        [InlineData("https://iam.tenant.net/path", "https://ast.tenant.net/api/security-mcp/mcp")]
-        [InlineData("http://iam.local:8080", "http://ast.local:8080/api/security-mcp/mcp")]
+        [InlineData("https://iam.checkmarx.net/path", "https://ast.checkmarx.net/api/security-mcp/mcp")]
+        [InlineData("https://us.iam.checkmarx.net", "https://us.ast.checkmarx.net/api/security-mcp/mcp")]
+        [InlineData("https://iam-dev.staging.cxast.net/auth/realms/x", "https://ast-master-components.dev.cxast.net/api/security-mcp/mcp")]
+        [InlineData("https://customer.cxone.cloud/auth/realms/x", "https://customer.cxone.cloud/api/security-mcp/mcp")]
+        [InlineData("https://iam.tenant.net/path", "https://iam.tenant.net/api/security-mcp/mcp")]
+        [InlineData("http://iam.local:8080", "https://iam.local/api/security-mcp/mcp")]
         public void ResolveMcpUrl_WithDifferentIssuers_ConstructsCorrectUrl(string issuer, string expectedUrl)
         {
             string payload = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{{\"iss\":\"{issuer}\"}}"));
