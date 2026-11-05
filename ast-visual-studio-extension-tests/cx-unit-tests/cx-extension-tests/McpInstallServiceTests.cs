@@ -199,12 +199,8 @@ namespace ast_visual_studio_extension_tests.cx_unit_tests.cx_extension_test
         [Fact]
         public void TryValidateOAuthOverrides_RejectsUrlWithUserInfo()
         {
-            // Built at runtime so no credential-bearing URL literal lives in source control
-            string serverUrl = new UriBuilder(Uri.UriSchemeHttps, "eu.ast.checkmarx.net")
-            {
-                UserName = "user",
-                Password = Guid.NewGuid().ToString("N")
-            }.Uri.ToString();
+            // Any userinfo is rejected, so a username alone covers it without a credential in source
+            string serverUrl = new UriBuilder(Uri.UriSchemeHttps, "eu.ast.checkmarx.net") { UserName = "user" }.Uri.ToString();
 
             Assert.False(McpInstallService.TryValidateOAuthOverrides(serverUrl, "cx_seg", out string error));
             Assert.NotNull(error);
