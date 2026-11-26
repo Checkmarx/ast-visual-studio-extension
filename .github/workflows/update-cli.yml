@@ -15,17 +15,29 @@ jobs:
   update-checkmarx-cli:
     name: Update Checkmarx CLI
     runs-on: cx-public-ubuntu-x64
+    environment: release-automation
     permissions:
-      contents: read
+      contents: read  # for actions/checkout; the branch push and the PR use the GitHub App token
+      id-token: write  # for configure-aws-credentials to assume the AWS role via OIDC
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
       - name: Get Latest Checkmarx API version
         id: checkmarx-ast-cli
+        env:
+          DISPATCH_VERSION: ${{ github.event.client_payload.version }}
         run: |
-          echo ::set-output name=release_tag::$(curl -sL https://api.github.com/repos/Checkmarx/ast-cli/releases/latest | jq -r ".tag_name")
-          echo ::set-output name=current_tag::$(<checkmarx-ast-cli.version)
+          if [ -n "$DISPATCH_VERSION" ]; then
+            if ! [[ "$DISPATCH_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid version in the dispatch event: $DISPATCH_VERSION"
+              exit 1
+            fi
+            echo "release_tag=$DISPATCH_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "release_tag=$(curl -sL https://api.github.com/repos/Checkmarx/ast-cli/releases/latest | jq -r '.tag_name')" >> "$GITHUB_OUTPUT"
+          fi
+          echo "current_tag=$(<checkmarx-ast-cli.version)" >> "$GITHUB_OUTPUT"
       - name: Update Checkmarx cli version
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
         env:
@@ -42,12 +54,50 @@ jobs:
           chmod +x ./.github/scripts/update_cli.sh
           ./.github/scripts/update_cli.sh "${RELEASE_TAG}"
 
+      - name: Configure AWS credentials
+        if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
+        uses: step-security/configure-aws-credentials@1448016543d4432bd608e0de7871c7bf9e9be925 # v6.2.1
+        with:
+          role-to-assume: ${{ secrets.PLUGINS_APP_ROLE_ARN }}
+          aws-region: ${{ secrets.PLUGINS_APP_AWS_REGION }}
+          role-session-name: plugins-release-update-pr
+
+      - name: Fetch GitHub App private key
+        if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
+        uses: step-security/aws-secretsmanager-get-secrets@102b6b2a2528747bcc321bb99ef326d8be7ef58f # v3.0.1
+        with:
+          secret-ids: PLUGINS_APP_KEY,${{ secrets.PLUGINS_APP_SECRET_NAME }}
+
+      - name: Mask each line of the private key
+        if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
+        run: |
+          while IFS= read -r line; do
+            line="${line%$'\r'}"
+            if [ -n "${line}" ]; then
+              echo "::add-mask::${line}"
+            fi
+          done <<< "${PLUGINS_APP_KEY}"
+
+      - name: Create GitHub App token
+        id: app-token
+        if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.PLUGINS_APP_CLIENT_ID }}
+          private-key: ${{ env.PLUGINS_APP_KEY }}
+          permission-contents: write  # push the update branch
+          permission-pull-requests: write  # open the PR and enable auto-merge
+
+      - name: Remove the private key from the environment
+        if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
+        run: echo "PLUGINS_APP_KEY=" >> "${GITHUB_ENV}"
+
       - name: Create Pull Request
         id: cretae_pull_request
         if: steps.checkmarx-ast-cli.outputs.current_tag != steps.checkmarx-ast-cli.outputs.release_tag
         uses: step-security/create-pull-request@50c103da2b9ca12cd5bc013fc6931051a5aa872b # v8.1.1
         with:
-          token: ${{ secrets.AUTOMATION_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: Update checkmarx-ast-cli to ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
           title: Update checkmarx-ast-cli binaries with ${{ steps.checkmarx-ast-cli.outputs.release_tag }}
           body: |
@@ -58,3 +108,10 @@ jobs:
             [1]: https://github.com/Checkmarx/checkmarx-ast-cli
           labels: cxone
           branch: feature/update_cli_${{ steps.checkmarx-ast-cli.outputs.release_tag }}
+
+      - name: Enable auto-merge (squash after 2 cx-maintainers approvals)
+        if: steps.cretae_pull_request.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.cretae_pull_request.outputs.pull-request-number }}
+        run: gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash
